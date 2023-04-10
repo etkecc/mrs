@@ -15,7 +15,7 @@ import (
 
 	"gitlab.com/etke.cc/int/mrs/config"
 	"gitlab.com/etke.cc/int/mrs/controllers"
-	"gitlab.com/etke.cc/int/mrs/model"
+	"gitlab.com/etke.cc/int/mrs/repository/data"
 	"gitlab.com/etke.cc/int/mrs/repository/search"
 	"gitlab.com/etke.cc/int/mrs/services"
 )
@@ -23,6 +23,7 @@ import (
 var (
 	configPath    string
 	configWatcher *fswatcher.Watcher
+	dataRepo      *data.Data
 	index         *search.Index
 	cfg           *config.Config
 	e             *echo.Echo
@@ -37,9 +38,19 @@ func main() {
 		log.Panic(err)
 	}
 	startConfigWatcher()
+	dataRepo, err = data.New(cfg.Path.Data, cfg.Shards)
+	if err != nil {
+		log.Panic(err)
+	}
+
 	index = createOrOpenIndex(cfg.Path.Index)
 	searchSvc := services.NewSearch(index)
+	matrixSvc := services.NewMatrix(cfg.Servers, dataRepo)
 	initShutdown(quit)
+	log.Println("parsing rooms...")
+	for _, server := range cfg.Servers {
+		matrixSvc.GetRooms(server)
+	}
 
 	e = echo.New()
 	controllers.ConfigureRouter(e, cfg, searchSvc)
@@ -47,7 +58,6 @@ func main() {
 	if err := e.Start(":" + cfg.Port); err != nil && err != http.ErrServerClosed {
 		log.Fatal("shutting down the server", err)
 	}
-	index.Search("something", 1, 0)
 
 	<-quit
 }
@@ -61,13 +71,6 @@ func createOrOpenIndex(indexPath string) *search.Index {
 	if err != nil {
 		log.Panic(err)
 	}
-	searchIndex.Index("!gqlCuoCdhufltluRXk:etke.cc", model.Entry{
-		ID:     "!gqlCuoCdhufltluRXk:etke.cc",
-		Alias:  "#news:etke.cc",
-		Name:   "etke.cc | news",
-		Topic:  "#service:etke.cc Matrix homeservers hosting, setup and maintenance",
-		Avatar: "mxc://etke.cc/sENrPlXsrqeJworlfatgzHmu",
-	})
 	return searchIndex
 }
 
@@ -91,6 +94,7 @@ func shutdown() {
 	if err := index.Close(); err != nil {
 		log.Println(err)
 	}
+	dataRepo.Close()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := e.Shutdown(ctx); err != nil {

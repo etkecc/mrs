@@ -1,4 +1,5 @@
 port: 8080
+shards: 5 # amount of room data shards to store data
 admin:
   login: admin
   password: changeme
