@@ -10,7 +10,7 @@ import (
 
 type matrixService interface {
 	DiscoverServers(int)
-	ParseRooms(int, func(string, model.MatrixRoom)) error
+	ParseRooms(int, func(string, string, model.MatrixRoom)) error
 	EachRoom(func(string, model.MatrixRoom))
 }
 
@@ -28,8 +28,8 @@ func discover(svc matrixService, workers int) echo.HandlerFunc {
 //nolint:errcheck
 func parse(parseSvc matrixService, indexSvc indexService, workers int) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		go parseSvc.ParseRooms(workers, func(roomID string, room model.MatrixRoom) {
-			if err := indexSvc.Index(roomID, model.Entry(room)); err != nil {
+		go parseSvc.ParseRooms(workers, func(serverName, roomID string, room model.MatrixRoom) {
+			if err := indexSvc.Index(roomID, room.Entry(serverName)); err != nil {
 				log.Println(room.Alias, "cannot index", err)
 			}
 		})
@@ -42,7 +42,7 @@ func parse(parseSvc matrixService, indexSvc indexService, workers int) echo.Hand
 func reindex(matrixSvc matrixService, indexSvc indexService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		go matrixSvc.EachRoom(func(roomID string, room model.MatrixRoom) {
-			if err := indexSvc.Index(roomID, model.Entry(room)); err != nil {
+			if err := indexSvc.Index(roomID, room.Entry("")); err != nil {
 				log.Println(room.Alias, "cannot index", err)
 			}
 		})
@@ -56,8 +56,8 @@ func full(matrixSvc matrixService, indexSvc indexService, discoveryWorkers int, 
 	return func(c echo.Context) error {
 		go func(matrixSvc matrixService, indexSvc indexService, discoveryWorkers int, parsingWorkers int) {
 			matrixSvc.DiscoverServers(discoveryWorkers)
-			matrixSvc.ParseRooms(parsingWorkers, func(roomID string, room model.MatrixRoom) {
-				if err := indexSvc.Index(roomID, model.Entry(room)); err != nil {
+			matrixSvc.ParseRooms(parsingWorkers, func(serverName, roomID string, room model.MatrixRoom) {
+				if err := indexSvc.Index(roomID, room.Entry(serverName)); err != nil {
 					log.Println(room.Alias, "cannot index", err)
 				}
 			})

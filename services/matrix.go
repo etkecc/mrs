@@ -105,7 +105,7 @@ func (m *Matrix) DiscoverServers(workers int) {
 }
 
 // ParseRooms across all discovered servers
-func (m *Matrix) ParseRooms(workers int, indexfunc func(roomID string, room model.MatrixRoom)) error {
+func (m *Matrix) ParseRooms(workers int, indexfunc func(serverName string, roomID string, room model.MatrixRoom)) error {
 	if m.parsing {
 		log.Println("rooms parsing already in progress, ignoring request")
 		return nil
@@ -138,12 +138,12 @@ func (m *Matrix) EachRoom(handler func(roomID string, data model.MatrixRoom)) {
 	m.data.EachRoom(handler)
 }
 
-func (m *Matrix) parseServerRooms(name, serverURL string, indexfunc func(roomID string, room model.MatrixRoom)) {
+func (m *Matrix) parseServerRooms(name, serverURL string, indexfunc func(serverName string, roomID string, room model.MatrixRoom)) {
 	ch := make(chan model.MatrixRoom)
 	go m.getPublicRooms(name, serverURL, ch)
 	for room := range ch {
 		m.data.AddRoom(room.ID, room) //nolint:errcheck
-		indexfunc(room.ID, room)
+		indexfunc(name, room.ID, room)
 	}
 }
 
@@ -199,6 +199,7 @@ func (m *Matrix) getPublicRooms(name, serverURL string, ch chan model.MatrixRoom
 
 		start := time.Now()
 		for _, room := range resp.Chunk {
+			room.Server = name
 			ch <- room
 		}
 		log.Println(name, "added", len(resp.Chunk), "rooms (", added, "of", resp.Total, ") took", time.Since(start))
