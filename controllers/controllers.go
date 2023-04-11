@@ -27,9 +27,13 @@ func ConfigureRouter(e *echo.Echo, cfg *config.Config, indexSvc indexerService, 
 }
 
 func configureRouter(e *echo.Echo, cfg *config.Config) {
-	e.Use(middleware.Logger())
+	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+		Format:           `${remote_ip} - - [${time_custom}] "${method} ${path} ${protocol}" ${status} ${bytes_out} "${referer}" "${user_agent}"`,
+		CustomTimeFormat: "2/Jan/2006:15:04:05 -0700",
+	}))
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORSWithConfig(cfg.CORS))
+	e.Use(cacheMiddleware)
 	e.HideBanner = true
 	e.IPExtractor = echo.ExtractIPFromXFFHeader(
 		echo.TrustLoopback(true),
@@ -66,4 +70,15 @@ func adminGroup(e *echo.Echo, cfg *config.Config) *echo.Group {
 		return false, nil
 	}))
 	return admin
+}
+
+func cacheMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		if c.Request().Method == http.MethodGet {
+			c.Response().
+				Header().
+				Set("Cache-Control", "max-age=86400")
+		}
+		return next(c)
+	}
 }
