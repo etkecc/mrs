@@ -39,7 +39,7 @@ paths:
         - public
       summary: Statistics
       description: returns instance statistics
-      operationId: stas
+      operationId: stats
       responses:
         '200':
           description: successful operation
@@ -98,6 +98,7 @@ paths:
       tags:
         - private
       description: Get YAML of the discovered (alive) matrix servers. Useful to adjust config file
+      operationId: admin_servers
       responses:
         '200':
           description: successful operation
@@ -116,6 +117,7 @@ paths:
       tags:
         - private
       description: Run matrix servers discovery process in background. If process already in progress, request will be ignored
+      operationId: admin_discover
       responses:
         '201':
           description: request acknowledged
@@ -126,6 +128,7 @@ paths:
       tags:
         - private
       description: Runs matrix rooms parsing and ingestion process in background. If process already in progress, request will be ignored
+      operationId: admin_parse
       responses:
         '201':
           description: request acknowledged
@@ -136,6 +139,7 @@ paths:
       tags:
         - private
       description: Runs parsed matrix rooms ingestion process in background. If process already in progress, request will be ignored
+      operationId: admin_reindex
       responses:
         '201':
           description: request acknowledged
@@ -146,6 +150,7 @@ paths:
       tags:
         - private
       description: Runs matrix servers discovery, then rooms parsing and ingestion in background. Useful when starting a fresh instance without any data. If process already in progress, request will be ignored
+      operationId: admin_full
       responses:
         '201':
           description: request acknowledged
