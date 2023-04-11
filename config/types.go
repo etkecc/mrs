@@ -8,6 +8,7 @@ type Config struct {
 	Path    Paths                 `yaml:"path"`
 	Admin   Admin                 `yaml:"admin"`
 	CORS    middleware.CORSConfig `yaml:"cors"`
+	Workers Workers               `yaml:"workers"`
 	Servers []string              `yaml:"servers"`
 }
 
@@ -22,4 +23,10 @@ type Admin struct {
 type Paths struct {
 	Index string `yaml:"index"`
 	Data  string `yaml:"data"`
+}
+
+// Workers config
+type Workers struct {
+	Discovery int `yaml:"discovery"`
+	Parsing   int `yaml:"parsing"`
 }

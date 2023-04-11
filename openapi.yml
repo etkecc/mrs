@@ -1,0 +1,127 @@
+openapi: 3.0.3
+info:
+  title: Matrix Rooms Search
+  version: '0.x.x'
+  description: 'Matrix Rooms Search service'
+  license:
+    name: GPL-3.0
+    url: https://www.gnu.org/licenses/gpl-3.0.txt
+
+externalDocs:
+  description: Git repo
+  url: https://gitlab.com/etke.cc/int/mrs
+servers:
+  - url: http://localhost:8080
+    description: local
+paths:
+  /search:
+    get:
+      tags:
+        - public
+      summary: Search something!
+      description: Search for matrix rooms
+      operationId: search
+      parameters:
+        - name: q
+          in: query
+          description: search query
+          required: true
+          schema:
+            type: string
+        - name: l
+          in: query
+          description: limit
+          required: false
+          schema:
+            type: integer
+            default: 100
+        - name: o
+          in: query
+          description: offset
+          required: false
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Entry'
+  /-/discover:
+    post:
+      tags:
+        - private
+      description: Run matrix servers discovery process in background. If process already in progress, request will be ignored
+      responses:
+        '201':
+          description: request acknowledged
+      security:
+       - admin:
+  /-/parse:
+    post:
+      tags:
+        - private
+      description: Runs matrix rooms parsing and ingestion process in background. If process already in progress, request will be ignored
+      responses:
+        '201':
+          description: request acknowledged
+      security:
+       - admin:
+  /-/reindex:
+    post:
+      tags:
+        - private
+      description: Runs parsed matrix rooms ingestion process in background. If process already in progress, request will be ignored
+      responses:
+        '201':
+          description: request acknowledged
+      security:
+       - admin:
+  /-/full:
+    post:
+      tags:
+        - private
+      description: Runs matrix servers discovery, then rooms parsing and ingestion in background. Useful when starting a fresh instance without any data. If process already in progress, request will be ignored
+      responses:
+        '201':
+          description: request acknowledged
+      security:
+       - admin:
+
+components:
+  schemas:
+    Entry:
+      type: object
+      properties:
+        id:
+          type: string
+          description: room ID
+          example: '!example:example.com'
+        alias:
+          type: string
+          description: room alias
+          example: '#example:example.com'
+        name:
+          type: string
+          description: room name
+          example: 'Example Room'
+        topic:
+          type: string
+          description: room topic
+          example: 'This is my topic'
+        avatar:
+          type: string
+          description: room avatar url
+          example: 'mxc://example.com/sENrPlXsrqeJworlfatgzHmu'
+        members:
+          type: integer
+          description: members count
+          example: 9
+  securitySchemes:
+    admin:
+      type: http
+      scheme: basic

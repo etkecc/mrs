@@ -2,6 +2,7 @@ package search
 
 import (
 	"github.com/blevesearch/bleve/v2"
+
 	"gitlab.com/etke.cc/int/mrs/model"
 )
 

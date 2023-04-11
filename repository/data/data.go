@@ -45,6 +45,24 @@ func (d *Data) GetServer(name string) (string, error) {
 	return url, err
 }
 
+// RemoveServer info
+func (d *Data) RemoveServer(name string) error {
+	return d.db.Update(func(tx *bbolt.Tx) error {
+		return tx.Bucket(serversBucket).Delete([]byte(name))
+	})
+}
+
+// EachServer allows to work with each known server
+//nolint:errcheck
+func (d *Data) EachServer(handler func(name, url string)) {
+	d.db.View(func(tx *bbolt.Tx) error {
+		return tx.Bucket(serversBucket).ForEach(func(k, v []byte) error {
+			handler(string(k), string(v))
+			return nil
+		})
+	})
+}
+
 // AddRoom info
 func (d *Data) AddRoom(roomID string, data model.MatrixRoom) error {
 	datab, err := json.Marshal(data)
@@ -68,6 +86,23 @@ func (d *Data) GetRoom(roomID string) (model.MatrixRoom, error) {
 		return json.Unmarshal(v, &room)
 	})
 	return room, err
+}
+
+// EachRoom allows to work with each known room
+//nolint:errcheck
+func (d *Data) EachRoom(handler func(roomID string, data model.MatrixRoom)) {
+	var room model.MatrixRoom
+	d.db.View(func(tx *bbolt.Tx) error {
+		return tx.Bucket(roomsBucket).ForEach(func(k, v []byte) error {
+			err := json.Unmarshal(v, &room)
+			if err != nil {
+				return err
+			}
+
+			handler(string(k), room)
+			return nil
+		})
+	})
 }
 
 // Close data repository

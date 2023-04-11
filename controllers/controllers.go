@@ -9,11 +9,20 @@ import (
 	"gitlab.com/etke.cc/int/mrs/config"
 )
 
+type indexerService interface {
+	searchService
+	indexService
+}
+
 // ConfigureRouter configures echo router
-func ConfigureRouter(e *echo.Echo, cfg *config.Config, searchSvc searchService) {
+func ConfigureRouter(e *echo.Echo, cfg *config.Config, indexSvc indexerService, matrixSvc matrixService) {
 	configureRouter(e, cfg)
-	configureAdminRoutes(e, cfg)
-	e.GET("/search", search(searchSvc))
+	a := adminGroup(e, cfg)
+	e.GET("/search", search(indexSvc))
+	a.POST("/discover", discover(matrixSvc, cfg.Workers.Discovery))
+	a.POST("/parse", parse(matrixSvc, indexSvc, cfg.Workers.Parsing))
+	a.POST("/reindex", reindex(matrixSvc, indexSvc))
+	a.POST("/full", full(matrixSvc, indexSvc, cfg.Workers.Discovery, cfg.Workers.Parsing))
 }
 
 func configureRouter(e *echo.Echo, cfg *config.Config) {
@@ -31,7 +40,7 @@ func configureRouter(e *echo.Echo, cfg *config.Config) {
 	})
 }
 
-func configureAdminRoutes(e *echo.Echo, cfg *config.Config) {
+func adminGroup(e *echo.Echo, cfg *config.Config) *echo.Group {
 	admin := e.Group("-")
 	admin.Use(middleware.BasicAuth(func(login, password string, ctx echo.Context) (bool, error) {
 		if login != cfg.Admin.Login || password != cfg.Admin.Password {
@@ -55,11 +64,5 @@ func configureAdminRoutes(e *echo.Echo, cfg *config.Config) {
 
 		return false, nil
 	}))
-
-	admin.POST("/parse", func(c echo.Context) error {
-		return c.JSON(http.StatusOK, map[string]string{"status": "not implemented"})
-	})
-	admin.POST("/reindex", func(c echo.Context) error {
-		return c.JSON(http.StatusOK, map[string]string{"status": "not implemented"})
-	})
+	return admin
 }

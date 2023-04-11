@@ -15,7 +15,6 @@ import (
 
 	"gitlab.com/etke.cc/int/mrs/config"
 	"gitlab.com/etke.cc/int/mrs/controllers"
-	"gitlab.com/etke.cc/int/mrs/model"
 	"gitlab.com/etke.cc/int/mrs/repository/data"
 	"gitlab.com/etke.cc/int/mrs/repository/search"
 	"gitlab.com/etke.cc/int/mrs/services"
@@ -47,18 +46,10 @@ func main() {
 	index = createOrOpenIndex(cfg.Path.Index)
 	searchSvc := services.NewSearch(index)
 	matrixSvc := services.NewMatrix(cfg.Servers, dataRepo)
-	initShutdown(quit)
-	log.Println("parsing and indexing rooms...")
-	for _, server := range cfg.Servers {
-		matrixSvc.ParseRooms(server, func(roomID string, room model.MatrixRoom) {
-			if err := index.Index(roomID, model.Entry(room)); err != nil {
-				log.Println(roomID, "cannot index", err)
-			}
-		})
-	}
-
 	e = echo.New()
-	controllers.ConfigureRouter(e, cfg, searchSvc)
+	controllers.ConfigureRouter(e, cfg, searchSvc, matrixSvc)
+
+	initShutdown(quit)
 
 	if err := e.Start(":" + cfg.Port); err != nil && err != http.ErrServerClosed {
 		log.Fatal("shutting down the server", err)
@@ -100,6 +91,10 @@ func shutdown() {
 		log.Println(err)
 	}
 	dataRepo.Close()
+	// api was not started yet
+	if e == nil {
+		return
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := e.Shutdown(ctx); err != nil {
