@@ -1,5 +1,4 @@
 port: 8080
-shards: 5 # amount of room data shards to store data
 admin:
   login: admin
   password: changeme
@@ -12,7 +11,7 @@ cors: # (optional) ref: https://echo.labstack.com/middleware/cors/#configuration
   max_age: 0
 path:
   index: testdata/index
-  data: testdata/data
+  data: testdata/data.db
 servers:
   - etke.cc
 

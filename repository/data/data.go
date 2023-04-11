@@ -1,72 +1,76 @@
 package data
 
 import (
-	"crypto/sha1"
-	"os"
-	"path"
-	"strconv"
+	"encoding/json"
 
 	"gitlab.com/etke.cc/int/mrs/model"
+	"go.etcd.io/bbolt"
 )
 
 type Data struct {
-	servers    *Store[string, string]
-	rooms      []*Store[string, model.Entry]
-	roomShards int
+	db *bbolt.DB
 }
 
-func New(dir string, roomShards int) (*Data, error) {
-	err := os.MkdirAll(dir, os.ModePerm)
+func New(path string) (*Data, error) {
+	db, err := bbolt.Open(path, 0o600, nil)
 	if err != nil {
 		return nil, err
 	}
-	servers, err := NewStore[string, string](path.Join(dir, "servers.yml"), true)
+	err = initBuckets(db)
 	if err != nil {
 		return nil, err
 	}
-	rooms := make([]*Store[string, model.Entry], roomShards)
-	for i := 0; i < roomShards; i++ {
-		store, err := NewStore[string, model.Entry](path.Join(dir, "rooms-"+strconv.Itoa(i)+".yml"), true)
-		if err != nil {
-			return nil, err
-		}
-		rooms[i] = store
-	}
 
-	return &Data{servers, rooms, roomShards}, nil
-}
-
-// getRoomsShard is a very simple sharding implementation
-func (d *Data) getRoomsShard(roomID string) *Store[string, model.Entry] {
-	hash := sha1.Sum([]byte(roomID))
-	return d.rooms[int(hash[17])%d.roomShards]
+	return &Data{db}, nil
 }
 
 // AddServer info
-func (d *Data) AddServer(name, url string) {
-	d.servers.Add(name, url)
+func (d *Data) AddServer(name, url string) error {
+	return d.db.Update(func(tx *bbolt.Tx) error {
+		return tx.Bucket(serversBucket).Put([]byte(name), []byte(url))
+	})
 }
 
 // GetServer info
-func (d *Data) GetServer(name string) string {
-	return d.servers.Get(name)
+func (d *Data) GetServer(name string) (string, error) {
+	var url string
+	err := d.db.View(func(tx *bbolt.Tx) error {
+		v := tx.Bucket(serversBucket).Get([]byte(name))
+		if v != nil {
+			url = string(v)
+		}
+
+		return nil
+	})
+	return url, err
 }
 
 // AddRoom info
-func (d *Data) AddRoom(roomID string, data model.Entry) {
-	d.getRoomsShard(roomID).Add(roomID, data)
+func (d *Data) AddRoom(roomID string, data model.Entry) error {
+	datab, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	return d.db.Update(func(tx *bbolt.Tx) error {
+		return tx.Bucket(roomsBucket).Put([]byte(roomID), datab)
+	})
 }
 
 // GetRoom info
-func (d *Data) GetRoom(roomID string) model.Entry {
-	return d.getRoomsShard(roomID).Get(roomID)
+func (d *Data) GetRoom(roomID string) (model.Entry, error) {
+	var room model.Entry
+	err := d.db.View(func(tx *bbolt.Tx) error {
+		v := tx.Bucket(roomsBucket).Get([]byte(roomID))
+		if v == nil {
+			return nil
+		}
+		return json.Unmarshal(v, &room)
+	})
+	return room, err
 }
 
 // Close data repository
-//nolint:errcheck
-func (d *Data) Close() {
-	d.servers.Close()
-	for _, room := range d.rooms {
-		room.Close()
-	}
+func (d *Data) Close() error {
+	return d.db.Close()
 }

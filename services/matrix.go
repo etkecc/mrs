@@ -16,10 +16,10 @@ type Matrix struct {
 }
 
 type DataRepository interface {
-	AddServer(string, string)
-	GetServer(string) string
-	AddRoom(string, model.Entry)
-	GetRoom(string) model.Entry
+	AddServer(string, string) error
+	GetServer(string) (string, error)
+	AddRoom(string, model.Entry) error
+	GetRoom(string) (model.Entry, error)
 }
 
 var matrixClient = &http.Client{
@@ -60,7 +60,7 @@ func (m *Matrix) GetRooms(server string) []model.Entry {
 	serverURL := m.discoverServer(server)
 	rooms := m.getPublicRooms(serverURL)
 	for _, room := range rooms {
-		m.data.AddRoom(room.ID, room)
+		m.data.AddRoom(room.ID, room) //nolint:errcheck
 	}
 
 	return rooms
@@ -69,7 +69,8 @@ func (m *Matrix) GetRooms(server string) []model.Entry {
 // discoverServer resolves matrix server domain into actual server's url using well-known delegation
 // inspired by https://github.com/mautrix/go/blob/master/client.go#L103
 func (m *Matrix) discoverServer(name string) string {
-	if serverURL := m.data.GetServer(name); serverURL != "" {
+	serverURL, _ := m.data.GetServer(name) //nolint:errcheck
+	if serverURL != "" {
 		return serverURL
 	}
 
@@ -98,7 +99,7 @@ func (m *Matrix) discoverServer(name string) string {
 		return name
 	}
 
-	m.data.AddServer(name, wellKnown.Homeserver.URL)
+	m.data.AddServer(name, wellKnown.Homeserver.URL) //nolint:errcheck
 	return wellKnown.Homeserver.URL
 }
 

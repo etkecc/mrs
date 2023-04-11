@@ -5,7 +5,6 @@ import "github.com/labstack/echo/v4/middleware"
 // Config structure
 type Config struct {
 	Port    string                `yaml:"port"`
-	Shards  int                   `yaml:"shards"`
 	Path    Paths                 `yaml:"path"`
 	Admin   Admin                 `yaml:"admin"`
 	CORS    middleware.CORSConfig `yaml:"cors"`

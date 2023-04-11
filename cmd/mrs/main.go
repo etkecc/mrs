@@ -38,7 +38,7 @@ func main() {
 		log.Panic(err)
 	}
 	startConfigWatcher()
-	dataRepo, err = data.New(cfg.Path.Data, cfg.Shards)
+	dataRepo, err = data.New(cfg.Path.Data)
 	if err != nil {
 		log.Panic(err)
 	}
