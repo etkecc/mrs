@@ -14,6 +14,25 @@ servers:
   - url: http://localhost:8080
     description: local
 paths:
+  /_health:
+    get:
+      tags:
+        - public
+      summary: Healthcheck endpoint
+      description: check that service is alive
+      operationId: health
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    description: ok
+                    example: 'ok'
   /search:
     get:
       tags:
@@ -51,6 +70,24 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Entry'
+  /-/servers:
+    get:
+      tags:
+        - private
+      description: Get YAML of the discovered (alive) matrix servers. Useful to adjust config file
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/x-yaml:
+              schema:
+                type: array
+                items:
+                  type: string
+                  description: human-readable server name (matrix domain)
+                  example: 'example.com'
+      security:
+       - admin:
   /-/discover:
     post:
       tags:

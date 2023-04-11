@@ -19,6 +19,7 @@ func ConfigureRouter(e *echo.Echo, cfg *config.Config, indexSvc indexerService, 
 	configureRouter(e, cfg)
 	a := adminGroup(e, cfg)
 	e.GET("/search", search(indexSvc))
+	a.GET("/servers", servers(matrixSvc))
 	a.POST("/discover", discover(matrixSvc, cfg.Workers.Discovery))
 	a.POST("/parse", parse(matrixSvc, indexSvc, cfg.Workers.Parsing))
 	a.POST("/reindex", reindex(matrixSvc, indexSvc))

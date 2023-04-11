@@ -48,6 +48,10 @@ type matrixClientWellKnownHomeserver struct {
 	URL string `json:"base_url"`
 }
 
+type matrixClientVersions struct {
+	Versions []string `json:"versions"`
+}
+
 type matrixRoomsResp struct {
 	Chunk     []model.MatrixRoom `json:"chunk"`
 	NextBatch string             `json:"next_batch"`
@@ -94,11 +98,16 @@ func (m *Matrix) DiscoverServers(workers int) {
 				return nil
 			}
 
-			serverURL = m.discoverServer(name)
-			if serverURL == "" {
-				return m.data.RemoveServer(name)
+			serverURL = m.discoverServerWellKnown(name)
+			if serverURL != "" {
+				return m.data.AddServer(name, serverURL)
 			}
-			return m.data.AddServer(name, serverURL)
+			serverURL = m.discoverServerDirect(name)
+			if serverURL != "" {
+				return m.data.AddServer(name, serverURL)
+			}
+
+			return m.data.RemoveServer(name)
 		})
 	}
 	wp.Wait() //nolint:errcheck
@@ -138,6 +147,11 @@ func (m *Matrix) EachRoom(handler func(roomID string, data model.MatrixRoom)) {
 	m.data.EachRoom(handler)
 }
 
+// EachServer allows to work with each known server
+func (m *Matrix) EachServer(handler func(name, serverURL string)) {
+	m.data.EachServer(handler)
+}
+
 func (m *Matrix) parseServerRooms(name, serverURL string, indexfunc func(serverName string, roomID string, room model.MatrixRoom)) {
 	ch := make(chan model.MatrixRoom)
 	go m.getPublicRooms(name, serverURL, ch)
@@ -147,14 +161,9 @@ func (m *Matrix) parseServerRooms(name, serverURL string, indexfunc func(serverN
 	}
 }
 
-// discoverServer resolves matrix server domain into actual server's url using well-known delegation
+// discoverServerWellKnown resolves matrix server domain into actual server's url using well-known delegation
 // inspired by https://github.com/mautrix/go/blob/master/client.go#L103
-func (m *Matrix) discoverServer(name string) string {
-	serverURL, _ := m.data.GetServer(name) //nolint:errcheck
-	if serverURL != "" {
-		return serverURL
-	}
-
+func (m *Matrix) discoverServerWellKnown(name string) string {
 	resp, err := matrixClientCall("https://" + name + "/.well-known/matrix/client")
 	if err != nil {
 		log.Println(name, "cannot get matrix delegation information", err)
@@ -180,8 +189,41 @@ func (m *Matrix) discoverServer(name string) string {
 		return ""
 	}
 
-	m.data.AddServer(name, wellKnown.Homeserver.URL) //nolint:errcheck
 	return wellKnown.Homeserver.URL
+}
+
+// discoverServerDirect tries to discover matrix server directly by supported protocol versions endpoint
+func (m *Matrix) discoverServerDirect(name string) string {
+	resp, err := matrixClientCall("https://" + name + "/_matrix/client/versions")
+	if err != nil {
+		log.Println(name, "cannot get matrix client versions", err)
+		return ""
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		log.Println(name, "matrix client versions not found")
+		return ""
+	}
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Println(name, "cannot read matrix client versions", err)
+		return ""
+	}
+
+	var clientVersions matrixClientVersions
+	err = json.Unmarshal(data, &clientVersions)
+	if err != nil {
+		log.Println(name, "cannot unmarshal matrix client versions", err)
+		return ""
+	}
+	if len(clientVersions.Versions) == 0 {
+		log.Println(name, "matrix client versions are empty")
+		return ""
+	}
+
+	return "https://" + name
 }
 
 // getPublicRooms reads public rooms of the given server from the matrix client-server api
