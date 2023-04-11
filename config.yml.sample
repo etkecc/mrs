@@ -13,7 +13,7 @@ path:
   index: testdata/index
   data: testdata/data.db
 workers: # parallelism configuration, how much workers to spin up at once
-  discovery: 10 # matrix server discovery, servers at once
+  discovery: 20 # matrix server discovery, servers at once
   parsing: 5 # matrix public rooms parsing, servers at once
 
 # bootstrap list of servers, each of them will be discovered and if server doesn't respond, it won't be parsed
@@ -1734,7 +1734,6 @@ servers:
   - matrix.itgo.com.au
   - matrix.jamella.ca
   - matrix.janha.cz
-  - matrix.jasondaigo.de
   - matrix.javier.eu.org
   - matrix.javil.eu
   - matrix.jb-net.us

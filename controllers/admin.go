@@ -38,8 +38,13 @@ func servers(matrix matrixService) echo.HandlerFunc {
 func discover(matrix matrixService, stats statsService, workers int) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		go func(matrix matrixService, stats statsService) {
+			log.Println("discovering matrix servers...")
 			matrix.DiscoverServers(workers)
+			log.Println("servers discovery has been finished")
+
+			log.Println("collecting stats...")
 			stats.Collect()
+			log.Println("stats have been collected")
 		}(matrix, stats)
 
 		return c.NoContent(http.StatusCreated)
@@ -50,12 +55,17 @@ func discover(matrix matrixService, stats statsService, workers int) echo.Handle
 func parse(matrix matrixService, index indexService, stats statsService, workers int) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		go func(matrix matrixService, index indexService, stats statsService) {
+			log.Println("parsing matrix rooms...")
 			matrix.ParseRooms(workers, func(serverName, roomID string, room model.MatrixRoom) {
 				if err := index.Index(roomID, room.Entry(serverName)); err != nil {
 					log.Println(room.Alias, "cannot index", err)
 				}
 			})
+			log.Println("all available matrix rooms have been parsed")
+
+			log.Println("collecting stats...")
 			stats.Collect()
+			log.Println("stats have been collected")
 		}(matrix, index, stats)
 
 		return c.NoContent(http.StatusCreated)
@@ -66,11 +76,16 @@ func parse(matrix matrixService, index indexService, stats statsService, workers
 func reindex(matrix matrixService, index indexService, stats statsService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		go func(matrix matrixService, index indexService, stats statsService) {
+			log.Println("ingesting matrix rooms...")
 			matrix.EachRoom(func(roomID string, room model.MatrixRoom) {
 				if err := index.Index(roomID, room.Entry("")); err != nil {
 					log.Println(room.Alias, "cannot index", err)
 				}
+				log.Println("all available matrix rooms have been ingested")
+
+				log.Println("collecting stats...")
 				stats.Collect()
+				log.Println("stats have been collected")
 			})
 		}(matrix, index, stats)
 
@@ -82,13 +97,21 @@ func reindex(matrix matrixService, index indexService, stats statsService) echo.
 func full(matrix matrixService, index indexService, stats statsService, discoveryWorkers int, parsingWorkers int) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		go func(matrix matrixService, index indexService, stats statsService, discoveryWorkers int, parsingWorkers int) {
+			log.Println("discovering matrix servers...")
 			matrix.DiscoverServers(discoveryWorkers)
+			log.Println("servers discovery has been finished")
+
+			log.Println("parsing matrix rooms...")
 			matrix.ParseRooms(parsingWorkers, func(serverName, roomID string, room model.MatrixRoom) {
 				if err := index.Index(roomID, room.Entry(serverName)); err != nil {
 					log.Println(room.Alias, "cannot index", err)
 				}
 			})
+			log.Println("all available matrix rooms have been parsed")
+
+			log.Println("collecting stats...")
 			stats.Collect()
+			log.Println("stats have been collected")
 		}(matrix, index, stats, discoveryWorkers, parsingWorkers)
 
 		return c.NoContent(http.StatusCreated)

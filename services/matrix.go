@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/xxjwxc/gowp/workpool"
@@ -35,7 +36,7 @@ var matrixClient = &http.Client{
 	Timeout: 30 * time.Second,
 	Transport: &http.Transport{
 		Dial: func(network, addr string) (net.Conn, error) {
-			return net.DialTimeout(network, addr, 2*time.Second)
+			return net.DialTimeout(network, addr, 5*time.Second)
 		},
 	},
 }
@@ -99,11 +100,11 @@ func (m *Matrix) DiscoverServers(workers int) {
 			}
 
 			serverURL = m.discoverServerWellKnown(name)
-			if serverURL != "" {
+			if serverURL != "" && m.validateDiscoveredServer(name, serverURL) {
 				return m.data.AddServer(name, serverURL)
 			}
 			serverURL = m.discoverServerDirect(name)
-			if serverURL != "" {
+			if serverURL != "" && m.validateDiscoveredServer(name, serverURL) {
 				return m.data.AddServer(name, serverURL)
 			}
 
@@ -188,8 +189,15 @@ func (m *Matrix) discoverServerWellKnown(name string) string {
 		log.Println(name, "cannot unmarshal matrix delegation information", err)
 		return ""
 	}
+	if wellKnown.Homeserver.URL == "" {
+		log.Println(name, "matrix delegation information is empty")
+		return ""
+	}
 
-	return wellKnown.Homeserver.URL
+	if strings.HasPrefix(wellKnown.Homeserver.URL, "https://") {
+		return wellKnown.Homeserver.URL
+	}
+	return "https://" + wellKnown.Homeserver.URL
 }
 
 // discoverServerDirect tries to discover matrix server directly by supported protocol versions endpoint
@@ -226,13 +234,20 @@ func (m *Matrix) discoverServerDirect(name string) string {
 	return "https://" + name
 }
 
+// validateDiscoveredServer performs simple check to public rooms endpoint
+// to ensure discovered server is actually alive
+func (m *Matrix) validateDiscoveredServer(name, serverURL string) bool {
+	return m.getPublicRoomsPage(name, serverURL, "1", "") != nil
+}
+
 // getPublicRooms reads public rooms of the given server from the matrix client-server api
 // and sends them into channel
 func (m *Matrix) getPublicRooms(name, serverURL string, ch chan model.MatrixRoom) {
 	var since string
 	var added int
+	limit := "500"
 	for {
-		resp := m.getPublicRoomsPage(name, serverURL, since)
+		resp := m.getPublicRoomsPage(name, serverURL, limit, since)
 		if resp == nil || len(resp.Chunk) == 0 {
 			close(ch)
 			break
@@ -255,8 +270,8 @@ func (m *Matrix) getPublicRooms(name, serverURL string, ch chan model.MatrixRoom
 	}
 }
 
-func (m *Matrix) getPublicRoomsPage(name, serverURL, since string) *matrixRoomsResp {
-	endpoint := serverURL + "/_matrix/client/v3/publicRooms?limit=500"
+func (m *Matrix) getPublicRoomsPage(name, serverURL, limit, since string) *matrixRoomsResp {
+	endpoint := serverURL + "/_matrix/client/v3/publicRooms?limit=" + limit
 	if since != "" {
 		endpoint = endpoint + "&since=" + url.QueryEscape(since)
 	}
