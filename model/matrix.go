@@ -7,7 +7,7 @@ type MatrixRoom struct {
 	Name    string `json:"name"`
 	Topic   string `json:"topic"`
 	Avatar  string `json:"avatar_url"`
-	Server  string `json:"__server"`
+	Server  string `json:"server"` // custom
 	Members int    `json:"num_joined_members"`
 }
 
@@ -18,6 +18,7 @@ func (r MatrixRoom) Entry(server string) Entry {
 	}
 	return Entry{
 		ID:      r.ID,
+		Type:    "room",
 		Alias:   r.Alias,
 		Name:    r.Name,
 		Topic:   r.Topic,
