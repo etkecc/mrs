@@ -11,7 +11,15 @@ On app start:
 
 Later you can manipulate mrs using api.
 
-## planned api
+## todo
+
+* add pagination support to rooms parser
+* make room parsing background process
+* allow room parsing to be called from api
+* add full reindex (read all rooms from data and ingest them) as background process with ability to be called from api
+* indexed entry's `members` is always `0`, should be fixed by proper index mapping
+
+### planned api
 
 * GET /search?q=QUERY - search it! Query syntax: https://blevesearch.com/docs/Query-String-Query/
 * POST /-/parse - start rooms parsing across federation and ingesting it into the index. If procedure is in progress, request will be ignored

@@ -46,7 +46,7 @@ func (d *Data) GetServer(name string) (string, error) {
 }
 
 // AddRoom info
-func (d *Data) AddRoom(roomID string, data model.Entry) error {
+func (d *Data) AddRoom(roomID string, data model.MatrixRoom) error {
 	datab, err := json.Marshal(data)
 	if err != nil {
 		return err
@@ -58,8 +58,8 @@ func (d *Data) AddRoom(roomID string, data model.Entry) error {
 }
 
 // GetRoom info
-func (d *Data) GetRoom(roomID string) (model.Entry, error) {
-	var room model.Entry
+func (d *Data) GetRoom(roomID string) (model.MatrixRoom, error) {
+	var room model.MatrixRoom
 	err := d.db.View(func(tx *bbolt.Tx) error {
 		v := tx.Bucket(roomsBucket).Get([]byte(roomID))
 		if v == nil {

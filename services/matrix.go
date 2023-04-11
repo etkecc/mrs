@@ -18,8 +18,8 @@ type Matrix struct {
 type DataRepository interface {
 	AddServer(string, string) error
 	GetServer(string) (string, error)
-	AddRoom(string, model.Entry) error
-	GetRoom(string) (model.Entry, error)
+	AddRoom(string, model.MatrixRoom) error
+	GetRoom(string) (model.MatrixRoom, error)
 }
 
 var matrixClient = &http.Client{
@@ -56,14 +56,13 @@ func matrixClientCall(endpoint string) (*http.Response, error) {
 	return matrixClient.Do(req)
 }
 
-func (m *Matrix) GetRooms(server string) []model.Entry {
+func (m *Matrix) ParseRooms(server string, indexfunc func(roomID string, room model.MatrixRoom)) {
 	serverURL := m.discoverServer(server)
 	rooms := m.getPublicRooms(serverURL)
 	for _, room := range rooms {
 		m.data.AddRoom(room.ID, room) //nolint:errcheck
+		indexfunc(room.ID, room)
 	}
-
-	return rooms
 }
 
 // discoverServer resolves matrix server domain into actual server's url using well-known delegation
@@ -104,7 +103,7 @@ func (m *Matrix) discoverServer(name string) string {
 }
 
 // getPublicRooms reads public rooms of the given server from the matrix client-server api
-func (m *Matrix) getPublicRooms(serverURL string) []model.Entry {
+func (m *Matrix) getPublicRooms(serverURL string) []model.MatrixRoom {
 	resp, err := matrixClientCall(serverURL + "/_matrix/client/v3/publicRooms")
 	if err != nil {
 		log.Println(serverURL, "cannot get public rooms")
@@ -124,9 +123,9 @@ func (m *Matrix) getPublicRooms(serverURL string) []model.Entry {
 		log.Println(serverURL, "cannot unmarshal public rooms")
 		return nil
 	}
-	entries := make([]model.Entry, 0, len(roomsResp.Chunk))
+	entries := make([]model.MatrixRoom, 0, len(roomsResp.Chunk))
 	for _, room := range roomsResp.Chunk {
-		entries = append(entries, model.Entry(room))
+		entries = append(entries, room)
 	}
 
 	return entries
