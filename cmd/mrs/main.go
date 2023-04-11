@@ -46,8 +46,10 @@ func main() {
 	index = createOrOpenIndex(cfg.Path.Index)
 	searchSvc := services.NewSearch(index)
 	matrixSvc := services.NewMatrix(cfg.Servers, dataRepo)
+	statsSvc := services.NewStats(dataRepo)
+	go statsSvc.Collect()
 	e = echo.New()
-	controllers.ConfigureRouter(e, cfg, searchSvc, matrixSvc)
+	controllers.ConfigureRouter(e, cfg, searchSvc, matrixSvc, statsSvc)
 
 	initShutdown(quit)
 

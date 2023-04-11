@@ -14,16 +14,29 @@ type indexerService interface {
 	indexService
 }
 
+type statsService interface {
+	GetRooms() int
+	GetServers() int
+	Collect()
+}
+
 // ConfigureRouter configures echo router
-func ConfigureRouter(e *echo.Echo, cfg *config.Config, indexSvc indexerService, matrixSvc matrixService) {
+func ConfigureRouter(e *echo.Echo, cfg *config.Config, indexSvc indexerService, matrixSvc matrixService, statsSvc statsService) {
 	configureRouter(e, cfg)
+	e.GET("/stats", func(c echo.Context) error {
+		return c.JSON(http.StatusOK, map[string]int{
+			"servers": statsSvc.GetServers(),
+			"rooms":   statsSvc.GetRooms(),
+		})
+	})
+
 	a := adminGroup(e, cfg)
 	e.GET("/search", search(indexSvc))
 	a.GET("/servers", servers(matrixSvc))
-	a.POST("/discover", discover(matrixSvc, cfg.Workers.Discovery))
-	a.POST("/parse", parse(matrixSvc, indexSvc, cfg.Workers.Parsing))
-	a.POST("/reindex", reindex(matrixSvc, indexSvc))
-	a.POST("/full", full(matrixSvc, indexSvc, cfg.Workers.Discovery, cfg.Workers.Parsing))
+	a.POST("/discover", discover(matrixSvc, statsSvc, cfg.Workers.Discovery))
+	a.POST("/parse", parse(matrixSvc, indexSvc, statsSvc, cfg.Workers.Parsing))
+	a.POST("/reindex", reindex(matrixSvc, indexSvc, statsSvc))
+	a.POST("/full", full(matrixSvc, indexSvc, statsSvc, cfg.Workers.Discovery, cfg.Workers.Parsing))
 }
 
 func configureRouter(e *echo.Echo, cfg *config.Config) {

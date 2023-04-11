@@ -20,10 +20,10 @@ type indexService interface {
 	Index(string, model.Entry) error
 }
 
-func servers(svc matrixService) echo.HandlerFunc {
+func servers(matrix matrixService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		servers := make([]string, 0)
-		svc.EachServer(func(name string, _ string) {
+		matrix.EachServer(func(name string, _ string) {
 			servers = append(servers, name)
 		})
 		serversb, err := yaml.Marshal(servers)
@@ -35,51 +35,61 @@ func servers(svc matrixService) echo.HandlerFunc {
 
 }
 
-func discover(svc matrixService, workers int) echo.HandlerFunc {
+func discover(matrix matrixService, stats statsService, workers int) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		go svc.DiscoverServers(workers)
-		return c.NoContent(http.StatusCreated)
-	}
-}
-
-//nolint:errcheck
-func parse(parseSvc matrixService, indexSvc indexService, workers int) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		go parseSvc.ParseRooms(workers, func(serverName, roomID string, room model.MatrixRoom) {
-			if err := indexSvc.Index(roomID, room.Entry(serverName)); err != nil {
-				log.Println(room.Alias, "cannot index", err)
-			}
-		})
+		go func(matrix matrixService, stats statsService) {
+			matrix.DiscoverServers(workers)
+			stats.Collect()
+		}(matrix, stats)
 
 		return c.NoContent(http.StatusCreated)
 	}
 }
 
 //nolint:errcheck
-func reindex(matrixSvc matrixService, indexSvc indexService) echo.HandlerFunc {
+func parse(matrix matrixService, index indexService, stats statsService, workers int) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		go matrixSvc.EachRoom(func(roomID string, room model.MatrixRoom) {
-			if err := indexSvc.Index(roomID, room.Entry("")); err != nil {
-				log.Println(room.Alias, "cannot index", err)
-			}
-		})
-
-		return c.NoContent(http.StatusCreated)
-	}
-}
-
-//nolint:errcheck
-func full(matrixSvc matrixService, indexSvc indexService, discoveryWorkers int, parsingWorkers int) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		go func(matrixSvc matrixService, indexSvc indexService, discoveryWorkers int, parsingWorkers int) {
-			matrixSvc.DiscoverServers(discoveryWorkers)
-			matrixSvc.ParseRooms(parsingWorkers, func(serverName, roomID string, room model.MatrixRoom) {
-				if err := indexSvc.Index(roomID, room.Entry(serverName)); err != nil {
+		go func(matrix matrixService, index indexService, stats statsService) {
+			matrix.ParseRooms(workers, func(serverName, roomID string, room model.MatrixRoom) {
+				if err := index.Index(roomID, room.Entry(serverName)); err != nil {
 					log.Println(room.Alias, "cannot index", err)
 				}
 			})
+			stats.Collect()
+		}(matrix, index, stats)
 
-		}(matrixSvc, indexSvc, discoveryWorkers, parsingWorkers)
+		return c.NoContent(http.StatusCreated)
+	}
+}
+
+//nolint:errcheck
+func reindex(matrix matrixService, index indexService, stats statsService) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		go func(matrix matrixService, index indexService, stats statsService) {
+			matrix.EachRoom(func(roomID string, room model.MatrixRoom) {
+				if err := index.Index(roomID, room.Entry("")); err != nil {
+					log.Println(room.Alias, "cannot index", err)
+				}
+				stats.Collect()
+			})
+		}(matrix, index, stats)
+
+		return c.NoContent(http.StatusCreated)
+	}
+}
+
+//nolint:errcheck
+func full(matrix matrixService, index indexService, stats statsService, discoveryWorkers int, parsingWorkers int) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		go func(matrix matrixService, index indexService, stats statsService, discoveryWorkers int, parsingWorkers int) {
+			matrix.DiscoverServers(discoveryWorkers)
+			matrix.ParseRooms(parsingWorkers, func(serverName, roomID string, room model.MatrixRoom) {
+				if err := index.Index(roomID, room.Entry(serverName)); err != nil {
+					log.Println(room.Alias, "cannot index", err)
+				}
+			})
+			stats.Collect()
+		}(matrix, index, stats, discoveryWorkers, parsingWorkers)
 
 		return c.NoContent(http.StatusCreated)
 	}

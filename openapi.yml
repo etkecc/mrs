@@ -33,6 +33,29 @@ paths:
                     type: string
                     description: ok
                     example: 'ok'
+  /stats:
+    get:
+      tags:
+        - public
+      summary: Statistics
+      description: returns instance statistics
+      operationId: stas
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  servers:
+                    type: integer
+                    description: Count of known servers
+                    example: 3230
+                  rooms:
+                    type: integer
+                    description: Count of parsed rooms
+                    example: 3230
   /search:
     get:
       tags:
