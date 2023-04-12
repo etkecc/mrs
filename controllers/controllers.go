@@ -41,7 +41,7 @@ func ConfigureRouter(e *echo.Echo, cfg *config.Config, indexSvc indexerService, 
 
 func configureRouter(e *echo.Echo, cfg *config.Config) {
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
-		Format:           `${remote_ip} - - [${time_custom}] "${method} ${path} ${protocol}" ${status} ${bytes_out} "${referer}" "${user_agent}"`,
+		Format:           `${remote_ip} - - [${time_custom}] "${method} ${path} ${protocol}" ${status} ${bytes_out} "${referer}" "${user_agent}"` + "\n",
 		CustomTimeFormat: "2/Jan/2006:15:04:05 -0700",
 	}))
 	e.Use(middleware.Recover())
