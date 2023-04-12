@@ -28,3 +28,24 @@ Check [openapi.yml](./openapi.yml)
 1. adjust `model/matrix.go` and `model/search.go` if needed
 2. adjust `repository/search/bleve.go` `getIndexMapping()`
 3. adjust `repository/search/search.go` `parseSearchResults()`
+
+## Tips n Tricks
+
+### get list of known servers from own matrix server db
+
+```bash
+psql -d synapse -c "select '- '||destination from destinations;" > destinations.txt
+```
+
+### get list of known servers from [the-federation.info](https://the-federation.info)
+
+```bash
+curl 'https://the-federation.info/v1/graphql' \
+    -X POST \
+    -H 'content-type: application/json' \
+    --data '{
+        "query":"query MatrixServers { thefederation_node( where: {blocked: {_eq: false}, thefederation_platform: {id: {_eq: 41}}} order_by: {last_success: desc} ) { host }}",
+        "variables":null,
+        "operationName":"MatrixServers"
+    }' | jq -r '.data.thefederation_node[] | "- " + .host'
+```

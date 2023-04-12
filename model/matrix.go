@@ -1,5 +1,7 @@
 package model
 
+import "strings"
+
 // MatrixRoom from matrix client-server API
 type MatrixRoom struct {
 	ID      string `json:"room_id"`
@@ -11,11 +13,22 @@ type MatrixRoom struct {
 	Members int    `json:"num_joined_members"`
 }
 
-// Entry converts matrix room to search entry
-func (r *MatrixRoom) Entry(server string) *Entry {
+// ParseServer from room ID
+func (r *MatrixRoom) ParseServer() string {
 	if r.Server != "" {
-		server = r.Server
+		return r.Server
 	}
+
+	parts := strings.SplitN(r.ID, ":", 2)
+	if len(parts) > 1 {
+		r.Server = parts[1]
+		return parts[1]
+	}
+	return ""
+}
+
+// Entry converts matrix room to search entry
+func (r *MatrixRoom) Entry() *Entry {
 	return &Entry{
 		ID:      r.ID,
 		Type:    "room",
@@ -23,7 +36,7 @@ func (r *MatrixRoom) Entry(server string) *Entry {
 		Name:    r.Name,
 		Topic:   r.Topic,
 		Avatar:  r.Avatar,
-		Server:  server,
+		Server:  r.ParseServer(),
 		Members: r.Members,
 	}
 }

@@ -57,7 +57,7 @@ func parse(matrix matrixService, index indexService, stats statsService, workers
 		go func(matrix matrixService, index indexService, stats statsService) {
 			log.Println("parsing matrix rooms...")
 			matrix.ParseRooms(workers, func(serverName, roomID string, room *model.MatrixRoom) {
-				if err := index.Index(roomID, room.Entry(serverName)); err != nil {
+				if err := index.Index(roomID, room.Entry()); err != nil {
 					log.Println(room.Alias, "cannot index", err)
 				}
 			})
@@ -78,7 +78,7 @@ func reindex(matrix matrixService, index indexService, stats statsService) echo.
 		go func(matrix matrixService, index indexService, stats statsService) {
 			log.Println("ingesting matrix rooms...")
 			matrix.EachRoom(func(roomID string, room *model.MatrixRoom) {
-				if err := index.Index(roomID, room.Entry("")); err != nil {
+				if err := index.Index(roomID, room.Entry()); err != nil {
 					log.Println(room.Alias, "cannot index", err)
 				}
 				log.Println("all available matrix rooms have been ingested")
@@ -103,7 +103,7 @@ func full(matrix matrixService, index indexService, stats statsService, discover
 
 			log.Println("parsing matrix rooms...")
 			matrix.ParseRooms(parsingWorkers, func(serverName, roomID string, room *model.MatrixRoom) {
-				if err := index.Index(roomID, room.Entry(serverName)); err != nil {
+				if err := index.Index(roomID, room.Entry()); err != nil {
 					log.Println(room.Alias, "cannot index", err)
 				}
 			})
