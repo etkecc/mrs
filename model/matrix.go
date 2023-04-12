@@ -12,11 +12,11 @@ type MatrixRoom struct {
 }
 
 // Entry converts matrix room to search entry
-func (r MatrixRoom) Entry(server string) Entry {
+func (r *MatrixRoom) Entry(server string) *Entry {
 	if r.Server != "" {
 		server = r.Server
 	}
-	return Entry{
+	return &Entry{
 		ID:      r.ID,
 		Type:    "room",
 		Alias:   r.Alias,

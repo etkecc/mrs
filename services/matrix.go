@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/xxjwxc/gowp/workpool"
+
 	"gitlab.com/etke.cc/mrs/api/model"
 )
 
@@ -27,9 +28,9 @@ type DataRepository interface {
 	GetServer(string) (string, error)
 	RemoveServer(string) error
 	EachServer(func(string, string))
-	AddRoom(string, model.MatrixRoom) error
-	GetRoom(string) (model.MatrixRoom, error)
-	EachRoom(func(string, model.MatrixRoom))
+	AddRoom(string, *model.MatrixRoom) error
+	GetRoom(string) (*model.MatrixRoom, error)
+	EachRoom(func(string, *model.MatrixRoom))
 }
 
 var matrixClient = &http.Client{
@@ -79,6 +80,8 @@ func matrixClientCall(endpoint string) (*http.Response, error) {
 }
 
 // DiscoverServers across federation and reject invalid ones
+//
+//nolint:gocognit // TODO
 func (m *Matrix) DiscoverServers(workers int) {
 	if m.discovering {
 		log.Println("servers discovery already in progress, ignoring request")
@@ -115,7 +118,7 @@ func (m *Matrix) DiscoverServers(workers int) {
 }
 
 // ParseRooms across all discovered servers
-func (m *Matrix) ParseRooms(workers int, indexfunc func(serverName string, roomID string, room model.MatrixRoom)) error {
+func (m *Matrix) ParseRooms(workers int, indexfunc func(serverName string, roomID string, room *model.MatrixRoom)) error {
 	if m.parsing {
 		log.Println("rooms parsing already in progress, ignoring request")
 		return nil
@@ -137,7 +140,7 @@ func (m *Matrix) ParseRooms(workers int, indexfunc func(serverName string, roomI
 }
 
 // EachRoom allows to work with each known room
-func (m *Matrix) EachRoom(handler func(roomID string, data model.MatrixRoom)) {
+func (m *Matrix) EachRoom(handler func(roomID string, data *model.MatrixRoom)) {
 	if m.eachrooming {
 		log.Println("iterating over each room is already in progress, ignoring request")
 		return
@@ -153,8 +156,8 @@ func (m *Matrix) EachServer(handler func(name, serverURL string)) {
 	m.data.EachServer(handler)
 }
 
-func (m *Matrix) parseServerRooms(name, serverURL string, indexfunc func(serverName string, roomID string, room model.MatrixRoom)) {
-	ch := make(chan model.MatrixRoom)
+func (m *Matrix) parseServerRooms(name, serverURL string, indexfunc func(serverName string, roomID string, room *model.MatrixRoom)) {
+	ch := make(chan *model.MatrixRoom)
 	go m.getPublicRooms(name, serverURL, ch)
 	for room := range ch {
 		m.data.AddRoom(room.ID, room) //nolint:errcheck
@@ -242,7 +245,7 @@ func (m *Matrix) validateDiscoveredServer(name, serverURL string) bool {
 
 // getPublicRooms reads public rooms of the given server from the matrix client-server api
 // and sends them into channel
-func (m *Matrix) getPublicRooms(name, serverURL string, ch chan model.MatrixRoom) {
+func (m *Matrix) getPublicRooms(name, serverURL string, ch chan *model.MatrixRoom) {
 	var since string
 	var added int
 	limit := "500"
@@ -257,7 +260,7 @@ func (m *Matrix) getPublicRooms(name, serverURL string, ch chan model.MatrixRoom
 		start := time.Now()
 		for _, room := range resp.Chunk {
 			room.Server = name
-			ch <- room
+			ch <- &room
 		}
 		log.Println(name, "added", len(resp.Chunk), "rooms (", added, "of", resp.Total, ") took", time.Since(start))
 

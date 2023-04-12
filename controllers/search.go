@@ -9,7 +9,7 @@ import (
 )
 
 type searchService interface {
-	Search(query string, limit, offset int) ([]model.Entry, error)
+	Search(query string, limit, offset int) ([]*model.Entry, error)
 }
 
 const (

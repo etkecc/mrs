@@ -9,8 +9,8 @@ type Search struct {
 
 // SearchRepository interface
 type SearchRepository interface {
-	Search(query string, limit, offset int) ([]model.Entry, error)
-	Index(roomID string, data model.Entry) error
+	Search(query string, limit, offset int) ([]*model.Entry, error)
+	Index(roomID string, data *model.Entry) error
 }
 
 // NewSearch creates new search service
@@ -20,11 +20,11 @@ func NewSearch(repo SearchRepository) Search {
 
 // Search things
 // ref: https://blevesearch.com/docs/Query-String-Query/
-func (s Search) Search(query string, limit, offset int) ([]model.Entry, error) {
+func (s Search) Search(query string, limit, offset int) ([]*model.Entry, error) {
 	return s.repo.Search(query, limit, offset)
 }
 
 // Index data
-func (s Search) Index(roomID string, data model.Entry) error {
+func (s Search) Index(roomID string, data *model.Entry) error {
 	return s.repo.Index(roomID, data)
 }

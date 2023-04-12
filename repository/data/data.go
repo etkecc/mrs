@@ -54,6 +54,7 @@ func (d *Data) RemoveServer(name string) error {
 }
 
 // EachServer allows to work with each known server
+//
 //nolint:errcheck
 func (d *Data) EachServer(handler func(name, url string)) {
 	d.db.View(func(tx *bbolt.Tx) error {
@@ -65,7 +66,7 @@ func (d *Data) EachServer(handler func(name, url string)) {
 }
 
 // AddRoom info
-func (d *Data) AddRoom(roomID string, data model.MatrixRoom) error {
+func (d *Data) AddRoom(roomID string, data *model.MatrixRoom) error {
 	datab, err := json.Marshal(data)
 	if err != nil {
 		return err
@@ -77,8 +78,8 @@ func (d *Data) AddRoom(roomID string, data model.MatrixRoom) error {
 }
 
 // GetRoom info
-func (d *Data) GetRoom(roomID string) (model.MatrixRoom, error) {
-	var room model.MatrixRoom
+func (d *Data) GetRoom(roomID string) (*model.MatrixRoom, error) {
+	var room *model.MatrixRoom
 	err := d.db.View(func(tx *bbolt.Tx) error {
 		v := tx.Bucket(roomsBucket).Get([]byte(roomID))
 		if v == nil {
@@ -90,9 +91,10 @@ func (d *Data) GetRoom(roomID string) (model.MatrixRoom, error) {
 }
 
 // EachRoom allows to work with each known room
+//
 //nolint:errcheck
-func (d *Data) EachRoom(handler func(roomID string, data model.MatrixRoom)) {
-	var room model.MatrixRoom
+func (d *Data) EachRoom(handler func(roomID string, data *model.MatrixRoom)) {
+	var room *model.MatrixRoom
 	d.db.View(func(tx *bbolt.Tx) error {
 		return tx.Bucket(roomsBucket).ForEach(func(k, v []byte) error {
 			err := json.Unmarshal(v, &room)

@@ -9,7 +9,7 @@ import (
 
 // Search something!
 // ref: https://blevesearch.com/docs/Query-String-Query/
-func (i *Index) Search(query string, limit, offset int) ([]model.Entry, error) {
+func (i *Index) Search(query string, limit, offset int) ([]*model.Entry, error) {
 	bleveQuery := bleve.NewQueryStringQuery(query)
 	req := bleve.NewSearchRequestOptions(bleveQuery, limit, offset, false)
 	req.Fields = []string{"*"}
@@ -25,10 +25,10 @@ func (i *Index) Search(query string, limit, offset int) ([]model.Entry, error) {
 	return parseSearchResults(resp.Hits), nil
 }
 
-func parseSearchResults(result []*search.DocumentMatch) []model.Entry {
-	entries := make([]model.Entry, 0, len(result))
+func parseSearchResults(result []*search.DocumentMatch) []*model.Entry {
+	entries := make([]*model.Entry, 0, len(result))
 	for _, hit := range result {
-		entries = append(entries, model.Entry{
+		entries = append(entries, &model.Entry{
 			ID:      hit.ID,
 			Type:    parseHitField[string](hit, "type"),
 			Alias:   parseHitField[string](hit, "alias"),

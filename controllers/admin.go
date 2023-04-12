@@ -12,13 +12,13 @@ import (
 
 type matrixService interface {
 	DiscoverServers(int)
-	ParseRooms(int, func(string, string, model.MatrixRoom)) error
-	EachRoom(func(string, model.MatrixRoom))
+	ParseRooms(int, func(string, string, *model.MatrixRoom)) error
+	EachRoom(func(string, *model.MatrixRoom))
 	EachServer(func(string, string))
 }
 
 type indexService interface {
-	Index(string, model.Entry) error
+	Index(string, *model.Entry) error
 }
 
 func servers(matrix matrixService) echo.HandlerFunc {
@@ -33,7 +33,6 @@ func servers(matrix matrixService) echo.HandlerFunc {
 		}
 		return c.Blob(http.StatusOK, "application/x-yaml", serversb)
 	}
-
 }
 
 func discover(matrix matrixService, stats statsService, workers int) echo.HandlerFunc {
@@ -57,7 +56,7 @@ func parse(matrix matrixService, index indexService, stats statsService, workers
 	return func(c echo.Context) error {
 		go func(matrix matrixService, index indexService, stats statsService) {
 			log.Println("parsing matrix rooms...")
-			matrix.ParseRooms(workers, func(serverName, roomID string, room model.MatrixRoom) {
+			matrix.ParseRooms(workers, func(serverName, roomID string, room *model.MatrixRoom) {
 				if err := index.Index(roomID, room.Entry(serverName)); err != nil {
 					log.Println(room.Alias, "cannot index", err)
 				}
@@ -78,7 +77,7 @@ func reindex(matrix matrixService, index indexService, stats statsService) echo.
 	return func(c echo.Context) error {
 		go func(matrix matrixService, index indexService, stats statsService) {
 			log.Println("ingesting matrix rooms...")
-			matrix.EachRoom(func(roomID string, room model.MatrixRoom) {
+			matrix.EachRoom(func(roomID string, room *model.MatrixRoom) {
 				if err := index.Index(roomID, room.Entry("")); err != nil {
 					log.Println(room.Alias, "cannot index", err)
 				}
@@ -103,7 +102,7 @@ func full(matrix matrixService, index indexService, stats statsService, discover
 			log.Println("servers discovery has been finished")
 
 			log.Println("parsing matrix rooms...")
-			matrix.ParseRooms(parsingWorkers, func(serverName, roomID string, room model.MatrixRoom) {
+			matrix.ParseRooms(parsingWorkers, func(serverName, roomID string, room *model.MatrixRoom) {
 				if err := index.Index(roomID, room.Entry(serverName)); err != nil {
 					log.Println(room.Alias, "cannot index", err)
 				}

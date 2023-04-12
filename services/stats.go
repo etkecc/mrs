@@ -45,7 +45,7 @@ func (s *Stats) Collect() {
 	s.servers = servers
 
 	var rooms int
-	s.data.EachRoom(func(_ string, _ model.MatrixRoom) {
+	s.data.EachRoom(func(_ string, _ *model.MatrixRoom) {
 		rooms++
 	})
 	s.rooms = rooms

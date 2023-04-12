@@ -7,7 +7,7 @@ import (
 )
 
 // Index new data
-func (i *Index) Index(roomID string, data model.Entry) error {
+func (i *Index) Index(roomID string, data *model.Entry) error {
 	return i.index.Index(roomID, data)
 }
 

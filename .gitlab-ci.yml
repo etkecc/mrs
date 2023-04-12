@@ -1,0 +1,30 @@
+stages:
+  - test
+  - release
+
+lint:
+  stage: test
+  only: ['main']
+  image: registry.gitlab.com/etke.cc/base/build
+  script:
+    - just lint
+
+unit:
+  stage: test
+  only: ['main']
+  image: registry.gitlab.com/etke.cc/base/build
+  script:
+    - just test
+
+docker:
+  stage: release
+  only: ['main', 'tags']
+  services:
+    - docker:dind
+  image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/jdrouet/docker-with-buildx:latest
+  before_script:
+    - apk --no-cache add just
+  script:
+    - just login docker
+  tags:
+    - docker
