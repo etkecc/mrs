@@ -29,15 +29,43 @@ Check [openapi.yml](./openapi.yml)
 2. adjust `repository/search/bleve.go` `getIndexMapping()`
 3. adjust `repository/search/search.go` `parseSearchResults()`
 
-## Tips n Tricks
+## Troubleshooting
 
-### get list of known servers from own matrix server db
+### Why my server and its public rooms aren't discovered/parsed/included?
+
+1. Your server must have valid `/.well-known/matrix/client`, e.g. `https://etke.cc/.well-known/matrix/client`
+2. Your server must publish public rooms over federation without auth (`/_matrix/client/v3/publicRooms` endpoint), eg: `https://matrix.etke.cc/_matrix/client/v3/publicRooms`
+
+**I get error on public rooms endpoint**, something like:
+
+```json
+{"errcode":"M_MISSING_TOKEN","error":"Missing access token"}
+```
+
+In that case you should adjust your server's configuration.
+For synapse, you need to add the following config options in the `homeserver.yaml`:
+
+```yaml
+allow_public_rooms_over_federation: true
+allow_public_rooms_without_auth: true
+```
+
+in case of [etke.cc/ansible](https://gitlab.com/etke.cc/ansible) and [mdad](https://github.com/spantaleev/matrix-docker-ansible-deploy), add the following to your vars.yml:
+
+```yaml
+matrix_synapse_allow_public_rooms_over_federation: true
+matrix_synapse_allow_public_rooms_without_auth: true
+```
+
+### Where can I get list of servers?
+
+**get list of known servers from own matrix server db**
 
 ```bash
 psql -d synapse -c "select '- '||destination from destinations;" > destinations.txt
 ```
 
-### get list of known servers from [the-federation.info](https://the-federation.info)
+**get list of known servers from [the-federation.info](https://the-federation.info)**
 
 ```bash
 curl 'https://the-federation.info/v1/graphql' \
