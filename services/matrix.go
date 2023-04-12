@@ -34,10 +34,10 @@ type DataRepository interface {
 }
 
 var matrixClient = &http.Client{
-	Timeout: 30 * time.Second,
+	Timeout: 60 * time.Second,
 	Transport: &http.Transport{
 		Dial: func(network, addr string) (net.Conn, error) {
-			return net.DialTimeout(network, addr, 5*time.Second)
+			return net.DialTimeout(network, addr, 30*time.Second)
 		},
 	},
 }
