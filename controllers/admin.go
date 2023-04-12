@@ -4,12 +4,13 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/blevesearch/bleve/v2"
 	"github.com/labstack/echo/v4"
 	"gopkg.in/yaml.v3"
 
 	"gitlab.com/etke.cc/mrs/api/model"
 )
+
+const roomsBatchSize = 50000
 
 type matrixService interface {
 	DiscoverServers(int)
@@ -20,9 +21,8 @@ type matrixService interface {
 }
 
 type indexService interface {
-	Index(string, *model.Entry) error
-	IndexBatch(*bleve.Batch) error
-	NewBatch() *bleve.Batch
+	RoomsBatch(size int, roomID string, data *model.Entry) error
+	IndexBatch() error
 }
 
 func servers(matrix matrixService) echo.HandlerFunc {
@@ -78,17 +78,14 @@ func reindex(matrix matrixService, index indexService, stats statsService) echo.
 	return func(c echo.Context) error {
 		go func(matrix matrixService, index indexService, stats statsService) {
 			log.Println("ingesting matrix rooms...")
-			batch := index.NewBatch()
 			matrix.EachRoom(func(roomID string, room *model.MatrixRoom) {
-				if err := batch.Index(roomID, room.Entry()); err != nil {
+				if err := index.RoomsBatch(roomsBatchSize, roomID, room.Entry()); err != nil {
 					log.Println(room.Alias, "cannot add to batch", err)
 				}
 			})
-			log.Println("all available matrix rooms were added to the batch request, total operations =", batch.Size())
-			if err := index.IndexBatch(batch); err != nil {
-				log.Println("cannot index rooms batch", err)
+			if err := index.IndexBatch(); err != nil {
+				log.Println("indexing of the last batch failed", err)
 			}
-			batch.Reset()
 			log.Println("all available matrix rooms have been ingested")
 
 			log.Println("collecting stats...")
@@ -113,17 +110,14 @@ func full(matrix matrixService, index indexService, stats statsService, discover
 			log.Println("all available matrix rooms have been parsed")
 
 			log.Println("ingesting matrix rooms...")
-			batch := index.NewBatch()
 			matrix.EachRoom(func(roomID string, room *model.MatrixRoom) {
-				if err := batch.Index(roomID, room.Entry()); err != nil {
+				if err := index.RoomsBatch(roomsBatchSize, roomID, room.Entry()); err != nil {
 					log.Println(room.Alias, "cannot add to batch", err)
 				}
 			})
-			log.Println("all available matrix rooms were added to the batch request, total operations =", batch.Size())
-			if err := index.IndexBatch(batch); err != nil {
-				log.Println("cannot index rooms batch", err)
+			if err := index.IndexBatch(); err != nil {
+				log.Println("indexing of the last batch failed", err)
 			}
-			batch.Reset()
 			log.Println("all available matrix rooms have been ingested")
 
 			log.Println("collecting stats...")

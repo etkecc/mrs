@@ -9,11 +9,6 @@ import (
 	"gitlab.com/etke.cc/mrs/api/config"
 )
 
-type indexerService interface {
-	searchService
-	indexService
-}
-
 type statsService interface {
 	GetRooms() int
 	GetServers() int
@@ -21,13 +16,13 @@ type statsService interface {
 }
 
 // ConfigureRouter configures echo router
-func ConfigureRouter(e *echo.Echo, cfg *config.Config, indexSvc indexerService, matrixSvc matrixService, statsSvc statsService) {
+func ConfigureRouter(e *echo.Echo, cfg *config.Config, searchSvc searchService, indexSvc indexService, matrixSvc matrixService, statsSvc statsService) {
 	configureRouter(e, cfg)
 	e.GET("/stats", stats(statsSvc))
 	e.POST("/discover/:name", addServer(matrixSvc), middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1)))
 
 	a := adminGroup(e, cfg)
-	e.GET("/search", search(indexSvc))
+	e.GET("/search", search(searchSvc))
 	a.GET("/servers", servers(matrixSvc))
 	a.POST("/discover", discover(matrixSvc, statsSvc, cfg.Workers.Discovery))
 	a.POST("/parse", parse(matrixSvc, statsSvc, cfg.Workers.Parsing))
@@ -37,6 +32,9 @@ func ConfigureRouter(e *echo.Echo, cfg *config.Config, indexSvc indexerService, 
 
 func configureRouter(e *echo.Echo, cfg *config.Config) {
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+		Skipper: func(c echo.Context) bool {
+			return c.Request().URL.Path == "/_health"
+		},
 		Format:           `${remote_ip} - - [${time_custom}] "${method} ${path} ${protocol}" ${status} ${bytes_out} "${referer}" "${user_agent}"` + "\n",
 		CustomTimeFormat: "2/Jan/2006:15:04:05 -0700",
 	}))
