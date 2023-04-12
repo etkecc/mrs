@@ -3,7 +3,8 @@ package search
 import (
 	"github.com/blevesearch/bleve/v2"
 	"github.com/blevesearch/bleve/v2/search"
-	"gitlab.com/etke.cc/int/mrs/model"
+
+	"gitlab.com/etke.cc/mrs/api/model"
 )
 
 // Search something!

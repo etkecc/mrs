@@ -5,8 +5,9 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"gitlab.com/etke.cc/int/mrs/model"
 	"gopkg.in/yaml.v3"
+
+	"gitlab.com/etke.cc/mrs/api/model"
 )
 
 type matrixService interface {

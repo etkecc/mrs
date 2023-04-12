@@ -4,7 +4,8 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"gitlab.com/etke.cc/int/mrs/model"
+
+	"gitlab.com/etke.cc/mrs/api/model"
 )
 
 type searchService interface {

@@ -1,6 +1,6 @@
 package services
 
-import "gitlab.com/etke.cc/int/mrs/model"
+import "gitlab.com/etke.cc/mrs/api/model"
 
 // Search service
 type Search struct {

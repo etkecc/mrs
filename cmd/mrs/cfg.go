@@ -6,7 +6,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"gitlab.com/etke.cc/go/fswatcher"
 
-	"gitlab.com/etke.cc/int/mrs/config"
+	"gitlab.com/etke.cc/mrs/api/config"
 )
 
 func loadConfig() error {

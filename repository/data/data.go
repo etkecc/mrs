@@ -3,8 +3,9 @@ package data
 import (
 	"encoding/json"
 
-	"gitlab.com/etke.cc/int/mrs/model"
 	"go.etcd.io/bbolt"
+
+	"gitlab.com/etke.cc/mrs/api/model"
 )
 
 type Data struct {

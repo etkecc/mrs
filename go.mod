@@ -1,4 +1,4 @@
-module gitlab.com/etke.cc/int/mrs
+module gitlab.com/etke.cc/mrs/api
 
 go 1.20
 

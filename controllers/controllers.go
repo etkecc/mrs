@@ -6,7 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
-	"gitlab.com/etke.cc/int/mrs/config"
+	"gitlab.com/etke.cc/mrs/api/config"
 )
 
 type indexerService interface {

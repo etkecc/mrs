@@ -3,7 +3,7 @@ package services
 import (
 	"log"
 
-	"gitlab.com/etke.cc/int/mrs/model"
+	"gitlab.com/etke.cc/mrs/api/model"
 )
 
 // Stats service

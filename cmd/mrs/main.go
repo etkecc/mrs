@@ -13,11 +13,11 @@ import (
 	"github.com/labstack/echo/v4"
 	"gitlab.com/etke.cc/go/fswatcher"
 
-	"gitlab.com/etke.cc/int/mrs/config"
-	"gitlab.com/etke.cc/int/mrs/controllers"
-	"gitlab.com/etke.cc/int/mrs/repository/data"
-	"gitlab.com/etke.cc/int/mrs/repository/search"
-	"gitlab.com/etke.cc/int/mrs/services"
+	"gitlab.com/etke.cc/mrs/api/config"
+	"gitlab.com/etke.cc/mrs/api/controllers"
+	"gitlab.com/etke.cc/mrs/api/repository/data"
+	"gitlab.com/etke.cc/mrs/api/repository/search"
+	"gitlab.com/etke.cc/mrs/api/services"
 )
 
 var (

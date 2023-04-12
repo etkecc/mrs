@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/xxjwxc/gowp/workpool"
-	"gitlab.com/etke.cc/int/mrs/model"
+	"gitlab.com/etke.cc/mrs/api/model"
 )
 
 type Matrix struct {
