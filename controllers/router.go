@@ -30,7 +30,7 @@ func ConfigureRouter(e *echo.Echo, cfg *config.Config, indexSvc indexerService, 
 	e.GET("/search", search(indexSvc))
 	a.GET("/servers", servers(matrixSvc))
 	a.POST("/discover", discover(matrixSvc, statsSvc, cfg.Workers.Discovery))
-	a.POST("/parse", parse(matrixSvc, indexSvc, statsSvc, cfg.Workers.Parsing))
+	a.POST("/parse", parse(matrixSvc, statsSvc, cfg.Workers.Parsing))
 	a.POST("/reindex", reindex(matrixSvc, indexSvc, statsSvc))
 	a.POST("/full", full(matrixSvc, indexSvc, statsSvc, cfg.Workers.Discovery, cfg.Workers.Parsing))
 }

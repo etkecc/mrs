@@ -26,8 +26,8 @@ type Matrix struct {
 type DataRepository interface {
 	AddServer(string, string) error
 	GetServer(string) (string, error)
+	AllServers() map[string]string
 	RemoveServer(string) error
-	EachServer(func(string, string))
 	AddRoom(string, *model.MatrixRoom) error
 	GetRoom(string) (*model.MatrixRoom, error)
 	EachRoom(func(string, *model.MatrixRoom))
@@ -145,8 +145,13 @@ func (m *Matrix) AddServer(name string) int {
 	return http.StatusCreated
 }
 
+// AllServers returns map of all known servers
+func (m *Matrix) AllServers() map[string]string {
+	return m.data.AllServers()
+}
+
 // ParseRooms across all discovered servers
-func (m *Matrix) ParseRooms(workers int, indexfunc func(serverName string, roomID string, room *model.MatrixRoom)) error {
+func (m *Matrix) ParseRooms(workers int) error {
 	if m.parsing {
 		log.Println("rooms parsing already in progress, ignoring request")
 		return nil
@@ -154,16 +159,17 @@ func (m *Matrix) ParseRooms(workers int, indexfunc func(serverName string, roomI
 	m.parsing = true
 	defer func() { m.parsing = false }()
 
+	servers := m.data.AllServers()
 	wp := workpool.New(workers)
-	m.data.EachServer(func(srvName, srvUrl string) {
+	for srvName, srvURL := range servers {
 		name := srvName
-		serverURL := srvUrl
+		serverURL := srvURL
 		wp.Do(func() error {
 			log.Println(name, "parsing rooms...")
-			m.parseServerRooms(name, serverURL, indexfunc)
+			m.parseServerRooms(name, serverURL)
 			return nil
 		})
-	})
+	}
 	return wp.Wait()
 }
 
@@ -179,17 +185,11 @@ func (m *Matrix) EachRoom(handler func(roomID string, data *model.MatrixRoom)) {
 	m.data.EachRoom(handler)
 }
 
-// EachServer allows to work with each known server
-func (m *Matrix) EachServer(handler func(name, serverURL string)) {
-	m.data.EachServer(handler)
-}
-
-func (m *Matrix) parseServerRooms(name, serverURL string, indexfunc func(serverName string, roomID string, room *model.MatrixRoom)) {
+func (m *Matrix) parseServerRooms(name, serverURL string) {
 	ch := make(chan *model.MatrixRoom)
 	go m.getPublicRooms(name, serverURL, ch)
 	for room := range ch {
 		m.data.AddRoom(room.ID, room) //nolint:errcheck
-		indexfunc(name, room.ID, room)
 	}
 }
 
@@ -276,7 +276,7 @@ func (m *Matrix) validateDiscoveredServer(name, serverURL string) bool {
 func (m *Matrix) getPublicRooms(name, serverURL string, ch chan *model.MatrixRoom) {
 	var since string
 	var added int
-	limit := "500"
+	limit := "10000"
 	for {
 		resp := m.getPublicRoomsPage(name, serverURL, limit, since)
 		if resp == nil || len(resp.Chunk) == 0 {

@@ -13,9 +13,9 @@ import (
 type matrixService interface {
 	DiscoverServers(int)
 	AddServer(string) int
-	ParseRooms(int, func(string, string, *model.MatrixRoom)) error
+	AllServers() map[string]string
+	ParseRooms(int) error
 	EachRoom(func(string, *model.MatrixRoom))
-	EachServer(func(string, string))
 }
 
 type indexService interface {
@@ -24,10 +24,11 @@ type indexService interface {
 
 func servers(matrix matrixService) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		srvmap := matrix.AllServers()
 		servers := make([]string, 0)
-		matrix.EachServer(func(name string, _ string) {
+		for name := range srvmap {
 			servers = append(servers, name)
-		})
+		}
 		serversb, err := yaml.Marshal(servers)
 		if err != nil {
 			return err
@@ -53,21 +54,17 @@ func discover(matrix matrixService, stats statsService, workers int) echo.Handle
 }
 
 //nolint:errcheck
-func parse(matrix matrixService, index indexService, stats statsService, workers int) echo.HandlerFunc {
+func parse(matrix matrixService, stats statsService, workers int) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		go func(matrix matrixService, index indexService, stats statsService) {
+		go func(matrix matrixService, stats statsService) {
 			log.Println("parsing matrix rooms...")
-			matrix.ParseRooms(workers, func(serverName, roomID string, room *model.MatrixRoom) {
-				if err := index.Index(roomID, room.Entry()); err != nil {
-					log.Println(room.Alias, "cannot index", err)
-				}
-			})
+			matrix.ParseRooms(workers)
 			log.Println("all available matrix rooms have been parsed")
 
 			log.Println("collecting stats...")
 			stats.Collect()
 			log.Println("stats have been collected")
-		}(matrix, index, stats)
+		}(matrix, stats)
 
 		return c.NoContent(http.StatusCreated)
 	}
@@ -82,12 +79,12 @@ func reindex(matrix matrixService, index indexService, stats statsService) echo.
 				if err := index.Index(roomID, room.Entry()); err != nil {
 					log.Println(room.Alias, "cannot index", err)
 				}
-				log.Println("all available matrix rooms have been ingested")
-
-				log.Println("collecting stats...")
-				stats.Collect()
-				log.Println("stats have been collected")
 			})
+			log.Println("all available matrix rooms have been ingested")
+
+			log.Println("collecting stats...")
+			stats.Collect()
+			log.Println("stats have been collected")
 		}(matrix, index, stats)
 
 		return c.NoContent(http.StatusCreated)
@@ -103,12 +100,16 @@ func full(matrix matrixService, index indexService, stats statsService, discover
 			log.Println("servers discovery has been finished")
 
 			log.Println("parsing matrix rooms...")
-			matrix.ParseRooms(parsingWorkers, func(serverName, roomID string, room *model.MatrixRoom) {
+			matrix.ParseRooms(parsingWorkers)
+			log.Println("all available matrix rooms have been parsed")
+
+			log.Println("ingesting matrix rooms...")
+			matrix.EachRoom(func(roomID string, room *model.MatrixRoom) {
 				if err := index.Index(roomID, room.Entry()); err != nil {
 					log.Println(room.Alias, "cannot index", err)
 				}
 			})
-			log.Println("all available matrix rooms have been parsed")
+			log.Println("all available matrix rooms have been ingested")
 
 			log.Println("collecting stats...")
 			stats.Collect()

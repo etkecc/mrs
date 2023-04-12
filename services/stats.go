@@ -38,11 +38,7 @@ func (s *Stats) Collect() {
 	s.collecting = true
 	defer func() { s.collecting = false }()
 
-	var servers int
-	s.data.EachServer(func(_, _ string) {
-		servers++
-	})
-	s.servers = servers
+	s.servers = len(s.data.AllServers())
 
 	var rooms int
 	s.data.EachRoom(func(_ string, _ *model.MatrixRoom) {

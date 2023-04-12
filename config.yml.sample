@@ -14,7 +14,7 @@ path:
   data: testdata/data.db
 workers: # parallelism configuration, how much workers to spin up at once
   discovery: 20 # matrix server discovery, servers at once
-  parsing: 5 # matrix public rooms parsing, servers at once
+  parsing: 20 # matrix public rooms parsing, servers at once
 
 # bootstrap list of servers, each of them will be discovered and if server doesn't respond, it won't be parsed
 servers:

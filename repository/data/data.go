@@ -27,7 +27,7 @@ func New(path string) (*Data, error) {
 
 // AddServer info
 func (d *Data) AddServer(name, url string) error {
-	return d.db.Update(func(tx *bbolt.Tx) error {
+	return d.db.Batch(func(tx *bbolt.Tx) error {
 		return tx.Bucket(serversBucket).Put([]byte(name), []byte(url))
 	})
 }
@@ -48,31 +48,38 @@ func (d *Data) GetServer(name string) (string, error) {
 
 // RemoveServer info
 func (d *Data) RemoveServer(name string) error {
-	return d.db.Update(func(tx *bbolt.Tx) error {
+	return d.db.Batch(func(tx *bbolt.Tx) error {
 		return tx.Bucket(serversBucket).Delete([]byte(name))
 	})
 }
 
-// EachServer allows to work with each known server
+// AllServers returns all known servers
 //
 //nolint:errcheck
-func (d *Data) EachServer(handler func(name, url string)) {
+func (d *Data) AllServers() map[string]string {
+	servers := make(map[string]string)
 	d.db.View(func(tx *bbolt.Tx) error {
 		return tx.Bucket(serversBucket).ForEach(func(k, v []byte) error {
-			handler(string(k), string(v))
+			servers[string(k)] = string(v)
 			return nil
 		})
 	})
+
+	return servers
 }
 
 // AddRoom info
 func (d *Data) AddRoom(roomID string, data *model.MatrixRoom) error {
+	if data == nil {
+		return nil
+	}
+
 	datab, err := json.Marshal(data)
 	if err != nil {
 		return err
 	}
 
-	return d.db.Update(func(tx *bbolt.Tx) error {
+	return d.db.Batch(func(tx *bbolt.Tx) error {
 		return tx.Bucket(roomsBucket).Put([]byte(roomID), datab)
 	})
 }

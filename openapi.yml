@@ -154,7 +154,7 @@ paths:
     post:
       tags:
         - private
-      description: Runs matrix rooms parsing and ingestion process in background. If process already in progress, request will be ignored
+      description: Runs matrix rooms parsing process in background. If process already in progress, request will be ignored
       operationId: admin_parse
       responses:
         '201':
