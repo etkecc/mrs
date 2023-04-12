@@ -12,9 +12,10 @@ import (
 type Index struct {
 	sync.Mutex
 
-	index IndexRepository
-	data  DataRepository
-	batch *bleve.Batch
+	index     IndexRepository
+	data      DataRepository
+	batch     *bleve.Batch
+	batchSize int
 }
 
 type IndexRepository interface {
@@ -24,21 +25,22 @@ type IndexRepository interface {
 }
 
 // NewIndex creates new index service
-func NewIndex(index IndexRepository, data DataRepository) *Index {
+func NewIndex(index IndexRepository, data DataRepository, roomsBatchSize int) *Index {
 	batch := index.NewBatch()
 	return &Index{
-		index: index,
-		data:  data,
-		batch: batch,
+		index:     index,
+		data:      data,
+		batch:     batch,
+		batchSize: roomsBatchSize,
 	}
 }
 
 // RoomsBatch indexes rooms in batches
-func (i *Index) RoomsBatch(size int, roomID string, data *model.Entry) error {
+func (i *Index) RoomsBatch(roomID string, data *model.Entry) error {
 	i.Lock()
 	defer i.Unlock()
 
-	if i.batch.Size() >= size {
+	if i.batch.Size() >= i.batchSize {
 		return i.IndexBatch()
 	}
 

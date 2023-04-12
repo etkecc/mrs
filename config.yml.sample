@@ -12,6 +12,8 @@ cors: # (optional) ref: https://echo.labstack.com/middleware/cors/#configuration
 path:
   index: testdata/index
   data: testdata/data.db
+batch: # batch size of ingested data
+  rooms: 10000
 workers: # parallelism configuration, how much workers to spin up at once
   discovery: 20 # matrix server discovery, servers at once
   parsing: 20 # matrix public rooms parsing, servers at once

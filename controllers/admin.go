@@ -10,8 +10,6 @@ import (
 	"gitlab.com/etke.cc/mrs/api/model"
 )
 
-const roomsBatchSize = 50000
-
 type matrixService interface {
 	DiscoverServers(int)
 	AddServer(string) int
@@ -21,7 +19,7 @@ type matrixService interface {
 }
 
 type indexService interface {
-	RoomsBatch(size int, roomID string, data *model.Entry) error
+	RoomsBatch(roomID string, data *model.Entry) error
 	IndexBatch() error
 }
 
@@ -79,7 +77,7 @@ func reindex(matrix matrixService, index indexService, stats statsService) echo.
 		go func(matrix matrixService, index indexService, stats statsService) {
 			log.Println("ingesting matrix rooms...")
 			matrix.EachRoom(func(roomID string, room *model.MatrixRoom) {
-				if err := index.RoomsBatch(roomsBatchSize, roomID, room.Entry()); err != nil {
+				if err := index.RoomsBatch(roomID, room.Entry()); err != nil {
 					log.Println(room.Alias, "cannot add to batch", err)
 				}
 			})
@@ -111,7 +109,7 @@ func full(matrix matrixService, index indexService, stats statsService, discover
 
 			log.Println("ingesting matrix rooms...")
 			matrix.EachRoom(func(roomID string, room *model.MatrixRoom) {
-				if err := index.RoomsBatch(roomsBatchSize, roomID, room.Entry()); err != nil {
+				if err := index.RoomsBatch(roomID, room.Entry()); err != nil {
 					log.Println(room.Alias, "cannot add to batch", err)
 				}
 			})

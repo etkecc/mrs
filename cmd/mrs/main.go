@@ -44,7 +44,7 @@ func main() {
 	}
 
 	index = createOrOpenIndex(cfg.Path.Index)
-	indexSvc := services.NewIndex(index, dataRepo)
+	indexSvc := services.NewIndex(index, dataRepo, cfg.Batch.Rooms)
 	searchSvc := services.NewSearch(index)
 	matrixSvc := services.NewMatrix(cfg.Servers, dataRepo)
 	statsSvc := services.NewStats(dataRepo)

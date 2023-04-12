@@ -6,6 +6,7 @@ import "github.com/labstack/echo/v4/middleware"
 type Config struct {
 	Port    string                `yaml:"port"`
 	Path    Paths                 `yaml:"path"`
+	Batch   Batch                 `yaml:"batch"`
 	Admin   Admin                 `yaml:"admin"`
 	CORS    middleware.CORSConfig `yaml:"cors"`
 	Workers Workers               `yaml:"workers"`
@@ -23,6 +24,11 @@ type Admin struct {
 type Paths struct {
 	Index string `yaml:"index"`
 	Data  string `yaml:"data"`
+}
+
+// Batch config
+type Batch struct {
+	Rooms int `yaml:"rooms"`
 }
 
 // Workers config
