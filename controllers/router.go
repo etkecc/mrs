@@ -23,12 +23,8 @@ type statsService interface {
 // ConfigureRouter configures echo router
 func ConfigureRouter(e *echo.Echo, cfg *config.Config, indexSvc indexerService, matrixSvc matrixService, statsSvc statsService) {
 	configureRouter(e, cfg)
-	e.GET("/stats", func(c echo.Context) error {
-		return c.JSON(http.StatusOK, map[string]int{
-			"servers": statsSvc.GetServers(),
-			"rooms":   statsSvc.GetRooms(),
-		})
-	})
+	e.GET("/stats", stats(statsSvc))
+	e.POST("/discover/:name", addServer(matrixSvc), middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1)))
 
 	a := adminGroup(e, cfg)
 	e.GET("/search", search(indexSvc))

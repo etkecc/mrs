@@ -12,6 +12,7 @@ import (
 
 type matrixService interface {
 	DiscoverServers(int)
+	AddServer(string) int
 	ParseRooms(int, func(string, string, *model.MatrixRoom)) error
 	EachRoom(func(string, *model.MatrixRoom))
 	EachServer(func(string, string))

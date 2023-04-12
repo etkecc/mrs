@@ -117,6 +117,34 @@ func (m *Matrix) DiscoverServers(workers int) {
 	wp.Wait() //nolint:errcheck
 }
 
+// AddServer by name, intended for HTTP API
+// returns http status code to send to the reporter
+func (m *Matrix) AddServer(name string) int {
+	existingURL, _ := m.data.GetServer(name) //nolint:errcheck
+	if existingURL != "" {
+		return http.StatusAlreadyReported
+	}
+
+	serverURL := m.discoverServerWellKnown(name)
+	if serverURL == "" {
+		serverURL = m.discoverServerDirect(name)
+	}
+	if serverURL == "" {
+		return http.StatusUnprocessableEntity
+	}
+	if !m.validateDiscoveredServer(name, serverURL) {
+		return http.StatusUnprocessableEntity
+	}
+
+	err := m.data.AddServer(name, serverURL)
+	if err != nil {
+		log.Println(name, "cannot add server", err)
+		return http.StatusInternalServerError
+	}
+
+	return http.StatusCreated
+}
+
 // ParseRooms across all discovered servers
 func (m *Matrix) ParseRooms(workers int, indexfunc func(serverName string, roomID string, room *model.MatrixRoom)) error {
 	if m.parsing {

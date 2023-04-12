@@ -56,6 +56,31 @@ paths:
                     type: integer
                     description: Count of parsed rooms
                     example: 3230
+  /discover/{server_name}:
+    post:
+      tags:
+        - public
+      summary: Add a new server
+      operationId: addServer
+      parameters:
+        - name: server_name
+          in: path
+          description: server name,domain
+          required: true
+          schema:
+            type: string
+            example: 'example.com'
+      responses:
+        '201':
+          description: server has been added
+        '208':
+          description: server already discovered
+        '422':
+          description: server is not discoverable, check troubleshooting section of readme
+        '429':
+          description: too many requests, slow down.
+        '500':
+          description: something is wrong, check the logs
   /search:
     get:
       tags:
