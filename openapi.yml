@@ -93,6 +93,8 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Entry'
+        '204':
+          description: no results found.
   /-/servers:
     get:
       tags:

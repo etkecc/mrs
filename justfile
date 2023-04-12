@@ -7,7 +7,7 @@ default:
 
 # update go deps
 update:
-    go get ./cmd
+    go get ./cmd/mrs
     go mod tidy
     go mod vendor
 
