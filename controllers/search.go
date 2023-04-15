@@ -13,7 +13,7 @@ type searchService interface {
 }
 
 const (
-	DefaultSearchLimit  = 100
+	DefaultSearchLimit  = 10
 	DefaultSearchOffset = 0
 )
 

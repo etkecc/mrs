@@ -41,6 +41,7 @@ func configureRouter(e *echo.Echo, cfg *config.Config) {
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORSWithConfig(cfg.CORS))
 	e.Use(cacheMiddleware)
+	e.Use(middleware.Secure())
 	e.HideBanner = true
 	e.IPExtractor = echo.ExtractIPFromXFFHeader(
 		echo.TrustLoopback(true),
