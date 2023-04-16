@@ -13,6 +13,7 @@ func (i *Index) Search(query string, limit, offset int) ([]*model.Entry, error) 
 	bleveQuery := bleve.NewQueryStringQuery(query)
 	req := bleve.NewSearchRequestOptions(bleveQuery, limit, offset, false)
 	req.Fields = []string{"*"}
+	req.SortBy([]string{"-members", "-_score", "name"})
 
 	resp, err := i.index.Search(req)
 	if err != nil {
