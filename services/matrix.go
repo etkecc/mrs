@@ -290,6 +290,8 @@ func (m *Matrix) getPublicRooms(name, serverURL string, ch chan *model.MatrixRoo
 			if serverName := room.ParseServer(); serverName == "" {
 				room.Server = name
 			}
+			room.ParseLanguage()
+
 			ch <- &room
 		}
 		log.Println(name, "added", len(resp.Chunk), "rooms (", added, "of", resp.Total, ") took", time.Since(start))

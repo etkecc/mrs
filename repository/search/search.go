@@ -30,14 +30,15 @@ func parseSearchResults(result []*search.DocumentMatch) []*model.Entry {
 	entries := make([]*model.Entry, 0, len(result))
 	for _, hit := range result {
 		entries = append(entries, &model.Entry{
-			ID:      hit.ID,
-			Type:    parseHitField[string](hit, "type"),
-			Alias:   parseHitField[string](hit, "alias"),
-			Name:    parseHitField[string](hit, "name"),
-			Topic:   parseHitField[string](hit, "topic"),
-			Avatar:  parseHitField[string](hit, "avatar"),
-			Server:  parseHitField[string](hit, "server"),
-			Members: int(parseHitField[float64](hit, "members")),
+			ID:       hit.ID,
+			Type:     parseHitField[string](hit, "type"),
+			Alias:    parseHitField[string](hit, "alias"),
+			Name:     parseHitField[string](hit, "name"),
+			Topic:    parseHitField[string](hit, "topic"),
+			Avatar:   parseHitField[string](hit, "avatar"),
+			Server:   parseHitField[string](hit, "server"),
+			Language: parseHitField[string](hit, "language"),
+			Members:  int(parseHitField[float64](hit, "members")),
 		})
 	}
 

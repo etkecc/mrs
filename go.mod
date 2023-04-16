@@ -3,6 +3,7 @@ module gitlab.com/etke.cc/mrs/api
 go 1.20
 
 require (
+	github.com/abadojack/whatlanggo v1.0.1
 	github.com/blevesearch/bleve/v2 v2.3.7
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/labstack/echo/v4 v4.10.2

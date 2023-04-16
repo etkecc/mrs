@@ -213,6 +213,14 @@ components:
           type: integer
           description: members count
           example: 9
+        server:
+          type: string
+          description: server name
+          example: example.com
+        language:
+          type: string
+          description: 'ISO6391 language code (e.g. en, de, fr) OR `-` if there is not enough text in room name and topic to determine language'
+          example: en
   securitySchemes:
     admin:
       type: http
