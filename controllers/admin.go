@@ -83,9 +83,9 @@ func parse(matrix matrixService, stats statsService, workers int) echo.HandlerFu
 }
 
 //nolint:errcheck
-func reindex(matrix matrixService, index indexService, stats statsService) echo.HandlerFunc {
+func reindex(matrix matrixService, index indexService, stats statsService, cache cacheService) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		go func(matrix matrixService, index indexService, stats statsService) {
+		go func(matrix matrixService, index indexService, stats statsService, cache cacheService) {
 			log.Println("ingesting matrix rooms...")
 			stats.SetStartedAt("indexing", time.Now().UTC())
 			matrix.EachRoom(func(roomID string, room *model.MatrixRoom) {
@@ -102,29 +102,33 @@ func reindex(matrix matrixService, index indexService, stats statsService) echo.
 			log.Println("collecting stats...")
 			stats.Collect()
 			log.Println("stats have been collected")
-		}(matrix, index, stats)
+
+			log.Println("purging cache...")
+			cache.Purge()
+			log.Println("cache has been purged")
+		}(matrix, index, stats, cache)
 
 		return c.NoContent(http.StatusCreated)
 	}
 }
 
 //nolint:errcheck
-func full(matrix matrixService, index indexService, stats statsService, discoveryWorkers int, parsingWorkers int) echo.HandlerFunc {
+func full(matrix matrixService, index indexService, stats statsService, cache cacheService, discoveryWorkers int, parsingWorkers int) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		go func(matrix matrixService, index indexService, stats statsService, discoveryWorkers int, parsingWorkers int) {
+		go func(matrix matrixService, index indexService, stats statsService, cache cacheService, discoveryWorkers int, parsingWorkers int) {
 			log.Println("discovering matrix servers...")
 			stats.SetStartedAt("discovery", time.Now().UTC())
 			matrix.DiscoverServers(discoveryWorkers)
 			stats.SetFinishedAt("discovery", time.Now().UTC())
 			log.Println("servers discovery has been finished")
-			stats.Collect()
+			stats.Reload()
 
 			log.Println("parsing matrix rooms...")
 			stats.SetStartedAt("parsing", time.Now().UTC())
 			matrix.ParseRooms(parsingWorkers)
 			stats.SetFinishedAt("parsing", time.Now().UTC())
 			log.Println("all available matrix rooms have been parsed")
-			stats.Collect()
+			stats.Reload()
 
 			log.Println("ingesting matrix rooms...")
 			stats.SetStartedAt("indexing", time.Now().UTC())
@@ -139,7 +143,11 @@ func full(matrix matrixService, index indexService, stats statsService, discover
 			stats.SetFinishedAt("indexing", time.Now().UTC())
 			log.Println("all available matrix rooms have been ingested")
 			stats.Collect()
-		}(matrix, index, stats, discoveryWorkers, parsingWorkers)
+
+			log.Println("purging cache...")
+			cache.Purge()
+			log.Println("cache has been purged")
+		}(matrix, index, stats, cache, discoveryWorkers, parsingWorkers)
 
 		return c.NoContent(http.StatusCreated)
 	}

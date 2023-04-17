@@ -9,8 +9,21 @@ type Config struct {
 	Batch   Batch                 `yaml:"batch"`
 	Admin   Admin                 `yaml:"admin"`
 	CORS    middleware.CORSConfig `yaml:"cors"`
+	Cache   Cache                 `yaml:"cache"`
 	Workers Workers               `yaml:"workers"`
 	Servers []string              `yaml:"servers"`
+}
+
+// Cache config
+type Cache struct {
+	MaxAge int        `yaml:"max_age"`
+	Bunny  CacheBunny `yaml:"bunny"`
+}
+
+// CacheBunny BunnyCDN cache purging config
+type CacheBunny struct {
+	URL string `yaml:"url"`
+	Key string `yaml:"key"`
 }
 
 // Admin config

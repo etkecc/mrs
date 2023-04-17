@@ -26,13 +26,13 @@ type Stats struct {
 // NewStats service
 func NewStats(data StatsRepository) *Stats {
 	stats := &Stats{data: data}
-	stats.load()
+	stats.Reload()
 
 	return stats
 }
 
-// load saved stats
-func (s *Stats) load() {
+// Reload saved stats. Useful when you need to get updated timestamps, but don't want to parse whole db
+func (s *Stats) Reload() {
 	s.stats = s.data.GetIndexStats()
 }
 

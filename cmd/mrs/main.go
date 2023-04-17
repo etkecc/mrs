@@ -48,9 +48,10 @@ func main() {
 	searchSvc := services.NewSearch(index)
 	matrixSvc := services.NewMatrix(cfg.Servers, dataRepo)
 	statsSvc := services.NewStats(dataRepo)
+	cacheSvc := services.NewCache(cfg.Cache.MaxAge, cfg.Cache.Bunny.URL, cfg.Cache.Bunny.Key, statsSvc)
 	go statsSvc.Collect()
 	e = echo.New()
-	controllers.ConfigureRouter(e, cfg, searchSvc, indexSvc, matrixSvc, statsSvc)
+	controllers.ConfigureRouter(e, cfg, cacheSvc, searchSvc, indexSvc, matrixSvc, statsSvc)
 
 	initShutdown(quit)
 
