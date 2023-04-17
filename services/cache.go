@@ -46,7 +46,7 @@ func (cache *Cache) Middleware() echo.MiddlewareFunc {
 				return next(c)
 			}
 
-			lastModified := cache.stats.Get().Index.FinishedAt.Format(http.TimeFormat)
+			lastModified := cache.stats.Get().Indexing.FinishedAt.Format(http.TimeFormat)
 			ifModifiedSince := c.Request().Header.Get("if-modified-since")
 			if lastModified == ifModifiedSince {
 				return c.NoContent(http.StatusNotModified)

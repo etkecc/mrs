@@ -77,4 +77,5 @@ func (s *Stats) Collect() {
 	if err := s.data.SetIndexRooms(rooms); err != nil {
 		log.Println("cannot set indexed rooms count", err)
 	}
+	s.Reload()
 }

@@ -16,7 +16,7 @@ func (d *Data) GetIndexStats() *model.IndexStats {
 	stats := &model.IndexStats{
 		Discovery: model.IndexStatsTime{},
 		Parsing:   model.IndexStatsTime{},
-		Index:     model.IndexStatsTime{},
+		Indexing:  model.IndexStatsTime{},
 	}
 	d.db.View(func(tx *bbolt.Tx) error {
 		bucket := tx.Bucket(indexBucket)
@@ -39,8 +39,8 @@ func (d *Data) GetIndexStats() *model.IndexStats {
 		stats.Discovery.FinishedAt, _ = time.Parse(time.RFC3339, string(discoveryFinishedAt))
 		stats.Parsing.StartedAt, _ = time.Parse(time.RFC3339, string(parsingStartedAt))
 		stats.Parsing.FinishedAt, _ = time.Parse(time.RFC3339, string(parsingFinishedAt))
-		stats.Index.StartedAt, _ = time.Parse(time.RFC3339, string(indexStartedAt))
-		stats.Index.FinishedAt, _ = time.Parse(time.RFC3339, string(indexFinishedAt))
+		stats.Indexing.StartedAt, _ = time.Parse(time.RFC3339, string(indexStartedAt))
+		stats.Indexing.FinishedAt, _ = time.Parse(time.RFC3339, string(indexFinishedAt))
 		return nil
 	})
 

@@ -8,7 +8,7 @@ type IndexStats struct {
 	Rooms     int            `json:"rooms"`
 	Discovery IndexStatsTime `json:"discovery"`
 	Parsing   IndexStatsTime `json:"parsing"`
-	Index     IndexStatsTime `json:"index"`
+	Indexing  IndexStatsTime `json:"indexing"`
 }
 
 // IndexStatsTime structure
