@@ -207,8 +207,12 @@ components:
           example: 'This is my topic'
         avatar:
           type: string
-          description: room avatar url
+          description: MXC URI of room avatar
           example: 'mxc://example.com/sENrPlXsrqeJworlfatgzHmu'
+        avatar_url:
+          type: string
+          description: HTTP URL of room avatar (use this one for web)
+          example: 'https://matrix.example.com/_matrix/media/v3/download/example.com/sENrPlXsrqeJworlfatgzHmu'
         members:
           type: integer
           description: members count

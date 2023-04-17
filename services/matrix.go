@@ -55,9 +55,9 @@ type matrixClientVersions struct {
 }
 
 type matrixRoomsResp struct {
-	Chunk     []model.MatrixRoom `json:"chunk"`
-	NextBatch string             `json:"next_batch"`
-	Total     int                `json:"total_room_count_estimate"`
+	Chunk     []*model.MatrixRoom `json:"chunk"`
+	NextBatch string              `json:"next_batch"`
+	Total     int                 `json:"total_room_count_estimate"`
 }
 
 // NewMatrix service
@@ -287,12 +287,8 @@ func (m *Matrix) getPublicRooms(name, serverURL string, ch chan *model.MatrixRoo
 
 		start := time.Now()
 		for _, room := range resp.Chunk {
-			if serverName := room.ParseServer(); serverName == "" {
-				room.Server = name
-			}
-			room.ParseLanguage()
-
-			ch <- &room
+			room.Parse(serverURL)
+			ch <- room
 		}
 		log.Println(name, "added", len(resp.Chunk), "rooms (", added, "of", resp.Total, ") took", time.Since(start))
 
