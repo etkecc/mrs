@@ -2,31 +2,59 @@ package services
 
 import (
 	"log"
+	"time"
 
 	"gitlab.com/etke.cc/mrs/api/model"
 )
 
+type StatsRepository interface {
+	DataRepository
+	GetIndexStats() *model.IndexStats
+	SetIndexServers(servers int) error
+	SetIndexRooms(rooms int) error
+	SetStartedAt(process string, startedAt time.Time) error
+	SetFinishedAt(process string, finishedAt time.Time) error
+}
+
 // Stats service
 type Stats struct {
-	data       DataRepository
+	data       StatsRepository
+	stats      *model.IndexStats
 	collecting bool
-	servers    int
-	rooms      int
 }
 
 // NewStats service
-func NewStats(data DataRepository) *Stats {
-	return &Stats{data: data}
+func NewStats(data StatsRepository) *Stats {
+	stats := &Stats{data: data}
+	stats.load()
+
+	return stats
 }
 
-// GetServers returns count of known servers
-func (s *Stats) GetServers() int {
-	return s.servers
+// load saved stats
+func (s *Stats) load() {
+	s.stats = s.data.GetIndexStats()
 }
 
-// GetRooms returns count of known rooms
-func (s *Stats) GetRooms() int {
-	return s.rooms
+// Get stats
+func (s *Stats) Get() *model.IndexStats {
+	return s.stats
+}
+
+// SetStartedAt of the process
+func (s *Stats) SetStartedAt(process string, startedAt time.Time) {
+	if err := s.data.SetStartedAt(process, startedAt); err != nil {
+		log.Println("cannot set", process, "started_at", err)
+	}
+	s.stats = s.data.GetIndexStats()
+}
+
+// SetFinishedAt of the process
+func (s *Stats) SetFinishedAt(process string, finishedAt time.Time) {
+	if err := s.data.SetFinishedAt(process, finishedAt); err != nil {
+		log.Println("cannot set", process, "finished_at", err)
+	}
+	s.stats = s.data.GetIndexStats()
 }
 
 // Collect stats from repository
@@ -38,11 +66,15 @@ func (s *Stats) Collect() {
 	s.collecting = true
 	defer func() { s.collecting = false }()
 
-	s.servers = len(s.data.AllServers())
+	if err := s.data.SetIndexServers(len(s.data.AllServers())); err != nil {
+		log.Println("cannot set indexed servers count", err)
+	}
 
 	var rooms int
 	s.data.EachRoom(func(_ string, _ *model.MatrixRoom) {
 		rooms++
 	})
-	s.rooms = rooms
+	if err := s.data.SetIndexRooms(rooms); err != nil {
+		log.Println("cannot set indexed rooms count", err)
+	}
 }

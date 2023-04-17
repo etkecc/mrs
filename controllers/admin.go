@@ -3,6 +3,7 @@ package controllers
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"gopkg.in/yaml.v3"
@@ -38,11 +39,19 @@ func servers(matrix matrixService) echo.HandlerFunc {
 	}
 }
 
+func status(stats statsService) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		return c.JSON(http.StatusOK, stats.Get())
+	}
+}
+
 func discover(matrix matrixService, stats statsService, workers int) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		go func(matrix matrixService, stats statsService) {
 			log.Println("discovering matrix servers...")
+			stats.SetStartedAt("discovery", time.Now().UTC())
 			matrix.DiscoverServers(workers)
+			stats.SetFinishedAt("discovery", time.Now().UTC())
 			log.Println("servers discovery has been finished")
 
 			log.Println("collecting stats...")
@@ -59,7 +68,9 @@ func parse(matrix matrixService, stats statsService, workers int) echo.HandlerFu
 	return func(c echo.Context) error {
 		go func(matrix matrixService, stats statsService) {
 			log.Println("parsing matrix rooms...")
+			stats.SetStartedAt("parsing", time.Now().UTC())
 			matrix.ParseRooms(workers)
+			stats.SetFinishedAt("parsing", time.Now().UTC())
 			log.Println("all available matrix rooms have been parsed")
 
 			log.Println("collecting stats...")
@@ -76,6 +87,7 @@ func reindex(matrix matrixService, index indexService, stats statsService) echo.
 	return func(c echo.Context) error {
 		go func(matrix matrixService, index indexService, stats statsService) {
 			log.Println("ingesting matrix rooms...")
+			stats.SetStartedAt("indexing", time.Now().UTC())
 			matrix.EachRoom(func(roomID string, room *model.MatrixRoom) {
 				if err := index.RoomsBatch(roomID, room.Entry()); err != nil {
 					log.Println(room.Alias, "cannot add to batch", err)
@@ -84,6 +96,7 @@ func reindex(matrix matrixService, index indexService, stats statsService) echo.
 			if err := index.IndexBatch(); err != nil {
 				log.Println("indexing of the last batch failed", err)
 			}
+			stats.SetFinishedAt("indexing", time.Now().UTC())
 			log.Println("all available matrix rooms have been ingested")
 
 			log.Println("collecting stats...")
@@ -100,14 +113,21 @@ func full(matrix matrixService, index indexService, stats statsService, discover
 	return func(c echo.Context) error {
 		go func(matrix matrixService, index indexService, stats statsService, discoveryWorkers int, parsingWorkers int) {
 			log.Println("discovering matrix servers...")
+			stats.SetStartedAt("discovery", time.Now().UTC())
 			matrix.DiscoverServers(discoveryWorkers)
+			stats.SetFinishedAt("discovery", time.Now().UTC())
 			log.Println("servers discovery has been finished")
+			stats.Collect()
 
 			log.Println("parsing matrix rooms...")
+			stats.SetStartedAt("parsing", time.Now().UTC())
 			matrix.ParseRooms(parsingWorkers)
+			stats.SetFinishedAt("parsing", time.Now().UTC())
 			log.Println("all available matrix rooms have been parsed")
+			stats.Collect()
 
 			log.Println("ingesting matrix rooms...")
+			stats.SetStartedAt("indexing", time.Now().UTC())
 			matrix.EachRoom(func(roomID string, room *model.MatrixRoom) {
 				if err := index.RoomsBatch(roomID, room.Entry()); err != nil {
 					log.Println(room.Alias, "cannot add to batch", err)
@@ -116,11 +136,9 @@ func full(matrix matrixService, index indexService, stats statsService, discover
 			if err := index.IndexBatch(); err != nil {
 				log.Println("indexing of the last batch failed", err)
 			}
+			stats.SetFinishedAt("indexing", time.Now().UTC())
 			log.Println("all available matrix rooms have been ingested")
-
-			log.Println("collecting stats...")
 			stats.Collect()
-			log.Println("stats have been collected")
 		}(matrix, index, stats, discoveryWorkers, parsingWorkers)
 
 		return c.NoContent(http.StatusCreated)

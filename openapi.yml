@@ -120,6 +120,21 @@ paths:
                   $ref: '#/components/schemas/Entry'
         '204':
           description: no results found.
+  /-/status:
+    get:
+      tags:
+        - private
+      description: Get full status of the MRS
+      operationId: admin_status
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
+      security:
+       - admin:
   /-/servers:
     get:
       tags:
@@ -225,6 +240,37 @@ components:
           type: string
           description: 'ISO6391 language code (e.g. en, de, fr) OR `-` if there is not enough text in room name and topic to determine language'
           example: en
+    Status:
+      type: object
+      properties:
+        servers:
+          type: integer
+          description: amount of discovered servers
+          example: 123
+        rooms:
+          type: integer
+          description: amount of parsed rooms
+          example: 321
+        discovery:
+          $ref: '#/components/schemas/ProcessStatus'
+        parsing:
+          $ref: '#/components/schemas/ProcessStatus'
+        indexing:
+          $ref: '#/components/schemas/ProcessStatus'
+    ProcessStatus:
+      type: object
+      description: servers discovery info
+      properties:
+        started_at:
+          type: string
+          format: date-time
+          description: start time of the process
+          example: 2023-04-17T18:40:56Z
+        finished_at:
+          type: string
+          format: date-time
+          description: start time of the process
+          example: 2023-04-17T18:40:56Z
   securitySchemes:
     admin:
       type: http

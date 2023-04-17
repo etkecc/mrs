@@ -2,16 +2,19 @@ package controllers
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
 	"gitlab.com/etke.cc/mrs/api/config"
+	"gitlab.com/etke.cc/mrs/api/model"
 )
 
 type statsService interface {
-	GetRooms() int
-	GetServers() int
+	Get() *model.IndexStats
+	SetStartedAt(string, time.Time)
+	SetFinishedAt(string, time.Time)
 	Collect()
 }
 
@@ -19,11 +22,12 @@ type statsService interface {
 func ConfigureRouter(e *echo.Echo, cfg *config.Config, searchSvc searchService, indexSvc indexService, matrixSvc matrixService, statsSvc statsService) {
 	configureRouter(e, cfg)
 	e.GET("/stats", stats(statsSvc))
+	e.GET("/search", search(searchSvc))
 	e.POST("/discover/:name", addServer(matrixSvc), middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1)))
 
 	a := adminGroup(e, cfg)
-	e.GET("/search", search(searchSvc))
 	a.GET("/servers", servers(matrixSvc))
+	a.GET("/status", status(statsSvc))
 	a.POST("/discover", discover(matrixSvc, statsSvc, cfg.Workers.Discovery))
 	a.POST("/parse", parse(matrixSvc, statsSvc, cfg.Workers.Parsing))
 	a.POST("/reindex", reindex(matrixSvc, indexSvc, statsSvc))

@@ -5,8 +5,9 @@ import "go.etcd.io/bbolt"
 var (
 	serversBucket = []byte(`servers`)
 	roomsBucket   = []byte(`rooms`)
+	indexBucket   = []byte(`index`)
 
-	buckets = [][]byte{serversBucket, roomsBucket}
+	buckets = [][]byte{serversBucket, roomsBucket, indexBucket}
 )
 
 func initBuckets(db *bbolt.DB) error {
