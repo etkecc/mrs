@@ -49,7 +49,7 @@ func main() {
 	index = createOrOpenIndex(cfg.Path.Index)
 	detector := getLanguageDetector(cfg.Languages)
 	indexSvc := services.NewIndex(index, dataRepo, cfg.Batch.Rooms)
-	searchSvc := services.NewSearch(index, detector)
+	searchSvc := services.NewSearch(index)
 	matrixSvc := services.NewMatrix(cfg.Servers, dataRepo, detector)
 	statsSvc := services.NewStats(dataRepo)
 	cacheSvc := services.NewCache(cfg.Cache.MaxAge, cfg.Cache.Bunny.URL, cfg.Cache.Bunny.Key, statsSvc)
