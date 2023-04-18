@@ -35,7 +35,5 @@ languages: # (optional) list of supported languages in ISO 639-1 format
 # bootstrap list of servers, each of them will be discovered and if server doesn't respond, it won't be parsed
 servers:
   - etke.cc
-  # - matrix.org
-  # - gitter.im
 
 # vi: ft=yaml
