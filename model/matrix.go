@@ -3,7 +3,9 @@ package model
 import (
 	"strings"
 
-	"github.com/abadojack/whatlanggo"
+	"github.com/pemistahl/lingua-go"
+
+	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
 // MatrixRoom from matrix client-server API
@@ -38,9 +40,9 @@ func (r *MatrixRoom) Entry() *Entry {
 }
 
 // Parse matrix room info to prepare custom fields
-func (r *MatrixRoom) Parse(serverURL string) {
+func (r *MatrixRoom) Parse(detector lingua.LanguageDetector, serverURL string) {
 	r.parseServer()
-	r.parseLanguage()
+	r.parseLanguage(detector)
 	r.parseAvatar(serverURL)
 }
 
@@ -53,23 +55,19 @@ func (r *MatrixRoom) parseServer() {
 }
 
 // parseLanguage tries to identify room language by room name and topic
-func (r *MatrixRoom) parseLanguage() {
-	name := whatlanggo.Detect(r.Name)
-	topic := whatlanggo.Detect(r.Topic)
-	if !name.IsReliable() {
-		if !topic.IsReliable() {
-			r.Language = "-"
-			return
-		}
-		r.Language = topic.Lang.Iso6391()
+func (r *MatrixRoom) parseLanguage(detector lingua.LanguageDetector) {
+	name, nameConfedence := utils.DetectLanguage(detector, r.Name)
+	topic, topicConfedence := utils.DetectLanguage(detector, r.Topic)
+	if nameConfedence == 0 && topicConfedence == 0 {
+		r.Language = "-"
 		return
 	}
 
-	if name.Confidence > topic.Confidence {
-		r.Language = name.Lang.Iso6391()
-		return
+	if nameConfedence > topicConfedence {
+		r.Language = name
+	} else {
+		r.Language = topic
 	}
-	r.Language = topic.Lang.Iso6391()
 }
 
 // parseAvatar builds HTTP URL to access room avatar

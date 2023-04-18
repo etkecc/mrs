@@ -21,8 +21,10 @@ func getIndexMapping() mapping.IndexMapping {
 	r.AddFieldMappingsAt("name", textFM)
 	r.AddFieldMappingsAt("topic", textFM)
 	r.AddFieldMappingsAt("avatar", keywordFM)
+	r.AddFieldMappingsAt("avatar_url", keywordFM)
 	r.AddFieldMappingsAt("server", keywordFM)
 	r.AddFieldMappingsAt("members", numericFM)
+	r.AddFieldMappingsAt("language", keywordFM)
 
 	m := bleve.NewIndexMapping()
 	m.TypeField = "type"

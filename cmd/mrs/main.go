@@ -12,6 +12,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/mileusna/crontab"
+	"github.com/pemistahl/lingua-go"
 	"gitlab.com/etke.cc/go/fswatcher"
 
 	"gitlab.com/etke.cc/mrs/api/config"
@@ -46,9 +47,10 @@ func main() {
 	}
 
 	index = createOrOpenIndex(cfg.Path.Index)
+	detector := getLanguageDetector(cfg.Languages)
 	indexSvc := services.NewIndex(index, dataRepo, cfg.Batch.Rooms)
 	searchSvc := services.NewSearch(index)
-	matrixSvc := services.NewMatrix(cfg.Servers, dataRepo)
+	matrixSvc := services.NewMatrix(cfg.Servers, dataRepo, detector)
 	statsSvc := services.NewStats(dataRepo)
 	cacheSvc := services.NewCache(cfg.Cache.MaxAge, cfg.Cache.Bunny.URL, cfg.Cache.Bunny.Key, statsSvc)
 	dataSvc := services.NewDataFacade(matrixSvc, indexSvc, statsSvc, cacheSvc)
@@ -76,6 +78,24 @@ func createOrOpenIndex(indexPath string) *search.Index {
 		log.Panic(err)
 	}
 	return searchIndex
+}
+
+func getLanguageDetector(inputLangs []string) lingua.LanguageDetector {
+	all := lingua.AllLanguages()
+	enabled := make([]lingua.Language, 0)
+	langs := make(map[string]bool, len(inputLangs))
+	for _, inputLang := range inputLangs {
+		langs[inputLang] = true
+	}
+	for _, lang := range all {
+		if langs[lang.IsoCode639_1().String()] {
+			enabled = append(enabled, lang)
+		}
+	}
+
+	return lingua.NewLanguageDetectorBuilder().
+		FromLanguages(enabled...).
+		Build()
 }
 
 func initShutdown(quit chan struct{}) {

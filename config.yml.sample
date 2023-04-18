@@ -28,9 +28,14 @@ workers: # parallelism configuration, how much workers to spin up at once
   discovery: 20 # matrix server discovery, servers at once
   parsing: 20 # matrix public rooms parsing, servers at once
 
+languages: # (optional) list of supported languages in ISO 639-1 format
+  - EN
+  - DE
+
 # bootstrap list of servers, each of them will be discovered and if server doesn't respond, it won't be parsed
 servers:
-  - matrix.org
-  - gitter.im
+  - etke.cc
+  # - matrix.org
+  # - gitter.im
 
 # vi: ft=yaml

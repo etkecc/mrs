@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pemistahl/lingua-go"
 	"github.com/xxjwxc/gowp/workpool"
 
 	"gitlab.com/etke.cc/mrs/api/model"
@@ -21,6 +22,7 @@ type Matrix struct {
 	discovering bool
 	eachrooming bool
 	data        DataRepository
+	detector    lingua.LanguageDetector
 }
 
 type DataRepository interface {
@@ -61,10 +63,11 @@ type matrixRoomsResp struct {
 }
 
 // NewMatrix service
-func NewMatrix(servers []string, data DataRepository) *Matrix {
+func NewMatrix(servers []string, data DataRepository, detector lingua.LanguageDetector) *Matrix {
 	return &Matrix{
-		servers: servers,
-		data:    data,
+		servers:  servers,
+		data:     data,
+		detector: detector,
 	}
 }
 
@@ -287,7 +290,7 @@ func (m *Matrix) getPublicRooms(name, serverURL string, ch chan *model.MatrixRoo
 
 		start := time.Now()
 		for _, room := range resp.Chunk {
-			room.Parse(serverURL)
+			room.Parse(m.detector, serverURL)
 			ch <- room
 		}
 		log.Println(name, "added", len(resp.Chunk), "rooms (", added, "of", resp.Total, ") took", time.Since(start))

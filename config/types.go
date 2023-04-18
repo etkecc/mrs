@@ -4,15 +4,16 @@ import "github.com/labstack/echo/v4/middleware"
 
 // Config structure
 type Config struct {
-	Port    string                `yaml:"port"`
-	Path    Paths                 `yaml:"path"`
-	Batch   Batch                 `yaml:"batch"`
-	Admin   Admin                 `yaml:"admin"`
-	Cron    Cron                  `yaml:"cron"`
-	CORS    middleware.CORSConfig `yaml:"cors"`
-	Cache   Cache                 `yaml:"cache"`
-	Workers Workers               `yaml:"workers"`
-	Servers []string              `yaml:"servers"`
+	Port      string                `yaml:"port"`
+	Path      Paths                 `yaml:"path"`
+	Batch     Batch                 `yaml:"batch"`
+	Admin     Admin                 `yaml:"admin"`
+	Cron      Cron                  `yaml:"cron"`
+	CORS      middleware.CORSConfig `yaml:"cors"`
+	Cache     Cache                 `yaml:"cache"`
+	Workers   Workers               `yaml:"workers"`
+	Languages []string              `yaml:"languages"`
+	Servers   []string              `yaml:"servers"`
 }
 
 // Cache config
