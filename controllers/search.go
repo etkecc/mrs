@@ -17,11 +17,16 @@ const (
 	DefaultSearchOffset = 0
 )
 
-func search(svc searchService) echo.HandlerFunc {
+func search(svc searchService, path bool) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		query := c.QueryParam("q")
-		limit := string2int(c.QueryParam("l"), DefaultSearchLimit)
-		offset := string2int(c.QueryParam("o"), DefaultSearchOffset)
+		paramfunc := c.QueryParam
+		if path {
+			paramfunc = c.Param
+		}
+
+		query := paramfunc("q")
+		limit := string2int(paramfunc("l"), DefaultSearchLimit)
+		offset := string2int(paramfunc("o"), DefaultSearchOffset)
 		entries, err := svc.Search(query, limit, offset)
 		if err != nil {
 			return err

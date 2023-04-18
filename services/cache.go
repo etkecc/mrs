@@ -48,13 +48,15 @@ func (cache *Cache) Middleware() echo.MiddlewareFunc {
 
 			lastModified := cache.stats.Get().Indexing.FinishedAt.Format(http.TimeFormat)
 			ifModifiedSince := c.Request().Header.Get("if-modified-since")
-			if lastModified == ifModifiedSince {
+			if lastModified == ifModifiedSince && (c.Request().URL.Path != "/search") {
 				return c.NoContent(http.StatusNotModified)
 			}
 
 			resp := c.Response()
 			resp.Header().Set("Cache-Control", "max-age="+cache.maxAge+", public")
-			resp.Header().Set("Last-Modified", lastModified)
+			if c.Request().URL.Path != "/search" {
+				resp.Header().Set("Last-Modified", lastModified)
+			}
 			return next(c)
 		}
 	}

@@ -85,9 +85,9 @@ paths:
     get:
       tags:
         - public
-      summary: Search something!
+      summary: Search something! (query params)
       description: Search for matrix rooms
-      operationId: search
+      operationId: search_query
       parameters:
         - name: q
           in: query
@@ -104,6 +104,45 @@ paths:
             default: 10
         - name: o
           in: query
+          description: offset
+          required: false
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Entry'
+        '204':
+          description: no results found.
+  /search/{q}/{l}/{o}:
+    get:
+      tags:
+        - public
+      summary: Search something! (path params)
+      description: Search for matrix rooms
+      operationId: search_path
+      parameters:
+        - name: q
+          in: path
+          description: search query
+          required: true
+          schema:
+            type: string
+        - name: l
+          in: path
+          description: limit
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: o
+          in: path
           description: offset
           required: false
           schema:

@@ -22,7 +22,10 @@ type cacheService interface {
 func ConfigureRouter(e *echo.Echo, cfg *config.Config, dataSvc dataService, cacheSvc cacheService, searchSvc searchService, matrixSvc matrixService, statsSvc statsService) {
 	configureRouter(e, cfg, cacheSvc)
 	e.GET("/stats", stats(statsSvc))
-	e.GET("/search", search(searchSvc))
+	e.GET("/search", search(searchSvc, false))
+	e.GET("/search/:q", search(searchSvc, true))
+	e.GET("/search/:q/:l", search(searchSvc, true))
+	e.GET("/search/:q/:l/:o", search(searchSvc, true))
 	e.POST("/discover/:name", addServer(matrixSvc), middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1)))
 
 	a := adminGroup(e, cfg)
