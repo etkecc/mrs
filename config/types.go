@@ -8,6 +8,7 @@ type Config struct {
 	Path    Paths                 `yaml:"path"`
 	Batch   Batch                 `yaml:"batch"`
 	Admin   Admin                 `yaml:"admin"`
+	Cron    Cron                  `yaml:"cron"`
 	CORS    middleware.CORSConfig `yaml:"cors"`
 	Cache   Cache                 `yaml:"cache"`
 	Workers Workers               `yaml:"workers"`
@@ -31,6 +32,14 @@ type Admin struct {
 	Login    string   `yaml:"login"`
 	Password string   `yaml:"password"`
 	IPs      []string `yaml:"ips"`
+}
+
+// Cron config
+type Cron struct {
+	Discovery string `yaml:"discovery"`
+	Parsing   string `yaml:"parsing"`
+	Indexing  string `yaml:"indexing"`
+	Full      string `yaml:"full"`
 }
 
 // Paths config

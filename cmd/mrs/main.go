@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"github.com/mileusna/crontab"
 	"gitlab.com/etke.cc/go/fswatcher"
 
 	"gitlab.com/etke.cc/mrs/api/config"
@@ -25,6 +26,7 @@ var (
 	configWatcher *fswatcher.Watcher
 	dataRepo      *data.Data
 	index         *search.Index
+	cron          *crontab.Crontab
 	cfg           *config.Config
 	e             *echo.Echo
 )
@@ -49,10 +51,12 @@ func main() {
 	matrixSvc := services.NewMatrix(cfg.Servers, dataRepo)
 	statsSvc := services.NewStats(dataRepo)
 	cacheSvc := services.NewCache(cfg.Cache.MaxAge, cfg.Cache.Bunny.URL, cfg.Cache.Bunny.Key, statsSvc)
+	dataSvc := services.NewDataFacade(matrixSvc, indexSvc, statsSvc, cacheSvc)
 	go statsSvc.Collect()
 	e = echo.New()
-	controllers.ConfigureRouter(e, cfg, cacheSvc, searchSvc, indexSvc, matrixSvc, statsSvc)
+	controllers.ConfigureRouter(e, cfg, dataSvc, cacheSvc, searchSvc, matrixSvc, statsSvc)
 
+	initCron(dataSvc)
 	initShutdown(quit)
 
 	if err := e.Start(":" + cfg.Port); err != nil && err != http.ErrServerClosed {
@@ -86,8 +90,29 @@ func initShutdown(quit chan struct{}) {
 	}()
 }
 
+func initCron(dataSvc *services.DataFacade) {
+	cron = crontab.New()
+	if schedule := cfg.Cron.Discovery; schedule != "" {
+		log.Println("cron", "discovery job enabled")
+		cron.MustAddJob(schedule, dataSvc.DiscoverServers, cfg.Workers.Discovery)
+	}
+	if schedule := cfg.Cron.Parsing; schedule != "" {
+		log.Println("cron", "parsing job enabled")
+		cron.MustAddJob(schedule, dataSvc.ParseRooms, cfg.Workers.Parsing)
+	}
+	if schedule := cfg.Cron.Indexing; schedule != "" {
+		log.Println("cron", "indexing job enabled")
+		cron.MustAddJob(schedule, dataSvc.Ingest)
+	}
+	if schedule := cfg.Cron.Full; schedule != "" {
+		log.Println("cron", "full job enabled")
+		cron.MustAddJob(schedule, dataSvc.Full, cfg.Workers.Discovery, cfg.Workers.Parsing)
+	}
+}
+
 func shutdown() {
 	log.Println("shutting down...")
+	cron.Shutdown()
 	if err := configWatcher.Stop(); err != nil {
 		log.Println(err)
 	}

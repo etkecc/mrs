@@ -7,6 +7,7 @@ require (
 	github.com/blevesearch/bleve/v2 v2.3.7
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/labstack/echo/v4 v4.10.2
+	github.com/mileusna/crontab v1.2.0
 	github.com/xxjwxc/gowp v0.0.0-20220528192505-f87b7668d4ff
 	gitlab.com/etke.cc/go/fswatcher v1.0.0
 	go.etcd.io/bbolt v1.3.5

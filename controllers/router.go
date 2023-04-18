@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -13,19 +12,14 @@ import (
 
 type statsService interface {
 	Get() *model.IndexStats
-	SetStartedAt(string, time.Time)
-	SetFinishedAt(string, time.Time)
-	Reload()
-	Collect()
 }
 
 type cacheService interface {
 	Middleware() echo.MiddlewareFunc
-	Purge()
 }
 
 // ConfigureRouter configures echo router
-func ConfigureRouter(e *echo.Echo, cfg *config.Config, cacheSvc cacheService, searchSvc searchService, indexSvc indexService, matrixSvc matrixService, statsSvc statsService) {
+func ConfigureRouter(e *echo.Echo, cfg *config.Config, dataSvc dataService, cacheSvc cacheService, searchSvc searchService, matrixSvc matrixService, statsSvc statsService) {
 	configureRouter(e, cfg, cacheSvc)
 	e.GET("/stats", stats(statsSvc))
 	e.GET("/search", search(searchSvc))
@@ -34,10 +28,10 @@ func ConfigureRouter(e *echo.Echo, cfg *config.Config, cacheSvc cacheService, se
 	a := adminGroup(e, cfg)
 	a.GET("/servers", servers(matrixSvc))
 	a.GET("/status", status(statsSvc))
-	a.POST("/discover", discover(matrixSvc, statsSvc, cfg.Workers.Discovery))
-	a.POST("/parse", parse(matrixSvc, statsSvc, cfg.Workers.Parsing))
-	a.POST("/reindex", reindex(matrixSvc, indexSvc, statsSvc, cacheSvc))
-	a.POST("/full", full(matrixSvc, indexSvc, statsSvc, cacheSvc, cfg.Workers.Discovery, cfg.Workers.Parsing))
+	a.POST("/discover", discover(dataSvc, cfg.Workers.Discovery))
+	a.POST("/parse", parse(dataSvc, cfg.Workers.Parsing))
+	a.POST("/reindex", reindex(dataSvc))
+	a.POST("/full", full(dataSvc, cfg.Workers.Discovery, cfg.Workers.Parsing))
 }
 
 func configureRouter(e *echo.Echo, cfg *config.Config, cacheSvc cacheService) {

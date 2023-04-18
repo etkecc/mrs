@@ -14,6 +14,11 @@ cache: # (optional) cache config
   bunny: # (optional) bunny cdn cache purging, ref: https://docs.bunny.net/reference/pullzonepublic_purgecachepostbytag
     url:
     key:
+cron: # (optional) data jobs, using cron synax, ref: https://github.com/mileusna/crontab#crontab-syntax-
+  discovery:
+  parsing:
+  indexing:
+  full:
 path:
   index: testdata/index
   data: testdata/data.db
