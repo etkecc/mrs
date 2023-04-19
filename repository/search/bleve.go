@@ -1,7 +1,12 @@
 package search
 
 import (
+	"log"
+
 	"github.com/blevesearch/bleve/v2"
+	"github.com/blevesearch/bleve/v2/analysis/analyzer/custom"
+	regexp_char_filter "github.com/blevesearch/bleve/v2/analysis/char/regexp"
+	"github.com/blevesearch/bleve/v2/analysis/tokenizer/letter"
 	"github.com/blevesearch/bleve/v2/mapping"
 )
 
@@ -9,15 +14,48 @@ type Index struct {
 	index bleve.Index
 }
 
+var (
+	charfilter = map[string]interface{}{
+		"regexp":  `(#|!|:)`,
+		"replace": ` `,
+		"type":    regexp_char_filter.Name,
+	}
+	analyzer = map[string]interface{}{
+		"type": custom.Name,
+		"char_filters": []interface{}{
+			`matrixchars`,
+		},
+		"tokenizer": letter.Name,
+		"token_filters": []interface{}{
+			`to_lower`,
+		},
+	}
+)
+
 func getIndexMapping() mapping.IndexMapping {
+	m := bleve.NewIndexMapping()
+	m.TypeField = "type"
+	m.DefaultType = "room"
+	err := m.AddCustomCharFilter("matrixchars", charfilter)
+	if err != nil {
+		log.Println("index", "cannot create custom char filter", err)
+	}
+
+	err = m.AddCustomAnalyzer("matrixuris", analyzer)
+	if err != nil {
+		log.Println("index", "cannot create custom analyzer", err)
+	}
+
 	textFM := bleve.NewTextFieldMapping()
 	keywordFM := bleve.NewKeywordFieldMapping()
 	numericFM := bleve.NewNumericFieldMapping()
+	matrixURIFM := bleve.NewTextFieldMapping()
+	matrixURIFM.Analyzer = "matrixuris"
 
 	r := bleve.NewDocumentMapping()
-	r.AddFieldMappingsAt("id", keywordFM)
+	r.AddFieldMappingsAt("id", matrixURIFM)
 	r.AddFieldMappingsAt("type", keywordFM)
-	r.AddFieldMappingsAt("alias", keywordFM)
+	r.AddFieldMappingsAt("alias", matrixURIFM)
 	r.AddFieldMappingsAt("name", textFM)
 	r.AddFieldMappingsAt("topic", textFM)
 	r.AddFieldMappingsAt("avatar", keywordFM)
@@ -25,10 +63,8 @@ func getIndexMapping() mapping.IndexMapping {
 	r.AddFieldMappingsAt("server", keywordFM)
 	r.AddFieldMappingsAt("members", numericFM)
 	r.AddFieldMappingsAt("language", keywordFM)
-
-	m := bleve.NewIndexMapping()
-	m.TypeField = "type"
 	m.AddDocumentMapping("room", r)
+
 	return m
 }
 

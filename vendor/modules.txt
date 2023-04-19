@@ -9,14 +9,18 @@ github.com/bits-and-blooms/bitset
 ## explicit; go 1.19
 github.com/blevesearch/bleve/v2
 github.com/blevesearch/bleve/v2/analysis
+github.com/blevesearch/bleve/v2/analysis/analyzer/custom
 github.com/blevesearch/bleve/v2/analysis/analyzer/keyword
 github.com/blevesearch/bleve/v2/analysis/analyzer/standard
+github.com/blevesearch/bleve/v2/analysis/char/regexp
 github.com/blevesearch/bleve/v2/analysis/datetime/flexible
 github.com/blevesearch/bleve/v2/analysis/datetime/optional
 github.com/blevesearch/bleve/v2/analysis/lang/en
 github.com/blevesearch/bleve/v2/analysis/token/lowercase
 github.com/blevesearch/bleve/v2/analysis/token/porter
 github.com/blevesearch/bleve/v2/analysis/token/stop
+github.com/blevesearch/bleve/v2/analysis/tokenizer/character
+github.com/blevesearch/bleve/v2/analysis/tokenizer/letter
 github.com/blevesearch/bleve/v2/analysis/tokenizer/single
 github.com/blevesearch/bleve/v2/analysis/tokenizer/unicode
 github.com/blevesearch/bleve/v2/document
