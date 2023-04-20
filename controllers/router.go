@@ -26,6 +26,7 @@ func ConfigureRouter(e *echo.Echo, cfg *config.Config, dataSvc dataService, cach
 	e.GET("/search/:q", search(searchSvc, true))
 	e.GET("/search/:q/:l", search(searchSvc, true))
 	e.GET("/search/:q/:l/:o", search(searchSvc, true))
+	e.GET("/search/:q/:l/:o/:s", search(searchSvc, true))
 	e.POST("/discover/:name", addServer(matrixSvc), middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1)))
 
 	a := adminGroup(e, cfg)

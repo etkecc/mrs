@@ -9,11 +9,11 @@ import (
 
 // Search something!
 // ref: https://blevesearch.com/docs/Query-String-Query/
-func (i *Index) Search(query string, limit, offset int) ([]*model.Entry, error) {
+func (i *Index) Search(query string, limit, offset int, sortBy []string) ([]*model.Entry, error) {
 	bleveQuery := bleve.NewQueryStringQuery(query)
 	req := bleve.NewSearchRequestOptions(bleveQuery, limit, offset, false)
 	req.Fields = []string{"*"}
-	req.SortBy([]string{"-members", "-_score", "name"})
+	req.SortBy(sortBy)
 
 	resp, err := i.index.Search(req)
 	if err != nil {

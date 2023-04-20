@@ -11,7 +11,7 @@ type Search struct {
 
 // SearchRepository interface
 type SearchRepository interface {
-	Search(query string, limit, offset int) ([]*model.Entry, error)
+	Search(query string, limit, offset int, sortBy []string) ([]*model.Entry, error)
 }
 
 // NewSearch creates new search service
@@ -21,6 +21,6 @@ func NewSearch(repo SearchRepository) Search {
 
 // Search things
 // ref: https://blevesearch.com/docs/Query-String-Query/
-func (s Search) Search(query string, limit, offset int) ([]*model.Entry, error) {
-	return s.repo.Search(query, limit, offset)
+func (s Search) Search(query string, limit, offset int, sortBy []string) ([]*model.Entry, error) {
+	return s.repo.Search(query, limit, offset, sortBy)
 }

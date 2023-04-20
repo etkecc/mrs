@@ -109,6 +109,13 @@ paths:
           schema:
             type: integer
             default: 0
+        - name: s
+          in: query
+          description: sort by, comma-separated list of fields. `-` prefix means descending
+          required: true
+          schema:
+            type: string
+            default: -_score,-members
       responses:
         '200':
           description: successful operation
@@ -120,7 +127,7 @@ paths:
                   $ref: '#/components/schemas/Entry'
         '204':
           description: no results found.
-  /search/{q}/{l}/{o}:
+  /search/{q}/{l}/{o}/{s}:
     get:
       tags:
         - public
@@ -148,6 +155,13 @@ paths:
           schema:
             type: integer
             default: 0
+        - name: s
+          in: path
+          description: sort by, comma-separated list of fields. `-` prefix means descending
+          required: true
+          schema:
+            type: string
+            default: -_score,-members
       responses:
         '200':
           description: successful operation
