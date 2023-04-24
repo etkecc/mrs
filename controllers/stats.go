@@ -10,7 +10,7 @@ func stats(stats statsService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		info := stats.Get()
 		return c.JSON(http.StatusOK, map[string]int{
-			"servers": info.Servers,
+			"servers": info.Servers.All,
 			"rooms":   info.Rooms,
 		})
 	}

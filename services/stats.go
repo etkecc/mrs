@@ -11,6 +11,7 @@ type StatsRepository interface {
 	DataRepository
 	GetIndexStats() *model.IndexStats
 	SetIndexServers(servers int) error
+	SetIndexOnlineServers(servers int) error
 	SetIndexRooms(rooms int) error
 	SetStartedAt(process string, startedAt time.Time) error
 	SetFinishedAt(process string, finishedAt time.Time) error
@@ -68,6 +69,10 @@ func (s *Stats) Collect() {
 
 	if err := s.data.SetIndexServers(len(s.data.AllServers())); err != nil {
 		log.Println("cannot set indexed servers count", err)
+	}
+
+	if err := s.data.SetIndexOnlineServers(len(s.data.AllOnlineServers())); err != nil {
+		log.Println("cannot set indexed servers (online) count", err)
 	}
 
 	var rooms int

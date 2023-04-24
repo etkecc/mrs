@@ -4,11 +4,17 @@ import "time"
 
 // IndexStats structure
 type IndexStats struct {
-	Servers   int            `json:"servers"`
-	Rooms     int            `json:"rooms"`
-	Discovery IndexStatsTime `json:"discovery"`
-	Parsing   IndexStatsTime `json:"parsing"`
-	Indexing  IndexStatsTime `json:"indexing"`
+	Servers   IndexStatsServers `json:"servers"`
+	Rooms     int               `json:"rooms"`
+	Discovery IndexStatsTime    `json:"discovery"`
+	Parsing   IndexStatsTime    `json:"parsing"`
+	Indexing  IndexStatsTime    `json:"indexing"`
+}
+
+// IndexStatsServers structure
+type IndexStatsServers struct {
+	All    int `json:"all"`
+	Online int `json:"online"`
 }
 
 // IndexStatsTime structure

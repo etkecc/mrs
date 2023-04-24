@@ -50,7 +50,7 @@ paths:
                 properties:
                   servers:
                     type: integer
-                    description: Count of known servers
+                    description: Count of all known servers
                     example: 3230
                   rooms:
                     type: integer
@@ -327,9 +327,16 @@ components:
       type: object
       properties:
         servers:
-          type: integer
-          description: amount of discovered servers
-          example: 123
+          type: object
+          properties:
+            all:
+              type: integer
+              description: amount of all discovered servers
+              example: 123
+            online:
+              type: integer
+              description: amount of discovered servers (online only)
+              example: 23
         rooms:
           type: integer
           description: amount of parsed rooms

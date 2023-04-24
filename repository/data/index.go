@@ -14,6 +14,7 @@ import (
 //nolint:errcheck
 func (d *Data) GetIndexStats() *model.IndexStats {
 	stats := &model.IndexStats{
+		Servers:   model.IndexStatsServers{},
 		Discovery: model.IndexStatsTime{},
 		Parsing:   model.IndexStatsTime{},
 		Indexing:  model.IndexStatsTime{},
@@ -22,6 +23,7 @@ func (d *Data) GetIndexStats() *model.IndexStats {
 		bucket := tx.Bucket(indexBucket)
 
 		serversBytes := bucket.Get([]byte("servers"))
+		serversOnlineBytes := bucket.Get([]byte("servers_online"))
 		roomsBytes := bucket.Get([]byte("rooms"))
 
 		discoveryStartedAt := bucket.Get([]byte("discovery_started_at"))
@@ -33,7 +35,8 @@ func (d *Data) GetIndexStats() *model.IndexStats {
 		indexStartedAt := bucket.Get([]byte("indexing_started_at"))
 		indexFinishedAt := bucket.Get([]byte("indexing_finished_at"))
 
-		stats.Servers, _ = strconv.Atoi(string(serversBytes))
+		stats.Servers.All, _ = strconv.Atoi(string(serversBytes))
+		stats.Servers.Online, _ = strconv.Atoi(string(serversOnlineBytes))
 		stats.Rooms, _ = strconv.Atoi(string(roomsBytes))
 		stats.Discovery.StartedAt, _ = time.Parse(time.RFC3339, string(discoveryStartedAt))
 		stats.Discovery.FinishedAt, _ = time.Parse(time.RFC3339, string(discoveryFinishedAt))
@@ -52,6 +55,14 @@ func (d *Data) SetIndexServers(servers int) error {
 	return d.db.Update(func(tx *bbolt.Tx) error {
 		value := []byte(strconv.Itoa(servers))
 		return tx.Bucket(indexBucket).Put([]byte("servers"), value)
+	})
+}
+
+// SetIndexOnlineServers sets count of discovered online servers
+func (d *Data) SetIndexOnlineServers(servers int) error {
+	return d.db.Update(func(tx *bbolt.Tx) error {
+		value := []byte(strconv.Itoa(servers))
+		return tx.Bucket(indexBucket).Put([]byte("servers_online"), value)
 	})
 }
 
