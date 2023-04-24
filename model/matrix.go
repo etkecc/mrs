@@ -2,11 +2,20 @@ package model
 
 import (
 	"strings"
+	"time"
 
 	"github.com/pemistahl/lingua-go"
 
 	"gitlab.com/etke.cc/mrs/api/utils"
 )
+
+// MatrixServer info
+type MatrixServer struct {
+	Name      string    `json:"name"`
+	URL       string    `json:"url"`
+	Online    bool      `json:"online"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
 
 // MatrixRoom from matrix client-server API
 type MatrixRoom struct {

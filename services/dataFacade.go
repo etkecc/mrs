@@ -8,7 +8,7 @@ import (
 )
 
 type dataMatrixService interface {
-	DiscoverServers(int)
+	DiscoverServers(int) error
 	AddServer(string) int
 	AllServers() map[string]string
 	ParseRooms(int) error
@@ -54,9 +54,9 @@ func NewDataFacade(
 func (df *DataFacade) DiscoverServers(workers int) {
 	log.Println("discovering matrix servers...")
 	df.stats.SetStartedAt("discovery", time.Now().UTC())
-	df.matrix.DiscoverServers(workers)
+	err := df.matrix.DiscoverServers(workers)
 	df.stats.SetFinishedAt("discovery", time.Now().UTC())
-	log.Println("servers discovery has been finished")
+	log.Println("servers discovery has been finished", err)
 
 	log.Println("collecting stats...")
 	df.stats.Collect()

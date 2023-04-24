@@ -14,6 +14,7 @@ import (
 	"github.com/xxjwxc/gowp/workpool"
 
 	"gitlab.com/etke.cc/mrs/api/model"
+	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
 type Matrix struct {
@@ -26,9 +27,11 @@ type Matrix struct {
 }
 
 type DataRepository interface {
-	AddServer(string, string) error
+	AddServer(*model.MatrixServer) error
 	GetServer(string) (string, error)
+	GetServerInfo(string) (*model.MatrixServer, error)
 	AllServers() map[string]string
+	AllOnlineServers() map[string]string
 	RemoveServer(string) error
 	AddRoom(string, *model.MatrixRoom) error
 	GetRoom(string) (*model.MatrixRoom, error)
@@ -85,39 +88,39 @@ func matrixClientCall(endpoint string) (*http.Response, error) {
 // DiscoverServers across federation and reject invalid ones
 //
 //nolint:gocognit // TODO
-func (m *Matrix) DiscoverServers(workers int) {
+func (m *Matrix) DiscoverServers(workers int) error {
 	if m.discovering {
 		log.Println("servers discovery already in progress, ignoring request")
-		return
+		return nil
 	}
 	m.discovering = true
 	defer func() { m.discovering = false }()
 
+	dataservers := utils.MapKeys(m.data.AllServers())
+	servers := utils.MergeSlices(dataservers, m.servers)
 	wp := workpool.New(workers)
-	for _, server := range m.servers {
+	for _, server := range servers {
 		name := server
 		wp.Do(func() error {
-			serverURL, err := m.data.GetServer(name)
-			if err != nil {
-				return err
+			server := &model.MatrixServer{
+				Name:      name,
+				Online:    true,
+				UpdatedAt: time.Now().UTC(),
 			}
-			if serverURL != "" {
-				return nil
+			server.URL = m.discoverServerWellKnown(name)
+			if server.URL != "" && m.validateDiscoveredServer(name, server.URL) {
+				return m.data.AddServer(server)
 			}
-
-			serverURL = m.discoverServerWellKnown(name)
-			if serverURL != "" && m.validateDiscoveredServer(name, serverURL) {
-				return m.data.AddServer(name, serverURL)
-			}
-			serverURL = m.discoverServerDirect(name)
-			if serverURL != "" && m.validateDiscoveredServer(name, serverURL) {
-				return m.data.AddServer(name, serverURL)
+			server.URL = m.discoverServerDirect(name)
+			if server.URL != "" && m.validateDiscoveredServer(name, server.URL) {
+				return m.data.AddServer(server)
 			}
 
-			return m.data.RemoveServer(name)
+			server.Online = false
+			return m.data.AddServer(server)
 		})
 	}
-	wp.Wait() //nolint:errcheck
+	return wp.Wait() //nolint:errcheck
 }
 
 // AddServers by name in bulk, intended for HTTP API
@@ -134,20 +137,28 @@ func (m *Matrix) AddServers(names []string, workers int) {
 				return nil
 			}
 
-			serverURL := m.discoverServerWellKnown(name)
-			if serverURL == "" {
-				serverURL = m.discoverServerDirect(name)
-			}
-			if serverURL == "" {
-				log.Println(name, "server not found")
-				return nil
-			}
-			if !m.validateDiscoveredServer(name, serverURL) {
-				log.Println(name, "server is not eligible")
-				return nil
+			server := &model.MatrixServer{
+				Name:      name,
+				Online:    true,
+				UpdatedAt: time.Now().UTC(),
 			}
 
-			err := m.data.AddServer(name, serverURL)
+			server.URL = m.discoverServerWellKnown(name)
+			if server.URL == "" {
+				server.URL = m.discoverServerDirect(name)
+			}
+			if server.URL == "" {
+				log.Println(name, "server not found")
+				server.Online = false
+				return m.data.AddServer(server)
+			}
+			if !m.validateDiscoveredServer(name, server.URL) {
+				log.Println(name, "server is not eligible")
+				server.Online = false
+				return m.data.AddServer(server)
+			}
+
+			err := m.data.AddServer(server)
 			if err != nil {
 				log.Println(name, "cannot add server", err)
 				return nil
@@ -167,18 +178,24 @@ func (m *Matrix) AddServer(name string) int {
 		return http.StatusAlreadyReported
 	}
 
-	serverURL := m.discoverServerWellKnown(name)
-	if serverURL == "" {
-		serverURL = m.discoverServerDirect(name)
+	server := &model.MatrixServer{
+		Name:      name,
+		Online:    true,
+		UpdatedAt: time.Now().UTC(),
 	}
-	if serverURL == "" {
+
+	server.URL = m.discoverServerWellKnown(name)
+	if server.URL == "" {
+		server.URL = m.discoverServerDirect(name)
+	}
+	if server.URL == "" {
 		return http.StatusUnprocessableEntity
 	}
-	if !m.validateDiscoveredServer(name, serverURL) {
+	if !m.validateDiscoveredServer(name, server.URL) {
 		return http.StatusUnprocessableEntity
 	}
 
-	err := m.data.AddServer(name, serverURL)
+	err := m.data.AddServer(server)
 	if err != nil {
 		log.Println(name, "cannot add server", err)
 		return http.StatusInternalServerError
@@ -201,7 +218,7 @@ func (m *Matrix) ParseRooms(workers int) error {
 	m.parsing = true
 	defer func() { m.parsing = false }()
 
-	servers := m.data.AllServers()
+	servers := m.data.AllOnlineServers()
 	wp := workpool.New(workers)
 	for srvName, srvURL := range servers {
 		name := srvName
