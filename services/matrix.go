@@ -120,6 +120,45 @@ func (m *Matrix) DiscoverServers(workers int) {
 	wp.Wait() //nolint:errcheck
 }
 
+// AddServers by name in bulk, intended for HTTP API
+//
+//nolint:gocognit // TODO
+func (m *Matrix) AddServers(names []string, workers int) {
+	wp := workpool.New(workers)
+	for _, server := range names {
+		name := server
+		wp.Do(func() error {
+			log.Println(name, "discovering...")
+			existingURL, _ := m.data.GetServer(name) //nolint:errcheck
+			if existingURL != "" {
+				return nil
+			}
+
+			serverURL := m.discoverServerWellKnown(name)
+			if serverURL == "" {
+				serverURL = m.discoverServerDirect(name)
+			}
+			if serverURL == "" {
+				log.Println(name, "server not found")
+				return nil
+			}
+			if !m.validateDiscoveredServer(name, serverURL) {
+				log.Println(name, "server is not eligible")
+				return nil
+			}
+
+			err := m.data.AddServer(name, serverURL)
+			if err != nil {
+				log.Println(name, "cannot add server", err)
+				return nil
+			}
+
+			return nil
+		})
+	}
+	wp.Wait() //nolint:errcheck
+}
+
 // AddServer by name, intended for HTTP API
 // returns http status code to send to the reporter
 func (m *Matrix) AddServer(name string) int {

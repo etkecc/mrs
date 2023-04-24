@@ -27,6 +27,7 @@ func ConfigureRouter(e *echo.Echo, cfg *config.Config, dataSvc dataService, cach
 	e.GET("/search/:q/:l", search(searchSvc, true))
 	e.GET("/search/:q/:l/:o", search(searchSvc, true))
 	e.GET("/search/:q/:l/:o/:s", search(searchSvc, true))
+	e.POST("/discover/bulk", addServers(matrixSvc, cfg.Workers.Discovery), discoveryAuth(cfg))
 	e.POST("/discover/:name", addServer(matrixSvc), discoveryProtection(cfg))
 
 	a := adminGroup(e, cfg)
@@ -61,16 +62,19 @@ func configureRouter(e *echo.Echo, cfg *config.Config, cacheSvc cacheService) {
 	})
 }
 
-// discoveryProtection rate limits anonymous requests, but allows authorized with basic auth requests
-func discoveryProtection(cfg *config.Config) echo.MiddlewareFunc {
-	rl := middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1))
-	auth := middleware.BasicAuth(func(login, password string, ctx echo.Context) (bool, error) {
+func discoveryAuth(cfg *config.Config) echo.MiddlewareFunc {
+	return middleware.BasicAuth(func(login, password string, ctx echo.Context) (bool, error) {
 		if login != cfg.Auth.Discovery.Login || password != cfg.Auth.Discovery.Password {
 			return false, nil
 		}
 		return true, nil
 	})
+}
 
+// discoveryProtection rate limits anonymous requests, but allows authorized with basic auth requests
+func discoveryProtection(cfg *config.Config) echo.MiddlewareFunc {
+	rl := middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1))
+	auth := discoveryAuth(cfg)
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			if len(c.Request().Header.Get(echo.HeaderAuthorization)) > 0 {

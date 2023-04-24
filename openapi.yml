@@ -56,6 +56,30 @@ paths:
                     type: integer
                     description: Count of parsed rooms
                     example: 3230
+  /discover/bulk:
+    post:
+      tags:
+        - public
+      summary: Add new servers in bulk
+      operationId: addServerBulk
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                description: server name / base domain
+                example: example.com
+      responses:
+        '202':
+          description: payload accepted
+        '401':
+          description: unauthorized (provided credentials are invalid)
+        '500':
+          description: something is wrong, check the logs
+      security:
+       - discovery:
   /discover/{server_name}:
     post:
       tags:

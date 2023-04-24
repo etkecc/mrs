@@ -16,6 +16,7 @@ type dataService interface {
 
 type matrixService interface {
 	AddServer(string) int
+	AddServers([]string, int)
 	AllServers() map[string]string
 }
 
