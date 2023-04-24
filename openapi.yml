@@ -61,6 +61,7 @@ paths:
       tags:
         - public
       summary: Add a new server
+      description: Add a new server. Without auth requests limited to 1 rps, with auth there is no such limitation
       operationId: addServer
       parameters:
         - name: server_name
@@ -75,12 +76,17 @@ paths:
           description: server has been added
         '208':
           description: server already discovered
+        '401':
+          description: unauthorized (provided credentials are invalid)
         '422':
           description: server is not discoverable, check troubleshooting section of readme
         '429':
           description: too many requests, slow down.
         '500':
           description: something is wrong, check the logs
+      security:
+       - {}
+       - discovery:
   /search:
     get:
       tags:
@@ -326,5 +332,8 @@ components:
           example: 2023-04-17T18:40:56Z
   securitySchemes:
     admin:
+      type: http
+      scheme: basic
+    discovery:
       type: http
       scheme: basic

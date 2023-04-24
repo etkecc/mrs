@@ -27,7 +27,7 @@ func ConfigureRouter(e *echo.Echo, cfg *config.Config, dataSvc dataService, cach
 	e.GET("/search/:q/:l", search(searchSvc, true))
 	e.GET("/search/:q/:l/:o", search(searchSvc, true))
 	e.GET("/search/:q/:l/:o/:s", search(searchSvc, true))
-	e.POST("/discover/:name", addServer(matrixSvc), middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1)))
+	e.POST("/discover/:name", addServer(matrixSvc), discoveryProtection(cfg))
 
 	a := adminGroup(e, cfg)
 	a.GET("/servers", servers(matrixSvc))
@@ -61,18 +61,38 @@ func configureRouter(e *echo.Echo, cfg *config.Config, cacheSvc cacheService) {
 	})
 }
 
+// discoveryProtection rate limits anonymous requests, but allows authorized with basic auth requests
+func discoveryProtection(cfg *config.Config) echo.MiddlewareFunc {
+	rl := middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1))
+	auth := middleware.BasicAuth(func(login, password string, ctx echo.Context) (bool, error) {
+		if login != cfg.Auth.Discovery.Login || password != cfg.Auth.Discovery.Password {
+			return false, nil
+		}
+		return true, nil
+	})
+
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			if len(c.Request().Header.Get(echo.HeaderAuthorization)) > 0 {
+				return auth(next)(c)
+			}
+			return rl(next)(c)
+		}
+	}
+}
+
 func adminGroup(e *echo.Echo, cfg *config.Config) *echo.Group {
 	admin := e.Group("-")
 	admin.Use(middleware.BasicAuth(func(login, password string, ctx echo.Context) (bool, error) {
-		if login != cfg.Admin.Login || password != cfg.Admin.Password {
+		if login != cfg.Auth.Admin.Login || password != cfg.Auth.Admin.Password {
 			return false, nil
 		}
-		if len(cfg.Admin.IPs) == 0 {
+		if len(cfg.Auth.Admin.IPs) == 0 {
 			return true, nil
 		}
 		var allowed bool
 		realIP := ctx.RealIP()
-		for _, ip := range cfg.Admin.IPs {
+		for _, ip := range cfg.Auth.Admin.IPs {
 			if ip == realIP {
 				allowed = true
 				break

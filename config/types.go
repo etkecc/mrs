@@ -7,7 +7,7 @@ type Config struct {
 	Port      string                `yaml:"port"`
 	Path      Paths                 `yaml:"path"`
 	Batch     Batch                 `yaml:"batch"`
-	Admin     Admin                 `yaml:"admin"`
+	Auth      Auth                  `yaml:"auth"`
 	Cron      Cron                  `yaml:"cron"`
 	CORS      middleware.CORSConfig `yaml:"cors"`
 	Cache     Cache                 `yaml:"cache"`
@@ -28,11 +28,23 @@ type CacheBunny struct {
 	Key string `yaml:"key"`
 }
 
-// Admin config
-type Admin struct {
+// Auth config
+type Auth struct {
+	Admin     AuthAdmin     `yaml:"admin"`
+	Discovery AuthDiscovery `yaml:"discovery"`
+}
+
+// AuthAdmin config
+type AuthAdmin struct {
 	Login    string   `yaml:"login"`
 	Password string   `yaml:"password"`
 	IPs      []string `yaml:"ips"`
+}
+
+// AuthDiscovery config
+type AuthDiscovery struct {
+	Login    string `yaml:"login"`
+	Password string `yaml:"password"`
 }
 
 // Cron config
