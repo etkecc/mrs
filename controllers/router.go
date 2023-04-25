@@ -20,7 +20,7 @@ type cacheService interface {
 
 // ConfigureRouter configures echo router
 func ConfigureRouter(e *echo.Echo, cfg *config.Config, dataSvc dataService, cacheSvc cacheService, searchSvc searchService, matrixSvc matrixService, statsSvc statsService) {
-	configureRouter(e, cfg, cacheSvc)
+	configureRouter(e, cacheSvc)
 	e.GET("/stats", stats(statsSvc))
 	e.GET("/search", search(searchSvc, false))
 	e.GET("/search/:q", search(searchSvc, true))
@@ -39,7 +39,7 @@ func ConfigureRouter(e *echo.Echo, cfg *config.Config, dataSvc dataService, cach
 	a.POST("/full", full(dataSvc, cfg.Workers.Discovery, cfg.Workers.Parsing))
 }
 
-func configureRouter(e *echo.Echo, cfg *config.Config, cacheSvc cacheService) {
+func configureRouter(e *echo.Echo, cacheSvc cacheService) {
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Skipper: func(c echo.Context) bool {
 			return c.Request().URL.Path == "/_health"
@@ -48,7 +48,6 @@ func configureRouter(e *echo.Echo, cfg *config.Config, cacheSvc cacheService) {
 		CustomTimeFormat: "2/Jan/2006:15:04:05 -0700",
 	}))
 	e.Use(middleware.Recover())
-	e.Use(middleware.CORSWithConfig(cfg.CORS))
 	e.Use(cacheSvc.Middleware())
 	e.Use(middleware.Secure())
 	e.HideBanner = true
