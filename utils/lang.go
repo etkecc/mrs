@@ -18,5 +18,9 @@ func DetectLanguage(detector lingua.LanguageDetector, text string) (string, floa
 		}
 	}
 
+	if confidence < 0.8 {
+		return "-", 0
+	}
+
 	return lang.IsoCode639_1().String(), confidence
 }
