@@ -111,6 +111,49 @@ paths:
       security:
        - {}
        - discovery:
+  /avatar/{server_name}/{media_id}:
+    get:
+      tags:
+        - public
+      summary: Get room avatar
+      operationId: avatar
+      parameters:
+        - name: server_name
+          in: path
+          description: server name to get avatar from
+          required: true
+          schema:
+            type: string
+            example: example.com
+        - name: media_id
+          in: path
+          description: media ID of the avatar
+          required: true
+          schema:
+            type: string
+            example: tiHQGISntgETFKWJvQWUhUBw
+      responses:
+        '200':
+          description: successful operation
+          content:
+            'image/jpeg':
+              schema:
+                type: string
+                format: binary
+            'image/png':
+              schema:
+                type: string
+                format: binary
+            'image/webp':
+              schema:
+                type: string
+                format: binary
+            'image/...':
+              schema:
+                type: string
+                format: binary
+        '204':
+          description: no results found.
   /search:
     get:
       tags:

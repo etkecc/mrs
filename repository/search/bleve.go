@@ -48,9 +48,7 @@ var (
 	}
 )
 
-func getIndexMapping(detector lingua.LanguageDetector, defaultLang string) mapping.IndexMapping {
-	multilang.Register(detector, defaultLang)
-
+func getIndexMapping() mapping.IndexMapping {
 	m := bleve.NewIndexMapping()
 	m.TypeField = "type"
 	m.DefaultType = "room"
@@ -94,21 +92,15 @@ func getIndexMapping(detector lingua.LanguageDetector, defaultLang string) mappi
 	return m
 }
 
-// OpenIndex opens existing index file
-func OpenIndex(path string) (*Index, error) {
+// NewIndex creates or opens an index
+func NewIndex(path string, detector lingua.LanguageDetector, defaultLang string) (*Index, error) {
+	multilang.Register(detector, defaultLang)
 	index, err := bleve.Open(path)
 	if err != nil {
-		return nil, err
-	}
-
-	return &Index{index}, err
-}
-
-// NewIndex creates a new empty index file
-func NewIndex(path string, detector lingua.LanguageDetector, defaultLang string) (*Index, error) {
-	index, err := bleve.New(path, getIndexMapping(detector, defaultLang))
-	if err != nil {
-		return nil, err
+		index, err = bleve.New(path, getIndexMapping())
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &Index{index}, err

@@ -47,10 +47,13 @@ func main() {
 	}
 
 	detector := getLanguageDetector(cfg.Languages)
-	index = createOrOpenIndex(cfg.Path.Index, detector, "en")
+	index, err = search.NewIndex(cfg.Path.Index, detector, "en")
+	if err != nil {
+		log.Panic(err)
+	}
 	indexSvc := services.NewIndex(index, dataRepo, cfg.Batch.Rooms)
 	searchSvc := services.NewSearch(index)
-	matrixSvc := services.NewMatrix(cfg.Servers, dataRepo, detector)
+	matrixSvc := services.NewMatrix(cfg.Servers, cfg.PublicURL, dataRepo, detector)
 	statsSvc := services.NewStats(dataRepo)
 	cacheSvc := services.NewCache(cfg.Cache.MaxAge, cfg.Cache.Bunny.URL, cfg.Cache.Bunny.Key, statsSvc)
 	dataSvc := services.NewDataFacade(matrixSvc, indexSvc, statsSvc, cacheSvc)
@@ -66,18 +69,6 @@ func main() {
 	}
 
 	<-quit
-}
-
-func createOrOpenIndex(indexPath string, detector lingua.LanguageDetector, defaultLang string) *search.Index {
-	searchIndex, err := search.OpenIndex(indexPath)
-	if err == nil {
-		return searchIndex
-	}
-	searchIndex, err = search.NewIndex(indexPath, detector, defaultLang)
-	if err != nil {
-		log.Panic(err)
-	}
-	return searchIndex
 }
 
 func getLanguageDetector(inputLangs []string) lingua.LanguageDetector {

@@ -1,6 +1,7 @@
 package model
 
 import (
+	"path"
 	"strings"
 	"time"
 
@@ -49,10 +50,11 @@ func (r *MatrixRoom) Entry() *Entry {
 }
 
 // Parse matrix room info to prepare custom fields
-func (r *MatrixRoom) Parse(detector lingua.LanguageDetector, serverURL string) {
+func (r *MatrixRoom) Parse(detector lingua.LanguageDetector, mrsPublicURL string) {
+	r.Topic = utils.Truncate(r.Topic, 200)
 	r.parseServer()
 	r.parseLanguage(detector)
-	r.parseAvatar(serverURL)
+	r.parseAvatar(mrsPublicURL)
 }
 
 // parseServer from room ID
@@ -80,7 +82,7 @@ func (r *MatrixRoom) parseLanguage(detector lingua.LanguageDetector) {
 }
 
 // parseAvatar builds HTTP URL to access room avatar
-func (r *MatrixRoom) parseAvatar(serverURL string) {
+func (r *MatrixRoom) parseAvatar(mrsPublicURL string) {
 	if r.Avatar == "" {
 		return
 	}
@@ -88,5 +90,5 @@ func (r *MatrixRoom) parseAvatar(serverURL string) {
 	if len(parts) != 2 {
 		return
 	}
-	r.AvatarURL = serverURL + "/_matrix/media/v3/download/" + parts[0] + "/" + parts[1]
+	r.AvatarURL = path.Join(mrsPublicURL, "/avatar", parts[0], parts[1])
 }

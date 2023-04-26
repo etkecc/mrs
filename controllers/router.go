@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -16,12 +17,14 @@ type statsService interface {
 
 type cacheService interface {
 	Middleware() echo.MiddlewareFunc
+	MiddlewareImmutable() echo.MiddlewareFunc
 }
 
 // ConfigureRouter configures echo router
 func ConfigureRouter(e *echo.Echo, cfg *config.Config, dataSvc dataService, cacheSvc cacheService, searchSvc searchService, matrixSvc matrixService, statsSvc statsService) {
 	configureRouter(e, cacheSvc)
 	e.GET("/stats", stats(statsSvc))
+	e.GET("/avatar/:name/:id", avatar(matrixSvc), middleware.RateLimiter(middleware.NewRateLimiterMemoryStoreWithConfig(middleware.RateLimiterMemoryStoreConfig{Rate: 30, Burst: 30, ExpiresIn: 5 * time.Minute})), cacheSvc.MiddlewareImmutable())
 	e.GET("/search", search(searchSvc, false))
 	e.GET("/search/:q", search(searchSvc, true))
 	e.GET("/search/:q/:l", search(searchSvc, true))

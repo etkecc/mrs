@@ -3,6 +3,7 @@ package config
 // Config structure
 type Config struct {
 	Port      string   `yaml:"port"`
+	PublicURL string   `yaml:"public_url"`
 	Path      Paths    `yaml:"path"`
 	Batch     Batch    `yaml:"batch"`
 	Auth      Auth     `yaml:"auth"`

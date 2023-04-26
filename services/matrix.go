@@ -19,6 +19,7 @@ import (
 
 type Matrix struct {
 	servers     []string
+	publicURL   string
 	parsing     bool
 	discovering bool
 	eachrooming bool
@@ -37,6 +38,8 @@ type DataRepository interface {
 	GetRoom(string) (*model.MatrixRoom, error)
 	EachRoom(func(string, *model.MatrixRoom))
 }
+
+var matrixMediaFallbacks = []string{"https://matrix-client.matrix.org"}
 
 var matrixClient = &http.Client{
 	Timeout: 60 * time.Second,
@@ -66,11 +69,12 @@ type matrixRoomsResp struct {
 }
 
 // NewMatrix service
-func NewMatrix(servers []string, data DataRepository, detector lingua.LanguageDetector) *Matrix {
+func NewMatrix(servers []string, publicURL string, data DataRepository, detector lingua.LanguageDetector) *Matrix {
 	return &Matrix{
-		servers:  servers,
-		data:     data,
-		detector: detector,
+		publicURL: publicURL,
+		servers:   servers,
+		data:      data,
+		detector:  detector,
 	}
 }
 
@@ -244,6 +248,51 @@ func (m *Matrix) EachRoom(handler func(roomID string, data *model.MatrixRoom)) {
 	m.data.EachRoom(handler)
 }
 
+// getMediaServers returns list of HTTP urls of the same media ID.
+// that list contains the requested server plus fallback media servers
+func (m *Matrix) getMediaURLs(serverName, mediaID string) []string {
+	urls := make([]string, 0, len(matrixMediaFallbacks)+1)
+	for _, serverURL := range matrixMediaFallbacks {
+		urls = append(urls, serverURL+"/_matrix/media/v3/download/"+serverName+"/"+mediaID)
+	}
+	serverURL, err := m.data.GetServer(serverName)
+	if err != nil && serverURL != "" {
+		urls = append(urls, serverURL+"/_matrix/media/v3/download/"+serverName+"/"+mediaID)
+	}
+
+	return urls
+}
+
+func (m *Matrix) GetAvatar(serverName string, mediaID string) (io.ReadCloser, string) {
+	datachan := make(chan map[string]io.ReadCloser, 1)
+	for _, avatarURL := range m.getMediaURLs(serverName, mediaID) {
+		go func(datachan chan map[string]io.ReadCloser, avatarURL string) {
+			select {
+			case <-datachan:
+				return
+			default:
+				resp, err := http.Get(avatarURL)
+				if err != nil {
+					return
+				}
+				if resp.StatusCode != http.StatusOK {
+					return
+				}
+				datachan <- map[string]io.ReadCloser{
+					resp.Header.Get("Content-Type"): resp.Body,
+				}
+			}
+		}(datachan, avatarURL)
+	}
+
+	for contentType, avatar := range <-datachan {
+		close(datachan)
+		return avatar, contentType
+	}
+
+	return nil, ""
+}
+
 func (m *Matrix) parseServerRooms(name, serverURL string) {
 	ch := make(chan *model.MatrixRoom)
 	go m.getPublicRooms(name, serverURL, ch)
@@ -346,7 +395,7 @@ func (m *Matrix) getPublicRooms(name, serverURL string, ch chan *model.MatrixRoo
 
 		start := time.Now()
 		for _, room := range resp.Chunk {
-			room.Parse(m.detector, serverURL)
+			room.Parse(m.detector, m.publicURL)
 			ch <- room
 		}
 		log.Println(name, "added", len(resp.Chunk), "rooms (", added, "of", resp.Total, ") took", time.Since(start))

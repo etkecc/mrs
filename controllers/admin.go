@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"io"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -18,6 +19,7 @@ type matrixService interface {
 	AddServer(string) int
 	AddServers([]string, int)
 	AllServers() map[string]string
+	GetAvatar(string, string) (io.ReadCloser, string)
 }
 
 func servers(matrix matrixService) echo.HandlerFunc {

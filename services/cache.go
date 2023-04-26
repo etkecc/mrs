@@ -10,6 +10,9 @@ import (
 	"gitlab.com/etke.cc/mrs/api/model"
 )
 
+// MaxCacheAge to be used on immutable resources
+const MaxCacheAge = "31536000"
+
 type cacheStats interface {
 	Get() *model.IndexStats
 }
@@ -57,6 +60,26 @@ func (cache *Cache) Middleware() echo.MiddlewareFunc {
 			if c.Request().URL.Path != "/search" {
 				resp.Header().Set("Last-Modified", lastModified)
 			}
+			return next(c)
+		}
+	}
+}
+
+// MiddlewareImmutable returns echo middleware with immutable in cache-control
+func (cache *Cache) MiddlewareImmutable() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			if c.Request().Method != http.MethodGet {
+				return next(c)
+			}
+
+			if c.Request().Header.Get("if-modified-since") != "" {
+				return c.NoContent(http.StatusNotModified)
+			}
+
+			resp := c.Response()
+			resp.Header().Del("Last-Modified")
+			resp.Header().Set("Cache-Control", "max-age="+MaxCacheAge+", immutable")
 			return next(c)
 		}
 	}
