@@ -6,7 +6,9 @@ import (
 	"github.com/blevesearch/bleve/v2"
 	"github.com/blevesearch/bleve/v2/analysis/analyzer/custom"
 	regexp_char_filter "github.com/blevesearch/bleve/v2/analysis/char/regexp"
+	"github.com/blevesearch/bleve/v2/analysis/lang/en"
 	"github.com/blevesearch/bleve/v2/analysis/tokenizer/letter"
+	"github.com/blevesearch/bleve/v2/analysis/tokenizer/unicode"
 	"github.com/blevesearch/bleve/v2/mapping"
 )
 
@@ -20,14 +22,25 @@ var (
 		"replace": ` `,
 		"type":    regexp_char_filter.Name,
 	}
-	analyzer = map[string]interface{}{
+	analyzerID = map[string]interface{}{
 		"type": custom.Name,
 		"char_filters": []interface{}{
-			`matrixchars`,
+			`matrix_chars`,
 		},
 		"tokenizer": letter.Name,
 		"token_filters": []interface{}{
 			`to_lower`,
+		},
+	}
+	analyzerAlias = map[string]interface{}{
+		"type": custom.Name,
+		"char_filters": []interface{}{
+			`matrix_chars`,
+		},
+		"tokenizer": unicode.Name,
+		"token_filters": []interface{}{
+			`to_lower`,
+			en.StopName,
 		},
 	}
 )
@@ -36,26 +49,33 @@ func getIndexMapping() mapping.IndexMapping {
 	m := bleve.NewIndexMapping()
 	m.TypeField = "type"
 	m.DefaultType = "room"
-	err := m.AddCustomCharFilter("matrixchars", charfilter)
+	err := m.AddCustomCharFilter("matrix_chars", charfilter)
 	if err != nil {
 		log.Println("index", "cannot create custom char filter", err)
 	}
 
-	err = m.AddCustomAnalyzer("matrixuris", analyzer)
+	err = m.AddCustomAnalyzer("matrix_id", analyzerID)
 	if err != nil {
-		log.Println("index", "cannot create custom analyzer", err)
+		log.Println("index", "cannot create matrix_id analyzer", err)
+	}
+
+	err = m.AddCustomAnalyzer("matrix_alias", analyzerAlias)
+	if err != nil {
+		log.Println("index", "cannot create matrix_alias analyzer", err)
 	}
 
 	textFM := bleve.NewTextFieldMapping()
 	keywordFM := bleve.NewKeywordFieldMapping()
 	numericFM := bleve.NewNumericFieldMapping()
-	matrixURIFM := bleve.NewTextFieldMapping()
-	matrixURIFM.Analyzer = "matrixuris"
+	matrixIDFM := bleve.NewTextFieldMapping()
+	matrixIDFM.Analyzer = "matrix_id"
+	matrixAliasFM := bleve.NewTextFieldMapping()
+	matrixAliasFM.Analyzer = "matrix_alias"
 
 	r := bleve.NewDocumentMapping()
-	r.AddFieldMappingsAt("id", matrixURIFM)
+	r.AddFieldMappingsAt("id", matrixIDFM)
 	r.AddFieldMappingsAt("type", keywordFM)
-	r.AddFieldMappingsAt("alias", matrixURIFM)
+	r.AddFieldMappingsAt("alias", matrixAliasFM)
 	r.AddFieldMappingsAt("name", textFM)
 	r.AddFieldMappingsAt("topic", textFM)
 	r.AddFieldMappingsAt("avatar", keywordFM)
