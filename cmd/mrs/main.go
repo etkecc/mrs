@@ -46,8 +46,8 @@ func main() {
 		log.Panic(err)
 	}
 
-	index = createOrOpenIndex(cfg.Path.Index)
 	detector := getLanguageDetector(cfg.Languages)
+	index = createOrOpenIndex(cfg.Path.Index, detector, "en")
 	indexSvc := services.NewIndex(index, dataRepo, cfg.Batch.Rooms)
 	searchSvc := services.NewSearch(index)
 	matrixSvc := services.NewMatrix(cfg.Servers, dataRepo, detector)
@@ -68,12 +68,12 @@ func main() {
 	<-quit
 }
 
-func createOrOpenIndex(indexPath string) *search.Index {
+func createOrOpenIndex(indexPath string, detector lingua.LanguageDetector, defaultLang string) *search.Index {
 	searchIndex, err := search.OpenIndex(indexPath)
 	if err == nil {
 		return searchIndex
 	}
-	searchIndex, err = search.NewIndex(indexPath)
+	searchIndex, err = search.NewIndex(indexPath, detector, defaultLang)
 	if err != nil {
 		log.Panic(err)
 	}

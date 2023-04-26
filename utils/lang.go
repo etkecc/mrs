@@ -2,11 +2,13 @@ package utils
 
 import "github.com/pemistahl/lingua-go"
 
+const UnknownLang = "-"
+
 // DetectLanguage and return it's ISO 639-1 code and confidence
 func DetectLanguage(detector lingua.LanguageDetector, text string) (string, float64) {
 	cvs := detector.ComputeLanguageConfidenceValues(text)
 	if len(cvs) == 0 {
-		return "-", 0
+		return UnknownLang, 0
 	}
 
 	var lang lingua.Language
@@ -19,7 +21,7 @@ func DetectLanguage(detector lingua.LanguageDetector, text string) (string, floa
 	}
 
 	if confidence < 0.8 {
-		return "-", 0
+		return UnknownLang, 0
 	}
 
 	return lang.IsoCode639_1().String(), confidence

@@ -10,6 +10,9 @@ import (
 	"github.com/blevesearch/bleve/v2/analysis/tokenizer/letter"
 	"github.com/blevesearch/bleve/v2/analysis/tokenizer/unicode"
 	"github.com/blevesearch/bleve/v2/mapping"
+	"github.com/pemistahl/lingua-go"
+
+	"gitlab.com/etke.cc/mrs/api/repository/search/multilang"
 )
 
 type Index struct {
@@ -45,7 +48,9 @@ var (
 	}
 )
 
-func getIndexMapping() mapping.IndexMapping {
+func getIndexMapping(detector lingua.LanguageDetector, defaultLang string) mapping.IndexMapping {
+	multilang.Register(detector, defaultLang)
+
 	m := bleve.NewIndexMapping()
 	m.TypeField = "type"
 	m.DefaultType = "room"
@@ -65,6 +70,7 @@ func getIndexMapping() mapping.IndexMapping {
 	}
 
 	textFM := bleve.NewTextFieldMapping()
+	textFM.Analyzer = multilang.Name
 	keywordFM := bleve.NewKeywordFieldMapping()
 	numericFM := bleve.NewNumericFieldMapping()
 	matrixIDFM := bleve.NewTextFieldMapping()
@@ -99,8 +105,8 @@ func OpenIndex(path string) (*Index, error) {
 }
 
 // NewIndex creates a new empty index file
-func NewIndex(path string) (*Index, error) {
-	index, err := bleve.New(path, getIndexMapping())
+func NewIndex(path string, detector lingua.LanguageDetector, defaultLang string) (*Index, error) {
+	index, err := bleve.New(path, getIndexMapping(detector, defaultLang))
 	if err != nil {
 		return nil, err
 	}
