@@ -1,6 +1,7 @@
 package services
 
 import (
+	"bytes"
 	"log"
 	"net/http"
 	"strconv"
@@ -25,8 +26,9 @@ type Cache struct {
 }
 
 type cacheBunny struct {
-	url string
-	key string
+	enabled bool
+	url     string
+	key     string
 }
 
 // NewCache service
@@ -35,8 +37,9 @@ func NewCache(maxAge int, bunnyURL string, bunnyKey string, stats cacheStats) *C
 		maxAge: strconv.Itoa(maxAge),
 		stats:  stats,
 		bunny: cacheBunny{
-			url: bunnyURL,
-			key: bunnyKey,
+			enabled: bunnyURL != "" && bunnyKey != "",
+			url:     bunnyURL,
+			key:     bunnyKey,
 		},
 	}
 }
@@ -57,6 +60,9 @@ func (cache *Cache) Middleware() echo.MiddlewareFunc {
 
 			resp := c.Response()
 			resp.Header().Set("Cache-Control", "max-age="+cache.maxAge+", public")
+			if cache.bunny.enabled {
+				resp.Header().Set("CDN-Tag", "mutable")
+			}
 			if c.Request().URL.Path != "/search" {
 				resp.Header().Set("Last-Modified", lastModified)
 			}
@@ -79,6 +85,9 @@ func (cache *Cache) MiddlewareImmutable() echo.MiddlewareFunc {
 
 			resp := c.Response()
 			resp.Header().Del("Last-Modified")
+			if cache.bunny.enabled {
+				resp.Header().Set("CDN-Tag", "immutable")
+			}
 			resp.Header().Set("Cache-Control", "max-age="+MaxCacheAge+", immutable")
 			return next(c)
 		}
@@ -93,10 +102,10 @@ func (cache *Cache) Purge() {
 // purgeBunnyCDN cache
 // ref: https://docs.bunny.net/reference/pullzonepublic_purgecachepostbytag
 func (cache *Cache) purgeBunnyCDN() {
-	if cache.bunny.url == "" || cache.bunny.key == "" {
+	if !cache.bunny.enabled {
 		return
 	}
-	req, err := http.NewRequest("POST", cache.bunny.url, nil)
+	req, err := http.NewRequest("POST", cache.bunny.url, bytes.NewBuffer([]byte(`{"CacheTag":"mutable"}}`)))
 	if err != nil {
 		log.Println("cannot purge bunny cache", err)
 		return
