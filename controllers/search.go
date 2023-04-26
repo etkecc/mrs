@@ -15,7 +15,7 @@ type searchService interface {
 const (
 	DefaultSearchLimit  = 10
 	DefaultSearchOffset = 0
-	DefaultSearchSortBy = "-_score,-members"
+	DefaultSearchSortBy = "-members,-_score"
 )
 
 func search(svc searchService, path bool) echo.HandlerFunc {
