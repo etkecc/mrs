@@ -1,7 +1,7 @@
 package model
 
 import (
-	"path"
+	"net/url"
 	"strings"
 	"time"
 
@@ -90,5 +90,9 @@ func (r *MatrixRoom) parseAvatar(mrsPublicURL string) {
 	if len(parts) != 2 {
 		return
 	}
-	r.AvatarURL = path.Join(mrsPublicURL, "/avatar", parts[0], parts[1])
+	base, err := url.Parse(mrsPublicURL)
+	if err != nil {
+		return
+	}
+	r.AvatarURL = base.JoinPath("/avatar", parts[0], parts[1]).String()
 }
