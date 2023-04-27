@@ -246,6 +246,76 @@ paths:
                   $ref: '#/components/schemas/Entry'
         '204':
           description: no results found.
+  /mod/report/{room_id}:
+    post:
+      tags:
+        - public
+        - moderation
+      summary: Report a room
+      operationId: mod_report
+      parameters:
+        - name: room_id
+          in: path
+          description: room ID
+          required: true
+          schema:
+            type: string
+            example: '!randomString:example.com'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Report reason
+                  example: CSAM
+      responses:
+        '202':
+          description: successful operation
+        '429':
+          description: too many requests
+  /mod/ban/{room_id}:
+    get:
+      tags:
+        - private
+        - moderation
+      description: Ban a room (erase from search index)
+      operationId: mod_ban
+      parameters:
+        - name: room_id
+          in: path
+          description: room ID
+          required: true
+          schema:
+            type: string
+            example: '!randomString:example.com'
+      responses:
+        '201':
+          description: successful operation
+      security:
+       - moderation:
+  /mod/unban/{room_id}:
+    get:
+      tags:
+        - private
+        - moderation
+      description: Unban a room (it won't be available in the search index until next reindex!)
+      operationId: mod_unban
+      parameters:
+        - name: room_id
+          in: path
+          description: room ID
+          required: true
+          schema:
+            type: string
+            example: '!randomString:example.com'
+      responses:
+        '202':
+          description: successful operation
+      security:
+       - moderation:
   /-/status:
     get:
       tags:
@@ -409,5 +479,8 @@ components:
       type: http
       scheme: basic
     discovery:
+      type: http
+      scheme: basic
+    moderation:
       type: http
       scheme: basic

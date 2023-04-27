@@ -37,6 +37,8 @@ type DataRepository interface {
 	AddRoom(string, *model.MatrixRoom) error
 	GetRoom(string) (*model.MatrixRoom, error)
 	EachRoom(func(string, *model.MatrixRoom))
+	BanRoom(string) error
+	UnbanRoom(string) error
 }
 
 var matrixMediaFallbacks = []string{"https://matrix-client.matrix.org"}

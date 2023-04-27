@@ -21,8 +21,19 @@ type cacheService interface {
 }
 
 // ConfigureRouter configures echo router
-func ConfigureRouter(e *echo.Echo, cfg *config.Config, dataSvc dataService, cacheSvc cacheService, searchSvc searchService, matrixSvc matrixService, statsSvc statsService) {
+func ConfigureRouter(
+	e *echo.Echo,
+	cfg *config.Config,
+	dataSvc dataService,
+	cacheSvc cacheService,
+	searchSvc searchService,
+	matrixSvc matrixService,
+	statsSvc statsService,
+	modSvc moderationService,
+) {
 	configureRouter(e, cacheSvc)
+	rl := middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1))
+
 	e.GET("/stats", stats(statsSvc))
 	e.GET("/avatar/:name/:id", avatar(matrixSvc), middleware.RateLimiter(middleware.NewRateLimiterMemoryStoreWithConfig(middleware.RateLimiterMemoryStoreConfig{Rate: 30, Burst: 30, ExpiresIn: 5 * time.Minute})), cacheSvc.MiddlewareImmutable())
 	e.GET("/search", search(searchSvc, false))
@@ -31,7 +42,12 @@ func ConfigureRouter(e *echo.Echo, cfg *config.Config, dataSvc dataService, cach
 	e.GET("/search/:q/:l/:o", search(searchSvc, true))
 	e.GET("/search/:q/:l/:o/:s", search(searchSvc, true))
 	e.POST("/discover/bulk", addServers(matrixSvc, cfg.Workers.Discovery), discoveryAuth(cfg))
-	e.POST("/discover/:name", addServer(matrixSvc), discoveryProtection(cfg))
+	e.POST("/discover/:name", addServer(matrixSvc), discoveryProtection(rl, cfg))
+
+	e.POST("/mod/report/:room_id", report(modSvc), rl) // doesn't use mod group to allow without auth
+	m := modGroup(e, cfg)
+	m.GET("/ban/:room_id", ban(modSvc), rl)
+	m.GET("/unban/:room_id", unban(modSvc), rl)
 
 	a := adminGroup(e, cfg)
 	a.GET("/servers", servers(matrixSvc))
@@ -74,8 +90,7 @@ func discoveryAuth(cfg *config.Config) echo.MiddlewareFunc {
 }
 
 // discoveryProtection rate limits anonymous requests, but allows authorized with basic auth requests
-func discoveryProtection(cfg *config.Config) echo.MiddlewareFunc {
-	rl := middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1))
+func discoveryProtection(rl echo.MiddlewareFunc, cfg *config.Config) echo.MiddlewareFunc {
 	auth := discoveryAuth(cfg)
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
@@ -112,4 +127,15 @@ func adminGroup(e *echo.Echo, cfg *config.Config) *echo.Group {
 		return false, nil
 	}))
 	return admin
+}
+
+func modGroup(e *echo.Echo, cfg *config.Config) *echo.Group {
+	mod := e.Group("mod")
+	mod.Use(middleware.BasicAuth(func(login, password string, ctx echo.Context) (bool, error) {
+		if login != cfg.Auth.Moderation.Login || password != cfg.Auth.Moderation.Password {
+			return false, nil
+		}
+		return true, nil
+	}))
+	return mod
 }

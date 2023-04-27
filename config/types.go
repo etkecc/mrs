@@ -2,16 +2,17 @@ package config
 
 // Config structure
 type Config struct {
-	Port      string   `yaml:"port"`
-	PublicURL string   `yaml:"public_url"`
-	Path      Paths    `yaml:"path"`
-	Batch     Batch    `yaml:"batch"`
-	Auth      Auth     `yaml:"auth"`
-	Cron      Cron     `yaml:"cron"`
-	Cache     Cache    `yaml:"cache"`
-	Workers   Workers  `yaml:"workers"`
-	Languages []string `yaml:"languages"`
-	Servers   []string `yaml:"servers"`
+	Port       string     `yaml:"port"`
+	PublicURL  string     `yaml:"public_url"`
+	Path       Paths      `yaml:"path"`
+	Batch      Batch      `yaml:"batch"`
+	Auth       Auth       `yaml:"auth"`
+	Cron       Cron       `yaml:"cron"`
+	Cache      Cache      `yaml:"cache"`
+	Workers    Workers    `yaml:"workers"`
+	Moderation Moderation `yaml:"moderation"`
+	Languages  []string   `yaml:"languages"`
+	Servers    []string   `yaml:"servers"`
 }
 
 // Cache config
@@ -28,8 +29,15 @@ type CacheBunny struct {
 
 // Auth config
 type Auth struct {
-	Admin     AuthAdmin     `yaml:"admin"`
-	Discovery AuthDiscovery `yaml:"discovery"`
+	Admin      AuthAdmin `yaml:"admin"`
+	Discovery  AuthItem  `yaml:"discovery"`
+	Moderation AuthItem  `yaml:"moderation"`
+}
+
+// AuthItem config (generic)
+type AuthItem struct {
+	Login    string `yaml:"login"`
+	Password string `yaml:"password"`
 }
 
 // AuthAdmin config
@@ -39,10 +47,9 @@ type AuthAdmin struct {
 	IPs      []string `yaml:"ips"`
 }
 
-// AuthDiscovery config
-type AuthDiscovery struct {
-	Login    string `yaml:"login"`
-	Password string `yaml:"password"`
+// Moderation config
+type Moderation struct {
+	Webhook string `json:"webhook"`
 }
 
 // Cron config

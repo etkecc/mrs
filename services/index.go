@@ -20,6 +20,7 @@ type Index struct {
 
 type IndexRepository interface {
 	Index(roomID string, data *model.Entry) error
+	Delete(roomID string) error
 	IndexBatch(*bleve.Batch) error
 	NewBatch() *bleve.Batch
 }

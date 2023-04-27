@@ -48,9 +48,27 @@ func (d *Data) EachRoom(handler func(roomID string, data *model.MatrixRoom)) {
 			if err != nil {
 				return err
 			}
+			// ignore banned rooms
+			if tx.Bucket(roomsBanlistBucket).Get(k) != nil {
+				return nil
+			}
 
 			handler(string(k), room)
 			return nil
 		})
+	})
+}
+
+// BanRoom
+func (d *Data) BanRoom(roomID string) error {
+	return d.db.Batch(func(tx *bbolt.Tx) error {
+		return tx.Bucket(roomsBanlistBucket).Put([]byte(roomID), []byte(`true`))
+	})
+}
+
+// UnbanRoom
+func (d *Data) UnbanRoom(roomID string) error {
+	return d.db.Batch(func(tx *bbolt.Tx) error {
+		return tx.Bucket(roomsBanlistBucket).Delete([]byte(roomID))
 	})
 }
