@@ -51,7 +51,7 @@ func (r *MatrixRoom) Entry() *Entry {
 
 // Parse matrix room info to prepare custom fields
 func (r *MatrixRoom) Parse(detector lingua.LanguageDetector, mrsPublicURL string) {
-	r.Topic = utils.Truncate(r.Topic, 200)
+	r.Topic = utils.Truncate(r.Topic, 400)
 	r.parseServer()
 	r.parseLanguage(detector)
 	r.parseAvatar(mrsPublicURL)
