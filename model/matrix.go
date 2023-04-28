@@ -10,6 +10,9 @@ import (
 	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
+// MatrixPreviewURL used for room previews
+var MatrixPreviewURL, _ = url.Parse("https://view.matrix.org") //nolint:errcheck // must parse
+
 // MatrixServer info
 type MatrixServer struct {
 	Name      string    `json:"name"`
@@ -28,33 +31,36 @@ type MatrixRoom struct {
 	Members int    `json:"num_joined_members"`
 
 	// Parsed (custom) fields
-	Server    string `json:"server"`
-	Language  string `json:"language"`
-	AvatarURL string `json:"avatar_url_http"`
+	Server     string `json:"server"`
+	Language   string `json:"language"`
+	PreviewURL string `json:"preview_url"`
+	AvatarURL  string `json:"avatar_url_http"`
 }
 
 // Entry converts matrix room to search entry
 func (r *MatrixRoom) Entry() *Entry {
 	return &Entry{
-		ID:        r.ID,
-		Type:      "room",
-		Alias:     r.Alias,
-		Name:      r.Name,
-		Topic:     r.Topic,
-		Avatar:    r.Avatar,
-		Server:    r.Server,
-		Members:   r.Members,
-		Language:  r.Language,
-		AvatarURL: r.AvatarURL,
+		ID:         r.ID,
+		Type:       "room",
+		Alias:      r.Alias,
+		Name:       r.Name,
+		Topic:      r.Topic,
+		Avatar:     r.Avatar,
+		Server:     r.Server,
+		Members:    r.Members,
+		Language:   r.Language,
+		AvatarURL:  r.AvatarURL,
+		PreviewURL: r.PreviewURL,
 	}
 }
 
 // Parse matrix room info to prepare custom fields
-func (r *MatrixRoom) Parse(detector lingua.LanguageDetector, mrsPublicURL string) {
+func (r *MatrixRoom) Parse(detector lingua.LanguageDetector, mrsPublicURL string, preview bool) {
 	r.Topic = utils.Truncate(r.Topic, 400)
 	r.parseServer()
 	r.parseLanguage(detector)
 	r.parseAvatar(mrsPublicURL)
+	r.parsePreview(preview)
 }
 
 // parseServer from room ID
@@ -95,4 +101,11 @@ func (r *MatrixRoom) parseAvatar(mrsPublicURL string) {
 		return
 	}
 	r.AvatarURL = base.JoinPath("/avatar", parts[0], parts[1]).String()
+}
+
+func (r *MatrixRoom) parsePreview(available bool) {
+	if !available {
+		return
+	}
+	r.PreviewURL = MatrixPreviewURL.JoinPath("/room/", r.ID, "/").String()
 }

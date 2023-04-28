@@ -69,24 +69,34 @@ func getIndexMapping() mapping.IndexMapping {
 
 	textFM := bleve.NewTextFieldMapping()
 	textFM.Analyzer = multilang.Name
-	keywordFM := bleve.NewKeywordFieldMapping()
+
+	// noindexFM is used for values that just need to be stored, but not analyzed or searched
+	noindexFM := bleve.NewKeywordFieldMapping()
+	noindexFM.Store = true
+	noindexFM.Index = false
+	noindexFM.IncludeInAll = false
+	noindexFM.IncludeTermVectors = false
+
 	numericFM := bleve.NewNumericFieldMapping()
+
 	matrixIDFM := bleve.NewTextFieldMapping()
 	matrixIDFM.Analyzer = "matrix_id"
+
 	matrixAliasFM := bleve.NewTextFieldMapping()
 	matrixAliasFM.Analyzer = "matrix_alias"
 
 	r := bleve.NewDocumentMapping()
 	r.AddFieldMappingsAt("id", matrixIDFM)
-	r.AddFieldMappingsAt("type", keywordFM)
+	r.AddFieldMappingsAt("type", noindexFM)
 	r.AddFieldMappingsAt("alias", matrixAliasFM)
 	r.AddFieldMappingsAt("name", textFM)
 	r.AddFieldMappingsAt("topic", textFM)
-	r.AddFieldMappingsAt("avatar", keywordFM)
-	r.AddFieldMappingsAt("avatar_url", keywordFM)
-	r.AddFieldMappingsAt("server", keywordFM)
+	r.AddFieldMappingsAt("avatar", noindexFM)
+	r.AddFieldMappingsAt("avatar_url", noindexFM)
+	r.AddFieldMappingsAt("preview_url", noindexFM)
+	r.AddFieldMappingsAt("server", noindexFM)
 	r.AddFieldMappingsAt("members", numericFM)
-	r.AddFieldMappingsAt("language", keywordFM)
+	r.AddFieldMappingsAt("language", noindexFM)
 	m.AddDocumentMapping("room", r)
 
 	return m

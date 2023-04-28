@@ -53,10 +53,11 @@ func NewDataFacade(
 // DiscoverServers matrix servers
 func (df *DataFacade) DiscoverServers(workers int) {
 	log.Println("discovering matrix servers...")
-	df.stats.SetStartedAt("discovery", time.Now().UTC())
+	start := time.Now().UTC()
+	df.stats.SetStartedAt("discovery", start)
 	err := df.matrix.DiscoverServers(workers)
 	df.stats.SetFinishedAt("discovery", time.Now().UTC())
-	log.Println("servers discovery has been finished", err)
+	log.Println("servers discovery has been finished", err, "took", time.Since(start))
 
 	log.Println("collecting stats...")
 	df.stats.Collect()
@@ -66,12 +67,13 @@ func (df *DataFacade) DiscoverServers(workers int) {
 // ParseRooms from discovered servers
 func (df *DataFacade) ParseRooms(workers int) {
 	log.Println("parsing matrix rooms...")
-	df.stats.SetStartedAt("parsing", time.Now().UTC())
+	start := time.Now().UTC()
+	df.stats.SetStartedAt("parsing", start)
 	if err := df.matrix.ParseRooms(workers); err != nil {
 		log.Println("parse rooms failed", err)
 	}
 	df.stats.SetFinishedAt("parsing", time.Now().UTC())
-	log.Println("all available matrix rooms have been parsed")
+	log.Println("all available matrix rooms have been parsed; took", time.Since(start))
 
 	log.Println("collecting stats...")
 	df.stats.Collect()
@@ -81,7 +83,8 @@ func (df *DataFacade) ParseRooms(workers int) {
 // Ingest data into search index
 func (df *DataFacade) Ingest() {
 	log.Println("ingesting matrix rooms...")
-	df.stats.SetStartedAt("indexing", time.Now().UTC())
+	start := time.Now().UTC()
+	df.stats.SetStartedAt("indexing", start)
 	df.matrix.EachRoom(func(roomID string, room *model.MatrixRoom) {
 		if err := df.index.RoomsBatch(roomID, room.Entry()); err != nil {
 			log.Println(room.Alias, "cannot add to batch", err)
@@ -91,7 +94,7 @@ func (df *DataFacade) Ingest() {
 		log.Println("indexing of the last batch failed", err)
 	}
 	df.stats.SetFinishedAt("indexing", time.Now().UTC())
-	log.Println("all available matrix rooms have been ingested")
+	log.Println("all available matrix rooms have been ingested; took", time.Since(start))
 
 	log.Println("collecting stats...")
 	df.stats.Collect()
