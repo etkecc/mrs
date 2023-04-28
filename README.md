@@ -1,4 +1,4 @@
-# Matrix Rooms Search
+# Matrix Rooms Search [![Donate on Liberapay](https://liberapay.com/assets/widgets/donate.svg)](https://liberapay.com/mrs/donate) 
 
 A fully-featured, standalone, matrix rooms search service.
 
