@@ -2,7 +2,6 @@ package multilang
 
 import (
 	"bytes"
-	"log"
 
 	"github.com/blevesearch/bleve/v2/analysis"
 	_ "github.com/blevesearch/bleve/v2/analysis/lang/ar"
@@ -57,7 +56,6 @@ func (d *Tokenizer) Tokenize(input []byte) analysis.TokenStream {
 	}
 	analyzer, err := d.cache.AnalyzerNamed(lang)
 	if err != nil {
-		log.Println("multilang.Tokenizer", "cannot find analyzer by name:", lang, err)
 		return d.fallback.Analyze(input)
 	}
 	return analyzer.Analyze(input)
