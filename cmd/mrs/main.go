@@ -22,6 +22,9 @@ import (
 	"gitlab.com/etke.cc/mrs/api/services"
 )
 
+// AllLanguages to load all language models at once
+const AllLanguages = "ALL"
+
 var (
 	configPath    string
 	configWatcher *fswatcher.Watcher
@@ -77,6 +80,13 @@ func main() {
 }
 
 func getLanguageDetector(inputLangs []string) lingua.LanguageDetector {
+	builder := lingua.NewLanguageDetectorBuilder()
+	if len(inputLangs) > 0 && inputLangs[0] == AllLanguages {
+		return builder.
+			FromAllLanguages().
+			Build()
+	}
+
 	all := lingua.AllLanguages()
 	enabled := make([]lingua.Language, 0)
 	langs := make(map[string]bool, len(inputLangs))
@@ -89,7 +99,7 @@ func getLanguageDetector(inputLangs []string) lingua.LanguageDetector {
 		}
 	}
 
-	return lingua.NewLanguageDetectorBuilder().
+	return builder.
 		FromLanguages(enabled...).
 		Build()
 }

@@ -381,17 +381,6 @@ func (m *Matrix) validateDiscoveredServer(name, serverURL string) bool {
 	return m.getPublicRoomsPage(name, serverURL, "1", "") != nil
 }
 
-// roomPreviewAvailable checks if room can be previewed on view.matrix.org
-func (m *Matrix) roomPreviewAvailable(roomID string) bool {
-	endpoint := model.MatrixPreviewURL.JoinPath("/room", roomID, "/").String()
-	resp, err := matrixClientCall(endpoint)
-	if err != nil {
-		return false
-	}
-	defer resp.Body.Close()
-	return resp.StatusCode == http.StatusOK
-}
-
 // getPublicRooms reads public rooms of the given server from the matrix client-server api
 // and sends them into channel
 func (m *Matrix) getPublicRooms(name, serverURL string, ch chan *model.MatrixRoom) {
@@ -408,7 +397,7 @@ func (m *Matrix) getPublicRooms(name, serverURL string, ch chan *model.MatrixRoo
 
 		start := time.Now()
 		for _, room := range resp.Chunk {
-			room.Parse(m.detector, m.publicURL, m.roomPreviewAvailable(room.ID))
+			room.Parse(m.detector, m.publicURL)
 			ch <- room
 		}
 		log.Println(name, "added", len(resp.Chunk), "rooms (", added, "of", resp.Total, ") took", time.Since(start))
