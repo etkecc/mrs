@@ -93,7 +93,6 @@ func getIndexMapping() mapping.IndexMapping {
 	r.AddFieldMappingsAt("topic", textFM)
 	r.AddFieldMappingsAt("avatar", noindexFM)
 	r.AddFieldMappingsAt("avatar_url", noindexFM)
-	r.AddFieldMappingsAt("preview_url", noindexFM)
 	r.AddFieldMappingsAt("server", noindexFM)
 	r.AddFieldMappingsAt("members", numericFM)
 	r.AddFieldMappingsAt("language", noindexFM)
