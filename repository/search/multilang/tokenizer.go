@@ -51,6 +51,9 @@ func (d *Tokenizer) Tokenize(input []byte) analysis.TokenStream {
 	}
 	lang := string(input[langpos+1:])
 	input = input[:langpos]
+	if lang == "zh" || lang == "ja" || lang == "ko" {
+		lang = "cjk"
+	}
 	analyzer, err := d.cache.AnalyzerNamed(lang)
 	if err != nil {
 		log.Println("multilang.Tokenizer", "cannot find analyzer by name:", lang, err)
