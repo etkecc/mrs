@@ -19,6 +19,7 @@ github.com/blevesearch/bleve/v2/analysis/datetime/optional
 github.com/blevesearch/bleve/v2/analysis/lang/ar
 github.com/blevesearch/bleve/v2/analysis/lang/bg
 github.com/blevesearch/bleve/v2/analysis/lang/ca
+github.com/blevesearch/bleve/v2/analysis/lang/cjk
 github.com/blevesearch/bleve/v2/analysis/lang/cs
 github.com/blevesearch/bleve/v2/analysis/lang/da
 github.com/blevesearch/bleve/v2/analysis/lang/de

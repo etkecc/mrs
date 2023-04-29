@@ -8,6 +8,7 @@ import (
 	_ "github.com/blevesearch/bleve/v2/analysis/lang/ar"
 	_ "github.com/blevesearch/bleve/v2/analysis/lang/bg"
 	_ "github.com/blevesearch/bleve/v2/analysis/lang/ca"
+	_ "github.com/blevesearch/bleve/v2/analysis/lang/cjk"
 	_ "github.com/blevesearch/bleve/v2/analysis/lang/cs"
 	_ "github.com/blevesearch/bleve/v2/analysis/lang/da"
 	_ "github.com/blevesearch/bleve/v2/analysis/lang/de"
