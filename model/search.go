@@ -12,4 +12,6 @@ type Entry struct {
 	Server    string `json:"server"`
 	Members   int    `json:"members"`
 	Language  string `json:"language"`
+	// DEPRECATED
+	PreviewURL string `json:"preview_url"`
 }

@@ -424,10 +424,6 @@ components:
           type: string
           description: HTTP URL of room avatar (use this one for web)
           example: 'https://matrix.example.com/_matrix/media/v3/download/example.com/sENrPlXsrqeJworlfatgzHmu'
-        preview_url:
-          type: string
-          description: HTTP URL of room preview, can be empty
-          example: 'https://view.matrix.org/room/!example:example.com/'
         members:
           type: integer
           description: members count
