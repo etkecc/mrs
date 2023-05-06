@@ -16,6 +16,7 @@ import (
 
 	"gitlab.com/etke.cc/mrs/api/model"
 	"gitlab.com/etke.cc/mrs/api/utils"
+	"gitlab.com/etke.cc/mrs/api/version"
 )
 
 const (
@@ -95,7 +96,7 @@ func (m *Matrix) call(ctx context.Context, endpoint string) (*http.Response, err
 	req.Header.Set("Connection", "Keep-Alive")
 	req.Header.Set("Authorization", "Bearer "+m.proxyToken)
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", "Matrix Rooms Search")
+	req.Header.Set("User-Agent", version.UserAgent)
 
 	return matrixClient.Do(req)
 }
