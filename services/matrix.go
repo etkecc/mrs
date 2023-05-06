@@ -198,9 +198,14 @@ func (m *Matrix) ParseRooms(workers int) error {
 	m.parsing = true
 	defer func() { m.parsing = false }()
 
-	wp := workpool.New(workers)
 	servers := m.data.AllOnlineServers()
+	total := len(servers)
+	if total < workers {
+		workers = total
+	}
+	wp := workpool.New(workers)
 	ch := make(chan *model.MatrixRoom, RoomsBatch)
+	log.Println("parsing rooms of", total, "servers using", workers, "workers")
 	for srvName := range servers {
 		name := srvName
 		wp.Do(func() error {
@@ -313,6 +318,7 @@ func (m *Matrix) getPublicRoomsPage(name, limit, since string) *matrixRoomsResp 
 	}
 
 	resp, err := m.call(endpoint)
+	log.Println(name, endpoint, resp.Status)
 	if err != nil {
 		log.Println(name, "cannot get public rooms", err)
 		return nil

@@ -27,7 +27,7 @@ test:
 
 # run app
 run:
-    @go run ./cmd/mrs -c config.yml.sample
+    @go run ./cmd/mrs -c config.yml
 
 # build app
 build:
