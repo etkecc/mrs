@@ -13,7 +13,7 @@ import (
 //
 //nolint:errcheck
 func (d *Data) AddRoomBatch(ch chan *model.MatrixRoom) {
-	d.db.Batch(func(tx *bbolt.Tx) error {
+	d.db.Update(func(tx *bbolt.Tx) error {
 		for room := range ch {
 			if room == nil {
 				continue
