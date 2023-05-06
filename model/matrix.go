@@ -1,6 +1,7 @@
 package model
 
 import (
+	"context"
 	"net/url"
 	"strings"
 	"time"
@@ -51,9 +52,24 @@ func (r *MatrixRoom) Entry() *Entry {
 
 // Parse matrix room info to prepare custom fields
 func (r *MatrixRoom) Parse(detector lingua.LanguageDetector, mrsPublicURL string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
 	r.Topic = utils.Truncate(r.Topic, 400)
+	if ctx.Err() != nil {
+		return
+	}
+
+	r.parseLanguage(ctx, detector)
+	if ctx.Err() != nil {
+		return
+	}
+
 	r.parseServer()
-	r.parseLanguage(detector)
+	if ctx.Err() != nil {
+		return
+	}
+
 	r.parseAvatar(mrsPublicURL)
 }
 
@@ -66,11 +82,20 @@ func (r *MatrixRoom) parseServer() {
 }
 
 // parseLanguage tries to identify room language by room name and topic
-func (r *MatrixRoom) parseLanguage(detector lingua.LanguageDetector) {
+func (r *MatrixRoom) parseLanguage(ctx context.Context, detector lingua.LanguageDetector) {
+	r.Language = "-"
+
 	name, nameConfedence := utils.DetectLanguage(detector, r.Name)
+	if ctx.Err() != nil {
+		return
+	}
+
 	topic, topicConfedence := utils.DetectLanguage(detector, r.Topic)
+	if ctx.Err() != nil {
+		return
+	}
+
 	if nameConfedence == 0 && topicConfedence == 0 {
-		r.Language = "-"
 		return
 	}
 

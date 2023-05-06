@@ -303,11 +303,17 @@ func (m *Matrix) getPublicRooms(name string) {
 			log.Println(name, "response is empty")
 			return
 		}
+
+		added += len(resp.Chunk)
 		for _, room := range resp.Chunk {
+			if room.ID == "" {
+				added--
+				continue
+			}
+
 			room.Parse(m.detector, m.publicURL)
 			m.data.AddRoomBatch(room)
 		}
-		added += len(resp.Chunk)
 		log.Println(name, "added", len(resp.Chunk), "rooms (", added, "of", resp.Total, ") took", time.Since(start))
 
 		if resp.NextBatch == "" {
