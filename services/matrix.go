@@ -56,7 +56,7 @@ var (
 		KeepAlive: 90 * time.Second,
 	}
 	matrixClient = &http.Client{
-		Timeout: 10 * time.Second,
+		Timeout: 60 * time.Second,
 		Transport: &http.Transport{
 			MaxIdleConns:        1000,
 			MaxConnsPerHost:     1000,
@@ -199,10 +199,10 @@ func (m *Matrix) AllServers() map[string]string {
 }
 
 // ParseRooms across all discovered servers
-func (m *Matrix) ParseRooms(workers int) error {
+func (m *Matrix) ParseRooms(workers int) {
 	if m.parsing {
 		log.Println("rooms parsing already in progress, ignoring request")
-		return nil
+		return
 	}
 	m.parsing = true
 	defer func() { m.parsing = false }()
@@ -223,10 +223,18 @@ func (m *Matrix) ParseRooms(workers int) error {
 			return nil
 		})
 	}
+
+	go func(ch chan *model.MatrixRoom, wp *workpool.WorkPool) {
+		wp.Wait() //nolint:errcheck
+		close(ch)
+	}(ch, wp)
 	go m.data.AddRoomBatch(ch)
-	err := wp.Wait()
-	close(ch)
-	return err
+
+	for {
+		if wp.IsDone() {
+			return
+		}
+	}
 }
 
 // EachRoom allows to work with each known room
@@ -299,17 +307,16 @@ func (m *Matrix) getPublicRooms(name string, ch chan *model.MatrixRoom) {
 	var added int
 	limit := RoomsBatchString
 	for {
+		start := time.Now()
 		resp := m.getPublicRoomsPage(name, limit, since)
 		if resp == nil || len(resp.Chunk) == 0 {
 			return
 		}
-		added += len(resp.Chunk)
-
-		start := time.Now()
 		for _, room := range resp.Chunk {
 			room.Parse(m.detector, m.publicURL)
 			ch <- room
 		}
+		added += len(resp.Chunk)
 		log.Println(name, "added", len(resp.Chunk), "rooms (", added, "of", resp.Total, ") took", time.Since(start))
 
 		if resp.NextBatch == "" {

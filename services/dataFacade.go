@@ -11,7 +11,7 @@ type dataMatrixService interface {
 	DiscoverServers(int) error
 	AddServer(string) int
 	AllServers() map[string]string
-	ParseRooms(int) error
+	ParseRooms(int)
 	EachRoom(func(string, *model.MatrixRoom))
 }
 
@@ -69,9 +69,7 @@ func (df *DataFacade) ParseRooms(workers int) {
 	log.Println("parsing matrix rooms...")
 	start := time.Now().UTC()
 	df.stats.SetStartedAt("parsing", start)
-	if err := df.matrix.ParseRooms(workers); err != nil {
-		log.Println("parse rooms failed", err)
-	}
+	df.matrix.ParseRooms(workers)
 	df.stats.SetFinishedAt("parsing", time.Now().UTC())
 	log.Println("all available matrix rooms have been parsed; took", time.Since(start))
 
