@@ -60,17 +60,17 @@ func (r *MatrixRoom) Parse(detector lingua.LanguageDetector, mrsPublicURL string
 		return
 	}
 
-	r.parseLanguage(ctx, detector)
-	if ctx.Err() != nil {
-		return
-	}
-
 	r.parseServer()
 	if ctx.Err() != nil {
 		return
 	}
 
 	r.parseAvatar(mrsPublicURL)
+	if ctx.Err() != nil {
+		return
+	}
+
+	r.parseLanguage(detector)
 }
 
 // parseServer from room ID
@@ -82,28 +82,9 @@ func (r *MatrixRoom) parseServer() {
 }
 
 // parseLanguage tries to identify room language by room name and topic
-func (r *MatrixRoom) parseLanguage(ctx context.Context, detector lingua.LanguageDetector) {
-	r.Language = "-"
-
-	name, nameConfedence := utils.DetectLanguage(detector, r.Name)
-	if ctx.Err() != nil {
-		return
-	}
-
-	topic, topicConfedence := utils.DetectLanguage(detector, r.Topic)
-	if ctx.Err() != nil {
-		return
-	}
-
-	if nameConfedence == 0 && topicConfedence == 0 {
-		return
-	}
-
-	if nameConfedence > topicConfedence {
-		r.Language = name
-	} else {
-		r.Language = topic
-	}
+func (r *MatrixRoom) parseLanguage(detector lingua.LanguageDetector) {
+	r.Language = utils.UnknownLang
+	r.Language, _ = utils.DetectLanguage(detector, r.Name+" "+r.Topic)
 }
 
 // parseAvatar builds HTTP URL to access room avatar
