@@ -287,7 +287,7 @@ func (m *Matrix) getPublicRooms(name string, ch chan *model.MatrixRoom) {
 	for {
 		resp := m.getPublicRoomsPage(name, limit, since)
 		if resp == nil || len(resp.Chunk) == 0 {
-			break
+			return
 		}
 		added += len(resp.Chunk)
 
@@ -299,7 +299,7 @@ func (m *Matrix) getPublicRooms(name string, ch chan *model.MatrixRoom) {
 		log.Println(name, "added", len(resp.Chunk), "rooms (", added, "of", resp.Total, ") took", time.Since(start))
 
 		if resp.NextBatch == "" {
-			break
+			return
 		}
 
 		since = resp.NextBatch
