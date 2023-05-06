@@ -94,7 +94,15 @@ func (m *Matrix) call(endpoint string) (*http.Response, error) {
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", "Matrix Rooms Search")
 
-	return matrixClient.Do(req)
+	resp, err := matrixClient.Do(req)
+	if resp != nil && resp.StatusCode == http.StatusTooManyRequests {
+		resp.Body.Close()
+		log.Println("matrix.call", "retrying", endpoint, "in 10 seconds (too many requests)")
+		time.Sleep(10 * time.Second)
+		return m.call(endpoint)
+	}
+
+	return resp, err
 }
 
 // DiscoverServers across federation and reject invalid ones
