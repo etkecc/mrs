@@ -1,5 +1,8 @@
 port: 8080
 public_url: http://localhost:8080
+proxy:
+  server: https://matrix.example.com # matrix server (actual url) to query public rooms over federation
+  token: '' # matrix session token
 auth: # auth configuration
   admin: # admin configuration
     login: admin

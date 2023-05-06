@@ -7,7 +7,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/pemistahl/lingua-go"
@@ -17,8 +16,17 @@ import (
 	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
+const (
+	// RoomsBatch is maximum rooms parsed/stored at once, the constant value is max recommended transaction size of bolt db
+	RoomsBatch = 10000
+	// RoomsBatchString is RoomsBatch value as string
+	RoomsBatchString = "10000"
+)
+
 type Matrix struct {
 	servers     []string
+	proxyURL    string
+	proxyToken  string
 	publicURL   string
 	parsing     bool
 	discovering bool
@@ -34,7 +42,7 @@ type DataRepository interface {
 	AllServers() map[string]string
 	AllOnlineServers() map[string]string
 	RemoveServer(string) error
-	AddRoom(string, *model.MatrixRoom) error
+	AddRoomBatch(chan *model.MatrixRoom)
 	GetRoom(string) (*model.MatrixRoom, error)
 	EachRoom(func(string, *model.MatrixRoom))
 	BanRoom(string) error
@@ -52,18 +60,6 @@ var matrixClient = &http.Client{
 	},
 }
 
-type matrixClientWellKnown struct {
-	Homeserver matrixClientWellKnownHomeserver `json:"m.homeserver"`
-}
-
-type matrixClientWellKnownHomeserver struct {
-	URL string `json:"base_url"`
-}
-
-type matrixClientVersions struct {
-	Versions []string `json:"versions"`
-}
-
 type matrixRoomsResp struct {
 	Chunk     []*model.MatrixRoom `json:"chunk"`
 	NextBatch string              `json:"next_batch"`
@@ -71,20 +67,23 @@ type matrixRoomsResp struct {
 }
 
 // NewMatrix service
-func NewMatrix(servers []string, publicURL string, data DataRepository, detector lingua.LanguageDetector) *Matrix {
+func NewMatrix(servers []string, proxyURL, proxyToken, publicURL string, data DataRepository, detector lingua.LanguageDetector) *Matrix {
 	return &Matrix{
-		publicURL: publicURL,
-		servers:   servers,
-		data:      data,
-		detector:  detector,
+		proxyURL:   proxyURL,
+		proxyToken: proxyToken,
+		publicURL:  publicURL,
+		servers:    servers,
+		data:       data,
+		detector:   detector,
 	}
 }
 
-func matrixClientCall(endpoint string) (*http.Response, error) {
+func (m *Matrix) call(endpoint string) (*http.Response, error) {
 	req, err := http.NewRequest("GET", endpoint, nil)
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Set("Authorization", "Bearer "+m.proxyToken)
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", "Matrix Rooms Search")
 
@@ -92,8 +91,6 @@ func matrixClientCall(endpoint string) (*http.Response, error) {
 }
 
 // DiscoverServers across federation and reject invalid ones
-//
-//nolint:gocognit // TODO
 func (m *Matrix) DiscoverServers(workers int) error {
 	if m.discovering {
 		log.Println("servers discovery already in progress, ignoring request")
@@ -113,12 +110,7 @@ func (m *Matrix) DiscoverServers(workers int) error {
 				Online:    true,
 				UpdatedAt: time.Now().UTC(),
 			}
-			server.URL = m.discoverServerWellKnown(name)
-			if server.URL != "" && m.validateDiscoveredServer(name, server.URL) {
-				return m.data.AddServer(server)
-			}
-			server.URL = m.discoverServerDirect(name)
-			if server.URL != "" && m.validateDiscoveredServer(name, server.URL) {
+			if m.validateDiscoveredServer(name) {
 				return m.data.AddServer(server)
 			}
 
@@ -130,8 +122,6 @@ func (m *Matrix) DiscoverServers(workers int) error {
 }
 
 // AddServers by name in bulk, intended for HTTP API
-//
-//nolint:gocognit // TODO
 func (m *Matrix) AddServers(names []string, workers int) {
 	wp := workpool.New(workers)
 	for _, server := range names {
@@ -149,16 +139,7 @@ func (m *Matrix) AddServers(names []string, workers int) {
 				UpdatedAt: time.Now().UTC(),
 			}
 
-			server.URL = m.discoverServerWellKnown(name)
-			if server.URL == "" {
-				server.URL = m.discoverServerDirect(name)
-			}
-			if server.URL == "" {
-				log.Println(name, "server not found")
-				server.Online = false
-				return m.data.AddServer(server)
-			}
-			if !m.validateDiscoveredServer(name, server.URL) {
+			if !m.validateDiscoveredServer(name) {
 				log.Println(name, "server is not eligible")
 				server.Online = false
 				return m.data.AddServer(server)
@@ -190,14 +171,7 @@ func (m *Matrix) AddServer(name string) int {
 		UpdatedAt: time.Now().UTC(),
 	}
 
-	server.URL = m.discoverServerWellKnown(name)
-	if server.URL == "" {
-		server.URL = m.discoverServerDirect(name)
-	}
-	if server.URL == "" {
-		return http.StatusUnprocessableEntity
-	}
-	if !m.validateDiscoveredServer(name, server.URL) {
+	if !m.validateDiscoveredServer(name) {
 		return http.StatusUnprocessableEntity
 	}
 
@@ -224,18 +198,21 @@ func (m *Matrix) ParseRooms(workers int) error {
 	m.parsing = true
 	defer func() { m.parsing = false }()
 
-	servers := m.data.AllOnlineServers()
 	wp := workpool.New(workers)
-	for srvName, srvURL := range servers {
+	servers := m.data.AllOnlineServers()
+	ch := make(chan *model.MatrixRoom, RoomsBatch)
+	for srvName := range servers {
 		name := srvName
-		serverURL := srvURL
 		wp.Do(func() error {
 			log.Println(name, "parsing rooms...")
-			m.parseServerRooms(name, serverURL)
+			m.getPublicRooms(name, ch)
 			return nil
 		})
 	}
-	return wp.Wait()
+	go m.data.AddRoomBatch(ch)
+	err := wp.Wait()
+	close(ch)
+	return err
 }
 
 // EachRoom allows to work with each known room
@@ -295,102 +272,21 @@ func (m *Matrix) GetAvatar(serverName string, mediaID string) (io.ReadCloser, st
 	return nil, ""
 }
 
-func (m *Matrix) parseServerRooms(name, serverURL string) {
-	ch := make(chan *model.MatrixRoom)
-	go m.getPublicRooms(name, serverURL, ch)
-	for room := range ch {
-		m.data.AddRoom(room.ID, room) //nolint:errcheck
-	}
-}
-
-// discoverServerWellKnown resolves matrix server domain into actual server's url using well-known delegation
-// inspired by https://github.com/mautrix/go/blob/master/client.go#L103
-func (m *Matrix) discoverServerWellKnown(name string) string {
-	resp, err := matrixClientCall("https://" + name + "/.well-known/matrix/client")
-	if err != nil {
-		log.Println(name, "cannot get matrix delegation information", err)
-		return ""
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusNotFound {
-		log.Println(name, "matrix delegation does not exists")
-		return ""
-	}
-
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Println(name, "cannot read matrix delegation information", err)
-		return ""
-	}
-
-	var wellKnown matrixClientWellKnown
-	err = json.Unmarshal(data, &wellKnown)
-	if err != nil {
-		log.Println(name, "cannot unmarshal matrix delegation information", err)
-		return ""
-	}
-	if wellKnown.Homeserver.URL == "" {
-		log.Println(name, "matrix delegation information is empty")
-		return ""
-	}
-
-	if strings.HasPrefix(wellKnown.Homeserver.URL, "https://") {
-		return wellKnown.Homeserver.URL
-	}
-	return "https://" + wellKnown.Homeserver.URL
-}
-
-// discoverServerDirect tries to discover matrix server directly by supported protocol versions endpoint
-func (m *Matrix) discoverServerDirect(name string) string {
-	resp, err := matrixClientCall("https://" + name + "/_matrix/client/versions")
-	if err != nil {
-		log.Println(name, "cannot get matrix client versions", err)
-		return ""
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusNotFound {
-		log.Println(name, "matrix client versions not found")
-		return ""
-	}
-
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Println(name, "cannot read matrix client versions", err)
-		return ""
-	}
-
-	var clientVersions matrixClientVersions
-	err = json.Unmarshal(data, &clientVersions)
-	if err != nil {
-		log.Println(name, "cannot unmarshal matrix client versions", err)
-		return ""
-	}
-	if len(clientVersions.Versions) == 0 {
-		log.Println(name, "matrix client versions are empty")
-		return ""
-	}
-
-	return "https://" + name
-}
-
 // validateDiscoveredServer performs simple check to public rooms endpoint
 // to ensure discovered server is actually alive
-func (m *Matrix) validateDiscoveredServer(name, serverURL string) bool {
-	return m.getPublicRoomsPage(name, serverURL, "1", "") != nil
+func (m *Matrix) validateDiscoveredServer(name string) bool {
+	return m.getPublicRoomsPage(name, "1", "") != nil
 }
 
 // getPublicRooms reads public rooms of the given server from the matrix client-server api
 // and sends them into channel
-func (m *Matrix) getPublicRooms(name, serverURL string, ch chan *model.MatrixRoom) {
+func (m *Matrix) getPublicRooms(name string, ch chan *model.MatrixRoom) {
 	var since string
 	var added int
-	limit := "10000"
+	limit := RoomsBatchString
 	for {
-		resp := m.getPublicRoomsPage(name, serverURL, limit, since)
+		resp := m.getPublicRoomsPage(name, limit, since)
 		if resp == nil || len(resp.Chunk) == 0 {
-			close(ch)
 			break
 		}
 		added += len(resp.Chunk)
@@ -403,7 +299,6 @@ func (m *Matrix) getPublicRooms(name, serverURL string, ch chan *model.MatrixRoo
 		log.Println(name, "added", len(resp.Chunk), "rooms (", added, "of", resp.Total, ") took", time.Since(start))
 
 		if resp.NextBatch == "" {
-			close(ch)
 			break
 		}
 
@@ -411,18 +306,23 @@ func (m *Matrix) getPublicRooms(name, serverURL string, ch chan *model.MatrixRoo
 	}
 }
 
-func (m *Matrix) getPublicRoomsPage(name, serverURL, limit, since string) *matrixRoomsResp {
-	endpoint := serverURL + "/_matrix/client/v3/publicRooms?limit=" + limit
+func (m *Matrix) getPublicRoomsPage(name, limit, since string) *matrixRoomsResp {
+	endpoint := m.proxyURL + "/_matrix/client/v3/publicRooms?server=" + name + "&limit=" + limit
 	if since != "" {
 		endpoint = endpoint + "&since=" + url.QueryEscape(since)
 	}
 
-	resp, err := matrixClientCall(endpoint)
+	resp, err := m.call(endpoint)
 	if err != nil {
 		log.Println(name, "cannot get public rooms", err)
 		return nil
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		log.Println(name, "cannot get public rooms", resp.Status)
+		return nil
+	}
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {

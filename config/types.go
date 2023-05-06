@@ -4,6 +4,7 @@ package config
 type Config struct {
 	Port       string     `yaml:"port"`
 	PublicURL  string     `yaml:"public_url"`
+	Proxy      Proxy      `yaml:"proxy"`
 	Path       Paths      `yaml:"path"`
 	Batch      Batch      `yaml:"batch"`
 	Auth       Auth       `yaml:"auth"`
@@ -13,6 +14,11 @@ type Config struct {
 	Moderation Moderation `yaml:"moderation"`
 	Languages  []string   `yaml:"languages"`
 	Servers    []string   `yaml:"servers"`
+}
+
+type Proxy struct {
+	Server string `yaml:"server"`
+	Token  string `yaml:"token"`
 }
 
 // Cache config

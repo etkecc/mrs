@@ -2,25 +2,36 @@ package data
 
 import (
 	"encoding/json"
+	"log"
 
 	"go.etcd.io/bbolt"
 
 	"gitlab.com/etke.cc/mrs/api/model"
 )
 
-// AddRoom info
-func (d *Data) AddRoom(roomID string, data *model.MatrixRoom) error {
-	if data == nil {
+// AddRoomBatch info
+//
+//nolint:errcheck
+func (d *Data) AddRoomBatch(ch chan *model.MatrixRoom) {
+	d.db.Batch(func(tx *bbolt.Tx) error {
+		for room := range ch {
+			if room == nil {
+				continue
+			}
+
+			roomb, err := json.Marshal(room)
+			if err != nil {
+				log.Println(room.Server, room.ID, "cannot marshal room", err)
+				continue
+			}
+
+			err = tx.Bucket(roomsBucket).Put([]byte(room.ID), roomb)
+			if err != nil {
+				log.Println(room.Server, room.ID, "cannot add room", err)
+				continue
+			}
+		}
 		return nil
-	}
-
-	datab, err := json.Marshal(data)
-	if err != nil {
-		return err
-	}
-
-	return d.db.Batch(func(tx *bbolt.Tx) error {
-		return tx.Bucket(roomsBucket).Put([]byte(roomID), datab)
 	})
 }
 

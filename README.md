@@ -34,13 +34,12 @@ Check [openapi.yml](./openapi.yml)
 
 ### Why my server and its public rooms aren't discovered/parsed/included?
 
-1. Your server must have valid `/.well-known/matrix/client`, e.g. `https://etke.cc/.well-known/matrix/client`
-2. Your server must publish public rooms over federation without auth (`/_matrix/client/v3/publicRooms` endpoint), eg: `https://matrix.etke.cc/_matrix/client/v3/publicRooms`
+Your server must publish public rooms over federation (`/_matrix/federation/v1/publicRooms` endpoint), eg: `https://matrix.etke.cc:8448/_matrix/federation/v1/publicRooms`
 
 **I get error on public rooms endpoint**, something like:
 
 ```json
-{"errcode":"M_MISSING_TOKEN","error":"Missing access token"}
+{"errcode":"M_FORBIDDEN","error":"You are not allowed to view the public rooms list of example.com"}
 ```
 
 In that case you should adjust your server's configuration.
