@@ -49,16 +49,24 @@ type DataRepository interface {
 	UnbanRoom(string) error
 }
 
-var matrixMediaFallbacks = []string{"https://matrix-client.matrix.org"}
-
-var matrixClient = &http.Client{
-	Timeout: 30 * time.Second,
-	Transport: &http.Transport{
-		Dial: func(network, addr string) (net.Conn, error) {
-			return net.DialTimeout(network, addr, 10*time.Second)
+var (
+	matrixMediaFallbacks = []string{"https://matrix-client.matrix.org"}
+	matrixDialer         = &net.Dialer{
+		Timeout:   5 * time.Second,
+		KeepAlive: 90 * time.Second,
+	}
+	matrixClient = &http.Client{
+		Timeout: 10 * time.Second,
+		Transport: &http.Transport{
+			MaxIdleConns:        1000,
+			MaxConnsPerHost:     1000,
+			MaxIdleConnsPerHost: 1000,
+			TLSHandshakeTimeout: 10 * time.Second,
+			DialContext:         matrixDialer.DialContext,
+			Dial:                matrixDialer.Dial,
 		},
-	},
-}
+	}
+)
 
 type matrixRoomsResp struct {
 	Chunk     []*model.MatrixRoom `json:"chunk"`
@@ -83,6 +91,7 @@ func (m *Matrix) call(endpoint string) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Set("Connection", "Keep-Alive")
 	req.Header.Set("Authorization", "Bearer "+m.proxyToken)
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", "Matrix Rooms Search")
@@ -318,7 +327,6 @@ func (m *Matrix) getPublicRoomsPage(name, limit, since string) *matrixRoomsResp 
 	}
 
 	resp, err := m.call(endpoint)
-	log.Println(name, endpoint, resp.Status)
 	if err != nil {
 		log.Println(name, "cannot get public rooms", err)
 		return nil
