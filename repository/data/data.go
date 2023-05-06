@@ -27,7 +27,7 @@ func New(path string) (*Data, error) {
 
 	return &Data{
 		db: db,
-		rb: batch.New[*model.MatrixRoom](10000, func(rooms []*model.MatrixRoom) {
+		rb: batch.New(1000, func(rooms []*model.MatrixRoom) {
 			db.Update(func(tx *bbolt.Tx) error { //nolint:errcheck // checked inside
 				for _, room := range rooms {
 					roomb, err := json.Marshal(room)

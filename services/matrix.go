@@ -17,10 +17,8 @@ import (
 )
 
 const (
-	// RoomsBatch is maximum rooms parsed/stored at once, the constant value is max recommended transaction size of bolt db
-	RoomsBatch = 10000
-	// RoomsBatchString is RoomsBatch value as string
-	RoomsBatchString = "10000"
+	// RoomsBatch is maximum rooms parsed/stored at once
+	RoomsBatch = 1000
 )
 
 type Matrix struct {
@@ -297,7 +295,7 @@ func (m *Matrix) validateDiscoveredServer(name string) bool {
 func (m *Matrix) getPublicRooms(name string, ch chan *model.MatrixRoom) {
 	var since string
 	var added int
-	limit := RoomsBatchString
+	limit := "10000"
 	for {
 		start := time.Now()
 		resp := m.getPublicRoomsPage(name, limit, since)
