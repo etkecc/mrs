@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/pemistahl/lingua-go"
@@ -40,7 +41,8 @@ type DataRepository interface {
 	AllServers() map[string]string
 	AllOnlineServers() map[string]string
 	RemoveServer(string) error
-	AddRoomBatch(chan *model.MatrixRoom)
+	AddRoomBatch(*model.MatrixRoom)
+	FlushRoomBatch()
 	GetRoom(string) (*model.MatrixRoom, error)
 	EachRoom(func(string, *model.MatrixRoom))
 	BanRoom(string) error
@@ -94,15 +96,7 @@ func (m *Matrix) call(endpoint string) (*http.Response, error) {
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", "Matrix Rooms Search")
 
-	resp, err := matrixClient.Do(req)
-	if resp != nil && resp.StatusCode == http.StatusTooManyRequests {
-		resp.Body.Close()
-		log.Println("matrix.call", "retrying", endpoint, "in 10 seconds (too many requests)")
-		time.Sleep(10 * time.Second)
-		return m.call(endpoint)
-	}
-
-	return resp, err
+	return matrixClient.Do(req)
 }
 
 // DiscoverServers across federation and reject invalid ones
@@ -219,20 +213,17 @@ func (m *Matrix) ParseRooms(workers int) {
 		workers = total
 	}
 	wp := workpool.New(workers)
-	ch := make(chan *model.MatrixRoom, RoomsBatch)
 	log.Println("parsing rooms of", total, "servers using", workers, "workers")
 	for srvName := range servers {
 		name := srvName
 		wp.Do(func() error {
 			log.Println(name, "parsing rooms...")
-			m.getPublicRooms(name, ch)
+			m.getPublicRooms(name)
 			return nil
 		})
 	}
-	go m.data.AddRoomBatch(ch)
-
 	wp.Wait() //nolint:errcheck
-	close(ch)
+	m.data.FlushRoomBatch()
 }
 
 // EachRoom allows to work with each known room
@@ -300,7 +291,7 @@ func (m *Matrix) validateDiscoveredServer(name string) bool {
 
 // getPublicRooms reads public rooms of the given server from the matrix client-server api
 // and sends them into channel
-func (m *Matrix) getPublicRooms(name string, ch chan *model.MatrixRoom) {
+func (m *Matrix) getPublicRooms(name string) {
 	var since string
 	var added int
 	limit := "10000"
@@ -308,16 +299,18 @@ func (m *Matrix) getPublicRooms(name string, ch chan *model.MatrixRoom) {
 		start := time.Now()
 		resp := m.getPublicRoomsPage(name, limit, since)
 		if resp == nil || len(resp.Chunk) == 0 {
+			log.Println(name, "response is empty")
 			return
 		}
 		for _, room := range resp.Chunk {
 			room.Parse(m.detector, m.publicURL)
-			ch <- room
+			m.data.AddRoomBatch(room)
 		}
 		added += len(resp.Chunk)
 		log.Println(name, "added", len(resp.Chunk), "rooms (", added, "of", resp.Total, ") took", time.Since(start))
 
 		if resp.NextBatch == "" {
+			log.Println(name, "no more rooms to parse")
 			return
 		}
 
@@ -333,6 +326,11 @@ func (m *Matrix) getPublicRoomsPage(name, limit, since string) *matrixRoomsResp 
 
 	resp, err := m.call(endpoint)
 	if err != nil {
+		if strings.Contains(err.Error(), "Timeout") {
+			log.Println(name, "cannot get public rooms (timeout)")
+			return nil
+		}
+
 		log.Println(name, "cannot get public rooms", err)
 		return nil
 	}

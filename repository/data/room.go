@@ -11,8 +11,13 @@ import (
 // AddRoomBatch info
 //
 //nolint:errcheck
-func (d *Data) AddRoomBatch(ch chan *model.MatrixRoom) {
-	d.rb.Add(ch)
+func (d *Data) AddRoomBatch(room *model.MatrixRoom) {
+	d.rb.Add(room)
+}
+
+// FlushRoomBatch to ensure nothing is left
+func (d *Data) FlushRoomBatch() {
+	d.rb.Flush()
 }
 
 // GetRoom info
