@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"log"
@@ -19,7 +20,7 @@ import (
 
 const (
 	// RoomsBatch is maximum rooms parsed/stored at once
-	RoomsBatch = 1000
+	RoomsBatch = 10000
 )
 
 type Matrix struct {
@@ -86,8 +87,8 @@ func NewMatrix(servers []string, proxyURL, proxyToken, publicURL string, data Da
 	}
 }
 
-func (m *Matrix) call(endpoint string) (*http.Response, error) {
-	req, err := http.NewRequest("GET", endpoint, nil)
+func (m *Matrix) call(ctx context.Context, endpoint string) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", endpoint, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -310,7 +311,6 @@ func (m *Matrix) getPublicRooms(name string) {
 		log.Println(name, "added", len(resp.Chunk), "rooms (", added, "of", resp.Total, ") took", time.Since(start))
 
 		if resp.NextBatch == "" {
-			log.Println(name, "no more rooms to parse")
 			return
 		}
 
@@ -324,9 +324,12 @@ func (m *Matrix) getPublicRoomsPage(name, limit, since string) *matrixRoomsResp 
 		endpoint = endpoint + "&since=" + url.QueryEscape(since)
 	}
 
-	resp, err := m.call(endpoint)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	resp, err := m.call(ctx, endpoint)
 	if err != nil {
-		if strings.Contains(err.Error(), "Timeout") {
+		if strings.Contains(err.Error(), "Timeout") || strings.Contains(err.Error(), "deadline") {
 			log.Println(name, "cannot get public rooms (timeout)")
 			return nil
 		}

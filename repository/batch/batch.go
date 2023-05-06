@@ -1,9 +1,13 @@
 package batch
 
-import "log"
+import (
+	"log"
+	"sync"
+)
 
 // Batch struct
 type Batch[T any] struct {
+	sync.Mutex
 	flushfunc func(items []T)
 	data      []T
 	size      int
@@ -20,7 +24,10 @@ func New[T any](size int, flushfunc func(items []T)) *Batch[T] {
 
 // Add items from channel to batch and automatically flush them
 func (b *Batch[T]) Add(item T) {
+	b.Lock()
 	b.data = append(b.data, item)
+	b.Unlock()
+
 	if len(b.data) >= b.size {
 		b.Flush()
 	}
@@ -28,7 +35,9 @@ func (b *Batch[T]) Add(item T) {
 
 // Flush / store batch
 func (b *Batch[T]) Flush() {
+	b.Lock()
 	log.Println("data.Batch", "storing batch of", len(b.data), "items")
 	b.flushfunc(b.data)
 	b.data = make([]T, 0, b.size)
+	b.Unlock()
 }
