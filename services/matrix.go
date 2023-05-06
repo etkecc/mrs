@@ -223,18 +223,10 @@ func (m *Matrix) ParseRooms(workers int) {
 			return nil
 		})
 	}
-
-	go func(ch chan *model.MatrixRoom, wp *workpool.WorkPool) {
-		wp.Wait() //nolint:errcheck
-		close(ch)
-	}(ch, wp)
 	go m.data.AddRoomBatch(ch)
 
-	for {
-		if wp.IsDone() {
-			return
-		}
-	}
+	wp.Wait() //nolint:errcheck
+	close(ch)
 }
 
 // EachRoom allows to work with each known room

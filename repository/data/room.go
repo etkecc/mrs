@@ -2,7 +2,6 @@ package data
 
 import (
 	"encoding/json"
-	"log"
 
 	"go.etcd.io/bbolt"
 
@@ -13,26 +12,7 @@ import (
 //
 //nolint:errcheck
 func (d *Data) AddRoomBatch(ch chan *model.MatrixRoom) {
-	d.db.Update(func(tx *bbolt.Tx) error {
-		for room := range ch {
-			if room == nil {
-				continue
-			}
-
-			roomb, err := json.Marshal(room)
-			if err != nil {
-				log.Println(room.Server, room.ID, "cannot marshal room", err)
-				continue
-			}
-
-			err = tx.Bucket(roomsBucket).Put([]byte(room.ID), roomb)
-			if err != nil {
-				log.Println(room.Server, room.ID, "cannot add room", err)
-				continue
-			}
-		}
-		return nil
-	})
+	d.rb.Add(ch)
 }
 
 // GetRoom info
