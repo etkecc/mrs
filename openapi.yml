@@ -296,6 +296,7 @@ paths:
           description: successful operation
       security:
        - moderation:
+       - automaticToken:
   /mod/unban/{room_id}:
     get:
       tags:
@@ -316,6 +317,7 @@ paths:
           description: successful operation
       security:
        - moderation:
+       - automaticToken:
   /-/status:
     get:
       tags:
@@ -484,3 +486,8 @@ components:
     moderation:
       type: http
       scheme: basic
+    automaticToken:
+      description: automatically generated token
+      type: apiKey
+      name: auth
+      in: query

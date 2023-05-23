@@ -5,16 +5,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
 
+	"github.com/raja/argon2pw"
+
+	"gitlab.com/etke.cc/mrs/api/config"
 	"gitlab.com/etke.cc/mrs/api/model"
 )
 
 // Moderation service
 type Moderation struct {
 	url     *url.URL
+	auth    config.AuthItem
 	data    DataRepository
 	index   IndexRepository
 	webhook string
@@ -28,7 +33,7 @@ type webhookPayload struct {
 }
 
 // NewModeration service
-func NewModeration(data DataRepository, index IndexRepository, publicURL, webhook string) (*Moderation, error) {
+func NewModeration(data DataRepository, index IndexRepository, auth config.AuthItem, publicURL, webhook string) (*Moderation, error) {
 	parsedURL, err := url.Parse(publicURL)
 	if err != nil {
 		return nil, err
@@ -36,6 +41,7 @@ func NewModeration(data DataRepository, index IndexRepository, publicURL, webhoo
 
 	return &Moderation{
 		data:    data,
+		auth:    auth,
 		index:   index,
 		webhook: webhook,
 		url:     parsedURL,
@@ -71,10 +77,18 @@ func (m *Moderation) getReportText(roomID, reason string, room *model.MatrixRoom
 
 	text.WriteString("\n\n---\n\n")
 
+	var queryParams string
+	hash, err := argon2pw.GenerateSaltedHash(m.auth.Login + m.auth.Password)
+	if err != nil {
+		log.Println("cannot generate auth hash:", err)
+	} else {
+		queryParams = "?auth=" + hash
+	}
+
 	text.WriteString("[ban and erase](")
-	text.WriteString(m.url.JoinPath("/mod/ban", roomID).String())
+	text.WriteString(m.url.JoinPath("/mod/ban", roomID).String() + queryParams)
 	text.WriteString(") || [unban](")
-	text.WriteString(m.url.JoinPath("/mod/unban", roomID).String())
+	text.WriteString(m.url.JoinPath("/mod/unban", roomID).String() + queryParams)
 	text.WriteString(")")
 
 	return text.String()
@@ -109,7 +123,7 @@ func (m *Moderation) Report(roomID, reason string) error {
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusAccepted {
 		body, err := io.ReadAll(resp.Body)
-		return fmt.Errorf("report backend returned HTTP %d: %s %v", resp.StatusCode, string(body), err)
+		return fmt.Errorf("backend returned HTTP %d: %s %v", resp.StatusCode, string(body), err)
 	}
 
 	return nil

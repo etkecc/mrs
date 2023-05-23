@@ -188,6 +188,9 @@ github.com/mschoch/smat
 ## explicit; go 1.18
 github.com/pemistahl/lingua-go
 github.com/pemistahl/lingua-go/serialization
+# github.com/raja/argon2pw v1.0.1
+## explicit
+github.com/raja/argon2pw
 # github.com/shopspring/decimal v1.3.1
 ## explicit; go 1.13
 github.com/shopspring/decimal
@@ -213,6 +216,8 @@ go.etcd.io/bbolt
 ## explicit; go 1.17
 golang.org/x/crypto/acme
 golang.org/x/crypto/acme/autocert
+golang.org/x/crypto/argon2
+golang.org/x/crypto/blake2b
 # golang.org/x/exp v0.0.0-20221106115401-f9659909a136
 ## explicit; go 1.18
 golang.org/x/exp/constraints
@@ -227,6 +232,7 @@ golang.org/x/net/http2/hpack
 golang.org/x/net/idna
 # golang.org/x/sys v0.7.0
 ## explicit; go 1.17
+golang.org/x/sys/cpu
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows

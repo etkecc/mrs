@@ -6,6 +6,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/raja/argon2pw"
 
 	"gitlab.com/etke.cc/mrs/api/config"
 	"gitlab.com/etke.cc/mrs/api/model"
@@ -131,11 +132,41 @@ func adminGroup(e *echo.Echo, cfg *config.Config) *echo.Group {
 
 func modGroup(e *echo.Echo, cfg *config.Config) *echo.Group {
 	mod := e.Group("mod")
-	mod.Use(middleware.BasicAuth(func(login, password string, ctx echo.Context) (bool, error) {
-		if login != cfg.Auth.Moderation.Login || password != cfg.Auth.Moderation.Password {
-			return false, nil
+	authPassword := cfg.Auth.Moderation.Login + cfg.Auth.Moderation.Password
+	mod.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			hash := c.QueryParam("auth")
+			if hash == "" {
+				return next(c)
+			}
+
+			ok, _ := argon2pw.CompareHashWithPassword(hash, authPassword) //nolint:errcheck
+			if !ok {
+				return echo.ErrUnauthorized
+			}
+
+			c.Set("authorized", true)
+			return next(c)
 		}
-		return true, nil
+	})
+	mod.Use(middleware.BasicAuthWithConfig(middleware.BasicAuthConfig{
+		Skipper: func(c echo.Context) bool {
+			v := c.Get("authorized")
+			if v == nil {
+				return false
+			}
+			skip, ok := v.(bool)
+			if !ok {
+				return false
+			}
+			return skip
+		},
+		Validator: func(login, password string, ctx echo.Context) (bool, error) {
+			if login != cfg.Auth.Moderation.Login || password != cfg.Auth.Moderation.Password {
+				return false, nil
+			}
+			return true, nil
+		},
 	}))
 	return mod
 }

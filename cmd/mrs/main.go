@@ -60,7 +60,7 @@ func main() {
 	statsSvc := services.NewStats(dataRepo)
 	cacheSvc := services.NewCache(cfg.Cache.MaxAge, cfg.Cache.Bunny.URL, cfg.Cache.Bunny.Key, statsSvc)
 	dataSvc := services.NewDataFacade(matrixSvc, indexSvc, statsSvc, cacheSvc)
-	modSvc, merr := services.NewModeration(dataRepo, index, cfg.PublicURL, cfg.Moderation.Webhook)
+	modSvc, merr := services.NewModeration(dataRepo, index, cfg.Auth.Moderation, cfg.PublicURL, cfg.Moderation.Webhook)
 	if merr != nil {
 		log.Fatal("cannot start moderation service", err)
 	}
