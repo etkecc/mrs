@@ -6,6 +6,7 @@ import (
 	"go.etcd.io/bbolt"
 
 	"gitlab.com/etke.cc/mrs/api/model"
+	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
 // AddRoomBatch info
@@ -56,10 +57,19 @@ func (d *Data) EachRoom(handler func(roomID string, data *model.MatrixRoom)) {
 }
 
 // GetBannedRooms returns full list of the banned rooms
-func (d *Data) GetBannedRooms() ([]string, error) {
+func (d *Data) GetBannedRooms(serverName ...string) ([]string, error) {
+	var server string
+	if len(serverName) > 0 {
+		server = serverName[0]
+	}
 	list := []string{}
 	err := d.db.View(func(tx *bbolt.Tx) error {
 		return tx.Bucket(roomsBanlistBucket).ForEach(func(k, v []byte) error {
+			roomID := string(k)
+			if server != "" && utils.ServerFrom(roomID) != server {
+				return nil
+			}
+
 			list = append(list, string(k))
 			return nil
 		})

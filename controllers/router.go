@@ -61,6 +61,7 @@ func ConfigureRouter(
 	e.POST("/mod/report/:room_id", report(modSvc), rl) // doesn't use mod group to allow without auth
 	m := modGroup(e, cfg)
 	m.GET("/list", listBanned(modSvc), rl)
+	m.GET("/list/:server_name", listBanned(modSvc), rl)
 	m.GET("/ban/:room_id", ban(modSvc), rl)
 	m.GET("/unban/:room_id", unban(modSvc), rl)
 

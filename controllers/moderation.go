@@ -9,7 +9,7 @@ import (
 
 type moderationService interface {
 	Report(string, string) error
-	List() ([]string, error)
+	List(...string) ([]string, error)
 	Ban(string) error
 	Unban(string) error
 }
@@ -38,13 +38,20 @@ func report(svc moderationService) echo.HandlerFunc {
 
 func listBanned(svc moderationService) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		list, err := svc.List()
+		serverName := c.Param("server_name")
+		var list []string
+		var err error
+		if serverName != "" {
+			list, err = svc.List(serverName)
+		} else {
+			list, err = svc.List()
+		}
 		if err != nil {
 			return err
 		}
 
 		if len(list) == 0 {
-			return c.NoContent(http.StatusCreated)
+			return c.NoContent(http.StatusNoContent)
 		}
 		return c.JSON(http.StatusOK, list)
 	}

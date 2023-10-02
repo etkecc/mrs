@@ -90,8 +90,11 @@ func (m *Moderation) getReportText(roomID, reason string, room *model.MatrixRoom
 	text.WriteString(m.url.JoinPath("/mod/ban", roomID).String() + queryParams)
 	text.WriteString(") || [unban](")
 	text.WriteString(m.url.JoinPath("/mod/unban", roomID).String() + queryParams)
-	text.WriteString(") || [list banned](")
+	text.WriteString(") || [list banned (all)](")
 	text.WriteString(m.url.JoinPath("/mod/list").String() + queryParams)
+	text.WriteString(") || [list banned (" + room.Server + ")](")
+	text.WriteString(m.url.JoinPath("/mod/list/"+room.Server).String() + queryParams)
+	text.WriteString(")")
 
 	return text.String()
 }
@@ -131,9 +134,9 @@ func (m *Moderation) Report(roomID, reason string) error {
 	return nil
 }
 
-// List returns full list of the banned rooms
-func (m *Moderation) List() ([]string, error) {
-	return m.data.GetBannedRooms()
+// List returns full list of the banned rooms (optionally from specific server)
+func (m *Moderation) List(serverName ...string) ([]string, error) {
+	return m.data.GetBannedRooms(serverName...)
 }
 
 // Ban a room

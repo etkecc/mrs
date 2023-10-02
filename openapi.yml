@@ -284,7 +284,37 @@ paths:
       description: List all banned rooms
       operationId: mod_list
       responses:
-        '201':
+        '204':
+          description: no banned rooms yet
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  description: banned matrix room ID
+                  example: '!randomString:example.com'
+      security:
+       - moderation:
+       - automaticToken:
+  /mod/list/{server_name}:
+    get:
+      tags:
+        - private
+        - moderation
+      parameters:
+        - name: server_name
+          in: path
+          description: server name
+          required: true
+          schema:
+            type: string
+            example: 'example.com'
+      description: List banned rooms of specific server
+      operationId: mod_list_server
+      responses:
+        '204':
           description: no banned rooms yet
         '200':
           content:
