@@ -19,7 +19,7 @@ type matrixService interface {
 	AddServer(string) int
 	AddServers([]string, int)
 	AllServers() map[string]string
-	GetAvatar(string, string) (io.ReadCloser, string)
+	GetAvatar(string, string) (io.Reader, string)
 }
 
 func servers(matrix matrixService) echo.HandlerFunc {

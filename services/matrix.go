@@ -256,7 +256,7 @@ func (m *Matrix) getMediaURLs(serverName, mediaID string) []string {
 	return urls
 }
 
-func (m *Matrix) GetAvatar(serverName string, mediaID string) (io.ReadCloser, string) {
+func (m *Matrix) downloadAvatar(serverName, mediaID string) (io.ReadCloser, string) {
 	datachan := make(chan map[string]io.ReadCloser, 1)
 	for _, avatarURL := range m.getMediaURLs(serverName, mediaID) {
 		go func(datachan chan map[string]io.ReadCloser, avatarURL string) {
@@ -284,6 +284,15 @@ func (m *Matrix) GetAvatar(serverName string, mediaID string) (io.ReadCloser, st
 	}
 
 	return nil, ""
+}
+
+func (m *Matrix) GetAvatar(serverName string, mediaID string) (io.Reader, string) {
+	avatar, contentType := m.downloadAvatar(serverName, mediaID)
+	converted, ok := utils.Avatar(avatar)
+	if ok {
+		contentType = utils.AvatarMIME
+	}
+	return converted, contentType
 }
 
 // validateDiscoveredServer performs simple check to public rooms endpoint

@@ -18,7 +18,6 @@ func avatar(svc matrixService) echo.HandlerFunc {
 		if contentType == "" {
 			return c.NoContent(http.StatusNoContent)
 		}
-		defer avatar.Close()
 
 		return c.Stream(http.StatusOK, contentType, avatar)
 	}

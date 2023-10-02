@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/blevesearch/bleve/v2 v2.3.7
 	github.com/fsnotify/fsnotify v1.6.0
+	github.com/h2non/bimg v1.1.10-0.20230922201823-0fdc5cc0e1b8
 	github.com/labstack/echo/v4 v4.10.2
 	github.com/mileusna/crontab v1.2.0
 	github.com/pemistahl/lingua-go v1.3.3
