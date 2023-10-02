@@ -14,6 +14,7 @@ import (
 
 	"gitlab.com/etke.cc/mrs/api/config"
 	"gitlab.com/etke.cc/mrs/api/model"
+	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
 // Moderation service
@@ -82,14 +83,15 @@ func (m *Moderation) getReportText(roomID, reason string, room *model.MatrixRoom
 	if err != nil {
 		log.Println("cannot generate auth hash:", err)
 	} else {
-		queryParams = "?auth=" + hash
+		queryParams = "?auth=" + utils.URLSafeEncode(hash)
 	}
 
 	text.WriteString("[ban and erase](")
 	text.WriteString(m.url.JoinPath("/mod/ban", roomID).String() + queryParams)
 	text.WriteString(") || [unban](")
 	text.WriteString(m.url.JoinPath("/mod/unban", roomID).String() + queryParams)
-	text.WriteString(")")
+	text.WriteString(") || [list banned](")
+	text.WriteString(m.url.JoinPath("/mod/list").String() + queryParams)
 
 	return text.String()
 }
@@ -121,12 +123,17 @@ func (m *Moderation) Report(roomID, reason string) error {
 		return err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusAccepted {
+	if resp.StatusCode != http.StatusAccepted && resp.StatusCode != http.StatusOK {
 		body, err := io.ReadAll(resp.Body)
 		return fmt.Errorf("backend returned HTTP %d: %s %v", resp.StatusCode, string(body), err)
 	}
 
 	return nil
+}
+
+// List returns full list of the banned rooms
+func (m *Moderation) List() ([]string, error) {
+	return m.data.GetBannedRooms()
 }
 
 // Ban a room

@@ -55,6 +55,18 @@ func (d *Data) EachRoom(handler func(roomID string, data *model.MatrixRoom)) {
 	})
 }
 
+// GetBannedRooms returns full list of the banned rooms
+func (d *Data) GetBannedRooms() ([]string, error) {
+	list := []string{}
+	err := d.db.View(func(tx *bbolt.Tx) error {
+		return tx.Bucket(roomsBanlistBucket).ForEach(func(k, v []byte) error {
+			list = append(list, string(k))
+			return nil
+		})
+	})
+	return list, err
+}
+
 // BanRoom
 func (d *Data) BanRoom(roomID string) error {
 	return d.db.Batch(func(tx *bbolt.Tx) error {

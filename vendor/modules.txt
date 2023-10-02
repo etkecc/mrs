@@ -194,6 +194,9 @@ github.com/raja/argon2pw
 # github.com/shopspring/decimal v1.3.1
 ## explicit; go 1.13
 github.com/shopspring/decimal
+# github.com/theovassiliou/base64url v0.0.0-20211006203958-1e011490eaaf
+## explicit; go 1.13
+github.com/theovassiliou/base64url
 # github.com/valyala/bytebufferpool v1.0.0
 ## explicit
 github.com/valyala/bytebufferpool

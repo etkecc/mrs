@@ -276,6 +276,28 @@ paths:
           description: successful operation
         '429':
           description: too many requests
+  /mod/list:
+    get:
+      tags:
+        - private
+        - moderation
+      description: List all banned rooms
+      operationId: mod_list
+      responses:
+        '201':
+          description: no banned rooms yet
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  description: banned matrix room ID
+                  example: '!randomString:example.com'
+      security:
+       - moderation:
+       - automaticToken:
   /mod/ban/{room_id}:
     get:
       tags:
@@ -292,8 +314,17 @@ paths:
             type: string
             example: '!randomString:example.com'
       responses:
-        '201':
+        '200':
           description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: response message
+                    example: 'the room has been banned'
       security:
        - moderation:
        - automaticToken:
@@ -313,8 +344,17 @@ paths:
             type: string
             example: '!randomString:example.com'
       responses:
-        '202':
+        '200':
           description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: response message
+                    example: 'the room has been unbanned'
       security:
        - moderation:
        - automaticToken:

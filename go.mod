@@ -9,6 +9,7 @@ require (
 	github.com/mileusna/crontab v1.2.0
 	github.com/pemistahl/lingua-go v1.3.3
 	github.com/raja/argon2pw v1.0.1
+	github.com/theovassiliou/base64url v0.0.0-20211006203958-1e011490eaaf
 	github.com/xxjwxc/gowp v0.0.0-20220528192505-f87b7668d4ff
 	gitlab.com/etke.cc/go/fswatcher v1.0.0
 	go.etcd.io/bbolt v1.3.5

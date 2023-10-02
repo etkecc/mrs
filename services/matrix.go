@@ -47,6 +47,7 @@ type DataRepository interface {
 	FlushRoomBatch()
 	GetRoom(string) (*model.MatrixRoom, error)
 	EachRoom(func(string, *model.MatrixRoom))
+	GetBannedRooms() ([]string, error)
 	BanRoom(string) error
 	UnbanRoom(string) error
 }

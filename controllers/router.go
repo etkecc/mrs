@@ -10,6 +10,7 @@ import (
 
 	"gitlab.com/etke.cc/mrs/api/config"
 	"gitlab.com/etke.cc/mrs/api/model"
+	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
 type statsService interface {
@@ -19,6 +20,18 @@ type statsService interface {
 type cacheService interface {
 	Middleware() echo.MiddlewareFunc
 	MiddlewareImmutable() echo.MiddlewareFunc
+}
+
+var basicAuthSkipper = func(c echo.Context) bool {
+	v := c.Get("authorized")
+	if v == nil {
+		return false
+	}
+	skip, ok := v.(bool)
+	if !ok {
+		return false
+	}
+	return skip
 }
 
 // ConfigureRouter configures echo router
@@ -47,6 +60,7 @@ func ConfigureRouter(
 
 	e.POST("/mod/report/:room_id", report(modSvc), rl) // doesn't use mod group to allow without auth
 	m := modGroup(e, cfg)
+	m.GET("/list", listBanned(modSvc), rl)
 	m.GET("/ban/:room_id", ban(modSvc), rl)
 	m.GET("/unban/:room_id", unban(modSvc), rl)
 
@@ -105,29 +119,46 @@ func discoveryProtection(rl echo.MiddlewareFunc, cfg *config.Config) echo.Middle
 
 func adminGroup(e *echo.Echo, cfg *config.Config) *echo.Group {
 	admin := e.Group("-")
-	admin.Use(middleware.BasicAuth(func(login, password string, ctx echo.Context) (bool, error) {
-		if login != cfg.Auth.Admin.Login || password != cfg.Auth.Admin.Password {
-			return false, nil
-		}
-		if len(cfg.Auth.Admin.IPs) == 0 {
-			return true, nil
-		}
-		var allowed bool
-		realIP := ctx.RealIP()
-		for _, ip := range cfg.Auth.Admin.IPs {
-			if ip == realIP {
-				allowed = true
-				break
+	admin.Use(middleware.BasicAuthWithConfig(middleware.BasicAuthConfig{
+		Skipper: basicAuthSkipper,
+		Validator: func(login, password string, ctx echo.Context) (bool, error) {
+			if login != cfg.Auth.Admin.Login || password != cfg.Auth.Admin.Password {
+				return false, nil
 			}
-		}
+			if len(cfg.Auth.Admin.IPs) == 0 {
+				return true, nil
+			}
+			var allowed bool
+			realIP := ctx.RealIP()
+			for _, ip := range cfg.Auth.Admin.IPs {
+				if ip == realIP {
+					allowed = true
+					break
+				}
+			}
 
-		if allowed {
-			return true, nil
-		}
+			if allowed {
+				return true, nil
+			}
 
-		return false, nil
+			return false, nil
+		},
 	}))
+
 	return admin
+}
+
+func hashAuth(c echo.Context, authPassword string) *bool {
+	hash := c.QueryParam("auth")
+	if hash == "" {
+		return nil
+	}
+	hashDecoded := utils.URLSafeDecode(hash)
+	if hashDecoded != "" {
+		hash = hashDecoded
+	}
+	ok, _ := argon2pw.CompareHashWithPassword(hash, authPassword) //nolint:errcheck
+	return &ok
 }
 
 func modGroup(e *echo.Echo, cfg *config.Config) *echo.Group {
@@ -135,13 +166,11 @@ func modGroup(e *echo.Echo, cfg *config.Config) *echo.Group {
 	authPassword := cfg.Auth.Moderation.Login + cfg.Auth.Moderation.Password
 	mod.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			hash := c.QueryParam("auth")
-			if hash == "" {
+			ok := hashAuth(c, authPassword)
+			if ok == nil {
 				return next(c)
 			}
-
-			ok, _ := argon2pw.CompareHashWithPassword(hash, authPassword) //nolint:errcheck
-			if !ok {
+			if !*ok {
 				return echo.ErrUnauthorized
 			}
 
@@ -150,17 +179,7 @@ func modGroup(e *echo.Echo, cfg *config.Config) *echo.Group {
 		}
 	})
 	mod.Use(middleware.BasicAuthWithConfig(middleware.BasicAuthConfig{
-		Skipper: func(c echo.Context) bool {
-			v := c.Get("authorized")
-			if v == nil {
-				return false
-			}
-			skip, ok := v.(bool)
-			if !ok {
-				return false
-			}
-			return skip
-		},
+		Skipper: basicAuthSkipper,
 		Validator: func(login, password string, ctx echo.Context) (bool, error) {
 			if login != cfg.Auth.Moderation.Login || password != cfg.Auth.Moderation.Password {
 				return false, nil

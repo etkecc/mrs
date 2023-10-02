@@ -9,6 +9,7 @@ import (
 
 type moderationService interface {
 	Report(string, string) error
+	List() ([]string, error)
 	Ban(string) error
 	Unban(string) error
 }
@@ -35,6 +36,20 @@ func report(svc moderationService) echo.HandlerFunc {
 	}
 }
 
+func listBanned(svc moderationService) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		list, err := svc.List()
+		if err != nil {
+			return err
+		}
+
+		if len(list) == 0 {
+			return c.NoContent(http.StatusCreated)
+		}
+		return c.JSON(http.StatusOK, list)
+	}
+}
+
 func ban(svc moderationService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		roomID := c.Param("room_id")
@@ -42,7 +57,7 @@ func ban(svc moderationService) echo.HandlerFunc {
 			return err
 		}
 
-		return c.NoContent(http.StatusCreated)
+		return c.JSON(http.StatusOK, map[string]string{"message": "the room has been banned"})
 	}
 }
 
@@ -53,6 +68,6 @@ func unban(svc moderationService) echo.HandlerFunc {
 			return err
 		}
 
-		return c.NoContent(http.StatusAccepted)
+		return c.JSON(http.StatusOK, map[string]string{"message": "the room has been unbanned"})
 	}
 }
