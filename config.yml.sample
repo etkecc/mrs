@@ -1,5 +1,8 @@
 port: 8080
-public_url: http://localhost:8080
+public: # public-facing information
+  name: MRS # instance name
+  ui: http://localhost # UI URL
+  api: https://localhost:8080 # public API URL
 proxy:
   server: https://matrix.example.com # matrix server (actual url) to query public rooms over federation
   token: '' # matrix session token
@@ -35,6 +38,31 @@ workers: # parallelism configuration, how much workers to spin up at once
   parsing: 20 # matrix public rooms parsing, servers at once
 moderation: # moderation config
   webhook: 'hookshot webhook url'
+email: # (optional) email integration, for now only for automatic reporting using MSC1929
+  postmark: # only postmark is supported for now
+    server_token: your server token
+    report:
+      message_stream: postmark message stream ID
+      from: email, usually a postmark sender signature
+  templates: # (optional) email templates using go tempates: https://pkg.go.dev/text/template
+    report: # report is used when sending automatic email to the server admins using MSC1929 contacts
+      subject: "{{ .Public.Name }}: Room {{ .Room.ID }} has been reported"
+      body: |-
+        Hello,
+
+        The room "[{{ .Room.ID }}](https://matrix.to/#/{{ .Room.ID }})" has been reported
+        on [{{ .Public.Name }}]({{ .Public.UI }}) (a [Matrix Rooms Search](https://gitlab.com/etke.cc/mrs/api) instance).
+
+        Reporter provided the following reason:
+
+        ```
+        {{ .Reason }}
+        ```
+
+        ---
+
+        This automatic email was sent by [{{ .Public.Name }}]({{ .Public.UI }}) (a [Matrix Rooms Search](https://gitlab.com/etke.cc/mrs/api) instance) because you listed that email address as contact point (Matrix MSC1929 proposal).
+        If you have any questions - please, use the [{{ .Public.Name }}]({{ .Public.UI }}) website.
 
 languages: # (optional) list of supported languages in ISO 639-1 format. if first element is "ALL" - all models will be loaded
   - EN

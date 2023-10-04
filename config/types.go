@@ -3,7 +3,7 @@ package config
 // Config structure
 type Config struct {
 	Port       string     `yaml:"port"`
-	PublicURL  string     `yaml:"public_url"`
+	Public     Public     `yaml:"public"`
 	Proxy      Proxy      `yaml:"proxy"`
 	Path       Paths      `yaml:"path"`
 	Batch      Batch      `yaml:"batch"`
@@ -12,8 +12,15 @@ type Config struct {
 	Cache      Cache      `yaml:"cache"`
 	Workers    Workers    `yaml:"workers"`
 	Moderation Moderation `yaml:"moderation"`
+	Email      Email      `yaml:"email"`
 	Languages  []string   `yaml:"languages"`
 	Servers    []string   `yaml:"servers"`
+}
+
+type Public struct {
+	Name string `yaml:"name"`
+	UI   string `yaml:"ui"`
+	API  string `yaml:"api"`
 }
 
 type Proxy struct {
@@ -81,4 +88,33 @@ type Batch struct {
 type Workers struct {
 	Discovery int `yaml:"discovery"`
 	Parsing   int `yaml:"parsing"`
+}
+
+// Email config
+type Email struct {
+	Postmark  EmailPostmark  `yaml:"postmark"`
+	Templates EmailTemplates `yaml:"templates"`
+}
+
+// EmailPostmark is Postmark config
+type EmailPostmark struct {
+	Token  string            `yaml:"server_token"`
+	Report EmailPostmarkType `yaml:"report"`
+}
+
+// EmailPostmarkType config
+type EmailPostmarkType struct {
+	Stream string `yaml:"message_stream"`
+	From   string `yaml:"from"`
+}
+
+// EmailTemplates config
+type EmailTemplates struct {
+	Report EmailTemplate `yaml:"report"`
+}
+
+// EmailTemplate config
+type EmailTemplate struct {
+	Subject string `yaml:"subject"`
+	Body    string `yaml:"body"`
 }

@@ -175,6 +175,9 @@ github.com/labstack/gommon/bytes
 github.com/labstack/gommon/color
 github.com/labstack/gommon/log
 github.com/labstack/gommon/random
+# github.com/mattevans/postmark-go v0.1.6
+## explicit; go 1.17
+github.com/mattevans/postmark-go
 # github.com/mattn/go-colorable v0.1.13
 ## explicit; go 1.15
 github.com/mattn/go-colorable
@@ -212,37 +215,55 @@ github.com/xxjwxc/gowp/workpool
 # github.com/xxjwxc/public v0.0.0-20210518123934-6cc0965f0bc5
 ## explicit; go 1.14
 github.com/xxjwxc/public/myqueue
+# github.com/yuin/goldmark v1.5.6
+## explicit; go 1.18
+github.com/yuin/goldmark
+github.com/yuin/goldmark/ast
+github.com/yuin/goldmark/extension
+github.com/yuin/goldmark/extension/ast
+github.com/yuin/goldmark/parser
+github.com/yuin/goldmark/renderer
+github.com/yuin/goldmark/renderer/html
+github.com/yuin/goldmark/text
+github.com/yuin/goldmark/util
 # gitlab.com/etke.cc/go/fswatcher v1.0.0
 ## explicit; go 1.20
 gitlab.com/etke.cc/go/fswatcher
 # go.etcd.io/bbolt v1.3.5
 ## explicit; go 1.12
 go.etcd.io/bbolt
-# golang.org/x/crypto v0.6.0
+# go.mau.fi/util v0.1.0
+## explicit; go 1.20
+go.mau.fi/util/base58
+# golang.org/x/crypto v0.13.0
 ## explicit; go 1.17
 golang.org/x/crypto/acme
 golang.org/x/crypto/acme/autocert
 golang.org/x/crypto/argon2
 golang.org/x/crypto/blake2b
-# golang.org/x/exp v0.0.0-20221106115401-f9659909a136
-## explicit; go 1.18
+golang.org/x/crypto/hkdf
+golang.org/x/crypto/pbkdf2
+# golang.org/x/exp v0.0.0-20230905200255-921286631fa9
+## explicit; go 1.20
 golang.org/x/exp/constraints
 golang.org/x/exp/maps
 golang.org/x/exp/slices
-# golang.org/x/net v0.7.0
+# golang.org/x/net v0.15.0
 ## explicit; go 1.17
+golang.org/x/net/html
+golang.org/x/net/html/atom
 golang.org/x/net/http/httpguts
 golang.org/x/net/http2
 golang.org/x/net/http2/h2c
 golang.org/x/net/http2/hpack
 golang.org/x/net/idna
-# golang.org/x/sys v0.7.0
+# golang.org/x/sys v0.12.0
 ## explicit; go 1.17
 golang.org/x/sys/cpu
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/text v0.7.0
+# golang.org/x/text v0.13.0
 ## explicit; go 1.17
 golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
@@ -286,6 +307,14 @@ gopkg.in/eapache/queue.v1
 # gopkg.in/yaml.v3 v3.0.1
 ## explicit
 gopkg.in/yaml.v3
+# maunium.net/go/mautrix v0.16.1
+## explicit; go 1.20
+maunium.net/go/mautrix/crypto/attachment
+maunium.net/go/mautrix/crypto/utils
+maunium.net/go/mautrix/event
+maunium.net/go/mautrix/format
+maunium.net/go/mautrix/format/mdext
+maunium.net/go/mautrix/id
 # mvdan.cc/xurls/v2 v2.5.0
 ## explicit; go 1.19
 mvdan.cc/xurls/v2

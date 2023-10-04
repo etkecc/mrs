@@ -17,11 +17,17 @@ import (
 	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
+type EmailService interface {
+	SendReport(room *model.MatrixRoom, server *model.MatrixServer, reason string, emails []string) error
+}
+
 // Moderation service
 type Moderation struct {
-	url     *url.URL
+	apiURL  *url.URL
+	uiURL   *url.URL
 	auth    config.AuthItem
 	data    DataRepository
+	mail    EmailService
 	index   IndexRepository
 	webhook string
 }
@@ -34,8 +40,12 @@ type webhookPayload struct {
 }
 
 // NewModeration service
-func NewModeration(data DataRepository, index IndexRepository, auth config.AuthItem, publicURL, webhook string) (*Moderation, error) {
-	parsedURL, err := url.Parse(publicURL)
+func NewModeration(data DataRepository, index IndexRepository, mail EmailService, auth config.AuthItem, public config.Public, webhook string) (*Moderation, error) {
+	parsedAPIURL, err := url.Parse(public.API)
+	if err != nil {
+		return nil, err
+	}
+	parsedUIURL, err := url.Parse(public.UI)
 	if err != nil {
 		return nil, err
 	}
@@ -43,13 +53,15 @@ func NewModeration(data DataRepository, index IndexRepository, auth config.AuthI
 	return &Moderation{
 		data:    data,
 		auth:    auth,
+		mail:    mail,
 		index:   index,
 		webhook: webhook,
-		url:     parsedURL,
+		apiURL:  parsedAPIURL,
+		uiURL:   parsedUIURL,
 	}, nil
 }
 
-func (m *Moderation) getReportText(roomID, reason string, room *model.MatrixRoom) string {
+func (m *Moderation) getReportText(roomID, reason string, room *model.MatrixRoom, server *model.MatrixServer) string {
 	var roomtxt string
 	roomb, err := json.MarshalIndent(room, "", "    ")
 	if err == nil {
@@ -78,6 +90,8 @@ func (m *Moderation) getReportText(roomID, reason string, room *model.MatrixRoom
 
 	text.WriteString("\n\n---\n\n")
 
+	text.WriteString(m.getServerContactsText(server.Contacts))
+
 	var queryParams string
 	hash, err := argon2pw.GenerateSaltedHash(m.auth.Login + m.auth.Password)
 	if err != nil {
@@ -87,14 +101,39 @@ func (m *Moderation) getReportText(roomID, reason string, room *model.MatrixRoom
 	}
 
 	text.WriteString("[ban and erase](")
-	text.WriteString(m.url.JoinPath("/mod/ban", roomID).String() + queryParams)
+	text.WriteString(m.apiURL.JoinPath("/mod/ban", roomID).String() + queryParams)
 	text.WriteString(") || [unban](")
-	text.WriteString(m.url.JoinPath("/mod/unban", roomID).String() + queryParams)
+	text.WriteString(m.apiURL.JoinPath("/mod/unban", roomID).String() + queryParams)
 	text.WriteString(") || [list banned (all)](")
-	text.WriteString(m.url.JoinPath("/mod/list").String() + queryParams)
+	text.WriteString(m.apiURL.JoinPath("/mod/list").String() + queryParams)
 	text.WriteString(") || [list banned (" + room.Server + ")](")
-	text.WriteString(m.url.JoinPath("/mod/list/"+room.Server).String() + queryParams)
+	text.WriteString(m.apiURL.JoinPath("/mod/list/"+room.Server).String() + queryParams)
 	text.WriteString(")")
+
+	return text.String()
+}
+
+func (m *Moderation) getServerContactsText(contacts model.MatrixServerContacts) string {
+	if contacts.IsEmpty() {
+		return ""
+	}
+	var text strings.Builder
+	emails := contacts.Emails
+	mxids := contacts.MXIDs
+	page := contacts.URL
+
+	text.WriteString("**Server Contacts**\n\n")
+	if len(emails) > 0 {
+		text.WriteString("* Emails: " + utils.SliceToString(emails, ", ", utils.MarkdownEmail) + "\n")
+	}
+	if len(mxids) > 0 {
+		text.WriteString("* MXIDs: " + utils.SliceToString(mxids, ", ", utils.MarkdownMXID) + "\n")
+	}
+	if page != "" {
+		text.WriteString("* URL: " + utils.MarkdownLink(page) + "\n")
+	}
+
+	text.WriteString("\n---\n\n")
 
 	return text.String()
 }
@@ -107,13 +146,24 @@ func (m *Moderation) Report(roomID, reason string) error {
 	if room == nil {
 		return fmt.Errorf("room not found")
 	}
+	server, err := m.data.GetServerInfo(room.Server)
+	if err != nil {
+		return err
+	}
+	if server == nil {
+		return fmt.Errorf("server not found")
+	}
 
 	payload, err := json.Marshal(webhookPayload{
-		Username: m.url.Host,
-		Markdown: m.getReportText(roomID, reason, room),
+		Username: m.uiURL.Host,
+		Markdown: m.getReportText(roomID, reason, room, server),
 	})
 	if err != nil {
 		return err
+	}
+
+	if merr := m.mail.SendReport(room, server, reason, server.Contacts.Emails); merr != nil {
+		log.Printf("email sending failed: %+v", merr)
 	}
 
 	req, err := http.NewRequest("POST", m.webhook, bytes.NewReader(payload))

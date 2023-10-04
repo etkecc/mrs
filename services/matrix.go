@@ -77,6 +77,16 @@ type matrixRoomsResp struct {
 	Total     int                 `json:"total_room_count_estimate"`
 }
 
+type matrixContactsResp struct {
+	Admins      []matrixContactsRespAdmin `json:"admins"`
+	SupportPage string                    `json:"support_page"`
+}
+
+type matrixContactsRespAdmin struct {
+	Email    string `json:"email_address"`
+	MatrixID string `json:"matrix_id"`
+}
+
 // NewMatrix service
 func NewMatrix(servers []string, proxyURL, proxyToken, publicURL string, data DataRepository, detector lingua.LanguageDetector) *Matrix {
 	return &Matrix{
@@ -89,13 +99,15 @@ func NewMatrix(servers []string, proxyURL, proxyToken, publicURL string, data Da
 	}
 }
 
-func (m *Matrix) call(ctx context.Context, endpoint string) (*http.Response, error) {
+func (m *Matrix) call(ctx context.Context, endpoint string, withAuth bool) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", endpoint, nil)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Connection", "Keep-Alive")
-	req.Header.Set("Authorization", "Bearer "+m.proxyToken)
+	if withAuth {
+		req.Header.Set("Connection", "Keep-Alive")
+		req.Header.Set("Authorization", "Bearer "+m.proxyToken)
+	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", version.UserAgent)
 
@@ -122,6 +134,10 @@ func (m *Matrix) DiscoverServers(workers int) error {
 				Online:    true,
 				UpdatedAt: time.Now().UTC(),
 			}
+			if contacts := m.getServerContacts(name); contacts != nil {
+				server.Contacts = *contacts
+			}
+
 			if m.validateDiscoveredServer(name) {
 				return m.data.AddServer(server)
 			}
@@ -149,6 +165,10 @@ func (m *Matrix) AddServers(names []string, workers int) {
 				Name:      name,
 				Online:    true,
 				UpdatedAt: time.Now().UTC(),
+			}
+
+			if contacts := m.getServerContacts(name); contacts != nil {
+				server.Contacts = *contacts
 			}
 
 			if !m.validateDiscoveredServer(name) {
@@ -181,6 +201,10 @@ func (m *Matrix) AddServer(name string) int {
 		Name:      name,
 		Online:    true,
 		UpdatedAt: time.Now().UTC(),
+	}
+
+	if contacts := m.getServerContacts(name); contacts != nil {
+		server.Contacts = *contacts
 	}
 
 	if !m.validateDiscoveredServer(name) {
@@ -301,6 +325,69 @@ func (m *Matrix) validateDiscoveredServer(name string) bool {
 	return m.getPublicRoomsPage(name, "1", "") != nil
 }
 
+// getServerContacts as per MSC1929
+func (m *Matrix) getServerContacts(name string) *model.MatrixServerContacts {
+	contacts := &model.MatrixServerContacts{Emails: []string{}, MXIDs: []string{}}
+	endpoint := "https://" + name + "/.well-known/matrix/support"
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	resp, err := m.call(ctx, endpoint, false)
+	if err != nil {
+		if strings.Contains(err.Error(), "Timeout") || strings.Contains(err.Error(), "deadline") {
+			log.Println(name, "cannot get server contacts (timeout)")
+			return contacts
+		}
+
+		log.Println(name, "cannot get server contacts", err)
+		return contacts
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		log.Println(name, "cannot get server contacts", resp.Status)
+		return contacts
+	}
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Println(name, "cannot read server contacts", err)
+		return contacts
+	}
+
+	var contactsResp *matrixContactsResp
+	err = json.Unmarshal(data, &contactsResp)
+	if err != nil {
+		log.Println(name, "cannot unmarshal server contacts", err)
+		return contacts
+	}
+
+	var hasContent bool
+	if contactsResp.SupportPage != "" {
+		contacts.URL = contactsResp.SupportPage
+		hasContent = true
+	}
+	for _, admin := range contactsResp.Admins {
+		if admin.Email != "" {
+			contacts.Emails = append(contacts.Emails, admin.Email)
+			hasContent = true
+		}
+		if admin.MatrixID != "" {
+			contacts.MXIDs = append(contacts.MXIDs, admin.MatrixID)
+			hasContent = true
+		}
+	}
+
+	if hasContent {
+		contacts.Emails = utils.Uniq(contacts.Emails)
+		contacts.MXIDs = utils.Uniq(contacts.MXIDs)
+
+		return contacts
+	}
+	return nil
+}
+
 // getPublicRooms reads public rooms of the given server from the matrix client-server api
 // and sends them into channel
 func (m *Matrix) getPublicRooms(name string) {
@@ -344,7 +431,7 @@ func (m *Matrix) getPublicRoomsPage(name, limit, since string) *matrixRoomsResp 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	resp, err := m.call(ctx, endpoint)
+	resp, err := m.call(ctx, endpoint, true)
 	if err != nil {
 		if strings.Contains(err.Error(), "Timeout") || strings.Contains(err.Error(), "deadline") {
 			log.Println(name, "cannot get public rooms (timeout)")

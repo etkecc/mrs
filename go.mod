@@ -7,6 +7,7 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/h2non/bimg v1.1.10-0.20230922201823-0fdc5cc0e1b8
 	github.com/labstack/echo/v4 v4.10.2
+	github.com/mattevans/postmark-go v0.1.6
 	github.com/mileusna/crontab v1.2.0
 	github.com/pemistahl/lingua-go v1.3.3
 	github.com/raja/argon2pw v1.0.1
@@ -15,6 +16,7 @@ require (
 	gitlab.com/etke.cc/go/fswatcher v1.0.0
 	go.etcd.io/bbolt v1.3.5
 	gopkg.in/yaml.v3 v3.0.1
+	maunium.net/go/mautrix v0.16.1
 	mvdan.cc/xurls/v2 v2.5.0
 )
 
@@ -49,11 +51,13 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/xxjwxc/public v0.0.0-20210518123934-6cc0965f0bc5 // indirect
-	golang.org/x/crypto v0.6.0 // indirect
-	golang.org/x/exp v0.0.0-20221106115401-f9659909a136 // indirect
-	golang.org/x/net v0.7.0 // indirect
-	golang.org/x/sys v0.7.0 // indirect
-	golang.org/x/text v0.7.0 // indirect
+	github.com/yuin/goldmark v1.5.6 // indirect
+	go.mau.fi/util v0.1.0 // indirect
+	golang.org/x/crypto v0.13.0 // indirect
+	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
+	golang.org/x/net v0.15.0 // indirect
+	golang.org/x/sys v0.12.0 // indirect
+	golang.org/x/text v0.13.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/eapache/queue.v1 v1.1.0 // indirect

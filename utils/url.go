@@ -1,8 +1,6 @@
 package utils
 
-import (
-	"github.com/theovassiliou/base64url"
-)
+import "github.com/theovassiliou/base64url"
 
 // URLSafeEncode encodes url-unsafe string into url-safe form
 func URLSafeEncode(unsafeString string) string {

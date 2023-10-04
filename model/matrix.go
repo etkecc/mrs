@@ -13,10 +13,22 @@ import (
 
 // MatrixServer info
 type MatrixServer struct {
-	Name      string    `json:"name"`
-	URL       string    `json:"url"`
-	Online    bool      `json:"online"`
-	UpdatedAt time.Time `json:"updated_at"`
+	Name      string               `json:"name"`
+	URL       string               `json:"url"`
+	Online    bool                 `json:"online"`
+	Contacts  MatrixServerContacts `json:"contacts"` // Contacts as per MSC1929
+	UpdatedAt time.Time            `json:"updated_at"`
+}
+
+// MatrixServerContacts - MSC1929
+type MatrixServerContacts struct {
+	Emails []string `json:"emails"`
+	MXIDs  []string `json:"mxids"`
+	URL    string   `json:"url"`
+}
+
+func (c MatrixServerContacts) IsEmpty() bool {
+	return len(c.Emails) == 0 && len(c.MXIDs) == 0 && c.URL == ""
 }
 
 // MatrixRoom from matrix client-server API

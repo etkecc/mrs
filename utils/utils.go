@@ -46,3 +46,32 @@ func Truncate(s string, length int) string {
 	}
 	return out + "..."
 }
+
+// Uniq removes duplicates from slice
+func Uniq[T comparable](slice []T) []T {
+	uniq := map[T]struct{}{}
+	uniqSlice := []T{}
+
+	for _, item := range slice {
+		if _, ok := uniq[item]; ok {
+			continue
+		}
+		uniq[item] = struct{}{}
+		uniqSlice = append(uniqSlice, item)
+	}
+
+	return uniqSlice
+}
+
+// SliceToString converts slice of strings into single string (using strings.Join) with optional hook
+func SliceToString(slice []string, delimiter string, hook func(string) string) string {
+	adjusted := make([]string, 0, len(slice))
+	for _, item := range slice {
+		if hook != nil {
+			item = hook(item)
+		}
+		adjusted = append(adjusted, item)
+	}
+
+	return strings.Join(adjusted, delimiter)
+}
