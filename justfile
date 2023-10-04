@@ -1,5 +1,9 @@
-CI_REGISTRY_IMAGE := env_var_or_default("CI_REGISTRY_IMAGE", "registry.gitlab.com/etke.cc/mrs/api")
-CI_COMMIT_TAG := if env_var_or_default("CI_COMMIT_TAG", "main") == "main" { "latest" } else { env_var_or_default("CI_COMMIT_TAG", "latest") }
+tag := if env_var_or_default("CI_COMMIT_TAG", "main") == "main" { "latest" } else { env_var_or_default("CI_COMMIT_TAG", "latest") }
+repo := trim_end_match(replace(replace_regex(env_var_or_default("CI_REPOSITORY_URL", `git remote get-url origin`), ".*@|", ""), ":", "/"),".git")
+gitlab_image := "registry." + repo + ":" + tag
+
+try:
+    @echo {{ gitlab_image }}
 
 # show help by default
 default:
@@ -21,7 +25,7 @@ lintfix:
 
 # run unit tests
 test:
-    @go test -coverprofile=cover.out ./...
+    @go test -cover -coverprofile=cover.out -coverpkg=./... -covermode=set ./...
     @go tool cover -func=cover.out
     -@rm -f cover.out
 
@@ -31,7 +35,7 @@ run:
 
 # build app
 build:
-    go build -v -o mrs ./cmd/mrs
+    go build -v ./cmd/mrs
 
 # docker login
 login:
@@ -39,5 +43,5 @@ login:
 
 # docker build
 docker:
-    docker build -t {{ CI_REGISTRY_IMAGE }}:{{ CI_COMMIT_TAG }} .
-    docker push {{ CI_REGISTRY_IMAGE }}:{{ CI_COMMIT_TAG }}
+    docker buildx create --use
+    docker buildx build --pull --platform linux/amd64 --push -t {{ gitlab_image }} .
