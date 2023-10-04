@@ -10,6 +10,51 @@ A fully-featured, standalone, matrix rooms search service.
 
 Each step can be run separately or all at once using admin API
 
+### How can I add my homeserver to the index?
+
+Use POST `/discover/{server_name}`, example for [MatrixRooms.info](https://matrixrooms.info) demo instance and `example.com` homeserver:
+
+```bash
+curl -X POST https://apicdn.matrixrooms.info/discover/example.com
+```
+
+If your server publishes room directory over federation and has public rooms within the directory,
+they will appear in the search index after the next full reindex process (should be run daily)
+
+### How can I remove my homeserver's rooms from the index?
+
+Just unpublish them or stop publishing room directory over federation.
+MRS tries to follow the specification and be polite, so it uses only information that was explicitly published.
+
+### How the [MSC1929](https://github.com/matrix-org/matrix-spec-proposals/pull/1929) integration works
+
+MRS will parse MSC1929 contacts automatically during the discovery phase and store them into db.
+When a room is reported using the `/mod/report/{room_id}` endpoint, MRS will check if the room's server
+has MSC1929 contacts. If email address(-es) are listed within the contacts, report details will be sent
+to the administrators of the Matrix server to which the room belongs.
+
+#### How to opt-in?
+
+Add `/.well-known/matrix/support` file with the following structure:
+
+```json
+{
+  "admins": [
+    {
+      "email_address": "your@email.here",
+      "matrix_id": "@your:mxid.here"
+    }
+  ]
+}
+```
+File must be served on the homeserver name domain (`@you:example.com` -> `https://example.com/.well-known/matrix/support`)
+
+At this moment, MRS works with emails only
+
+#### How to opt-out?
+
+Just unlist your email from the MSC1929 file
+
 ### API
 
 Check [openapi.yml](./openapi.yml)
@@ -47,15 +92,28 @@ For synapse, you need to add the following config options in the `homeserver.yam
 
 ```yaml
 allow_public_rooms_over_federation: true
-allow_public_rooms_without_auth: true
 ```
 
 in case of [etke.cc/ansible](https://gitlab.com/etke.cc/ansible) and [mdad](https://github.com/spantaleev/matrix-docker-ansible-deploy), add the following to your vars.yml:
 
 ```yaml
 matrix_synapse_allow_public_rooms_over_federation: true
-matrix_synapse_allow_public_rooms_without_auth: true
 ```
+
+### Why MRS doesn't contact me when a room from my server is reported.
+
+You have to serve the `/.well-known/matrix/support` file with at least 1 email in it.
+
+in case of [etke.cc/ansible](https://gitlab.com/etke.cc/ansible) and [mdad](https://github.com/spantaleev/matrix-docker-ansible-deploy), add the following to your vars.yml:
+
+```yaml
+matrix_well_known_matrix_support_enabled: true
+matrix_homeserver_admin_contacts:
+  - matrix_id: "@you:example.com" # optional, remove if not needed
+    email_address: "you@example.com" # required for MRS MSC1929 integration
+matrix_homeserver_support_url: "https://example.com/help" # optional, remove if not needed
+```
+
 
 ### Where can I get list of servers?
 
