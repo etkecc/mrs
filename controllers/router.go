@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"log"
 	"net/http"
 	"time"
 
@@ -126,6 +127,7 @@ func adminGroup(e *echo.Echo, cfg *config.Config) *echo.Group {
 			if login != cfg.Auth.Admin.Login || password != cfg.Auth.Admin.Password {
 				return false, nil
 			}
+			log.Println("attempt to authorize as admin from:", ctx.RealIP())
 			if len(cfg.Auth.Admin.IPs) == 0 {
 				return true, nil
 			}
