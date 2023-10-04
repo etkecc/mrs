@@ -523,9 +523,20 @@ components:
               description: amount of discovered servers (online only)
               example: 23
         rooms:
-          type: integer
-          description: amount of parsed rooms
-          example: 321
+          type: object
+          properties:
+            all:
+              type: integer
+              description: amount of all indexed rooms
+              example: 123
+            banned:
+              type: integer
+              description: amount of banned rooms
+              example: 23
+            reported:
+              type: integer
+              description: amount of reported rooms
+              example: 43
         discovery:
           $ref: '#/components/schemas/ProcessStatus'
         parsing:

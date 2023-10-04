@@ -7,9 +7,10 @@ var (
 	serversInfoBucket  = []byte(`servers_info`)
 	roomsBucket        = []byte(`rooms`)
 	roomsBanlistBucket = []byte(`rooms_banlist`)
+	roomsReportsBucket = []byte(`rooms_reports`)
 	indexBucket        = []byte(`index`)
 
-	buckets = [][]byte{serversBucket, serversInfoBucket, roomsBucket, roomsBanlistBucket, indexBucket}
+	buckets = [][]byte{serversBucket, serversInfoBucket, roomsBucket, roomsBanlistBucket, roomsReportsBucket, indexBucket}
 )
 
 func initBuckets(db *bbolt.DB) error {

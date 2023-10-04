@@ -50,6 +50,10 @@ type DataRepository interface {
 	GetBannedRooms(...string) ([]string, error)
 	BanRoom(string) error
 	UnbanRoom(string) error
+	GetReportedRooms(...string) (map[string]string, error)
+	ReportRoom(string, string) error
+	UnreportRoom(string) error
+	IsReported(string) bool
 }
 
 var (

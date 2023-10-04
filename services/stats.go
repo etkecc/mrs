@@ -13,6 +13,8 @@ type StatsRepository interface {
 	SetIndexServers(servers int) error
 	SetIndexOnlineServers(servers int) error
 	SetIndexRooms(rooms int) error
+	SetIndexBannedRooms(rooms int) error
+	SetIndexReportedRooms(rooms int) error
 	SetStartedAt(process string, startedAt time.Time) error
 	SetFinishedAt(process string, finishedAt time.Time) error
 }
@@ -82,5 +84,20 @@ func (s *Stats) Collect() {
 	if err := s.data.SetIndexRooms(rooms); err != nil {
 		log.Println("cannot set indexed rooms count", err)
 	}
+	banned, berr := s.data.GetBannedRooms()
+	if berr != nil {
+		log.Println("cannot get banned rooms count", berr)
+	}
+	if err := s.data.SetIndexBannedRooms(len(banned)); err != nil {
+		log.Println("cannot set banned rooms count", err)
+	}
+	reported, rerr := s.data.GetReportedRooms()
+	if rerr != nil {
+		log.Println("cannot get reported rooms count", rerr)
+	}
+	if err := s.data.SetIndexReportedRooms(len(reported)); err != nil {
+		log.Println("cannot set reported rooms count", err)
+	}
+
 	s.Reload()
 }

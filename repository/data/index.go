@@ -15,6 +15,7 @@ import (
 func (d *Data) GetIndexStats() *model.IndexStats {
 	stats := &model.IndexStats{
 		Servers:   model.IndexStatsServers{},
+		Rooms:     model.IndexStatsRooms{},
 		Discovery: model.IndexStatsTime{},
 		Parsing:   model.IndexStatsTime{},
 		Indexing:  model.IndexStatsTime{},
@@ -25,6 +26,8 @@ func (d *Data) GetIndexStats() *model.IndexStats {
 		serversBytes := bucket.Get([]byte("servers"))
 		serversOnlineBytes := bucket.Get([]byte("servers_online"))
 		roomsBytes := bucket.Get([]byte("rooms"))
+		roomsBannedBytes := bucket.Get([]byte("rooms_banned"))
+		roomsReportedBytes := bucket.Get([]byte("rooms_reported"))
 
 		discoveryStartedAt := bucket.Get([]byte("discovery_started_at"))
 		discoveryFinishedAt := bucket.Get([]byte("discovery_finished_at"))
@@ -37,7 +40,9 @@ func (d *Data) GetIndexStats() *model.IndexStats {
 
 		stats.Servers.All, _ = strconv.Atoi(string(serversBytes))
 		stats.Servers.Online, _ = strconv.Atoi(string(serversOnlineBytes))
-		stats.Rooms, _ = strconv.Atoi(string(roomsBytes))
+		stats.Rooms.All, _ = strconv.Atoi(string(roomsBytes))
+		stats.Rooms.Banned, _ = strconv.Atoi(string(roomsBannedBytes))
+		stats.Rooms.Reported, _ = strconv.Atoi(string(roomsReportedBytes))
 		stats.Discovery.StartedAt, _ = time.Parse(time.RFC3339, string(discoveryStartedAt))
 		stats.Discovery.FinishedAt, _ = time.Parse(time.RFC3339, string(discoveryFinishedAt))
 		stats.Parsing.StartedAt, _ = time.Parse(time.RFC3339, string(parsingStartedAt))
@@ -71,6 +76,22 @@ func (d *Data) SetIndexRooms(rooms int) error {
 	return d.db.Update(func(tx *bbolt.Tx) error {
 		value := []byte(strconv.Itoa(rooms))
 		return tx.Bucket(indexBucket).Put([]byte("rooms"), value)
+	})
+}
+
+// SetIndexBannedRooms sets count of banned rooms
+func (d *Data) SetIndexBannedRooms(rooms int) error {
+	return d.db.Update(func(tx *bbolt.Tx) error {
+		value := []byte(strconv.Itoa(rooms))
+		return tx.Bucket(indexBucket).Put([]byte("rooms_banned"), value)
+	})
+}
+
+// SetIndexReportedRooms sets count of banned rooms
+func (d *Data) SetIndexReportedRooms(rooms int) error {
+	return d.db.Update(func(tx *bbolt.Tx) error {
+		value := []byte(strconv.Itoa(rooms))
+		return tx.Bucket(indexBucket).Put([]byte("rooms_reported"), value)
 	})
 }
 

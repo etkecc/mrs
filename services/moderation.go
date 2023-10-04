@@ -138,7 +138,12 @@ func (m *Moderation) getServerContactsText(contacts model.MatrixServerContacts) 
 	return text.String()
 }
 
+// Report a room
 func (m *Moderation) Report(roomID, reason string) error {
+	if m.data.IsReported(roomID) {
+		return nil
+	}
+
 	room, err := m.data.GetRoom(roomID)
 	if err != nil {
 		return err
@@ -181,7 +186,7 @@ func (m *Moderation) Report(roomID, reason string) error {
 		return fmt.Errorf("backend returned HTTP %d: %s %v", resp.StatusCode, string(body), err)
 	}
 
-	return nil
+	return m.data.ReportRoom(roomID, reason)
 }
 
 // List returns full list of the banned rooms (optionally from specific server)

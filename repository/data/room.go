@@ -87,6 +87,56 @@ func (d *Data) BanRoom(roomID string) error {
 // UnbanRoom
 func (d *Data) UnbanRoom(roomID string) error {
 	return d.db.Batch(func(tx *bbolt.Tx) error {
-		return tx.Bucket(roomsBanlistBucket).Delete([]byte(roomID))
+		if err := tx.Bucket(roomsBanlistBucket).Delete([]byte(roomID)); err != nil {
+			return err
+		}
+		return tx.Bucket(roomsReportsBucket).Delete([]byte(roomID))
+	})
+}
+
+// GetReportedRooms returns full list of the banned rooms with reasons
+func (d *Data) GetReportedRooms(serverName ...string) (map[string]string, error) {
+	var server string
+	if len(serverName) > 0 {
+		server = serverName[0]
+	}
+	data := map[string]string{}
+	err := d.db.View(func(tx *bbolt.Tx) error {
+		return tx.Bucket(roomsReportsBucket).ForEach(func(k, v []byte) error {
+			roomID := string(k)
+			if server != "" && utils.ServerFrom(roomID) != server {
+				return nil
+			}
+
+			data[string(k)] = string(v)
+			return nil
+		})
+	})
+	return data, err
+}
+
+// IsReported returns true if room was already reported
+func (d *Data) IsReported(roomID string) bool {
+	var reported bool
+	d.db.View(func(tx *bbolt.Tx) error { //nolint:errcheck
+		v := tx.Bucket(roomsReportsBucket).Get([]byte(roomID))
+		reported = v != nil
+		return nil
+	})
+
+	return reported
+}
+
+// ReportRoom
+func (d *Data) ReportRoom(roomID, reason string) error {
+	return d.db.Batch(func(tx *bbolt.Tx) error {
+		return tx.Bucket(roomsReportsBucket).Put([]byte(roomID), []byte(reason))
+	})
+}
+
+// UnreportRoom
+func (d *Data) UnreportRoom(roomID string) error {
+	return d.db.Batch(func(tx *bbolt.Tx) error {
+		return tx.Bucket(roomsReportsBucket).Delete([]byte(roomID))
 	})
 }
