@@ -20,10 +20,11 @@ type Email struct {
 }
 
 type emailVars struct {
-	Public *config.Public
-	Room   *model.MatrixRoom
-	Server *model.MatrixServer
-	Reason string
+	Public        *config.Public
+	Room          *model.MatrixRoom
+	Server        *model.MatrixServer
+	RoomAliasOrID string
+	Reason        string
 }
 
 // NewEmail creates new email service
@@ -49,7 +50,14 @@ func (e *Email) SendReport(room *model.MatrixRoom, server *model.MatrixServer, r
 		return nil
 	}
 
-	vars := emailVars{Public: e.public, Room: room, Server: server, Reason: reason}
+	var aliasOrID string
+	if room.Alias != "" {
+		aliasOrID = room.Alias
+	} else {
+		aliasOrID = room.ID
+	}
+
+	vars := emailVars{Public: e.public, Room: room, Server: server, Reason: reason, RoomAliasOrID: aliasOrID}
 	subject, err := e.parseTemplate(e.cfg.Templates.Report.Subject, vars)
 	if err != nil {
 		return err

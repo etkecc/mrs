@@ -46,14 +46,13 @@ email: # (optional) email integration, for now only for automatic reporting usin
       from: email, usually a postmark sender signature
   templates: # (optional) email templates using go tempates: https://pkg.go.dev/text/template
     report: # report is used when sending automatic email to the server admins using MSC1929 contacts
-      subject: "{{ .Public.Name }}: Room {{ .Room.ID }} has been reported"
+      subject: "{{ .Public.Name }}: Room {{ .RoomAliasOrID }} has been reported"
       body: |-
         Hello,
 
-        The room "[{{ .Room.ID }}](https://matrix.to/#/{{ .Room.ID }})" has been reported
-        on [{{ .Public.Name }}]({{ .Public.UI }}) (a [Matrix Rooms Search](https://gitlab.com/etke.cc/mrs/api) instance).
+        The room [{{ .RoomAliasOrID }}](https://matrix.to/#/{{ .RoomAliasOrID }}) has been reported on [{{ .Public.Name }}]({{ .Public.UI }}) (a [Matrix Rooms Search](https://gitlab.com/etke.cc/mrs/api) instance).
 
-        Reporter provided the following reason:
+        The reporter provided the following reason:
 
         ```
         {{ .Reason }}
@@ -61,8 +60,7 @@ email: # (optional) email integration, for now only for automatic reporting usin
 
         ---
 
-        This automatic email was sent by [{{ .Public.Name }}]({{ .Public.UI }}) (a [Matrix Rooms Search](https://gitlab.com/etke.cc/mrs/api) instance) because you listed that email address as contact point (Matrix MSC1929 proposal).
-        If you have any questions - please, use the [{{ .Public.Name }}]({{ .Public.UI }}) website.
+        This automatic email was sent by [{{ .Public.Name }}]({{ .Public.UI }}) (a [Matrix Rooms Search](https://gitlab.com/etke.cc/mrs/api) instance) because you listed that email address as contact point (Matrix MSC1929 proposal). If you have any questions - please, use the [{{ .Public.Name }}]({{ .Public.UI }}) website.
 
 languages: # (optional) list of supported languages in ISO 639-1 format. if first element is "ALL" - all models will be loaded
   - EN
