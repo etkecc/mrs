@@ -12,6 +12,7 @@ import (
 	"gitlab.com/etke.cc/mrs/api/config"
 	"gitlab.com/etke.cc/mrs/api/model"
 	"gitlab.com/etke.cc/mrs/api/utils"
+	"gitlab.com/etke.cc/mrs/api/version"
 )
 
 type statsService interface {
@@ -86,6 +87,13 @@ func configureRouter(e *echo.Echo, cacheSvc cacheService) {
 	e.Use(middleware.Recover())
 	e.Use(cacheSvc.Middleware())
 	e.Use(middleware.Secure())
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			c.Response().Header().Set(echo.HeaderReferrerPolicy, "origin")
+			c.Response().Header().Set(echo.HeaderServer, version.Server)
+			return next(c)
+		}
+	})
 	e.HideBanner = true
 	e.IPExtractor = echo.ExtractIPFromXFFHeader(
 		echo.TrustLoopback(true),
