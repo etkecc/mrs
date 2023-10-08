@@ -200,6 +200,11 @@ paths:
                   $ref: '#/components/schemas/Entry'
         '204':
           description: no results found.
+        '401':
+          description: unauthorized (if optional search auth is enabled)
+      security:
+       - {}
+       - search:
   /search/{q}/{l}/{o}/{s}:
     get:
       tags:
@@ -246,6 +251,11 @@ paths:
                   $ref: '#/components/schemas/Entry'
         '204':
           description: no results found.
+        '401':
+          description: unauthorized (if optional search auth is enabled)
+      security:
+       - {}
+       - search:
   /mod/report/{room_id}:
     post:
       tags:
@@ -565,6 +575,9 @@ components:
       type: http
       scheme: basic
     moderation:
+      type: http
+      scheme: basic
+    search:
       type: http
       scheme: basic
     automaticToken:

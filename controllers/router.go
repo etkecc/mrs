@@ -1,8 +1,11 @@
 package controllers
 
 import (
+	"bytes"
+	"encoding/base64"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -52,11 +55,13 @@ func ConfigureRouter(
 
 	e.GET("/stats", stats(statsSvc))
 	e.GET("/avatar/:name/:id", avatar(matrixSvc), middleware.RateLimiter(middleware.NewRateLimiterMemoryStoreWithConfig(middleware.RateLimiterMemoryStoreConfig{Rate: 30, Burst: 30, ExpiresIn: 5 * time.Minute})), cacheSvc.MiddlewareImmutable())
-	e.GET("/search", search(searchSvc, false))
-	e.GET("/search/:q", search(searchSvc, true))
-	e.GET("/search/:q/:l", search(searchSvc, true))
-	e.GET("/search/:q/:l/:o", search(searchSvc, true))
-	e.GET("/search/:q/:l/:o/:s", search(searchSvc, true))
+
+	e.GET("/search", search(searchSvc, false), searchAuth(cfg))
+	e.GET("/search/:q", search(searchSvc, true), searchAuth(cfg))
+	e.GET("/search/:q/:l", search(searchSvc, true), searchAuth(cfg))
+	e.GET("/search/:q/:l/:o", search(searchSvc, true), searchAuth(cfg))
+	e.GET("/search/:q/:l/:o/:s", search(searchSvc, true), searchAuth(cfg))
+
 	e.POST("/discover/bulk", addServers(matrixSvc, cfg.Workers.Discovery), discoveryAuth(cfg))
 	e.POST("/discover/:name", addServer(matrixSvc), discoveryProtection(rl, cfg))
 
@@ -81,8 +86,9 @@ func configureRouter(e *echo.Echo, cacheSvc cacheService) {
 		Skipper: func(c echo.Context) bool {
 			return c.Request().URL.Path == "/_health"
 		},
-		Format:           `${remote_ip} - - [${time_custom}] "${method} ${path} ${protocol}" ${status} ${bytes_out} "${referer}" "${user_agent}"` + "\n",
+		Format:           `${remote_ip} - ${custom} [${time_custom}] "${method} ${path} ${protocol}" ${status} ${bytes_out} "${referer}" "${user_agent}"` + "\n",
 		CustomTimeFormat: "2/Jan/2006:15:04:05 -0700",
+		CustomTagFunc:    logBasicAuthLogin,
 	}))
 	e.Use(middleware.Recover())
 	e.Use(cacheSvc.Middleware())
@@ -105,6 +111,29 @@ func configureRouter(e *echo.Echo, cacheSvc cacheService) {
 	})
 }
 
+// logBasicAuthLogin parses basic auth login (if provided) from headers
+func logBasicAuthLogin(c echo.Context, buf *bytes.Buffer) (int, error) {
+	auth := c.Request().Header.Get(echo.HeaderAuthorization)
+	l := len("basic")
+
+	if len(auth) > l+1 && strings.EqualFold(auth[:l], "basic") {
+		// Invalid base64 shouldn't be treated as error
+		// instead should be treated as invalid client input
+		b, err := base64.StdEncoding.DecodeString(auth[l+1:])
+		if err != nil {
+			return buf.WriteRune('-') //nolint:gocritic // interface constraint
+		}
+
+		cred := string(b)
+		for i := 0; i < len(cred); i++ {
+			if cred[i] == ':' {
+				return buf.WriteString(cred[:i])
+			}
+		}
+	}
+	return buf.WriteRune('-') //nolint:gocritic // interface constraint
+}
+
 func discoveryAuth(cfg *config.Config) echo.MiddlewareFunc {
 	return middleware.BasicAuth(func(login, password string, ctx echo.Context) (bool, error) {
 		if login != cfg.Auth.Discovery.Login || password != cfg.Auth.Discovery.Password {
@@ -123,6 +152,30 @@ func discoveryProtection(rl echo.MiddlewareFunc, cfg *config.Config) echo.Middle
 				return auth(next)(c)
 			}
 			return rl(next)(c)
+		}
+	}
+}
+
+// searchAuth enforces basic auth on search endpoints if credentials are configured
+func searchAuth(cfg *config.Config) echo.MiddlewareFunc {
+	auth := middleware.BasicAuth(func(login, password string, ctx echo.Context) (bool, error) {
+		pass, ok := cfg.Auth.Search[login]
+		if !ok {
+			return false, nil
+		}
+		if password != pass {
+			return false, nil
+		}
+
+		return true, nil
+	})
+
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			if len(cfg.Auth.Search) == 0 {
+				return next(c)
+			}
+			return auth(next)(c)
 		}
 	}
 }
