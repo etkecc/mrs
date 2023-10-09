@@ -15,6 +15,7 @@ type Config struct {
 	Email      Email      `yaml:"email"`
 	Languages  []string   `yaml:"languages"`
 	Servers    []string   `yaml:"servers"`
+	Blocklist  []string   `yaml:"blocklist"`
 }
 
 type Public struct {

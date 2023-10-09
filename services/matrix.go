@@ -13,6 +13,7 @@ import (
 
 	"github.com/pemistahl/lingua-go"
 	"github.com/xxjwxc/gowp/workpool"
+	"golang.org/x/exp/slices"
 
 	"gitlab.com/etke.cc/mrs/api/model"
 	"gitlab.com/etke.cc/mrs/api/utils"
@@ -26,6 +27,7 @@ const (
 
 type Matrix struct {
 	servers     []string
+	blocklist   []string
 	proxyURL    string
 	proxyToken  string
 	publicURL   string
@@ -92,12 +94,13 @@ type matrixContactsRespAdmin struct {
 }
 
 // NewMatrix service
-func NewMatrix(servers []string, proxyURL, proxyToken, publicURL string, data DataRepository, detector lingua.LanguageDetector) *Matrix {
+func NewMatrix(servers, blocklist []string, proxyURL, proxyToken, publicURL string, data DataRepository, detector lingua.LanguageDetector) *Matrix {
 	return &Matrix{
 		proxyURL:   proxyURL,
 		proxyToken: proxyToken,
 		publicURL:  publicURL,
 		servers:    servers,
+		blocklist:  blocklist,
 		data:       data,
 		detector:   detector,
 	}
@@ -129,6 +132,8 @@ func (m *Matrix) DiscoverServers(workers int) error {
 
 	dataservers := utils.MapKeys(m.data.AllServers())
 	servers := utils.MergeSlices(dataservers, m.servers)
+	servers = utils.RemoveFromSlice(servers, m.blocklist)
+
 	wp := workpool.New(workers)
 	for _, server := range servers {
 		name := server
@@ -155,6 +160,7 @@ func (m *Matrix) DiscoverServers(workers int) error {
 
 // AddServers by name in bulk, intended for HTTP API
 func (m *Matrix) AddServers(names []string, workers int) {
+	names = utils.RemoveFromSlice(names, m.blocklist)
 	wp := workpool.New(workers)
 	for _, server := range names {
 		name := server
@@ -196,6 +202,10 @@ func (m *Matrix) AddServers(names []string, workers int) {
 // AddServer by name, intended for HTTP API
 // returns http status code to send to the reporter
 func (m *Matrix) AddServer(name string) int {
+	if slices.Contains(m.blocklist, name) {
+		return http.StatusForbidden
+	}
+
 	existingURL, _ := m.data.GetServer(name) //nolint:errcheck
 	if existingURL != "" {
 		return http.StatusAlreadyReported
@@ -238,14 +248,16 @@ func (m *Matrix) ParseRooms(workers int) {
 	m.parsing = true
 	defer func() { m.parsing = false }()
 
-	servers := m.data.AllOnlineServers()
+	servers := utils.MapKeys(m.data.AllOnlineServers())
+	servers = utils.RemoveFromSlice(servers, m.blocklist)
+
 	total := len(servers)
 	if total < workers {
 		workers = total
 	}
 	wp := workpool.New(workers)
 	log.Println("parsing rooms of", total, "servers using", workers, "workers")
-	for srvName := range servers {
+	for _, srvName := range servers {
 		name := srvName
 		wp.Do(func() error {
 			log.Println(name, "parsing rooms...")

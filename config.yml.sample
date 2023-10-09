@@ -72,4 +72,7 @@ languages: # (optional) list of supported languages in ISO 639-1 format. if firs
 servers:
   - etke.cc
 
+# list of servers to ignore completely
+blocklist: []
+
 # vi: ft=yaml
