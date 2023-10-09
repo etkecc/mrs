@@ -112,8 +112,6 @@ just use the [playbook docs](https://github.com/mother-of-all-self-hosting/mash-
 To get started with MRS, you need index some matrix servers first.
 As a good starting point, you may use [The-Federation.info](https://the-federation.info) public API to get the first servers.
 
-### Integrations
-
 ```bash
 curl 'https://the-federation.info/v1/graphql' \
     -X POST \
@@ -124,6 +122,8 @@ curl 'https://the-federation.info/v1/graphql' \
         "operationName":"MatrixServers"
     }' | jq -r '.data.thefederation_node[] | "- " + .host'
 ```
+
+### Integrations
 
 #### With [SearXNG](https://docs.searxng.org)
 
