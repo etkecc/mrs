@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"net/url"
 
 	"github.com/labstack/echo/v4"
 
@@ -25,7 +26,10 @@ func search(svc searchService, path bool) echo.HandlerFunc {
 			paramfunc = c.Param
 		}
 
-		query := paramfunc("q")
+		query, err := url.QueryUnescape(paramfunc("q"))
+		if err != nil {
+			return err
+		}
 		limit := string2int(paramfunc("l"), DefaultSearchLimit)
 		offset := string2int(paramfunc("o"), DefaultSearchOffset)
 		sortBy := string2slice(paramfunc("s"), DefaultSearchSortBy)
