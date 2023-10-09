@@ -2,6 +2,34 @@
 
 A fully-featured, standalone, matrix rooms search service.
 
+
+<!-- vim-markdown-toc GitLab -->
+
+* [How it works?](#how-it-works)
+    * [Discovery and indexing](#discovery-and-indexing)
+        * [How to opt-in?](#how-to-opt-in)
+        * [How to opt-out?](#how-to-opt-out)
+    * [How the MSC1929 integration works](#how-the-msc1929-integration-works)
+        * [How to opt-in?](#how-to-opt-in-1)
+        * [How to opt-out?](#how-to-opt-out-1)
+    * [API](#api)
+* [Quick Start](#quick-start)
+    * [Deploy](#deploy)
+        * [Manual](#manual)
+        * [Ansible](#ansible)
+    * [Bootstrapping](#bootstrapping)
+    * [Integrations](#integrations)
+        * [With SearXNG](#with-searxng)
+        * [With Matrix API](#with-matrix-api)
+        * [With Synapse](#with-synapse)
+* [Troubleshooting](#troubleshooting)
+    * [Why my server and its public rooms aren't discovered/parsed/included?](#why-my-server-and-its-public-rooms-arent-discoveredparsedincluded)
+    * [Why MRS doesn't contact me when a room from my server is reported.](#why-mrs-doesnt-contact-me-when-a-room-from-my-server-is-reported)
+* [Development](#development)
+    * [how to add new field](#how-to-add-new-field)
+
+<!-- vim-markdown-toc -->
+
 ## How it works?
 
 1. Discover matrix servers (a.k.a find alive and properly configured) from provided config
@@ -10,9 +38,12 @@ A fully-featured, standalone, matrix rooms search service.
 
 Each step can be run separately or all at once using admin API
 
-### How can I add my homeserver to the index?
+### Discovery and indexing
 
-Use POST `/discover/{server_name}`, example for [MatrixRooms.info](https://matrixrooms.info) demo instance and `example.com` homeserver:
+#### How to opt-in?
+
+How can you add a matrix server to the index on some MRS instance?
+Use POST `/discover/{server_name}` endpoint, here is example using the [MatrixRooms.info](https://matrixrooms.info) demo instance and `example.com` homeserver:
 
 ```bash
 curl -X POST https://apicdn.matrixrooms.info/discover/example.com
@@ -21,8 +52,9 @@ curl -X POST https://apicdn.matrixrooms.info/discover/example.com
 If your server publishes room directory over federation and has public rooms within the directory,
 they will appear in the search index after the next full reindex process (should be run daily)
 
-### How can I remove my homeserver's rooms from the index?
+#### How to opt-out?
 
+How can you remove your homeserver's rooms from the index?
 Just unpublish them or stop publishing room directory over federation.
 MRS tries to follow the specification and be polite, so it uses only information that was explicitly published.
 
@@ -61,19 +93,53 @@ Check [openapi.yml](./openapi.yml)
 
 ## Quick Start
 
+### Deploy
+
+#### Manual
+
 1. Build mrs
 2. Copy `config.yml.sample` into `config.yml` and adjust it
 3. Run mrs with `-c config.yml`
 4. You probably want to call `/-/full` admin API endpoint at start
 
-## Development
+#### Ansible
 
-### how to add new field
+MRS is fully integrated into the [MASH Playbook](https://github.com/mother-of-all-self-hosting/mash-playbook/),
+just use the [playbook docs](https://github.com/mother-of-all-self-hosting/mash-playbook/blob/main/docs/services/mrs.md).
 
-1. adjust `model/matrix.go` and `model/search.go` if needed
-2. adjust `repository/search/bleve.go` `getIndexMapping()`
-3. adjust `repository/search/search.go` `parseSearchResults()`
-4. adjust `services/search.go` `getSearchQuery()`
+### Bootstrapping
+
+To get started with MRS, you need index some matrix servers first.
+As a good starting point, you may use [The-Federation.info](https://the-federation.info) public API to get the first servers.
+
+### Integrations
+
+```bash
+curl 'https://the-federation.info/v1/graphql' \
+    -X POST \
+    -H 'content-type: application/json' \
+    --data '{
+        "query":"query MatrixServers { thefederation_node( where: {blocked: {_eq: false}, thefederation_platform: {id: {_eq: 41}}} order_by: {last_success: desc} ) { host }}",
+        "variables":null,
+        "operationName":"MatrixServers"
+    }' | jq -r '.data.thefederation_node[] | "- " + .host'
+```
+
+#### With [SearXNG](https://docs.searxng.org)
+
+SearXNG is a free internet metasearch engine which aggregates results from more than 70 search services.
+Users are neither tracked nor profiled. 
+Additionally, SearXNG can be used over Tor for online anonymity.
+
+Just use the [SearXNG docs](https://docs.searxng.org/dev/engines/online/mrs.html).
+
+#### With [Matrix API](https://spec.matrix.org/latest/)
+
+[Matrix Server-Server API endpoint](https://spec.matrix.org/v1.8/server-server-api/#public-room-directory) not yet implemented
+
+#### With [Synapse](https://matrix-org.github.io/synapse/latest/)
+
+[Synapse module](https://matrix-org.github.io/synapse/latest/modules/writing_a_module.html) not yet implemented
 
 ## Troubleshooting
 
@@ -114,24 +180,11 @@ matrix_homeserver_admin_contacts:
 matrix_homeserver_support_url: "https://example.com/help" # optional, remove if not needed
 ```
 
+## Development
 
-### Where can I get list of servers?
+### how to add new field
 
-**get list of known servers from own matrix server db**
-
-```bash
-psql -d synapse -c "select '- '||destination from destinations;" > destinations.txt
-```
-
-**get list of known servers from [the-federation.info](https://the-federation.info)**
-
-```bash
-curl 'https://the-federation.info/v1/graphql' \
-    -X POST \
-    -H 'content-type: application/json' \
-    --data '{
-        "query":"query MatrixServers { thefederation_node( where: {blocked: {_eq: false}, thefederation_platform: {id: {_eq: 41}}} order_by: {last_success: desc} ) { host }}",
-        "variables":null,
-        "operationName":"MatrixServers"
-    }' | jq -r '.data.thefederation_node[] | "- " + .host'
-```
+1. adjust `model/matrix.go` and `model/search.go` if needed
+2. adjust `repository/search/bleve.go` `getIndexMapping()`
+3. adjust `repository/search/search.go` `parseSearchResults()`
+4. adjust `services/search.go` `getSearchQuery()`
