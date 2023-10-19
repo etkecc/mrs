@@ -74,7 +74,8 @@ Add `/.well-known/matrix/support` file with the following structure:
   "contacts": [
     {
       "email_address": "your@email.here",
-      "matrix_id": "@your:mxid.here"
+      "matrix_id": "@your:mxid.here",
+      "role": "admin"
     }
   ]
 }
