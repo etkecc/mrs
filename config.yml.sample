@@ -72,7 +72,9 @@ languages: # (optional) list of supported languages in ISO 639-1 format. if firs
 servers:
   - etke.cc
 
-# list of servers to ignore completely
-blocklist: []
+# blocklist config
+blocklist:
+  servers: [] # list of servers to ignore completely
+  queries: [] # list of words, if at least one of them is present in a search query, empty results will be returned
 
 # vi: ft=yaml

@@ -15,7 +15,7 @@ type Config struct {
 	Email      Email      `yaml:"email"`
 	Languages  []string   `yaml:"languages"`
 	Servers    []string   `yaml:"servers"`
-	Blocklist  []string   `yaml:"blocklist"`
+	Blocklist  Blocklist  `yaml:"blocklist"`
 }
 
 type Public struct {
@@ -90,6 +90,12 @@ type Batch struct {
 type Workers struct {
 	Discovery int `yaml:"discovery"`
 	Parsing   int `yaml:"parsing"`
+}
+
+// Blocklist config
+type Blocklist struct {
+	Servers []string `json:"servers"`
+	Queries []string `json:"queries"`
 }
 
 // Email config

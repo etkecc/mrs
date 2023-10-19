@@ -11,7 +11,8 @@ import (
 
 // Search service
 type Search struct {
-	repo SearchRepository
+	repo      SearchRepository
+	stopwords map[string]struct{}
 }
 
 // SearchRepository interface
@@ -28,15 +29,23 @@ var SearchFieldsBoost = map[string]float64{
 }
 
 // NewSearch creates new search service
-func NewSearch(repo SearchRepository) Search {
-	return Search{repo}
+func NewSearch(repo SearchRepository, stoplist []string) Search {
+	stopwords := make(map[string]struct{}, len(stoplist))
+	for _, stopword := range stoplist {
+		stopwords[stopword] = struct{}{}
+	}
+
+	return Search{repo, stopwords}
 }
 
 // Search things
 // ref: https://blevesearch.com/docs/Query-String-Query/
 func (s Search) Search(query string, limit, offset int, sortBy []string) ([]*model.Entry, error) {
-	query, fields := s.matchFields(query)
-	return s.repo.Search(s.getSearchQuery(query, fields), limit, offset, sortBy)
+	builtQuery := s.getSearchQuery(s.matchFields(query))
+	if builtQuery == nil {
+		return []*model.Entry{}, nil
+	}
+	return s.repo.Search(builtQuery, limit, offset, sortBy)
 }
 
 func (s Search) matchFields(query string) (string, map[string]string) {
@@ -86,9 +95,31 @@ func (s Search) newMatchQuery(match, field string, phrase bool) bleveQuery {
 	return searchQuery
 }
 
+// shouldReject checks if query or fields contain words from the stoplist
+func (s Search) shouldReject(q string, fields map[string]string) bool {
+	for k, v := range fields {
+		if _, ok := s.stopwords[k]; ok {
+			return true
+		}
+		if _, ok := s.stopwords[v]; ok {
+			return true
+		}
+	}
+	for _, k := range strings.Split(q, " ") {
+		if _, ok := s.stopwords[k]; ok {
+			return true
+		}
+	}
+	return false
+}
+
 func (s Search) getSearchQuery(q string, fields map[string]string) query.Query {
 	// base/standard query
 	q = strings.TrimSpace(q)
+	if s.shouldReject(q, fields) {
+		return nil
+	}
+
 	phrase := strings.Contains(q, " ")
 	queries := []query.Query{
 		s.newMatchQuery(q, "name", phrase),

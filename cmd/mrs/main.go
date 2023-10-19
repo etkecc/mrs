@@ -55,8 +55,8 @@ func main() {
 		log.Panic(err)
 	}
 	indexSvc := services.NewIndex(index, dataRepo, cfg.Batch.Rooms)
-	searchSvc := services.NewSearch(index)
-	matrixSvc := services.NewMatrix(cfg.Servers, cfg.Blocklist, cfg.Proxy.Server, cfg.Proxy.Token, cfg.Public.API, dataRepo, detector)
+	searchSvc := services.NewSearch(index, cfg.Blocklist.Queries)
+	matrixSvc := services.NewMatrix(cfg.Servers, cfg.Blocklist.Servers, cfg.Proxy.Server, cfg.Proxy.Token, cfg.Public.API, dataRepo, detector)
 	statsSvc := services.NewStats(dataRepo)
 	cacheSvc := services.NewCache(cfg.Cache.MaxAge, cfg.Cache.Bunny.URL, cfg.Cache.Bunny.Key, statsSvc)
 	dataSvc := services.NewDataFacade(matrixSvc, indexSvc, statsSvc, cacheSvc)
