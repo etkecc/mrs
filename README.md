@@ -71,7 +71,7 @@ Add `/.well-known/matrix/support` file with the following structure:
 
 ```json
 {
-  "admins": [
+  "contacts": [
     {
       "email_address": "your@email.here",
       "matrix_id": "@your:mxid.here"

@@ -84,13 +84,14 @@ type matrixRoomsResp struct {
 }
 
 type matrixContactsResp struct {
-	Admins      []matrixContactsRespAdmin `json:"admins"`
-	SupportPage string                    `json:"support_page"`
+	Contacts    []matrixContactsRespContact `json:"contacts,omitempty"`
+	Admins      []matrixContactsRespContact `json:"admins,omitempty"`
+	SupportPage string                      `json:"support_page,omitempty"`
 }
 
-type matrixContactsRespAdmin struct {
-	Email    string `json:"email_address"`
-	MatrixID string `json:"matrix_id"`
+type matrixContactsRespContact struct {
+	Email    string `json:"email_address,omitempty"`
+	MatrixID string `json:"matrix_id,omitempty"`
 }
 
 // NewMatrix service
@@ -341,6 +342,22 @@ func (m *Matrix) validateDiscoveredServer(name string) bool {
 	return m.getPublicRoomsPage(name, "1", "") != nil
 }
 
+func (m *Matrix) readServerContacts(contacts []matrixContactsRespContact) (emails, mxids []string, hasContent bool) {
+	emails = []string{}
+	mxids = []string{}
+	for _, contact := range contacts {
+		if contact.Email != "" {
+			emails = append(emails, contact.Email)
+			hasContent = true
+		}
+		if contact.MatrixID != "" {
+			mxids = append(mxids, contact.MatrixID)
+			hasContent = true
+		}
+	}
+	return emails, mxids, hasContent
+}
+
 // getServerContacts as per MSC1929
 func (m *Matrix) getServerContacts(name string) *model.MatrixServerContacts {
 	contacts := &model.MatrixServerContacts{Emails: []string{}, MXIDs: []string{}}
@@ -384,24 +401,27 @@ func (m *Matrix) getServerContacts(name string) *model.MatrixServerContacts {
 		contacts.URL = contactsResp.SupportPage
 		hasContent = true
 	}
-	for _, admin := range contactsResp.Admins {
-		if admin.Email != "" {
-			contacts.Emails = append(contacts.Emails, admin.Email)
-			hasContent = true
-		}
-		if admin.MatrixID != "" {
-			contacts.MXIDs = append(contacts.MXIDs, admin.MatrixID)
-			hasContent = true
-		}
+	emails, mxids, contactsHaveContent := m.readServerContacts(contactsResp.Contacts)
+	if contactsHaveContent {
+		hasContent = true
+		contacts.Emails = append(contacts.Emails, emails...)
+		contacts.MXIDs = append(contacts.MXIDs, mxids...)
 	}
 
-	if hasContent {
-		contacts.Emails = utils.Uniq(contacts.Emails)
-		contacts.MXIDs = utils.Uniq(contacts.MXIDs)
-
-		return contacts
+	emails, mxids, contactsHaveContent = m.readServerContacts(contactsResp.Admins)
+	if contactsHaveContent {
+		hasContent = true
+		contacts.Emails = append(contacts.Emails, emails...)
+		contacts.MXIDs = append(contacts.MXIDs, mxids...)
 	}
-	return nil
+
+	if !hasContent {
+		return nil
+	}
+	contacts.Emails = utils.Uniq(contacts.Emails)
+	contacts.MXIDs = utils.Uniq(contacts.MXIDs)
+
+	return contacts
 }
 
 // getPublicRooms reads public rooms of the given server from the matrix client-server api
