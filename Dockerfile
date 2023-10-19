@@ -4,7 +4,7 @@ COPY . .
 RUN just build
 
 FROM registry.gitlab.com/etke.cc/base/app
-COPY --from=builder /mrs/mrs /bin/mrs
+COPY --from=builder /mrs/api /bin/mrs
 RUN apk --no-cache add vips libheif
 USER app
 ENTRYPOINT ["/bin/mrs"]
