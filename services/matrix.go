@@ -271,7 +271,7 @@ func (m *Matrix) EachRoom(handler func(roomID string, data *model.MatrixRoom)) {
 
 	toRemove := []string{}
 	m.data.EachRoom(func(id string, room *model.MatrixRoom) {
-		if m.block.ByID(id) || m.block.ByID(room.ID) || m.block.ByID(room.Alias) || m.block.ByServer(room.Server) {
+		if room.IsBlocked(m.block) {
 			toRemove = append(toRemove, id)
 			return
 		}
@@ -439,7 +439,7 @@ func (m *Matrix) getPublicRooms(name string) {
 
 		added += len(resp.Chunk)
 		for _, room := range resp.Chunk {
-			if room.ID == "" {
+			if room.ID == "" || room.IsBlocked(m.block) {
 				added--
 				continue
 			}

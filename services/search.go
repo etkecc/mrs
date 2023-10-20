@@ -12,6 +12,7 @@ import (
 // Search service
 type Search struct {
 	repo      SearchRepository
+	block     BlocklistService
 	stopwords map[string]struct{}
 }
 
@@ -29,13 +30,13 @@ var SearchFieldsBoost = map[string]float64{
 }
 
 // NewSearch creates new search service
-func NewSearch(repo SearchRepository, stoplist []string) Search {
+func NewSearch(repo SearchRepository, block BlocklistService, stoplist []string) Search {
 	stopwords := make(map[string]struct{}, len(stoplist))
 	for _, stopword := range stoplist {
 		stopwords[stopword] = struct{}{}
 	}
 
-	return Search{repo, stopwords}
+	return Search{repo, block, stopwords}
 }
 
 // Search things
@@ -45,7 +46,26 @@ func (s Search) Search(query string, limit, offset int, sortBy []string) ([]*mod
 	if builtQuery == nil {
 		return []*model.Entry{}, nil
 	}
-	return s.repo.Search(builtQuery, limit, offset, sortBy)
+	results, err := s.repo.Search(builtQuery, limit, offset, sortBy)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.removeBlocked(results), nil
+}
+
+// removeBlocked removes results from blocked servers from the search results
+func (s Search) removeBlocked(results []*model.Entry) []*model.Entry {
+	allowed := []*model.Entry{}
+	for _, entry := range results {
+		if entry.IsBlocked(s.block) {
+			continue
+		}
+
+		allowed = append(allowed, entry)
+	}
+
+	return allowed
 }
 
 func (s Search) matchFields(query string) (string, map[string]string) {

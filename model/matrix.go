@@ -11,6 +11,11 @@ import (
 	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
+type BlocklistService interface {
+	ByID(matrixID string) bool
+	ByServer(server string) bool
+}
+
 // MatrixServer info
 type MatrixServer struct {
 	Name      string               `json:"name"`
@@ -60,6 +65,20 @@ func (r *MatrixRoom) Entry() *Entry {
 		Language:  r.Language,
 		AvatarURL: r.AvatarURL,
 	}
+}
+
+// IsBlocked checks if room's server is blocked
+func (r *MatrixRoom) IsBlocked(block BlocklistService) bool {
+	if block.ByID(r.ID) {
+		return true
+	}
+	if block.ByID(r.Alias) {
+		return true
+	}
+	if block.ByServer(r.Server) {
+		return true
+	}
+	return false
 }
 
 // Parse matrix room info to prepare custom fields

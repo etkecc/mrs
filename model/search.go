@@ -15,3 +15,17 @@ type Entry struct {
 	// DEPRECATED
 	PreviewURL string `json:"preview_url"`
 }
+
+// IsBlocked checks if room's server is blocked
+func (r *Entry) IsBlocked(block BlocklistService) bool {
+	if block.ByID(r.ID) {
+		return true
+	}
+	if block.ByID(r.Alias) {
+		return true
+	}
+	if block.ByServer(r.Server) {
+		return true
+	}
+	return false
+}
