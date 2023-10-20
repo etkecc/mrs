@@ -48,7 +48,7 @@ type DataRepository interface {
 	AddRoomBatch(*model.MatrixRoom)
 	FlushRoomBatch()
 	GetRoom(string) (*model.MatrixRoom, error)
-	EachRoom(func(string, *model.MatrixRoom))
+	EachRoom([]string, func(string, *model.MatrixRoom))
 	GetBannedRooms(...string) ([]string, error)
 	BanRoom(string) error
 	UnbanRoom(string) error
@@ -279,7 +279,7 @@ func (m *Matrix) EachRoom(handler func(roomID string, data *model.MatrixRoom)) {
 	m.eachrooming = true
 	defer func() { m.eachrooming = false }()
 
-	m.data.EachRoom(handler)
+	m.data.EachRoom(m.blocklist, handler)
 }
 
 // getMediaServers returns list of HTTP urls of the same media ID.

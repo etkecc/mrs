@@ -78,7 +78,7 @@ func (s *Stats) Collect() {
 	}
 
 	var rooms int
-	s.data.EachRoom(func(_ string, _ *model.MatrixRoom) {
+	s.data.EachRoom(nil, func(_ string, _ *model.MatrixRoom) {
 		rooms++
 	})
 	if err := s.data.SetIndexRooms(rooms); err != nil {

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"go.etcd.io/bbolt"
+	"golang.org/x/exp/slices"
 
 	"gitlab.com/etke.cc/mrs/api/model"
 	"gitlab.com/etke.cc/mrs/api/utils"
@@ -37,10 +38,16 @@ func (d *Data) GetRoom(roomID string) (*model.MatrixRoom, error) {
 // EachRoom allows to work with each known room
 //
 //nolint:errcheck
-func (d *Data) EachRoom(handler func(roomID string, data *model.MatrixRoom)) {
+func (d *Data) EachRoom(blocklist []string, handler func(roomID string, data *model.MatrixRoom)) {
 	var room *model.MatrixRoom
+	toRemove := [][]byte{}
 	d.db.View(func(tx *bbolt.Tx) error {
 		return tx.Bucket(roomsBucket).ForEach(func(k, v []byte) error {
+			if slices.Contains(blocklist, utils.ServerFrom(string(k))) {
+				toRemove = append(toRemove, k)
+				return nil
+			}
+
 			err := json.Unmarshal(v, &room)
 			if err != nil {
 				return err
@@ -53,6 +60,18 @@ func (d *Data) EachRoom(handler func(roomID string, data *model.MatrixRoom)) {
 			handler(string(k), room)
 			return nil
 		})
+	})
+
+	if len(toRemove) == 0 {
+		return
+	}
+
+	d.db.Update(func(tx *bbolt.Tx) error { //nolint:errcheck
+		bucket := tx.Bucket(roomsBucket)
+		for _, k := range toRemove {
+			bucket.Delete(k)
+		}
+		return nil
 	})
 }
 
