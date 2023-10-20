@@ -19,16 +19,21 @@ type StatsRepository interface {
 	SetFinishedAt(process string, finishedAt time.Time) error
 }
 
+type Lenable interface {
+	Len() int
+}
+
 // Stats service
 type Stats struct {
 	data       StatsRepository
+	block      Lenable
 	stats      *model.IndexStats
 	collecting bool
 }
 
 // NewStats service
-func NewStats(data StatsRepository) *Stats {
-	stats := &Stats{data: data}
+func NewStats(data StatsRepository, blocklist Lenable) *Stats {
+	stats := &Stats{data: data, block: blocklist}
 	stats.Reload()
 
 	return stats
@@ -37,6 +42,7 @@ func NewStats(data StatsRepository) *Stats {
 // Reload saved stats. Useful when you need to get updated timestamps, but don't want to parse whole db
 func (s *Stats) Reload() {
 	s.stats = s.data.GetIndexStats()
+	s.stats.Servers.Blocked = s.block.Len()
 }
 
 // Get stats
@@ -78,7 +84,7 @@ func (s *Stats) Collect() {
 	}
 
 	var rooms int
-	s.data.EachRoom(nil, func(_ string, _ *model.MatrixRoom) {
+	s.data.EachRoom(func(_ string, _ *model.MatrixRoom) {
 		rooms++
 	})
 	if err := s.data.SetIndexRooms(rooms); err != nil {

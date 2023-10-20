@@ -13,8 +13,9 @@ type IndexStats struct {
 
 // IndexStatsServers structure
 type IndexStatsServers struct {
-	All    int `json:"all"`
-	Online int `json:"online"`
+	All     int `json:"all"`
+	Online  int `json:"online"`
+	Blocked int `json:"blocked"`
 }
 
 // IndexStatsRooms structure

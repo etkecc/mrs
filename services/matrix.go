@@ -13,7 +13,6 @@ import (
 
 	"github.com/pemistahl/lingua-go"
 	"github.com/xxjwxc/gowp/workpool"
-	"golang.org/x/exp/slices"
 
 	"gitlab.com/etke.cc/mrs/api/model"
 	"gitlab.com/etke.cc/mrs/api/utils"
@@ -27,15 +26,20 @@ const (
 
 type Matrix struct {
 	servers     []string
-	blocklist   []string
 	proxyURL    string
 	proxyToken  string
 	publicURL   string
 	parsing     bool
 	discovering bool
 	eachrooming bool
+	block       BlocklistService
 	data        DataRepository
 	detector    lingua.LanguageDetector
+}
+
+type BlocklistService interface {
+	ByID(matrixID string) bool
+	ByServer(server string) bool
 }
 
 type DataRepository interface {
@@ -48,8 +52,9 @@ type DataRepository interface {
 	AddRoomBatch(*model.MatrixRoom)
 	FlushRoomBatch()
 	GetRoom(string) (*model.MatrixRoom, error)
-	EachRoom([]string, func(string, *model.MatrixRoom))
+	EachRoom(func(string, *model.MatrixRoom))
 	GetBannedRooms(...string) ([]string, error)
+	RemoveRooms([]string)
 	BanRoom(string) error
 	UnbanRoom(string) error
 	GetReportedRooms(...string) (map[string]string, error)
@@ -95,13 +100,13 @@ type matrixContactsRespContact struct {
 }
 
 // NewMatrix service
-func NewMatrix(servers, blocklist []string, proxyURL, proxyToken, publicURL string, data DataRepository, detector lingua.LanguageDetector) *Matrix {
+func NewMatrix(servers []string, proxyURL, proxyToken, publicURL string, block BlocklistService, data DataRepository, detector lingua.LanguageDetector) *Matrix {
 	return &Matrix{
 		proxyURL:   proxyURL,
 		proxyToken: proxyToken,
 		publicURL:  publicURL,
 		servers:    servers,
-		blocklist:  blocklist,
+		block:      block,
 		data:       data,
 		detector:   detector,
 	}
@@ -133,83 +138,31 @@ func (m *Matrix) DiscoverServers(workers int) error {
 
 	dataservers := utils.MapKeys(m.data.AllServers())
 	servers := utils.MergeSlices(dataservers, m.servers)
-	servers = utils.RemoveFromSlice(servers, m.blocklist)
 
 	wp := workpool.New(workers)
 	for _, server := range servers {
 		name := server
-		wp.Do(func() error {
-			server := &model.MatrixServer{
-				Name:      name,
-				Online:    true,
-				UpdatedAt: time.Now().UTC(),
+		if m.block.ByServer(name) {
+			if err := m.data.RemoveServer(name); err != nil {
+				log.Println(name, "cannot remove blocked server", err)
 			}
-			if contacts := m.getServerContacts(name); contacts != nil {
-				server.Contacts = *contacts
-			}
+			continue
+		}
 
-			if m.validateDiscoveredServer(name) {
-				return m.data.AddServer(server)
-			}
-
-			server.Online = false
-			return m.data.AddServer(server)
-		})
+		wp.Do(func() error { return m.discoverServer(name) })
 	}
 	return wp.Wait() //nolint:errcheck
 }
 
-// AddServers by name in bulk, intended for HTTP API
-func (m *Matrix) AddServers(names []string, workers int) {
-	names = utils.RemoveFromSlice(names, m.blocklist)
-	wp := workpool.New(workers)
-	for _, server := range names {
-		name := server
-		wp.Do(func() error {
-			log.Println(name, "discovering...")
-			existingURL, _ := m.data.GetServer(name) //nolint:errcheck
-			if existingURL != "" {
-				return nil
-			}
-
-			server := &model.MatrixServer{
-				Name:      name,
-				Online:    true,
-				UpdatedAt: time.Now().UTC(),
-			}
-
-			if contacts := m.getServerContacts(name); contacts != nil {
-				server.Contacts = *contacts
-			}
-
-			if !m.validateDiscoveredServer(name) {
-				log.Println(name, "server is not eligible")
-				server.Online = false
-				return m.data.AddServer(server)
-			}
-
-			err := m.data.AddServer(server)
-			if err != nil {
-				log.Println(name, "cannot add server", err)
-				return nil
-			}
-
-			return nil
-		})
-	}
-	wp.Wait() //nolint:errcheck
-}
-
-// AddServer by name, intended for HTTP API
-// returns http status code to send to the reporter
-func (m *Matrix) AddServer(name string) int {
-	if slices.Contains(m.blocklist, name) {
-		return http.StatusForbidden
+func (m *Matrix) discoverServer(name string) error {
+	log.Println(name, "discovering...")
+	if m.block.ByServer(name) {
+		return m.data.RemoveServer(name)
 	}
 
 	existingURL, _ := m.data.GetServer(name) //nolint:errcheck
 	if existingURL != "" {
-		return http.StatusAlreadyReported
+		return nil
 	}
 
 	server := &model.MatrixServer{
@@ -223,15 +176,46 @@ func (m *Matrix) AddServer(name string) int {
 	}
 
 	if !m.validateDiscoveredServer(name) {
-		return http.StatusUnprocessableEntity
+		log.Println(name, "server is not eligible")
+		server.Online = false
+		return m.data.AddServer(server)
 	}
 
-	err := m.data.AddServer(server)
-	if err != nil {
+	return m.data.AddServer(server)
+}
+
+// AddServers by name in bulk, intended for HTTP API
+func (m *Matrix) AddServers(names []string, workers int) {
+	wp := workpool.New(workers)
+	for _, server := range names {
+		name := server
+		if m.block.ByServer(name) {
+			if err := m.data.RemoveServer(name); err != nil {
+				log.Println(name, "cannot remove blocked server", err)
+			}
+			continue
+		}
+		wp.Do(func() error { return m.discoverServer(name) })
+	}
+	wp.Wait() //nolint:errcheck
+}
+
+// AddServer by name, intended for HTTP API
+// returns http status code to send to the reporter
+func (m *Matrix) AddServer(name string) int {
+	if m.block.ByServer(name) {
+		return http.StatusAlreadyReported
+	}
+
+	existingURL, _ := m.data.GetServer(name) //nolint:errcheck
+	if existingURL != "" {
+		return http.StatusAlreadyReported
+	}
+
+	if err := m.discoverServer(name); err != nil {
 		log.Println(name, "cannot add server", err)
 		return http.StatusInternalServerError
 	}
-
 	return http.StatusCreated
 }
 
@@ -250,7 +234,6 @@ func (m *Matrix) ParseRooms(workers int) {
 	defer func() { m.parsing = false }()
 
 	servers := utils.MapKeys(m.data.AllOnlineServers())
-	servers = utils.RemoveFromSlice(servers, m.blocklist)
 
 	total := len(servers)
 	if total < workers {
@@ -260,6 +243,13 @@ func (m *Matrix) ParseRooms(workers int) {
 	log.Println("parsing rooms of", total, "servers using", workers, "workers")
 	for _, srvName := range servers {
 		name := srvName
+		if m.block.ByServer(name) {
+			if err := m.data.RemoveServer(name); err != nil {
+				log.Println(name, "cannot remove blocked server", err)
+			}
+			continue
+		}
+
 		wp.Do(func() error {
 			log.Println(name, "parsing rooms...")
 			m.getPublicRooms(name)
@@ -279,7 +269,16 @@ func (m *Matrix) EachRoom(handler func(roomID string, data *model.MatrixRoom)) {
 	m.eachrooming = true
 	defer func() { m.eachrooming = false }()
 
-	m.data.EachRoom(m.blocklist, handler)
+	toRemove := []string{}
+	m.data.EachRoom(func(id string, room *model.MatrixRoom) {
+		if m.block.ByID(id) || m.block.ByID(room.ID) || m.block.ByID(room.Alias) || m.block.ByServer(room.Server) {
+			toRemove = append(toRemove, id)
+			return
+		}
+
+		handler(id, room)
+	})
+	m.data.RemoveRooms(toRemove)
 }
 
 // getMediaServers returns list of HTTP urls of the same media ID.

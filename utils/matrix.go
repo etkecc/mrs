@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/h2non/bimg"
-	"golang.org/x/exp/slices"
 )
 
 const (
@@ -34,11 +33,6 @@ func ServerFrom(matrixID string) string {
 		return ""
 	}
 	return matrixID[idx+1:]
-}
-
-// ServerIn checks if server of matrix ID is in the list
-func ServerIn(list []string, matrixID string) bool {
-	return slices.Contains(list, ServerFrom(matrixID))
 }
 
 // Avatar resizes and converts avatar stream to webp

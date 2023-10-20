@@ -34,7 +34,8 @@ func (d *Data) GetRoom(roomID string) (*model.MatrixRoom, error) {
 	return room, err
 }
 
-func (d *Data) removeRooms(keys [][]byte) {
+// RemoveRooms from db
+func (d *Data) RemoveRooms(keys []string) {
 	if len(keys) == 0 {
 		return
 	}
@@ -42,7 +43,7 @@ func (d *Data) removeRooms(keys [][]byte) {
 	d.db.Update(func(tx *bbolt.Tx) error { //nolint:errcheck
 		bucket := tx.Bucket(roomsBucket)
 		for _, k := range keys {
-			bucket.Delete(k) //nolint:errcheck
+			bucket.Delete([]byte(k)) //nolint:errcheck
 		}
 		return nil
 	})
@@ -51,28 +52,16 @@ func (d *Data) removeRooms(keys [][]byte) {
 // EachRoom allows to work with each known room
 //
 //nolint:errcheck
-func (d *Data) EachRoom(blocklist []string, handler func(roomID string, data *model.MatrixRoom)) {
+func (d *Data) EachRoom(handler func(roomID string, data *model.MatrixRoom)) {
 	var room *model.MatrixRoom
-	toRemove := [][]byte{}
 	d.db.View(func(tx *bbolt.Tx) error {
 		return tx.Bucket(roomsBucket).ForEach(func(k, v []byte) error {
-			if utils.ServerIn(blocklist, string(k)) {
-				toRemove = append(toRemove, k)
-				return nil
-			}
-
 			err := json.Unmarshal(v, &room)
 			if err != nil {
 				return err
 			}
 			// ignore banned rooms
 			if tx.Bucket(roomsBanlistBucket).Get(k) != nil {
-				toRemove = append(toRemove, k)
-				return nil
-			}
-
-			if utils.ServerIn(blocklist, room.ID) || utils.ServerIn(blocklist, room.Alias) {
-				toRemove = append(toRemove, k)
 				return nil
 			}
 
@@ -80,7 +69,6 @@ func (d *Data) EachRoom(blocklist []string, handler func(roomID string, data *mo
 			return nil
 		})
 	})
-	d.removeRooms(toRemove)
 }
 
 // GetBannedRooms returns full list of the banned rooms

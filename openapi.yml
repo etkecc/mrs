@@ -102,8 +102,6 @@ paths:
           description: server already discovered
         '401':
           description: unauthorized (provided credentials are invalid)
-        '422':
-          description: server is not discoverable, check troubleshooting section of readme
         '429':
           description: too many requests, slow down.
         '500':
@@ -532,6 +530,10 @@ components:
               type: integer
               description: amount of discovered servers (online only)
               example: 23
+            blocked:
+              type: integer
+              description: amount of servers in blocklist
+              example: 3
         rooms:
           type: object
           properties:

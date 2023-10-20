@@ -54,10 +54,11 @@ func main() {
 	if err != nil {
 		log.Panic(err)
 	}
+	blockSvc := services.NewBlocklist(cfg.Blocklist.Servers)
 	indexSvc := services.NewIndex(index, dataRepo, cfg.Batch.Rooms)
 	searchSvc := services.NewSearch(index, cfg.Blocklist.Queries)
-	matrixSvc := services.NewMatrix(cfg.Servers, cfg.Blocklist.Servers, cfg.Proxy.Server, cfg.Proxy.Token, cfg.Public.API, dataRepo, detector)
-	statsSvc := services.NewStats(dataRepo)
+	matrixSvc := services.NewMatrix(cfg.Servers, cfg.Proxy.Server, cfg.Proxy.Token, cfg.Public.API, blockSvc, dataRepo, detector)
+	statsSvc := services.NewStats(dataRepo, blockSvc)
 	cacheSvc := services.NewCache(cfg.Cache.MaxAge, cfg.Cache.Bunny.URL, cfg.Cache.Bunny.Key, statsSvc)
 	dataSvc := services.NewDataFacade(matrixSvc, indexSvc, statsSvc, cacheSvc)
 	mailSvc := services.NewEmail(&cfg.Public, &cfg.Email)
