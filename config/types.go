@@ -43,10 +43,9 @@ type CacheBunny struct {
 
 // Auth config
 type Auth struct {
-	Admin      AuthAdmin         `yaml:"admin"`
-	Discovery  AuthItem          `yaml:"discovery"`
-	Moderation AuthItem          `yaml:"moderation"`
-	Search     map[string]string `yaml:"search"`
+	Admin      AuthAdmin `yaml:"admin"`
+	Discovery  AuthItem  `yaml:"discovery"`
+	Moderation AuthItem  `yaml:"moderation"`
 }
 
 // AuthItem config (generic)

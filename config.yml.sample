@@ -18,8 +18,6 @@ auth: # auth configuration
   moderation: # moderation endpoints
     login: moderation
     password: changeme
-  search: # (optional) protect search endpoint with basic auth, format: login: password
-    # client-app-id: client-app-secret
 cache: # (optional) cache config
   max_age: 0
   bunny: # (optional) bunny cdn cache purging, ref: https://docs.bunny.net/reference/pullzonepublic_purgecachepostbytag

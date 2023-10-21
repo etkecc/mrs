@@ -11,6 +11,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/raja/argon2pw"
+	"golang.org/x/exp/slices"
 
 	"gitlab.com/etke.cc/mrs/api/config"
 	"gitlab.com/etke.cc/mrs/api/model"
@@ -56,11 +57,11 @@ func ConfigureRouter(
 	e.GET("/stats", stats(statsSvc))
 	e.GET("/avatar/:name/:id", avatar(matrixSvc), middleware.RateLimiter(middleware.NewRateLimiterMemoryStoreWithConfig(middleware.RateLimiterMemoryStoreConfig{Rate: 30, Burst: 30, ExpiresIn: 5 * time.Minute})), cacheSvc.MiddlewareImmutable())
 
-	e.GET("/search", search(searchSvc, false), searchAuth(cfg))
-	e.GET("/search/:q", search(searchSvc, true), searchAuth(cfg))
-	e.GET("/search/:q/:l", search(searchSvc, true), searchAuth(cfg))
-	e.GET("/search/:q/:l/:o", search(searchSvc, true), searchAuth(cfg))
-	e.GET("/search/:q/:l/:o/:s", search(searchSvc, true), searchAuth(cfg))
+	e.GET("/search", search(searchSvc, false))
+	e.GET("/search/:q", search(searchSvc, true))
+	e.GET("/search/:q/:l", search(searchSvc, true))
+	e.GET("/search/:q/:l/:o", search(searchSvc, true))
+	e.GET("/search/:q/:l/:o/:s", search(searchSvc, true))
 
 	e.POST("/discover/bulk", addServers(matrixSvc, cfg.Workers.Discovery), discoveryAuth(cfg))
 	e.POST("/discover/:name", addServer(matrixSvc), discoveryProtection(rl, cfg))
@@ -156,56 +157,21 @@ func discoveryProtection(rl echo.MiddlewareFunc, cfg *config.Config) echo.Middle
 	}
 }
 
-// searchAuth enforces basic auth on search endpoints if credentials are configured
-func searchAuth(cfg *config.Config) echo.MiddlewareFunc {
-	auth := middleware.BasicAuth(func(login, password string, ctx echo.Context) (bool, error) {
-		pass, ok := cfg.Auth.Search[login]
-		if !ok {
-			return false, nil
-		}
-		if password != pass {
-			return false, nil
-		}
-
-		return true, nil
-	})
-
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			if len(cfg.Auth.Search) == 0 {
-				return next(c)
-			}
-			return auth(next)(c)
-		}
-	}
-}
-
 func adminGroup(e *echo.Echo, cfg *config.Config) *echo.Group {
 	admin := e.Group("-")
 	admin.Use(middleware.BasicAuthWithConfig(middleware.BasicAuthConfig{
 		Skipper: basicAuthSkipper,
 		Validator: func(login, password string, ctx echo.Context) (bool, error) {
-			if login != cfg.Auth.Admin.Login || password != cfg.Auth.Admin.Password {
-				return false, nil
+			allowedIP := true
+			if len(cfg.Auth.Admin.IPs) != 0 {
+				allowedIP = slices.Contains(cfg.Auth.Admin.IPs, ctx.RealIP())
 			}
-			log.Println("attempt to authorize as admin from:", ctx.RealIP())
-			if len(cfg.Auth.Admin.IPs) == 0 {
-				return true, nil
-			}
-			var allowed bool
-			realIP := ctx.RealIP()
-			for _, ip := range cfg.Auth.Admin.IPs {
-				if ip == realIP {
-					allowed = true
-					break
-				}
-			}
+			match := utils.ConstantTimeEq(cfg.Auth.Admin.Login, login) && utils.ConstantTimeEq(cfg.Auth.Admin.Password, password)
 
-			if allowed {
-				return true, nil
-			}
-
-			return false, nil
+			log.Printf("admin authorization attempt from=%s path=%s allowed_ip=%t allowed_credentials=%t",
+				ctx.RealIP(), ctx.Request().URL.Path, allowedIP, match,
+			)
+			return match && allowedIP, nil
 		},
 	}))
 
@@ -221,7 +187,13 @@ func hashAuth(c echo.Context, authPassword string) *bool {
 	if hashDecoded != "" {
 		hash = hashDecoded
 	}
-	ok, _ := argon2pw.CompareHashWithPassword(hash, authPassword) //nolint:errcheck
+
+	var ok bool
+	defer func() {
+		log.Printf("hash authorization attempt from=%s path=%s allowed_credentials=%t panic=%v", c.RealIP(), c.Request().URL.Path, ok, recover())
+	}()
+	ok, _ = argon2pw.CompareHashWithPassword(hash, authPassword) //nolint:errcheck
+
 	return &ok
 }
 
@@ -245,10 +217,11 @@ func modGroup(e *echo.Echo, cfg *config.Config) *echo.Group {
 	mod.Use(middleware.BasicAuthWithConfig(middleware.BasicAuthConfig{
 		Skipper: basicAuthSkipper,
 		Validator: func(login, password string, ctx echo.Context) (bool, error) {
-			if login != cfg.Auth.Moderation.Login || password != cfg.Auth.Moderation.Password {
-				return false, nil
-			}
-			return true, nil
+			match := utils.ConstantTimeEq(cfg.Auth.Moderation.Login, login) && utils.ConstantTimeEq(cfg.Auth.Moderation.Password, password)
+			log.Printf("mod authorization attempt from=%s path=%s allowed_credentials=%t",
+				ctx.RealIP(), ctx.Request().URL.Path, match,
+			)
+			return match, nil
 		},
 	}))
 	return mod

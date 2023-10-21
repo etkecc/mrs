@@ -1,6 +1,9 @@
 package utils
 
-import "strings"
+import (
+	"crypto/subtle"
+	"strings"
+)
 
 // MapKeys returns keys of the map
 func MapKeys[K comparable, V any](datamap map[K]V) []K {
@@ -94,4 +97,11 @@ func SliceToString(slice []string, delimiter string, hook func(string) string) s
 	}
 
 	return strings.Join(adjusted, delimiter)
+}
+
+// ConstantTimeEq checks if 2 strings are equal in constant time
+func ConstantTimeEq(s1, s2 string) bool {
+	b1 := []byte(s1)
+	b2 := []byte(s2)
+	return subtle.ConstantTimeEq(int32(len(b1)), int32(len(b2))) == 1 && subtle.ConstantTimeCompare(b1, b2) == 1
 }
