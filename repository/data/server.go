@@ -85,30 +85,3 @@ func (d *Data) AllServers() map[string]string {
 
 	return servers
 }
-
-// AllOnlineServers returns all servers known to be online
-//
-//nolint:errcheck
-func (d *Data) AllOnlineServers() map[string]string {
-	servers := make(map[string]string)
-	d.db.View(func(tx *bbolt.Tx) error {
-		return tx.Bucket(serversInfoBucket).ForEach(func(k, v []byte) error {
-			if v == nil {
-				return nil
-			}
-			var server *model.MatrixServer
-			err := json.Unmarshal(v, &server)
-			if err != nil {
-				log.Println("cannot unmarshal server:", err)
-				return nil
-			}
-
-			if server.Online {
-				servers[string(k)] = server.URL
-			}
-			return nil
-		})
-	})
-
-	return servers
-}

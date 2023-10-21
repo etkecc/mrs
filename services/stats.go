@@ -10,8 +10,8 @@ import (
 type StatsRepository interface {
 	DataRepository
 	GetIndexStats() *model.IndexStats
-	SetIndexServers(servers int) error
 	SetIndexOnlineServers(servers int) error
+	SetIndexBlockedServers(servers int) error
 	SetIndexRooms(rooms int) error
 	SetIndexBannedRooms(rooms int) error
 	SetIndexReportedRooms(rooms int) error
@@ -42,7 +42,6 @@ func NewStats(data StatsRepository, blocklist Lenable) *Stats {
 // Reload saved stats. Useful when you need to get updated timestamps, but don't want to parse whole db
 func (s *Stats) Reload() {
 	s.stats = s.data.GetIndexStats()
-	s.stats.Servers.Blocked = s.block.Len()
 }
 
 // Get stats
@@ -75,12 +74,12 @@ func (s *Stats) Collect() {
 	s.collecting = true
 	defer func() { s.collecting = false }()
 
-	if err := s.data.SetIndexServers(len(s.data.AllServers())); err != nil {
+	if err := s.data.SetIndexOnlineServers(len(s.data.AllServers())); err != nil {
 		log.Println("cannot set indexed servers count", err)
 	}
 
-	if err := s.data.SetIndexOnlineServers(len(s.data.AllOnlineServers())); err != nil {
-		log.Println("cannot set indexed servers (online) count", err)
+	if err := s.data.SetIndexBlockedServers(s.block.Len()); err != nil {
+		log.Println("cannot set blocked servers count", err)
 	}
 
 	var rooms int

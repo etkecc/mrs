@@ -52,7 +52,6 @@ type DataRepository interface {
 	GetServer(string) (string, error)
 	GetServerInfo(string) (*model.MatrixServer, error)
 	AllServers() map[string]string
-	AllOnlineServers() map[string]string
 	RemoveServer(string) error
 	AddRoomBatch(*model.MatrixRoom)
 	FlushRoomBatch()
@@ -75,11 +74,11 @@ var (
 		KeepAlive: 90 * time.Second,
 	}
 	matrixClient = &http.Client{
-		Timeout: 60 * time.Second,
+		Timeout: 10 * time.Second,
 		Transport: &http.Transport{
 			MaxIdleConns:        1000,
-			MaxConnsPerHost:     1000,
-			MaxIdleConnsPerHost: 1000,
+			MaxConnsPerHost:     5,
+			MaxIdleConnsPerHost: 5,
 			TLSHandshakeTimeout: 10 * time.Second,
 			DialContext:         matrixDialer.DialContext,
 			Dial:                matrixDialer.Dial,
@@ -121,7 +120,7 @@ func (m *Matrix) call(ctx context.Context, endpoint string, withAuth bool) (*htt
 	return matrixClient.Do(req)
 }
 
-// DiscoverServers across federation and reject invalid ones
+// DiscoverServers across federation and remove invalid ones
 func (m *Matrix) DiscoverServers(workers int) error {
 	if m.discovering {
 		log.Println("servers discovery already in progress, ignoring request")
@@ -130,22 +129,13 @@ func (m *Matrix) DiscoverServers(workers int) error {
 	m.discovering = true
 	defer func() { m.discovering = false }()
 
-	dataservers := utils.MapKeys(m.data.AllServers())
-	servers := utils.MergeSlices(dataservers, m.servers)
-
+	servers := utils.MergeSlices(utils.MapKeys(m.data.AllServers()), m.servers)
 	wp := workpool.New(workers)
 	for _, server := range servers {
 		name := server
-		if m.block.ByServer(name) {
-			if err := m.data.RemoveServer(name); err != nil {
-				log.Println(name, "cannot remove blocked server", err)
-			}
-			continue
-		}
-
 		wp.Do(func() error { return m.discoverServer(name) })
 	}
-	return wp.Wait() //nolint:errcheck
+	return wp.Wait()
 }
 
 func (m *Matrix) isAllowed(name string) bool {
@@ -173,7 +163,6 @@ func (m *Matrix) isAllowed(name string) bool {
 }
 
 func (m *Matrix) discoverServer(name string) error {
-	log.Println(name, "discovering...")
 	if m.block.ByServer(name) {
 		return m.data.RemoveServer(name)
 	}
@@ -184,11 +173,7 @@ func (m *Matrix) discoverServer(name string) error {
 		return m.data.RemoveServer(name)
 	}
 
-	existingURL, _ := m.data.GetServer(name) //nolint:errcheck
-	if existingURL != "" {
-		return nil
-	}
-
+	log.Println(name, "discovering...")
 	server := &model.MatrixServer{
 		Name:      name,
 		Online:    true,
@@ -200,9 +185,9 @@ func (m *Matrix) discoverServer(name string) error {
 	}
 
 	if !m.validateDiscoveredServer(name) {
-		log.Println(name, "server is not eligible")
-		server.Online = false
-		return m.data.AddServer(server)
+		log.Println(name, "server is not eligible, removing")
+		m.block.Add(name)
+		return m.data.RemoveServer(name)
 	}
 
 	return m.data.AddServer(server)
@@ -213,13 +198,14 @@ func (m *Matrix) AddServers(names []string, workers int) {
 	wp := workpool.New(workers)
 	for _, server := range names {
 		name := server
-		if m.block.ByServer(name) {
-			if err := m.data.RemoveServer(name); err != nil {
-				log.Println(name, "cannot remove blocked server", err)
+		wp.Do(func() error {
+			existingURL, _ := m.data.GetServer(name) //nolint:errcheck
+			if existingURL != "" {
+				return nil
 			}
-			continue
-		}
-		wp.Do(func() error { return m.discoverServer(name) })
+
+			return m.discoverServer(name)
+		})
 	}
 	wp.Wait() //nolint:errcheck
 }
@@ -227,10 +213,6 @@ func (m *Matrix) AddServers(names []string, workers int) {
 // AddServer by name, intended for HTTP API
 // returns http status code to send to the reporter
 func (m *Matrix) AddServer(name string) int {
-	if m.block.ByServer(name) {
-		return http.StatusAlreadyReported
-	}
-
 	existingURL, _ := m.data.GetServer(name) //nolint:errcheck
 	if existingURL != "" {
 		return http.StatusAlreadyReported
@@ -257,7 +239,7 @@ func (m *Matrix) ParseRooms(workers int) {
 	m.parsing = true
 	defer func() { m.parsing = false }()
 
-	servers := utils.MapKeys(m.data.AllOnlineServers())
+	servers := utils.MapKeys(m.data.AllServers())
 
 	total := len(servers)
 	if total < workers {

@@ -23,8 +23,8 @@ func (d *Data) GetIndexStats() *model.IndexStats {
 	d.db.View(func(tx *bbolt.Tx) error {
 		bucket := tx.Bucket(indexBucket)
 
-		serversBytes := bucket.Get([]byte("servers"))
 		serversOnlineBytes := bucket.Get([]byte("servers_online"))
+		serversBlockedBytes := bucket.Get([]byte("servers_blocked"))
 		roomsBytes := bucket.Get([]byte("rooms"))
 		roomsBannedBytes := bucket.Get([]byte("rooms_banned"))
 		roomsReportedBytes := bucket.Get([]byte("rooms_reported"))
@@ -38,8 +38,8 @@ func (d *Data) GetIndexStats() *model.IndexStats {
 		indexStartedAt := bucket.Get([]byte("indexing_started_at"))
 		indexFinishedAt := bucket.Get([]byte("indexing_finished_at"))
 
-		stats.Servers.All, _ = strconv.Atoi(string(serversBytes))
 		stats.Servers.Online, _ = strconv.Atoi(string(serversOnlineBytes))
+		stats.Servers.Blocked, _ = strconv.Atoi(string(serversBlockedBytes))
 		stats.Rooms.All, _ = strconv.Atoi(string(roomsBytes))
 		stats.Rooms.Banned, _ = strconv.Atoi(string(roomsBannedBytes))
 		stats.Rooms.Reported, _ = strconv.Atoi(string(roomsReportedBytes))
@@ -55,19 +55,19 @@ func (d *Data) GetIndexStats() *model.IndexStats {
 	return stats
 }
 
-// SetIndexServers sets count of discovered servers
-func (d *Data) SetIndexServers(servers int) error {
-	return d.db.Update(func(tx *bbolt.Tx) error {
-		value := []byte(strconv.Itoa(servers))
-		return tx.Bucket(indexBucket).Put([]byte("servers"), value)
-	})
-}
-
 // SetIndexOnlineServers sets count of discovered online servers
 func (d *Data) SetIndexOnlineServers(servers int) error {
 	return d.db.Update(func(tx *bbolt.Tx) error {
 		value := []byte(strconv.Itoa(servers))
 		return tx.Bucket(indexBucket).Put([]byte("servers_online"), value)
+	})
+}
+
+// SetIndexBlockedServers sets count of discovered online servers
+func (d *Data) SetIndexBlockedServers(servers int) error {
+	return d.db.Update(func(tx *bbolt.Tx) error {
+		value := []byte(strconv.Itoa(servers))
+		return tx.Bucket(indexBucket).Put([]byte("servers_blocked"), value)
 	})
 }
 

@@ -50,7 +50,7 @@ paths:
                 properties:
                   servers:
                     type: integer
-                    description: Count of all known servers
+                    description: Count of all discovered online servers
                     example: 3230
                   rooms:
                     type: integer
@@ -522,13 +522,9 @@ components:
         servers:
           type: object
           properties:
-            all:
-              type: integer
-              description: amount of all discovered servers
-              example: 123
             online:
               type: integer
-              description: amount of discovered servers (online only)
+              description: amount of discovered online servers
               example: 23
             blocked:
               type: integer
@@ -539,7 +535,7 @@ components:
           properties:
             all:
               type: integer
-              description: amount of all indexed rooms
+              description: amount of all indexed rooms from online servers
               example: 123
             banned:
               type: integer
