@@ -1,7 +1,11 @@
 package version
 
-// Version of MRS
-const Version = "v0.0.0"
+const (
+	// Version of MRS
+	Version = "v0.0.0"
+	// Bot name for robots.txt
+	Bot = "MRSBot"
+)
 
 var (
 	// UserAgent of MRS

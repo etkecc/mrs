@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/benjaminestes/robots/v2"
 	"github.com/pemistahl/lingua-go"
 	"github.com/xxjwxc/gowp/workpool"
 	"gitlab.com/etke.cc/go/msc1929"
@@ -23,6 +24,8 @@ import (
 const (
 	// RoomsBatch is maximum rooms parsed/stored at once
 	RoomsBatch = 10000
+	// RobotsTxtEndpoint is checked in robots.txt (if allowed or not)
+	RobotsTxtEndpoint = "/_matrix/federation/v1/publicRooms"
 )
 
 type Matrix struct {
@@ -39,6 +42,7 @@ type Matrix struct {
 }
 
 type BlocklistService interface {
+	Add(server string)
 	ByID(matrixID string) bool
 	ByServer(server string) bool
 }
@@ -144,9 +148,39 @@ func (m *Matrix) DiscoverServers(workers int) error {
 	return wp.Wait() //nolint:errcheck
 }
 
+func (m *Matrix) isAllowed(name string) bool {
+	robotsURL, err := robots.Locate("https://" + name + RobotsTxtEndpoint)
+	if err != nil {
+		log.Println(name, "cannot locate robots.txt", err)
+		return true
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	resp, err := m.call(ctx, robotsURL, false)
+	if err != nil {
+		log.Println(name, "cannot get robots.txt", err)
+		return true
+	}
+	defer resp.Body.Close()
+
+	r, err := robots.From(resp.StatusCode, resp.Body)
+	if err != nil {
+		log.Println(name, "cannot read robots.txt", err)
+	}
+
+	return r.Test(version.Bot, RobotsTxtEndpoint)
+}
+
 func (m *Matrix) discoverServer(name string) error {
 	log.Println(name, "discovering...")
 	if m.block.ByServer(name) {
+		return m.data.RemoveServer(name)
+	}
+
+	if !m.isAllowed(name) {
+		log.Println(name, "robots.txt disallow parsing")
+		m.block.Add(name)
 		return m.data.RemoveServer(name)
 	}
 

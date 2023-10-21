@@ -2,13 +2,15 @@
 
 A fully-featured, standalone, matrix rooms search service.
 
-
 <!-- vim-markdown-toc GitLab -->
 
 * [How it works?](#how-it-works)
     * [Discovery and indexing](#discovery-and-indexing)
         * [How to opt-in?](#how-to-opt-in)
         * [How to opt-out?](#how-to-opt-out)
+            * [by unpublishing your directory](#by-unpublishing-your-directory)
+            * [by robots.txt](#by-robotstxt)
+            * [by contacting instance maintainers](#by-contacting-instance-maintainers)
     * [How the MSC1929 integration works](#how-the-msc1929-integration-works)
         * [How to opt-in?](#how-to-opt-in-1)
         * [How to opt-out?](#how-to-opt-out-1)
@@ -55,9 +57,37 @@ they will appear in the search index after the next full reindex process (should
 #### How to opt-out?
 
 How can you remove your homeserver's rooms from the index?
-Each MRS instance should have a page with contact details and description of the opt-out process,
-but if there is no such page (or you don't want to bother with that), unpublish them or stop publishing room directory over federation.
-MRS tries to follow the specification and be polite, so it uses only information that was explicitly published.
+
+##### by unpublishing your directory
+
+If your server is indexed, that means you explicitly published your public rooms directory over federation.
+If you don't like that the information you explicitly published over federation is accessed over federation,
+you should consider unpublishing it.
+
+For synapse, you need to add the following config options in the `homeserver.yaml`:
+
+```yaml
+allow_public_rooms_over_federation: false
+```
+
+in case of [etke.cc/ansible](https://gitlab.com/etke.cc/ansible) and [mdad](https://github.com/spantaleev/matrix-docker-ansible-deploy), add the following to your vars.yml:
+
+```yaml
+matrix_synapse_allow_public_rooms_over_federation: false
+```
+
+##### by robots.txt
+
+You can block indexing of the public rooms of your server by configuring robots.txt:
+
+```
+User-agent: MRSBot
+Disallow: /_matrix/federation/v1/publicRooms
+```
+
+##### by contacting instance maintainers
+
+Each MRS instance should have a page with contact details and description of the opt-out process.
 
 Please keep in mind that MRS is an open source project (code), it doesn't index anything by itself,
 you have to contact specific instance maintainers, not the project's developers.

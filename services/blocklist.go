@@ -2,12 +2,14 @@ package services
 
 import (
 	"strings"
+	"sync"
 
 	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
 // Blocklist service
 type Blocklist struct {
+	mu      *sync.Mutex
 	servers map[string]struct{}
 }
 
@@ -18,12 +20,23 @@ func NewBlocklist(list []string) *Blocklist {
 	for _, server := range list {
 		servers[server] = struct{}{}
 	}
-	return &Blocklist{servers: servers}
+	return &Blocklist{
+		mu:      &sync.Mutex{},
+		servers: servers,
+	}
 }
 
 // Len of the blocklist
 func (b *Blocklist) Len() int {
 	return len(b.servers)
+}
+
+// Add server to blocklist
+func (b *Blocklist) Add(server string) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	b.servers[server] = struct{}{}
 }
 
 // ByID checks if server of matrixID is present in the blocklist
