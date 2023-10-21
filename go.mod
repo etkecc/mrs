@@ -52,6 +52,7 @@ require (
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/xxjwxc/public v0.0.0-20210518123934-6cc0965f0bc5 // indirect
 	github.com/yuin/goldmark v1.5.6 // indirect
+	gitlab.com/etke.cc/go/msc1929 v0.0.0-20231021182755-a89d9cb113c2 // indirect
 	go.mau.fi/util v0.1.0 // indirect
 	golang.org/x/crypto v0.13.0 // indirect
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect

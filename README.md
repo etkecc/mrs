@@ -55,8 +55,12 @@ they will appear in the search index after the next full reindex process (should
 #### How to opt-out?
 
 How can you remove your homeserver's rooms from the index?
-Just unpublish them or stop publishing room directory over federation.
+Each MRS instance should have a page with contact details and description of the opt-out process,
+but if there is no such page (or you don't want to bother with that), unpublish them or stop publishing room directory over federation.
 MRS tries to follow the specification and be polite, so it uses only information that was explicitly published.
+
+Please keep in mind that MRS is an open source project (code), it doesn't index anything by itself,
+you have to contact specific instance maintainers, not the project's developers.
 
 ### How the [MSC1929](https://github.com/matrix-org/matrix-spec-proposals/pull/1929) integration works
 
@@ -64,6 +68,9 @@ MRS will parse MSC1929 contacts automatically during the discovery phase and sto
 When a room is reported using the `/mod/report/{room_id}` endpoint, MRS will check if the room's server
 has MSC1929 contacts. If email address(-es) are listed within the contacts, report details will be sent
 to the administrators of the Matrix server to which the room belongs.
+
+MSC1929 integration is implemented in a form of a reusable library [gitlab.com/etke.cc/go/msc1929](https://gitlab.com/etke.cc/go/msc1929),
+in case you want to use it yourself.
 
 #### How to opt-in?
 
@@ -178,6 +185,7 @@ matrix_well_known_matrix_support_enabled: true
 matrix_homeserver_admin_contacts:
   - matrix_id: "@you:example.com" # optional, remove if not needed
     email_address: "you@example.com" # required for MRS MSC1929 integration
+    role: "admin"
 matrix_homeserver_support_url: "https://example.com/help" # optional, remove if not needed
 ```
 

@@ -13,6 +13,7 @@ import (
 
 	"github.com/pemistahl/lingua-go"
 	"github.com/xxjwxc/gowp/workpool"
+	"gitlab.com/etke.cc/go/msc1929"
 
 	"gitlab.com/etke.cc/mrs/api/model"
 	"gitlab.com/etke.cc/mrs/api/utils"
@@ -86,17 +87,6 @@ type matrixRoomsResp struct {
 	Chunk     []*model.MatrixRoom `json:"chunk"`
 	NextBatch string              `json:"next_batch"`
 	Total     int                 `json:"total_room_count_estimate"`
-}
-
-type matrixContactsResp struct {
-	Contacts    []matrixContactsRespContact `json:"contacts,omitempty"`
-	Admins      []matrixContactsRespContact `json:"admins,omitempty"`
-	SupportPage string                      `json:"support_page,omitempty"`
-}
-
-type matrixContactsRespContact struct {
-	Email    string `json:"email_address,omitempty"`
-	MatrixID string `json:"matrix_id,omitempty"`
 }
 
 // NewMatrix service
@@ -341,86 +331,21 @@ func (m *Matrix) validateDiscoveredServer(name string) bool {
 	return m.getPublicRoomsPage(name, "1", "") != nil
 }
 
-func (m *Matrix) readServerContacts(contacts []matrixContactsRespContact) (emails, mxids []string, hasContent bool) {
-	emails = []string{}
-	mxids = []string{}
-	for _, contact := range contacts {
-		if contact.Email != "" {
-			emails = append(emails, contact.Email)
-			hasContent = true
-		}
-		if contact.MatrixID != "" {
-			mxids = append(mxids, contact.MatrixID)
-			hasContent = true
-		}
-	}
-	return emails, mxids, hasContent
-}
-
 // getServerContacts as per MSC1929
 func (m *Matrix) getServerContacts(name string) *model.MatrixServerContacts {
-	contacts := &model.MatrixServerContacts{Emails: []string{}, MXIDs: []string{}}
-	endpoint := "https://" + name + "/.well-known/matrix/support"
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	resp, err := m.call(ctx, endpoint, false)
+	resp, err := msc1929.Get(name)
 	if err != nil {
-		if strings.Contains(err.Error(), "Timeout") || strings.Contains(err.Error(), "deadline") {
-			log.Println(name, "cannot get server contacts (timeout)")
-			return contacts
-		}
-
 		log.Println(name, "cannot get server contacts", err)
-		return contacts
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		log.Println(name, "cannot get server contacts", resp.Status)
-		return contacts
-	}
-
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Println(name, "cannot read server contacts", err)
-		return contacts
-	}
-
-	var contactsResp *matrixContactsResp
-	err = json.Unmarshal(data, &contactsResp)
-	if err != nil {
-		log.Println(name, "cannot unmarshal server contacts", err)
-		return contacts
-	}
-
-	var hasContent bool
-	if contactsResp.SupportPage != "" {
-		contacts.URL = contactsResp.SupportPage
-		hasContent = true
-	}
-	emails, mxids, contactsHaveContent := m.readServerContacts(contactsResp.Contacts)
-	if contactsHaveContent {
-		hasContent = true
-		contacts.Emails = append(contacts.Emails, emails...)
-		contacts.MXIDs = append(contacts.MXIDs, mxids...)
-	}
-
-	emails, mxids, contactsHaveContent = m.readServerContacts(contactsResp.Admins)
-	if contactsHaveContent {
-		hasContent = true
-		contacts.Emails = append(contacts.Emails, emails...)
-		contacts.MXIDs = append(contacts.MXIDs, mxids...)
-	}
-
-	if !hasContent {
 		return nil
 	}
-	contacts.Emails = utils.Uniq(contacts.Emails)
-	contacts.MXIDs = utils.Uniq(contacts.MXIDs)
-
-	return contacts
+	if resp.IsEmpty() {
+		return nil
+	}
+	return &model.MatrixServerContacts{
+		Emails: utils.Uniq(resp.Emails()),
+		MXIDs:  utils.Uniq(resp.MatrixIDs()),
+		URL:    resp.SupportPage,
+	}
 }
 
 // getPublicRooms reads public rooms of the given server from the matrix client-server api
