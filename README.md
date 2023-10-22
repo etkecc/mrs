@@ -81,8 +81,13 @@ matrix_synapse_allow_public_rooms_over_federation: false
 You can block indexing of the public rooms of your server by configuring robots.txt:
 
 ```
+# you can block whole server parsing:
 User-agent: MRSBot
 Disallow: /_matrix/federation/v1/publicRooms
+
+# or block specific room(-s) parsing:
+User-agent: MRSBot
+Disallow: /_matrix/federation/v1/publicRooms/!yourRoomID:example.com
 ```
 
 ##### by contacting instance maintainers

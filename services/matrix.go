@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -11,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/benjaminestes/robots/v2"
 	"github.com/pemistahl/lingua-go"
 	"github.com/xxjwxc/gowp/workpool"
 	"gitlab.com/etke.cc/go/msc1929"
@@ -21,12 +21,8 @@ import (
 	"gitlab.com/etke.cc/mrs/api/version"
 )
 
-const (
-	// RoomsBatch is maximum rooms parsed/stored at once
-	RoomsBatch = 10000
-	// RobotsTxtEndpoint is checked in robots.txt (if allowed or not)
-	RobotsTxtEndpoint = "/_matrix/federation/v1/publicRooms"
-)
+// RoomsBatch is maximum rooms parsed/stored at once
+const RoomsBatch = 10000
 
 type Matrix struct {
 	servers     []string
@@ -37,6 +33,7 @@ type Matrix struct {
 	discovering bool
 	eachrooming bool
 	block       BlocklistService
+	robots      RobotsService
 	data        DataRepository
 	detector    lingua.LanguageDetector
 }
@@ -45,6 +42,10 @@ type BlocklistService interface {
 	Add(server string)
 	ByID(matrixID string) bool
 	ByServer(server string) bool
+}
+
+type RobotsService interface {
+	Allowed(serverName, endpoint string) bool
 }
 
 type DataRepository interface {
@@ -93,12 +94,13 @@ type matrixRoomsResp struct {
 }
 
 // NewMatrix service
-func NewMatrix(servers []string, proxyURL, proxyToken, publicURL string, block BlocklistService, data DataRepository, detector lingua.LanguageDetector) *Matrix {
+func NewMatrix(servers []string, proxyURL, proxyToken, publicURL string, robots RobotsService, block BlocklistService, data DataRepository, detector lingua.LanguageDetector) *Matrix {
 	return &Matrix{
 		proxyURL:   proxyURL,
 		proxyToken: proxyToken,
 		publicURL:  publicURL,
 		servers:    servers,
+		robots:     robots,
 		block:      block,
 		data:       data,
 		detector:   detector,
@@ -138,36 +140,12 @@ func (m *Matrix) DiscoverServers(workers int) error {
 	return wp.Wait()
 }
 
-func (m *Matrix) isAllowed(name string) bool {
-	robotsURL, err := robots.Locate("https://" + name + RobotsTxtEndpoint)
-	if err != nil {
-		log.Println(name, "cannot locate robots.txt", err)
-		return true
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	resp, err := m.call(ctx, robotsURL, false)
-	if err != nil {
-		log.Println(name, "cannot get robots.txt", err)
-		return true
-	}
-	defer resp.Body.Close()
-
-	r, err := robots.From(resp.StatusCode, resp.Body)
-	if err != nil {
-		log.Println(name, "cannot read robots.txt", err)
-	}
-
-	return r.Test(version.Bot, RobotsTxtEndpoint)
-}
-
 func (m *Matrix) discoverServer(name string) error {
 	if m.block.ByServer(name) {
 		return m.data.RemoveServer(name)
 	}
 
-	if !m.isAllowed(name) {
+	if !m.robots.Allowed(name, RobotsTxtPublicRooms) {
 		log.Println(name, "robots.txt disallow parsing")
 		m.block.Add(name)
 		return m.data.RemoveServer(name)
@@ -277,7 +255,7 @@ func (m *Matrix) EachRoom(handler func(roomID string, data *model.MatrixRoom)) {
 
 	toRemove := []string{}
 	m.data.EachRoom(func(id string, room *model.MatrixRoom) {
-		if room.IsBlocked(m.block) {
+		if !m.roomAllowed(room.Server, room) {
 			toRemove = append(toRemove, id)
 			return
 		}
@@ -364,6 +342,27 @@ func (m *Matrix) getServerContacts(name string) *model.MatrixServerContacts {
 	}
 }
 
+// roomAllowed check if room is allowed (by blocklist and robots.txt)
+func (m *Matrix) roomAllowed(name string, room *model.MatrixRoom) bool {
+	if room.ID == "" {
+		return false
+	}
+	if m.block.ByID(room.ID) {
+		return false
+	}
+	if m.block.ByID(room.Alias) {
+		return false
+	}
+	if m.block.ByServer(room.Server) {
+		return false
+	}
+	if m.block.ByServer(name) {
+		return false
+	}
+
+	return m.robots.Allowed(name, fmt.Sprintf(RobotsTxtPublicRoom, room.ID))
+}
+
 // getPublicRooms reads public rooms of the given server from the matrix client-server api
 // and sends them into channel
 func (m *Matrix) getPublicRooms(name string) {
@@ -380,7 +379,7 @@ func (m *Matrix) getPublicRooms(name string) {
 
 		added += len(resp.Chunk)
 		for _, room := range resp.Chunk {
-			if room.ID == "" || room.IsBlocked(m.block) {
+			if !m.roomAllowed(name, room) {
 				added--
 				continue
 			}

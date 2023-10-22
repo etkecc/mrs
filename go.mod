@@ -17,6 +17,7 @@ require (
 	gitlab.com/etke.cc/go/fswatcher v1.0.0
 	gitlab.com/etke.cc/go/msc1929 v0.0.0-20231021182755-a89d9cb113c2
 	go.etcd.io/bbolt v1.3.5
+	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 	gopkg.in/yaml.v3 v3.0.1
 	maunium.net/go/mautrix v0.16.1
 	mvdan.cc/xurls/v2 v2.5.0
@@ -57,7 +58,6 @@ require (
 	github.com/yuin/goldmark v1.5.6 // indirect
 	go.mau.fi/util v0.1.0 // indirect
 	golang.org/x/crypto v0.13.0 // indirect
-	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
 	golang.org/x/net v0.15.0 // indirect
 	golang.org/x/sys v0.12.0 // indirect
 	golang.org/x/text v0.13.0 // indirect

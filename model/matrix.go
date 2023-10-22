@@ -67,20 +67,6 @@ func (r *MatrixRoom) Entry() *Entry {
 	}
 }
 
-// IsBlocked checks if room's server is blocked
-func (r *MatrixRoom) IsBlocked(block BlocklistService) bool {
-	if block.ByID(r.ID) {
-		return true
-	}
-	if block.ByID(r.Alias) {
-		return true
-	}
-	if block.ByServer(r.Server) {
-		return true
-	}
-	return false
-}
-
 // Parse matrix room info to prepare custom fields
 func (r *MatrixRoom) Parse(detector lingua.LanguageDetector, mrsPublicURL string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
