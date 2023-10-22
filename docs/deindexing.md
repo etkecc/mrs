@@ -36,7 +36,7 @@ in case of [etke.cc/ansible](https://gitlab.com/etke.cc/ansible) and [mdad](http
 matrix_synapse_allow_public_rooms_over_federation: false
 ```
 
-However, if think that "publishing over federation, but not for that particular member of the federation" segregation is a good thing
+However, if you think that "publishing over federation, but not for that particular member of the federation" segregation is a good thing
 for Matrix protocol, MRS has several options to unlist/unpublish/block/remove your server and its rooms from indexing.
 
 ## robots.txt
