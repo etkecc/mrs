@@ -137,6 +137,7 @@ func (m *Matrix) DiscoverServers(workers int) error {
 	wp := workpool.New(workers)
 	for _, server := range servers {
 		name := server
+		name = m.sanitizeServerName(name)
 		wp.Do(func() error {
 			valid, err := m.discoverServer(name)
 			if valid {
@@ -151,6 +152,16 @@ func (m *Matrix) DiscoverServers(workers int) error {
 	m.data.RemoveServers(toRemove)
 
 	return perr
+}
+
+// sanitizeServerName returns sanitized server name
+func (m *Matrix) sanitizeServerName(name string) string {
+	uri, err := url.Parse("https://" + name)
+	if err != nil {
+		log.Println(name, "cannot parse url", err)
+		return name
+	}
+	return uri.Hostname()
 }
 
 func (m *Matrix) discoverServer(name string) (valid bool, err error) {
@@ -190,6 +201,7 @@ func (m *Matrix) AddServers(names []string, workers int) {
 	validServers := []string{}
 	for _, server := range names {
 		name := server
+		name = m.sanitizeServerName(name)
 		wp.Do(func() error {
 			existingURL, _ := m.data.GetServer(name) //nolint:errcheck
 			if existingURL != "" {
@@ -212,6 +224,7 @@ func (m *Matrix) AddServers(names []string, workers int) {
 // AddServer by name, intended for HTTP API
 // returns http status code to send to the reporter
 func (m *Matrix) AddServer(name string) int {
+	name = m.sanitizeServerName(name)
 	existingURL, _ := m.data.GetServer(name) //nolint:errcheck
 	if existingURL != "" {
 		return http.StatusAlreadyReported
