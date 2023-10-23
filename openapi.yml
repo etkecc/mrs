@@ -14,6 +14,25 @@ servers:
   - url: http://localhost:8080
     description: local
 paths:
+  /.well-known/matrix/server:
+    get:
+      tags:
+        - public
+      summary: Matrix server delegation
+      description: The delegated server information.
+      operationId: matrix_server_delegation
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  m.server:
+                    type: string
+                    description: The server name to delegate server-server communications to, with optional port
+                    example: 'example.com:443'
   /_health:
     get:
       tags:
