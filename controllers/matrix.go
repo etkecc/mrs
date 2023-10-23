@@ -21,7 +21,7 @@ type serverKeyResp struct {
 	ValidUntilTS  int64                        `json:"valid_unit_ts"`
 	Signatures    map[string]map[string]string `json:"signatures,omitempty"`
 	VerifyKeys    map[string]map[string]string `json:"verify_keys"`
-	OldVerifyKeys map[string]map[string]string `json:"old_verify_keys"`
+	OldVerifyKeys map[string]any               `json:"old_verify_keys"`
 }
 
 // /.well-known/matrix/server
@@ -61,24 +61,17 @@ func matrixKeyServer(matrix *config.Matrix) echo.HandlerFunc {
 	if err != nil {
 		log.Println("ERROR: cannot parse key from string:", err)
 	}
-	oldKeys, err := model.KeysFrom(matrix.OldKeys)
-	if err != nil {
-		log.Println("ERROR: cannot parse old key from string:", err)
-	}
 
-	resp := &serverKeyResp{
+	resp := serverKeyResp{
 		ServerName:    matrix.ServerName,
-		ValidUntilTS:  time.Now().Add(time.Hour * 24).UnixMilli(),
+		ValidUntilTS:  time.Now().UTC().Add(24*time.Hour - 1*time.Second).UnixMilli(),
 		VerifyKeys:    map[string]map[string]string{},
-		OldVerifyKeys: map[string]map[string]string{},
+		OldVerifyKeys: map[string]any{},
 	}
 	for _, key := range keys {
 		resp.VerifyKeys[key.ID] = map[string]string{"key": key.Public}
 	}
-	for _, key := range oldKeys {
-		resp.OldVerifyKeys[key.ID] = map[string]string{"key": key.Public}
-	}
-	payload, err := json.Marshal(resp)
+	payload, err := json.Marshal(&resp)
 	if err != nil {
 		log.Println("ERROR: cannot marshal matrix server key payload:", err)
 	}
@@ -86,5 +79,5 @@ func matrixKeyServer(matrix *config.Matrix) echo.HandlerFunc {
 	for _, key := range keys {
 		resp.Signatures[matrix.ServerName][key.ID] = base64.RawURLEncoding.EncodeToString(ed25519.Sign(key.Private, payload))
 	}
-	return func(c echo.Context) error { return c.JSON(http.StatusOK, resp) }
+	return func(c echo.Context) error { return c.JSON(http.StatusOK, &resp) }
 }
