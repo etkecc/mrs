@@ -137,7 +137,7 @@ type EmailTemplate struct {
 
 // Matrix config
 type Matrix struct {
-	ServerName string   `json:"server_name"`
-	Keys       []string `json:"keys"`
-	OldKeys    []string `json:"old_keys"`
+	ServerName string   `yaml:"server_name"`
+	Keys       []string `yaml:"keys"`
+	OldKeys    []string `yaml:"old_keys"`
 }

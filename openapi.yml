@@ -4,12 +4,12 @@ info:
   version: '0.x.x'
   description: 'Matrix Rooms Search service'
   license:
-    name: GPL-3.0
-    url: https://www.gnu.org/licenses/gpl-3.0.txt
+    name: AGPL-3.0
+    url: https://www.gnu.org/licenses/agpl-3.0.txt
 
 externalDocs:
   description: Git repo
-  url: https://gitlab.com/etke.cc/int/mrs
+  url: https://gitlab.com/etke.cc/mrs/api
 servers:
   - url: http://localhost:8080
     description: local
