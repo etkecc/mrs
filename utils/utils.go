@@ -39,7 +39,9 @@ func RemoveFromSlice[K comparable](base []K, toRemove []K) []K {
 		include[remove] = false
 	}
 	for _, item := range base {
-		include[item] = true
+		if _, ok := include[item]; !ok {
+			include[item] = true
+		}
 	}
 
 	items := []K{}

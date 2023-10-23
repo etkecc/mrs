@@ -54,6 +54,7 @@ type DataRepository interface {
 	GetServerInfo(string) (*model.MatrixServer, error)
 	AllServers() map[string]string
 	RemoveServer(string) error
+	RemoveServers([]string)
 	AddRoomBatch(*model.MatrixRoom)
 	FlushRoomBatch()
 	GetRoom(string) (*model.MatrixRoom, error)
@@ -132,23 +133,35 @@ func (m *Matrix) DiscoverServers(workers int) error {
 	defer func() { m.discovering = false }()
 
 	servers := utils.MergeSlices(utils.MapKeys(m.data.AllServers()), m.servers)
+	validServers := []string{}
 	wp := workpool.New(workers)
 	for _, server := range servers {
 		name := server
-		wp.Do(func() error { return m.discoverServer(name) })
+		wp.Do(func() error {
+			valid, err := m.discoverServer(name)
+			if valid {
+				validServers = append(validServers, name)
+			}
+			return err
+		})
 	}
-	return wp.Wait()
+	perr := wp.Wait()
+	toRemove := utils.RemoveFromSlice(servers, validServers)
+	log.Printf("removing %d invalid/offline/blocked servers", len(toRemove))
+	m.data.RemoveServers(toRemove)
+
+	return perr
 }
 
-func (m *Matrix) discoverServer(name string) error {
+func (m *Matrix) discoverServer(name string) (valid bool, err error) {
 	if m.block.ByServer(name) {
-		return m.data.RemoveServer(name)
+		return false, nil
 	}
 
 	if !m.robots.Allowed(name, RobotsTxtPublicRooms) {
 		log.Println(name, "robots.txt disallow parsing")
 		m.block.Add(name)
-		return m.data.RemoveServer(name)
+		return false, nil
 	}
 
 	log.Println(name, "discovering...")
@@ -165,15 +178,16 @@ func (m *Matrix) discoverServer(name string) error {
 	if !m.validateDiscoveredServer(name) {
 		log.Println(name, "server is not eligible, removing")
 		m.block.Add(name)
-		return m.data.RemoveServer(name)
+		return false, nil
 	}
 
-	return m.data.AddServer(server)
+	return true, m.data.AddServer(server)
 }
 
 // AddServers by name in bulk, intended for HTTP API
 func (m *Matrix) AddServers(names []string, workers int) {
 	wp := workpool.New(workers)
+	validServers := []string{}
 	for _, server := range names {
 		name := server
 		wp.Do(func() error {
@@ -182,10 +196,17 @@ func (m *Matrix) AddServers(names []string, workers int) {
 				return nil
 			}
 
-			return m.discoverServer(name)
+			valid, err := m.discoverServer(name)
+			if valid {
+				validServers = append(validServers, name)
+			}
+			return err
 		})
 	}
+
 	wp.Wait() //nolint:errcheck
+	toRemove := utils.RemoveFromSlice(names, validServers)
+	m.data.RemoveServers(toRemove)
 }
 
 // AddServer by name, intended for HTTP API
@@ -196,7 +217,12 @@ func (m *Matrix) AddServer(name string) int {
 		return http.StatusAlreadyReported
 	}
 
-	if err := m.discoverServer(name); err != nil {
+	valid, err := m.discoverServer(name)
+	if !valid {
+		m.data.RemoveServer(name) //nolint:errcheck
+	}
+
+	if err != nil {
 		log.Println(name, "cannot add server", err)
 		return http.StatusInternalServerError
 	}

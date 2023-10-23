@@ -71,6 +71,23 @@ func (d *Data) RemoveServer(name string) error {
 	})
 }
 
+// RemoveServers from db
+func (d *Data) RemoveServers(keys []string) {
+	if len(keys) == 0 {
+		return
+	}
+
+	d.db.Update(func(tx *bbolt.Tx) error { //nolint:errcheck
+		sbucket := tx.Bucket(serversBucket)
+		sibucket := tx.Bucket(serversInfoBucket)
+		for _, k := range keys {
+			sbucket.Delete([]byte(k))  //nolint:errcheck
+			sibucket.Delete([]byte(k)) //nolint:errcheck
+		}
+		return nil
+	})
+}
+
 // AllServers returns all known servers
 //
 //nolint:errcheck
