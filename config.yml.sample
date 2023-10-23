@@ -36,8 +36,9 @@ batch: # batch size of ingested data
 workers: # parallelism configuration, how much workers to spin up at once
   discovery: 20 # matrix server discovery, servers at once
   parsing: 20 # matrix public rooms parsing, servers at once
-moderation: # moderation config
-  webhook: 'hookshot webhook url'
+webhooks: # optional webhooks
+  moderation: 'hookshot webhook url'
+  stats: 'hookshot webhook url'
 email: # (optional) email integration, for now only for automatic reporting using MSC1929
   postmark: # only postmark is supported for now
     server_token: your server token

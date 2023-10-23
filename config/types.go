@@ -11,7 +11,8 @@ type Config struct {
 	Cron       Cron       `yaml:"cron"`
 	Cache      Cache      `yaml:"cache"`
 	Workers    Workers    `yaml:"workers"`
-	Moderation Moderation `yaml:"moderation"`
+	Moderation Moderation `yaml:"moderation"` // deprecated
+	Webhooks   Webhooks   `yaml:"webhooks"`
 	Email      Email      `yaml:"email"`
 	Languages  []string   `yaml:"languages"`
 	Servers    []string   `yaml:"servers"`
@@ -61,7 +62,14 @@ type AuthAdmin struct {
 	IPs      []string `yaml:"ips"`
 }
 
+// Webhooks config
+type Webhooks struct {
+	Moderation string `json:"moderation"`
+	Stats      string `json:"stats"`
+}
+
 // Moderation config
+// deprecated
 type Moderation struct {
 	Webhook string `json:"webhook"`
 }

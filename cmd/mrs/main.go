@@ -59,11 +59,15 @@ func main() {
 	indexSvc := services.NewIndex(index, dataRepo, cfg.Batch.Rooms)
 	searchSvc := services.NewSearch(index, blockSvc, cfg.Blocklist.Queries)
 	matrixSvc := services.NewMatrix(cfg.Servers, cfg.Proxy.Server, cfg.Proxy.Token, cfg.Public.API, robotsSvc, blockSvc, dataRepo, detector)
-	statsSvc := services.NewStats(dataRepo, blockSvc)
+	statsSvc := services.NewStats(dataRepo, blockSvc, cfg.Public.UI, cfg.Webhooks.Stats)
 	cacheSvc := services.NewCache(cfg.Cache.MaxAge, cfg.Cache.Bunny.URL, cfg.Cache.Bunny.Key, statsSvc)
 	dataSvc := services.NewDataFacade(matrixSvc, indexSvc, statsSvc, cacheSvc)
 	mailSvc := services.NewEmail(&cfg.Public, &cfg.Email)
-	modSvc, merr := services.NewModeration(dataRepo, index, mailSvc, cfg.Auth.Moderation, cfg.Public, cfg.Moderation.Webhook)
+	modwh := cfg.Moderation.Webhook
+	if cfg.Webhooks.Moderation != "" {
+		modwh = cfg.Webhooks.Moderation
+	}
+	modSvc, merr := services.NewModeration(dataRepo, index, mailSvc, cfg.Auth.Moderation, cfg.Public, modwh)
 	if merr != nil {
 		log.Fatal("cannot start moderation service", err)
 	}
