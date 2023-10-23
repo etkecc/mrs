@@ -68,7 +68,7 @@ func matrixKeyServer(matrix *config.Matrix) echo.HandlerFunc {
 
 	resp := &serverKeyResp{
 		ServerName:    matrix.ServerName,
-		ValidUntilTS:  time.Now().Add(time.Hour * 24 * 7).UnixMilli(),
+		ValidUntilTS:  time.Now().Add(time.Hour * 24).UnixMilli(),
 		VerifyKeys:    map[string]map[string]string{},
 		OldVerifyKeys: map[string]map[string]string{},
 	}
