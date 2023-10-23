@@ -62,6 +62,12 @@ func (r *Robots) Allowed(serverName, endpoint string) bool {
 
 // parse robots.txt by server name
 func (r *Robots) parse(serverName string) {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Println(serverName, "robots.txt parser paniced", err)
+		}
+	}()
+
 	robotsURL, err := robots.Locate("https://" + serverName + "/")
 	if err != nil {
 		log.Println(serverName, "cannot locate robots.txt", err)
