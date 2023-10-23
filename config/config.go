@@ -20,3 +20,12 @@ func Read(configPath string) (*Config, error) {
 
 	return &config, nil
 }
+
+// Write config file
+func Write(cfg *Config, configPath string) error {
+	datab, err := yaml.Marshal(cfg)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(configPath, datab, 0o666)
+}

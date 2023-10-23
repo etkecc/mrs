@@ -59,6 +59,38 @@ paths:
                         type: string
                         description: The server implementation's version
                         example: 'v0.0.0'
+  /_matrix/key/v2/server:
+    get:
+      tags:
+        - public
+      summary: matrix server's published signing keys
+      description: Gets the homeserver’s published signing keys
+      operationId: matrix_server_key
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  server_name:
+                    type: string
+                    description: DNS name of the homeserver.
+                    example: 'example.com'
+                  valid_until_ts:
+                    type: integer
+                    description: POSIX timestamp in milliseconds when the list of valid keys should be refreshed
+                    example: 1698164427133
+                  verify_keys:
+                    type: object
+                    additionalProperties: {}
+                  old_verify_keys:
+                    type: object
+                    additionalProperties: {}
+                  signatures:
+                    type: object
+                    additionalProperties: {}
   /_health:
     get:
       tags:
@@ -245,9 +277,6 @@ paths:
           description: no results found.
         '401':
           description: unauthorized (if optional search auth is enabled)
-      security:
-       - {}
-       - search:
   /search/{q}/{l}/{o}/{s}:
     get:
       tags:
@@ -296,9 +325,6 @@ paths:
           description: no results found.
         '401':
           description: unauthorized (if optional search auth is enabled)
-      security:
-       - {}
-       - search:
   /mod/report/{room_id}:
     post:
       tags:
@@ -618,9 +644,6 @@ components:
       type: http
       scheme: basic
     moderation:
-      type: http
-      scheme: basic
-    search:
       type: http
       scheme: basic
     automaticToken:

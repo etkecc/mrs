@@ -6,6 +6,9 @@ public: # public-facing information
 proxy:
   server: https://matrix.example.com # matrix server (actual url) to query public rooms over federation
   token: '' # matrix session token
+matrix: # matrix server information
+  server_name: localhost # server name (!), not api url
+  keys: [] # keys, will be generated automatically on first run
 auth: # auth configuration
   admin: # admin configuration
     login: admin

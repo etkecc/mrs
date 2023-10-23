@@ -4,6 +4,7 @@ package config
 type Config struct {
 	Port       string     `yaml:"port"`
 	Public     Public     `yaml:"public"`
+	Matrix     Matrix     `yaml:"matrix"`
 	Proxy      Proxy      `yaml:"proxy"`
 	Path       Paths      `yaml:"path"`
 	Batch      Batch      `yaml:"batch"`
@@ -132,4 +133,11 @@ type EmailTemplates struct {
 type EmailTemplate struct {
 	Subject string `yaml:"subject"`
 	Body    string `yaml:"body"`
+}
+
+// Matrix config
+type Matrix struct {
+	ServerName string   `json:"server_name"`
+	Keys       []string `json:"keys"`
+	OldKeys    []string `json:"old_keys"`
 }

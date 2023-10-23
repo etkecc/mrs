@@ -2,7 +2,11 @@ package main
 
 import (
 	"context"
+	"crypto/ed25519"
+	"crypto/rand"
+	"encoding/base64"
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -13,7 +17,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/mileusna/crontab"
 	"github.com/pemistahl/lingua-go"
-	"gitlab.com/etke.cc/go/fswatcher"
 
 	"gitlab.com/etke.cc/mrs/api/config"
 	"gitlab.com/etke.cc/mrs/api/controllers"
@@ -26,24 +29,31 @@ import (
 const AllLanguages = "ALL"
 
 var (
-	configPath    string
-	configWatcher *fswatcher.Watcher
-	dataRepo      *data.Data
-	index         *search.Index
-	cron          *crontab.Crontab
-	cfg           *config.Config
-	e             *echo.Echo
+	configPath string
+	runGenKey  bool
+	dataRepo   *data.Data
+	index      *search.Index
+	cron       *crontab.Crontab
+	cfg        *config.Config
+	e          *echo.Echo
 )
 
 func main() {
 	quit := make(chan struct{})
 	flag.StringVar(&configPath, "c", "config.yml", "Path to the config file")
+	flag.BoolVar(&runGenKey, "genkey", false, "Generate matrix signing key")
 	flag.Parse()
+	if runGenKey {
+		if _, err := generateKey(); err != nil {
+			log.Panic(err)
+		}
+		return
+	}
+
 	err := loadConfig()
 	if err != nil {
 		log.Panic(err)
 	}
-	startConfigWatcher()
 	dataRepo, err = data.New(cfg.Path.Data)
 	if err != nil {
 		log.Panic(err)
@@ -83,6 +93,36 @@ func main() {
 	}
 
 	<-quit
+}
+
+func loadConfig() error {
+	newcfg, err := config.Read(configPath)
+	if err != nil {
+		return err
+	}
+
+	cfg = newcfg
+	if len(cfg.Matrix.Keys) != 0 {
+		return nil
+	}
+	key, err := generateKey()
+	if err != nil {
+		return err
+	}
+	cfg.Matrix.Keys = []string{key}
+	return config.Write(cfg, configPath)
+}
+
+func generateKey() (string, error) {
+	pub, priv, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		return "", err
+	}
+	key := fmt.Sprintf("ed25519 %s %s", base64.RawURLEncoding.EncodeToString(pub[:4]), base64.RawStdEncoding.EncodeToString(priv.Seed()))
+	log.Println("WARNING", "AHTUNG", "ATTENTION!", "new key has been generated and written into the config file")
+	log.Println(key)
+
+	return key, nil
 }
 
 func getLanguageDetector(inputLangs []string) lingua.LanguageDetector {
@@ -145,9 +185,6 @@ func initCron(dataSvc *services.DataFacade) {
 func shutdown() {
 	log.Println("shutting down...")
 	cron.Shutdown()
-	if err := configWatcher.Stop(); err != nil {
-		log.Println(err)
-	}
 	if err := index.Close(); err != nil {
 		log.Println(err)
 	}
