@@ -76,10 +76,10 @@ var (
 		KeepAlive: 90 * time.Second,
 	}
 	matrixClient = &http.Client{
-		Timeout: 10 * time.Second,
+		Timeout: 60 * time.Second,
 		Transport: &http.Transport{
 			MaxIdleConns:        1000,
-			MaxConnsPerHost:     5,
+			MaxConnsPerHost:     100,
 			MaxIdleConnsPerHost: 5,
 			TLSHandshakeTimeout: 10 * time.Second,
 			DialContext:         matrixDialer.DialContext,
