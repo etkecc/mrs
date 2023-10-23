@@ -24,7 +24,6 @@ type dataStatsService interface {
 	Get() *model.IndexStats
 	SetStartedAt(string, time.Time)
 	SetFinishedAt(string, time.Time)
-	Reload()
 	Collect()
 }
 
@@ -58,10 +57,6 @@ func (df *DataFacade) DiscoverServers(workers int) {
 	err := df.matrix.DiscoverServers(workers)
 	df.stats.SetFinishedAt("discovery", time.Now().UTC())
 	log.Println("servers discovery has been finished", err, "took", time.Since(start))
-
-	log.Println("collecting stats...")
-	df.stats.Collect()
-	log.Println("stats have been collected")
 }
 
 // ParseRooms from discovered servers
@@ -72,10 +67,6 @@ func (df *DataFacade) ParseRooms(workers int) {
 	df.matrix.ParseRooms(workers)
 	df.stats.SetFinishedAt("parsing", time.Now().UTC())
 	log.Println("all available matrix rooms have been parsed; took", time.Since(start))
-
-	log.Println("collecting stats...")
-	df.stats.Collect()
-	log.Println("stats have been collected")
 }
 
 // Ingest data into search index
@@ -94,10 +85,6 @@ func (df *DataFacade) Ingest() {
 	df.stats.SetFinishedAt("indexing", time.Now().UTC())
 	log.Println("all available matrix rooms have been ingested; took", time.Since(start))
 
-	log.Println("collecting stats...")
-	df.stats.Collect()
-	log.Println("stats have been collected")
-
 	log.Println("purging cache...")
 	df.cache.Purge()
 	log.Println("cache has been purged")
@@ -108,4 +95,8 @@ func (df *DataFacade) Full(discoveryWorkers, parsingWorkers int) {
 	df.DiscoverServers(discoveryWorkers)
 	df.ParseRooms(parsingWorkers)
 	df.Ingest()
+
+	log.Println("collecting stats...")
+	df.stats.Collect()
+	log.Println("stats have been collected")
 }

@@ -79,7 +79,7 @@ var (
 		Timeout: 60 * time.Second,
 		Transport: &http.Transport{
 			MaxIdleConns:        1000,
-			MaxConnsPerHost:     100,
+			MaxConnsPerHost:     1000,
 			MaxIdleConnsPerHost: 5,
 			TLSHandshakeTimeout: 10 * time.Second,
 			DialContext:         matrixDialer.DialContext,

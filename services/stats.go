@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/exp/constraints"
+
 	"gitlab.com/etke.cc/mrs/api/model"
 )
 
@@ -35,6 +37,7 @@ type Stats struct {
 	data        StatsRepository
 	block       Lenable
 	stats       *model.IndexStats
+	prev        *model.IndexStats
 	webhookUser string
 	webhook     string
 	collecting  bool
@@ -49,13 +52,14 @@ func NewStats(data StatsRepository, blocklist Lenable, uiurl, webhook string) *S
 		}
 	}
 	stats := &Stats{data: data, block: blocklist, webhook: webhook, webhookUser: uiurl}
-	stats.Reload()
+	stats.reload()
 
 	return stats
 }
 
-// Reload saved stats. Useful when you need to get updated timestamps, but don't want to parse whole db
-func (s *Stats) Reload() {
+// reload saved stats. Useful when you need to get updated timestamps, but don't want to parse whole db
+func (s *Stats) reload() {
+	s.prev = s.stats.Clone()
 	s.stats = s.data.GetIndexStats()
 }
 
@@ -119,7 +123,7 @@ func (s *Stats) Collect() {
 		log.Println("cannot set reported rooms count", err)
 	}
 
-	s.Reload()
+	s.reload()
 	s.sendWebhook()
 }
 
@@ -158,19 +162,58 @@ func (s *Stats) sendWebhook() {
 
 func (s *Stats) getWebhookText() string {
 	var text strings.Builder
-	text.WriteString("**Stats have been collected**\n\n")
+	text.WriteString("**stats have been collected**\n\n")
 
-	text.WriteString(fmt.Sprintf("* `%d` servers online (`%d` blocked)\n", s.stats.Servers.Online, s.stats.Servers.Blocked))
-	text.WriteString(fmt.Sprintf("* `%d` rooms (`%d` blocked, `%d` reported)\n", s.stats.Rooms.All, s.stats.Rooms.Banned, s.stats.Rooms.Reported))
+	serversDiff := s.stats.Servers.Online - s.prev.Servers.Online
+	roomsDiff := s.stats.Rooms.All - s.prev.Rooms.All
+
+	text.WriteString(fmt.Sprintf("* `%d` `%s%d` servers online (`%d` blocked)\n", s.stats.Servers.Online, getSymbol(serversDiff), abs(serversDiff), s.stats.Servers.Blocked))
+	text.WriteString(fmt.Sprintf("* `%d` `%s%d` rooms (`%d` blocked, `%d` reported)\n", s.stats.Rooms.All, getSymbol(roomsDiff), abs(roomsDiff), s.stats.Rooms.Banned, s.stats.Rooms.Reported))
 	text.WriteString("\n---\n\n")
 
 	discovery := s.stats.Discovery.FinishedAt.Sub(s.stats.Discovery.StartedAt)
+	discoveryPrev := s.prev.Discovery.FinishedAt.Sub(s.prev.Discovery.StartedAt)
+	discoveryDiff := discovery - discoveryPrev
+
 	parsing := s.stats.Parsing.FinishedAt.Sub(s.stats.Parsing.StartedAt)
+	parsingPrev := s.prev.Parsing.FinishedAt.Sub(s.prev.Parsing.FinishedAt)
+	parsingDiff := parsing - parsingPrev
+
 	indexing := s.stats.Indexing.FinishedAt.Sub(s.stats.Indexing.StartedAt)
-	text.WriteString(fmt.Sprintf("* `%s` took discovery process\n", discovery.String()))
-	text.WriteString(fmt.Sprintf("* `%s` took parsing process\n", parsing.String()))
-	text.WriteString(fmt.Sprintf("* `%s` took indexing process\n", indexing.String()))
-	text.WriteString(fmt.Sprintf("* `%s` total\n", (discovery + parsing + indexing).String()))
+	indexingPrev := s.prev.Indexing.FinishedAt.Sub(s.prev.Indexing.StartedAt)
+	indexingDiff := indexing - indexingPrev
+
+	total := discovery + parsing + indexing
+	totalPrev := discoveryPrev + parsingPrev + indexingPrev
+	totalDiff := total - totalPrev
+
+	text.WriteString(fmt.Sprintf("* `%s` `%s%s` took discovery process\n", discovery.String(), getSymbol(discoveryDiff), discoveryDiff.String()))
+	text.WriteString(fmt.Sprintf("* `%s` `%s%s` took parsing process\n", parsing.String(), getSymbol(parsingDiff), parsingDiff.String()))
+	text.WriteString(fmt.Sprintf("* `%s` `%s%s` took indexing process\n", indexing.String(), getSymbol(indexingDiff), indexingDiff.String()))
+	text.WriteString(fmt.Sprintf("* `%s` `%s%s` total\n", total.String(), getSymbol(totalDiff), totalDiff.String()))
 
 	return text.String()
+}
+
+type Number interface {
+	constraints.Float | constraints.Integer | constraints.Signed | constraints.Unsigned
+}
+
+// diffText tries to find difference and return it in a human-friendly way, e.g. prev=1, curr=5 -> "+4"
+func getSymbol[T Number](diff T) string {
+	if diff == 0 {
+		return ""
+	}
+
+	if diff > 0 {
+		return "+"
+	}
+	return "-"
+}
+
+func abs[T Number](number T) T {
+	if number < 0 {
+		return 0 - number
+	}
+	return number
 }
