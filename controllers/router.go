@@ -55,6 +55,7 @@ func ConfigureRouter(
 	rl := middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1))
 
 	e.GET("/.well-known/matrix/server", wellKnownServer(cfg.Public.API))
+	e.GET("/_matrix/federation/v1/version", matrixFederationVersion())
 
 	e.GET("/stats", stats(statsSvc))
 	e.GET("/avatar/:name/:id", avatar(matrixSvc), middleware.RateLimiter(middleware.NewRateLimiterMemoryStoreWithConfig(middleware.RateLimiterMemoryStoreConfig{Rate: 30, Burst: 30, ExpiresIn: 5 * time.Minute})), cacheSvc.MiddlewareImmutable())

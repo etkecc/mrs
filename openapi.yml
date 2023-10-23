@@ -33,6 +33,32 @@ paths:
                     type: string
                     description: The server name to delegate server-server communications to, with optional port
                     example: 'example.com:443'
+  /_matrix/federation/v1/version:
+    get:
+      tags:
+        - public
+      summary: matrix server name and version
+      description: Get the implementation name and version of this homeserver.
+      operationId: matrix_server_version
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  server:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                        description: The server implementation name
+                        example: 'MatrixRoomsSearch'
+                      version:
+                        type: string
+                        description: The server implementation's version
+                        example: 'v0.0.0'
   /_health:
     get:
       tags:
