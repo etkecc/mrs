@@ -72,7 +72,7 @@ func main() {
 		log.Fatal("cannot start moderation service", err)
 	}
 
-	go statsSvc.Collect()
+	go statsSvc.Reload()
 	e = echo.New()
 	controllers.ConfigureRouter(e, cfg, dataSvc, cacheSvc, searchSvc, matrixSvc, statsSvc, modSvc)
 
