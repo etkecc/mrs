@@ -22,6 +22,37 @@ type unsignedKeyResp struct {
 	OldVerifyKeys map[string]any               `json:"old_verify_keys"`
 }
 
+type roomDirectoryReq struct {
+	Filter               roomDirectoryReqFilter `json:"filter"`
+	IncludeAllNetworks   bool                   `query:"include_all_networks" json:"include_all_networks"`
+	Limit                int                    `query:"limit" json:"limit"`
+	Since                string                 `query:"since" json:"since"`
+	ThirdPartyInstanceID string                 `query:"third_party_instance_id" json:"third_party_instance_id"`
+}
+
+type roomDirectoryReqFilter struct {
+	GenericSearchTerm string `json:"generic_search_term"`
+	RoomTypes         string `json:"room_types,omitempty"`
+}
+
+type roomDirectoryResp struct {
+	Chunk     []roomDirectoryItem `json:"chunk"`
+	NextBatch string              `json:"next_batch"`
+	PrevBatch string              `json:"prev_batch"`
+	Total     int                 `json:"total_room_count_estimate"`
+}
+
+type roomDirectoryItem struct {
+	Avatar        string `json:"avatar_url"`
+	Alias         string `json:"canonical_alias"`
+	Guest         bool   `json:"guest_can_join"`
+	Name          string `json:"name"`
+	Members       int    `json:"num_joined_members"`
+	ID            string `json:"room_id"`
+	Topic         string `json:"topic"`
+	WorldReadable bool   `json:"world_readable"`
+}
+
 // /.well-known/matrix/server
 func wellKnownServer(host string) echo.HandlerFunc {
 	uri, err := url.Parse(host)
@@ -81,4 +112,33 @@ func matrixKeyServer(matrix *config.Matrix) echo.HandlerFunc {
 		}
 	}
 	return func(c echo.Context) error { return c.JSONBlob(http.StatusOK, payload) }
+}
+
+// /_matrix/federation/v1/publicRooms
+// TODO: authentication of the requester
+// TODO: handle params
+// TODO: document in swagger
+func matrixRoomDirectory(matrix *config.Matrix) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		req := &roomDirectoryReq{}
+		if err := c.Bind(req); err != nil {
+			log.Println("directory request binding failed:", err)
+		}
+		log.Printf("room directory:\nGET params: %+v\nHeaders: %+v", c.QueryParams(), c.Request().Header)
+		return c.JSON(http.StatusOK, roomDirectoryResp{
+			Chunk: []roomDirectoryItem{
+				{
+					Avatar:        "mxc://etke.cc/EPswbbDKYLNEjRYgEpHpRQue", // mrs room avatar
+					Alias:         "#todo:" + matrix.ServerName,
+					Guest:         false,
+					Name:          "Not implemented yet",
+					Members:       999,
+					ID:            "!IyxAXBqViWHZfUkWjh:etke.cc", // mrs room id
+					Topic:         "This is a stub endpoint, not fully implemented yet",
+					WorldReadable: true,
+				},
+			},
+			Total: 1,
+		})
+	}
 }
