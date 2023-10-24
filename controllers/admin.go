@@ -15,16 +15,16 @@ type dataService interface {
 	Full(int, int)
 }
 
-type matrixService interface {
+type crawlerService interface {
 	AddServer(string) int
 	AddServers([]string, int)
 	AllServers() map[string]string
 	GetAvatar(string, string) (io.Reader, string)
 }
 
-func servers(matrix matrixService) echo.HandlerFunc {
+func servers(crawler crawlerService) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		srvmap := matrix.AllServers()
+		srvmap := crawler.AllServers()
 		servers := make([]string, 0)
 		for name := range srvmap {
 			servers = append(servers, name)

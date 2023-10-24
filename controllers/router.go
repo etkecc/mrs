@@ -44,25 +44,20 @@ var basicAuthSkipper = func(c echo.Context) bool {
 func ConfigureRouter(
 	e *echo.Echo,
 	cfg *config.Config,
+	matrixSvc matrixService,
 	dataSvc dataService,
 	cacheSvc cacheService,
 	searchSvc searchService,
-	matrixSvc matrixService,
+	crawlerSvc crawlerService,
 	statsSvc statsService,
 	modSvc moderationService,
 ) {
 	configureRouter(e, cacheSvc)
+	configureMatrixEndpoints(e, matrixSvc)
 	rl := middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1))
 
-	e.GET("/.well-known/matrix/server", wellKnownServer(cfg.Public.API))
-	e.GET("/_matrix/federation/v1/version", matrixFederationVersion())
-	e.GET("/_matrix/key/v2/server", matrixKeyServer(&cfg.Matrix))
-
-	e.GET("/_matrix/federation/v1/publicRooms", matrixRoomDirectory(&cfg.Matrix))
-	e.POST("/_matrix/federation/v1/publicRooms", matrixRoomDirectory(&cfg.Matrix))
-
 	e.GET("/stats", stats(statsSvc))
-	e.GET("/avatar/:name/:id", avatar(matrixSvc), middleware.RateLimiter(middleware.NewRateLimiterMemoryStoreWithConfig(middleware.RateLimiterMemoryStoreConfig{Rate: 30, Burst: 30, ExpiresIn: 5 * time.Minute})), cacheSvc.MiddlewareImmutable())
+	e.GET("/avatar/:name/:id", avatar(crawlerSvc), middleware.RateLimiter(middleware.NewRateLimiterMemoryStoreWithConfig(middleware.RateLimiterMemoryStoreConfig{Rate: 30, Burst: 30, ExpiresIn: 5 * time.Minute})), cacheSvc.MiddlewareImmutable())
 
 	e.GET("/search", search(searchSvc, false))
 	e.GET("/search/:q", search(searchSvc, true))
@@ -70,8 +65,8 @@ func ConfigureRouter(
 	e.GET("/search/:q/:l/:o", search(searchSvc, true))
 	e.GET("/search/:q/:l/:o/:s", search(searchSvc, true))
 
-	e.POST("/discover/bulk", addServers(matrixSvc, cfg.Workers.Discovery), discoveryAuth(cfg))
-	e.POST("/discover/:name", addServer(matrixSvc), discoveryProtection(rl, cfg))
+	e.POST("/discover/bulk", addServers(crawlerSvc, cfg.Workers.Discovery), discoveryAuth(cfg))
+	e.POST("/discover/:name", addServer(crawlerSvc), discoveryProtection(rl, cfg))
 
 	e.POST("/mod/report/:room_id", report(modSvc), rl) // doesn't use mod group to allow without auth
 	m := modGroup(e, cfg)
@@ -81,7 +76,7 @@ func ConfigureRouter(
 	m.GET("/unban/:room_id", unban(modSvc), rl)
 
 	a := adminGroup(e, cfg)
-	a.GET("/servers", servers(matrixSvc))
+	a.GET("/servers", servers(crawlerSvc))
 	a.GET("/status", status(statsSvc))
 	a.POST("/discover", discover(dataSvc, cfg.Workers.Discovery))
 	a.POST("/parse", parse(dataSvc, cfg.Workers.Parsing))

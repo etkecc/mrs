@@ -68,10 +68,14 @@ func main() {
 	blockSvc := services.NewBlocklist(cfg.Blocklist.Servers)
 	indexSvc := services.NewIndex(index, dataRepo, cfg.Batch.Rooms)
 	searchSvc := services.NewSearch(index, blockSvc, cfg.Blocklist.Queries)
-	matrixSvc := services.NewMatrix(cfg.Servers, cfg.Proxy.Server, cfg.Proxy.Token, cfg.Public.API, robotsSvc, blockSvc, dataRepo, detector)
+	matrixSvc, err := services.NewMatrix(cfg, searchSvc)
+	if err != nil {
+		log.Panic(err)
+	}
+	crawlerSvc := services.NewCrawler(cfg.Servers, cfg.Proxy.Server, cfg.Proxy.Token, cfg.Public.API, robotsSvc, blockSvc, dataRepo, detector)
 	statsSvc := services.NewStats(dataRepo, blockSvc, cfg.Public.UI, cfg.Webhooks.Stats)
 	cacheSvc := services.NewCache(cfg.Cache.MaxAge, cfg.Cache.Bunny.URL, cfg.Cache.Bunny.Key, statsSvc)
-	dataSvc := services.NewDataFacade(matrixSvc, indexSvc, statsSvc, cacheSvc)
+	dataSvc := services.NewDataFacade(crawlerSvc, indexSvc, statsSvc, cacheSvc)
 	mailSvc := services.NewEmail(&cfg.Public, &cfg.Email)
 	modwh := cfg.Moderation.Webhook
 	if cfg.Webhooks.Moderation != "" {
@@ -83,7 +87,7 @@ func main() {
 	}
 
 	e = echo.New()
-	controllers.ConfigureRouter(e, cfg, dataSvc, cacheSvc, searchSvc, matrixSvc, statsSvc, modSvc)
+	controllers.ConfigureRouter(e, cfg, matrixSvc, dataSvc, cacheSvc, searchSvc, crawlerSvc, statsSvc, modSvc)
 
 	initCron(dataSvc)
 	initShutdown(quit)

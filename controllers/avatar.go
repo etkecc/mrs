@@ -6,7 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func avatar(svc matrixService) echo.HandlerFunc {
+func avatar(svc crawlerService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		name := c.Param("name")
 		id := c.Param("id")

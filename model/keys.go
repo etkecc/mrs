@@ -37,20 +37,3 @@ func KeyFrom(str string) (*Key, error) {
 		Public:  base64.RawStdEncoding.EncodeToString(pub),
 	}, nil
 }
-
-// KeysFrom slice
-func KeysFrom(strs []string) ([]*Key, error) {
-	if len(strs) == 0 {
-		return nil, nil
-	}
-	keys := []*Key{}
-	for _, str := range strs {
-		key, err := KeyFrom(str)
-		if err != nil {
-			return nil, err
-		}
-		keys = append(keys, key)
-	}
-
-	return keys, nil
-}

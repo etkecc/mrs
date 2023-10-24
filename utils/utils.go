@@ -2,6 +2,7 @@ package utils
 
 import (
 	"crypto/subtle"
+	"strconv"
 	"strings"
 )
 
@@ -86,6 +87,28 @@ func Uniq[T comparable](slice []T) []T {
 	}
 
 	return uniqSlice
+}
+
+func StringToInt(value string, optionalDefaultValue ...int) int {
+	defaultValue := 0
+	if len(optionalDefaultValue) > 0 {
+		defaultValue = optionalDefaultValue[0]
+	}
+
+	vInt, err := strconv.Atoi(value)
+	if err != nil {
+		return defaultValue
+	}
+
+	return vInt
+}
+
+func StringToSlice(value string, defaultValue string) []string {
+	value = strings.TrimSpace(value)
+	if idx := strings.Index(value, ","); idx == -1 {
+		value = defaultValue
+	}
+	return strings.Split(value, ",")
 }
 
 // SliceToString converts slice of strings into single string (using strings.Join) with optional hook

@@ -7,6 +7,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"gitlab.com/etke.cc/mrs/api/model"
+	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
 type searchService interface {
@@ -30,9 +31,9 @@ func search(svc searchService, path bool) echo.HandlerFunc {
 		if err != nil {
 			return err
 		}
-		limit := string2int(paramfunc("l"), DefaultSearchLimit)
-		offset := string2int(paramfunc("o"), DefaultSearchOffset)
-		sortBy := string2slice(paramfunc("s"), DefaultSearchSortBy)
+		limit := utils.StringToInt(paramfunc("l"), DefaultSearchLimit)
+		offset := utils.StringToInt(paramfunc("o"), DefaultSearchOffset)
+		sortBy := utils.StringToSlice(paramfunc("s"), DefaultSearchSortBy)
 		entries, err := svc.Search(query, limit, offset, sortBy)
 		if err != nil {
 			return err

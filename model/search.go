@@ -29,3 +29,17 @@ func (r *Entry) IsBlocked(block BlocklistService) bool {
 	}
 	return false
 }
+
+// RoomDirectory converts processed matrix room intro room directory's room
+func (r *Entry) RoomDirectory() *RoomDirectoryRoom {
+	return &RoomDirectoryRoom{
+		ID:            r.ID,
+		Alias:         r.Alias,
+		Guest:         false, // guest_can_join, stub
+		Name:          r.Name,
+		Topic:         r.Topic,
+		Avatar:        r.Avatar,
+		Members:       r.Members,
+		WorldReadable: true,
+	}
+}
