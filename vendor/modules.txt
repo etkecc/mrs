@@ -146,9 +146,6 @@ github.com/blevesearch/zapx/v14
 # github.com/blevesearch/zapx/v15 v15.3.9
 ## explicit; go 1.18
 github.com/blevesearch/zapx/v15
-# github.com/fsnotify/fsnotify v1.6.0
-## explicit; go 1.16
-github.com/fsnotify/fsnotify
 # github.com/golang-jwt/jwt v3.2.2+incompatible
 ## explicit
 github.com/golang-jwt/jwt
@@ -180,6 +177,13 @@ github.com/labstack/gommon/bytes
 github.com/labstack/gommon/color
 github.com/labstack/gommon/log
 github.com/labstack/gommon/random
+# github.com/matrix-org/gomatrixserverlib v0.0.0-20231023121512-16e7431168be
+## explicit; go 1.18
+github.com/matrix-org/gomatrixserverlib
+github.com/matrix-org/gomatrixserverlib/spec
+# github.com/matrix-org/util v0.0.0-20200807132607-55161520e1d4
+## explicit; go 1.12
+github.com/matrix-org/util
 # github.com/mattevans/postmark-go v0.1.6
 ## explicit; go 1.17
 github.com/mattevans/postmark-go
@@ -205,9 +209,24 @@ github.com/raja/argon2pw
 # github.com/shopspring/decimal v1.3.1
 ## explicit; go 1.13
 github.com/shopspring/decimal
+# github.com/sirupsen/logrus v1.9.0
+## explicit; go 1.13
+github.com/sirupsen/logrus
 # github.com/theovassiliou/base64url v0.0.0-20211006203958-1e011490eaaf
 ## explicit; go 1.13
 github.com/theovassiliou/base64url
+# github.com/tidwall/gjson v1.16.0
+## explicit; go 1.12
+github.com/tidwall/gjson
+# github.com/tidwall/match v1.1.1
+## explicit; go 1.15
+github.com/tidwall/match
+# github.com/tidwall/pretty v1.2.0
+## explicit; go 1.16
+github.com/tidwall/pretty
+# github.com/tidwall/sjson v1.2.5
+## explicit; go 1.14
+github.com/tidwall/sjson
 # github.com/valyala/bytebufferpool v1.0.0
 ## explicit
 github.com/valyala/bytebufferpool
@@ -231,9 +250,6 @@ github.com/yuin/goldmark/renderer
 github.com/yuin/goldmark/renderer/html
 github.com/yuin/goldmark/text
 github.com/yuin/goldmark/util
-# gitlab.com/etke.cc/go/fswatcher v1.0.0
-## explicit; go 1.20
-gitlab.com/etke.cc/go/fswatcher
 # gitlab.com/etke.cc/go/msc1929 v0.0.0-20231021182755-a89d9cb113c2
 ## explicit; go 1.18
 gitlab.com/etke.cc/go/msc1929
@@ -243,12 +259,13 @@ go.etcd.io/bbolt
 # go.mau.fi/util v0.1.0
 ## explicit; go 1.20
 go.mau.fi/util/base58
-# golang.org/x/crypto v0.13.0
+# golang.org/x/crypto v0.14.0
 ## explicit; go 1.17
 golang.org/x/crypto/acme
 golang.org/x/crypto/acme/autocert
 golang.org/x/crypto/argon2
 golang.org/x/crypto/blake2b
+golang.org/x/crypto/ed25519
 golang.org/x/crypto/hkdf
 golang.org/x/crypto/pbkdf2
 # golang.org/x/exp v0.0.0-20230905200255-921286631fa9
@@ -256,7 +273,7 @@ golang.org/x/crypto/pbkdf2
 golang.org/x/exp/constraints
 golang.org/x/exp/maps
 golang.org/x/exp/slices
-# golang.org/x/net v0.15.0
+# golang.org/x/net v0.17.0
 ## explicit; go 1.17
 golang.org/x/net/html
 golang.org/x/net/html/atom
@@ -265,10 +282,9 @@ golang.org/x/net/http2
 golang.org/x/net/http2/h2c
 golang.org/x/net/http2/hpack
 golang.org/x/net/idna
-# golang.org/x/sys v0.12.0
+# golang.org/x/sys v0.13.0
 ## explicit; go 1.17
 golang.org/x/sys/cpu
-golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 # golang.org/x/text v0.13.0

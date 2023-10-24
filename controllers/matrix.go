@@ -1,8 +1,6 @@
 package controllers
 
 import (
-	"crypto/ed25519"
-	"encoding/base64"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -10,16 +8,16 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"github.com/matrix-org/gomatrixserverlib"
 
 	"gitlab.com/etke.cc/mrs/api/config"
 	"gitlab.com/etke.cc/mrs/api/model"
 	"gitlab.com/etke.cc/mrs/api/version"
 )
 
-type serverKeyResp struct {
+type unsignedKeyResp struct {
 	ServerName    string                       `json:"server_name"`
-	ValidUntilTS  int64                        `json:"valid_unit_ts"`
-	Signatures    map[string]map[string]string `json:"signatures,omitempty"`
+	ValidUntilTS  int64                        `json:"valid_until_ts"`
 	VerifyKeys    map[string]map[string]string `json:"verify_keys"`
 	OldVerifyKeys map[string]any               `json:"old_verify_keys"`
 }
@@ -62,7 +60,7 @@ func matrixKeyServer(matrix *config.Matrix) echo.HandlerFunc {
 		log.Println("ERROR: cannot parse key from string:", err)
 	}
 
-	resp := serverKeyResp{
+	resp := unsignedKeyResp{
 		ServerName:    matrix.ServerName,
 		ValidUntilTS:  time.Now().UTC().Add(24*time.Hour - 1*time.Second).UnixMilli(),
 		VerifyKeys:    map[string]map[string]string{},
@@ -71,13 +69,16 @@ func matrixKeyServer(matrix *config.Matrix) echo.HandlerFunc {
 	for _, key := range keys {
 		resp.VerifyKeys[key.ID] = map[string]string{"key": key.Public}
 	}
+
 	payload, err := json.Marshal(&resp)
 	if err != nil {
 		log.Println("ERROR: cannot marshal matrix server key payload:", err)
 	}
-	resp.Signatures = map[string]map[string]string{matrix.ServerName: {}}
 	for _, key := range keys {
-		resp.Signatures[matrix.ServerName][key.ID] = base64.RawURLEncoding.EncodeToString(ed25519.Sign(key.Private, payload))
+		payload, err = gomatrixserverlib.SignJSON(matrix.ServerName, gomatrixserverlib.KeyID(key.ID), key.Private, payload)
+		if err != nil {
+			log.Println("ERROR: cannot sign payload:", err)
+		}
 	}
-	return func(c echo.Context) error { return c.JSON(http.StatusOK, &resp) }
+	return func(c echo.Context) error { return c.JSONBlob(http.StatusOK, payload) }
 }

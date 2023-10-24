@@ -1,0 +1,11 @@
+language: go
+go:
+ - 1.7
+install:
+ - go get github.com/golang/lint/golint
+ - go get github.com/fzipp/gocyclo
+ - go get github.com/sirupsen/logrus
+ - go get github.com/mattn/goveralls
+script:
+ - ./hooks/pre-commit
+ - $HOME/gopath/bin/goveralls -service=travis-ci
