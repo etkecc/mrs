@@ -32,9 +32,9 @@ type Matrix struct {
 	name      string
 	keys      []*model.Key
 	search    matrixSearchService
-	wellknown map[string]string            // /.well-known/matrix/server contents
-	version   map[string]map[string]string // /_matrix/federation/v1/version contents
-	keyServer unsignedKeyResp              // /_matrix/key/v2/server template
+	wellknown []byte          // /.well-known/matrix/server contents
+	version   []byte          // /_matrix/federation/v1/version contents
+	keyServer unsignedKeyResp // /_matrix/key/v2/server template
 }
 
 // NewMatrix creates new matrix server
@@ -46,19 +46,21 @@ func NewMatrix(cfg *config.Config, search matrixSearchService) (*Matrix, error) 
 	if err := m.initKeys(cfg.Matrix.Keys); err != nil {
 		return nil, err
 	}
-	m.initVersion()
+	if err := m.initVersion(); err != nil {
+		return nil, err
+	}
 	m.initKeyServer()
 
 	return m, nil
 }
 
 // GetWellKnown returns json-eligible response for /.well-known/matrix/server
-func (m *Matrix) GetWellKnown() any {
+func (m *Matrix) GetWellKnown() []byte {
 	return m.wellknown
 }
 
 // GetVersion returns json-eligible response for /_matrix/federation/v1/version
-func (m *Matrix) GetVersion() any {
+func (m *Matrix) GetVersion() []byte {
 	return m.version
 }
 
@@ -74,7 +76,7 @@ func (m *Matrix) GetKeyServer() []byte {
 }
 
 // PublicRooms returns /_matrix/federation/v1/publicRooms response
-func (m *Matrix) PublicRooms(req *model.RoomDirectoryRequest) *model.RoomDirectoryResponse {
+func (m *Matrix) PublicRooms(req *model.RoomDirectoryRequest) []byte {
 	limit := req.Limit
 	if limit == 0 {
 		limit = 30
@@ -97,12 +99,16 @@ func (m *Matrix) PublicRooms(req *model.RoomDirectoryRequest) *model.RoomDirecto
 	if offset >= limit {
 		prev = offset - limit
 	}
-	return &model.RoomDirectoryResponse{
+	value, err := utils.JSON(model.RoomDirectoryResponse{
 		Chunk:     chunk,
 		PrevBatch: strconv.Itoa(prev),
 		NextBatch: strconv.Itoa(offset + len(chunk)),
 		Total:     99999, // TODO
+	})
+	if err != nil {
+		log.Println("ERROR: cannot marshal room directory json:", err)
 	}
+	return value
 }
 
 func (m *Matrix) initKeys(strs []string) error {
@@ -131,17 +137,22 @@ func (m *Matrix) initWellKnown(apiURL string) error {
 		port = "443"
 	}
 
-	m.wellknown = map[string]string{"m.server": uri.Hostname() + ":" + port}
-	return nil
+	value, err := utils.JSON(map[string]string{
+		"m.server": uri.Hostname() + ":" + port,
+	})
+	m.wellknown = value
+	return err
 }
 
-func (m *Matrix) initVersion() {
-	m.version = map[string]map[string]string{
+func (m *Matrix) initVersion() error {
+	value, err := utils.JSON(map[string]map[string]string{
 		"server": {
 			"name":    version.Name,
 			"version": version.Version,
 		},
-	}
+	})
+	m.version = value
+	return err
 }
 
 func (m *Matrix) initKeyServer() {

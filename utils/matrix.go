@@ -2,10 +2,12 @@ package utils
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"strings"
 
 	"github.com/h2non/bimg"
+	"github.com/matrix-org/gomatrixserverlib"
 )
 
 const (
@@ -47,4 +49,13 @@ func Avatar(avatarStream io.Reader) (io.Reader, bool) {
 		return bytes.NewReader(avatarRaw), false
 	}
 	return bytes.NewReader(avatar), true
+}
+
+// JSON marshals input into canonical json
+func JSON(input any) ([]byte, error) {
+	data, err := json.Marshal(input)
+	if err != nil {
+		return nil, err
+	}
+	return gomatrixserverlib.CanonicalJSON(data)
 }
