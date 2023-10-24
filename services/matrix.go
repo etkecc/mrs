@@ -152,6 +152,12 @@ func (m *Matrix) PublicRooms(req *http.Request, rdReq *model.RoomDirectoryReques
 
 // ValidateAuth validates matrix auth
 func (m *Matrix) ValidateAuth(r *http.Request) (serverName string, err error) {
+	defer r.Body.Close()
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		return "", err
+	}
+
 	auths := m.parseAuths(r)
 	if len(auths) == 0 {
 		return "", fmt.Errorf("no auth provided")
@@ -161,12 +167,15 @@ func (m *Matrix) ValidateAuth(r *http.Request) (serverName string, err error) {
 		"uri":         r.RequestURI,
 		"origin":      auths[0].Origin,
 		"destination": auths[0].Destination,
-		"content":     "{}",
+		"content":     string(body),
 	}
+	log.Println("body", string(body))
+	log.Println("obj", obj)
 	canonical, err := utils.JSON(obj)
 	if err != nil {
 		return "", err
 	}
+	log.Println("canonical", string(canonical))
 	keys := m.queryKeys(auths[0].Origin)
 	if len(keys) == 0 {
 		return "", fmt.Errorf("no server keys available")

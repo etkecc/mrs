@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"bytes"
+	"io"
 	"log"
 	"net/http"
 
@@ -30,9 +32,19 @@ func configureMatrixEndpoints(e *echo.Echo, matrixSvc matrixService) {
 func matrixRoomDirectory(matrixSvc matrixService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		req := &model.RoomDirectoryRequest{}
+		r := c.Request()
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			return err
+		}
+		r.Body = io.NopCloser(bytes.NewBuffer(body))
+		c.SetRequest(r)
+
 		if err := c.Bind(req); err != nil {
 			log.Println("directory request binding failed:", err)
 		}
+		r.Body = io.NopCloser(bytes.NewBuffer(body))
+		c.SetRequest(r)
 
 		return c.JSONBlob(http.StatusOK, matrixSvc.PublicRooms(c.Request(), req))
 	}
