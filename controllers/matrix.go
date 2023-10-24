@@ -13,7 +13,7 @@ type matrixService interface {
 	GetWellKnown() []byte
 	GetVersion() []byte
 	GetKeyServer() []byte
-	PublicRooms(*model.RoomDirectoryRequest) []byte
+	PublicRooms(*http.Request, *model.RoomDirectoryRequest) []byte
 }
 
 func configureMatrixEndpoints(e *echo.Echo, matrixSvc matrixService) {
@@ -26,8 +26,6 @@ func configureMatrixEndpoints(e *echo.Echo, matrixSvc matrixService) {
 }
 
 // /_matrix/federation/v1/publicRooms
-// TODO: authentication of the requester
-// TODO: handle params
 // TODO: document in swagger
 func matrixRoomDirectory(matrixSvc matrixService) echo.HandlerFunc {
 	return func(c echo.Context) error {
@@ -35,8 +33,7 @@ func matrixRoomDirectory(matrixSvc matrixService) echo.HandlerFunc {
 		if err := c.Bind(req); err != nil {
 			log.Println("directory request binding failed:", err)
 		}
-		log.Printf("room directory:\nModel: %+v\nGET params: %+v\nHeaders: %+v", req, c.QueryParams(), c.Request().Header)
 
-		return c.JSONBlob(http.StatusOK, matrixSvc.PublicRooms(req))
+		return c.JSONBlob(http.StatusOK, matrixSvc.PublicRooms(c.Request(), req))
 	}
 }

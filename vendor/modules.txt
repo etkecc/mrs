@@ -164,6 +164,11 @@ github.com/golang/snappy
 # github.com/h2non/bimg v1.1.10-0.20230922201823-0fdc5cc0e1b8
 ## explicit
 github.com/h2non/bimg
+# github.com/hashicorp/golang-lru/v2 v2.0.7
+## explicit; go 1.18
+github.com/hashicorp/golang-lru/v2
+github.com/hashicorp/golang-lru/v2/internal
+github.com/hashicorp/golang-lru/v2/simplelru
 # github.com/json-iterator/go v0.0.0-20171115153421-f7279a603ede
 ## explicit
 github.com/json-iterator/go
