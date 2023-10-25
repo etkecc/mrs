@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"log"
 	"net"
 	"net/http"
 	"sync"
@@ -126,10 +125,6 @@ func (r *Robots) parse(serverName string) {
 
 // set parsed robots.txt
 func (r *Robots) set(serverName string, parsed *robots.Robots) {
-	if parsed == nil {
-		log.Println(serverName, "no robots.txt")
-	}
-
 	r.mu.Lock()
 	r.data[serverName] = parsed
 	r.mu.Unlock()

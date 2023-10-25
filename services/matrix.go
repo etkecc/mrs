@@ -39,6 +39,10 @@ type wellKnownServerResp struct {
 	Host string `json:"m.server"`
 }
 
+type versionResp struct {
+	Server map[string]string `json:"server"`
+}
+
 type matrixAuth struct {
 	Origin      string
 	Destination string
@@ -229,6 +233,41 @@ func (m *Matrix) QueryServerName(serverName string) string {
 	}
 	m.namesCache.Add(serverName, discovered)
 	return discovered
+}
+
+// QueryVersion from /_matrix/federation/v1/version
+func (m *Matrix) QueryVersion(serverName string) (server, version string, err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, m.getURL(serverName, false)+"/_matrix/federation/v1/version", nil)
+	if err != nil {
+		return "", "", err
+	}
+	resp, err := matrixClient.Do(req)
+	if err != nil {
+		return "", "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return "", "", fmt.Errorf("federation disabled")
+	}
+
+	datab, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", "", err
+	}
+	var vResp *versionResp
+	if jerr := json.Unmarshal(datab, &vResp); jerr != nil {
+		return "", "", jerr
+	}
+	if len(vResp.Server) == 0 {
+		return "", "", fmt.Errorf("invalid version response")
+	}
+	if vResp.Server["name"] == "" || vResp.Server["version"] == "" {
+		return "", "", fmt.Errorf("invalid version contents")
+	}
+
+	return vResp.Server["name"], vResp.Server["version"], nil
 }
 
 // QueryPublicRooms over federation

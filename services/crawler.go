@@ -67,6 +67,7 @@ type DataRepository interface {
 type FederationService interface {
 	QueryPublicRooms(serverName, limit, since string) (*model.RoomDirectoryResponse, error)
 	QueryServerName(serverName string) string
+	QueryVersion(serverName string) (string, string, error)
 }
 
 var (
@@ -101,12 +102,12 @@ func NewCrawler(servers []string, publicURL string, fedSvc FederationService, ro
 	}
 }
 
-// discoverServerNames performs basic sanitization and checks if server is online
-func (m *Crawler) discoverServerNames(servers []string, workers int) []string {
+// validateServers performs basic sanitization, checks if server is online and federateable
+func (m *Crawler) validateServers(servers []string, workers int) []string {
 	discovered := []string{}
 	chunks := utils.Chunks(servers, 1000)
-	log.Printf("discovering server names of %d servers using %d workers in %d chunks", len(servers), workers, len(chunks))
-	for chunkID, chunk := range chunks {
+	log.Printf("validating %d servers using %d workers in %d chunks", len(servers), workers, len(chunks))
+	for i, chunk := range chunks {
 		wp := workpool.New(workers)
 		for _, server := range chunk {
 			name := server
@@ -116,17 +117,21 @@ func (m *Crawler) discoverServerNames(servers []string, workers int) []string {
 					name = uri.Hostname()
 				}
 				name = m.fed.QueryServerName(name)
-				if name != "" {
-					discovered = append(discovered, name)
+				if name == "" {
+					return nil
 				}
+				if _, _, ferr := m.fed.QueryVersion(name); ferr != nil {
+					return nil
+				}
+				discovered = append(discovered, name)
 				return nil
 			})
 		}
 		wp.Wait() //nolint:errcheck
-		log.Printf("[%d/%d] server names discovery in progress: %d of %d names discovered", chunkID, len(chunks), len(discovered), len(servers))
+		log.Printf("[%d/%d] servers validation in progress: %d of %d servers are valid", i+1, len(chunks), len(discovered), len(servers))
 	}
 	discovered = utils.Uniq(discovered)
-	log.Printf("server names discovery finished - from %d servers intended for discovery, only %d are reachable", len(servers), len(discovered))
+	log.Printf("servers validation finished - from %d servers intended for discovery, only %d are valid (online and federateable)", len(servers), len(discovered))
 	return discovered
 }
 
@@ -140,7 +145,7 @@ func (m *Crawler) DiscoverServers(workers int) error {
 	defer func() { m.discovering = false }()
 
 	servers := utils.MergeSlices(utils.MapKeys(m.data.AllServers()), m.servers)
-	discoveredServers := m.discoverServerNames(servers, workers)
+	discoveredServers := m.validateServers(servers, workers)
 
 	validServers := []string{}
 	wp := workpool.New(workers)
@@ -198,7 +203,7 @@ func (m *Crawler) discoverServer(name string) (valid bool, err error) {
 // AddServers by name in bulk, intended for HTTP API
 func (m *Crawler) AddServers(names []string, workers int) {
 	wp := workpool.New(workers)
-	discoveredServers := m.discoverServerNames(names, workers)
+	discoveredServers := m.validateServers(names, workers)
 	validServers := []string{}
 	for _, server := range discoveredServers {
 		name := server
