@@ -1,15 +1,12 @@
 package services
 
 import (
-	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net"
 	"net/http"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/pemistahl/lingua-go"
@@ -18,7 +15,6 @@ import (
 
 	"gitlab.com/etke.cc/mrs/api/model"
 	"gitlab.com/etke.cc/mrs/api/utils"
-	"gitlab.com/etke.cc/mrs/api/version"
 )
 
 // RoomsBatch is maximum rooms parsed/stored at once
@@ -26,12 +22,11 @@ const RoomsBatch = 10000
 
 type Crawler struct {
 	servers     []string
-	proxyURL    string
-	proxyToken  string
 	publicURL   string
 	parsing     bool
 	discovering bool
 	eachrooming bool
+	fed         FederationService
 	block       BlocklistService
 	robots      RobotsService
 	data        DataRepository
@@ -69,17 +64,22 @@ type DataRepository interface {
 	IsReported(string) bool
 }
 
+type FederationService interface {
+	QueryPublicRooms(serverName, limit, since string) (*model.RoomDirectoryResponse, error)
+	QueryServerName(serverName string) string
+}
+
 var (
 	matrixMediaFallbacks = []string{"https://matrix-client.matrix.org"}
 	matrixDialer         = &net.Dialer{
 		Timeout:   5 * time.Second,
-		KeepAlive: 90 * time.Second,
+		KeepAlive: 120 * time.Second,
 	}
 	matrixClient = &http.Client{
-		Timeout: 60 * time.Second,
+		Timeout: 120 * time.Second,
 		Transport: &http.Transport{
 			MaxIdleConns:        1000,
-			MaxConnsPerHost:     1000,
+			MaxConnsPerHost:     100,
 			MaxIdleConnsPerHost: 5,
 			TLSHandshakeTimeout: 10 * time.Second,
 			DialContext:         matrixDialer.DialContext,
@@ -88,39 +88,46 @@ var (
 	}
 )
 
-type matrixRoomsResp struct {
-	Chunk     []*model.MatrixRoom `json:"chunk"`
-	NextBatch string              `json:"next_batch"`
-	Total     int                 `json:"total_room_count_estimate"`
-}
-
 // NewCrawler service
-func NewCrawler(servers []string, proxyURL, proxyToken, publicURL string, robots RobotsService, block BlocklistService, data DataRepository, detector lingua.LanguageDetector) *Crawler {
+func NewCrawler(servers []string, publicURL string, fedSvc FederationService, robots RobotsService, block BlocklistService, data DataRepository, detector lingua.LanguageDetector) *Crawler {
 	return &Crawler{
-		proxyURL:   proxyURL,
-		proxyToken: proxyToken,
-		publicURL:  publicURL,
-		servers:    servers,
-		robots:     robots,
-		block:      block,
-		data:       data,
-		detector:   detector,
+		publicURL: publicURL,
+		servers:   servers,
+		robots:    robots,
+		block:     block,
+		fed:       fedSvc,
+		data:      data,
+		detector:  detector,
 	}
 }
 
-func (m *Crawler) call(ctx context.Context, endpoint string, withAuth bool) (*http.Response, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", endpoint, nil)
-	if err != nil {
-		return nil, err
+// discoverServerNames performs basic sanitization and checks if server is online
+func (m *Crawler) discoverServerNames(servers []string, workers int) []string {
+	discovered := []string{}
+	chunks := utils.Chunks(servers, 1000)
+	log.Printf("discovering server names of %d servers using %d workers in %d chunks", len(servers), workers, len(chunks))
+	for chunkID, chunk := range chunks {
+		wp := workpool.New(workers)
+		for _, server := range chunk {
+			name := server
+			wp.Do(func() error {
+				uri, err := url.Parse("https://" + name)
+				if err == nil {
+					name = uri.Hostname()
+				}
+				name = m.fed.QueryServerName(name)
+				if name != "" {
+					discovered = append(discovered, name)
+				}
+				return nil
+			})
+		}
+		wp.Wait() //nolint:errcheck
+		log.Printf("[%d/%d] server names discovery in progress: %d of %d names discovered", chunkID, len(chunks), len(discovered), len(servers))
 	}
-	if withAuth {
-		req.Header.Set("Connection", "Keep-Alive")
-		req.Header.Set("Authorization", "Bearer "+m.proxyToken)
-	}
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", version.UserAgent)
-
-	return matrixClient.Do(req)
+	discovered = utils.Uniq(discovered)
+	log.Printf("server names discovery finished - from %d servers intended for discovery, only %d are reachable", len(servers), len(discovered))
+	return discovered
 }
 
 // DiscoverServers across federation and remove invalid ones
@@ -133,11 +140,12 @@ func (m *Crawler) DiscoverServers(workers int) error {
 	defer func() { m.discovering = false }()
 
 	servers := utils.MergeSlices(utils.MapKeys(m.data.AllServers()), m.servers)
+	discoveredServers := m.discoverServerNames(servers, workers)
+
 	validServers := []string{}
 	wp := workpool.New(workers)
-	for _, server := range servers {
+	for _, server := range discoveredServers {
 		name := server
-		name = m.sanitizeServerName(name)
 		wp.Do(func() error {
 			valid, err := m.discoverServer(name)
 			if valid {
@@ -154,28 +162,18 @@ func (m *Crawler) DiscoverServers(workers int) error {
 	return perr
 }
 
-// sanitizeServerName returns sanitized server name
-func (m *Crawler) sanitizeServerName(name string) string {
-	uri, err := url.Parse("https://" + name)
-	if err != nil {
-		log.Println(name, "cannot parse url", err)
-		return name
-	}
-	return uri.Hostname()
-}
-
 func (m *Crawler) discoverServer(name string) (valid bool, err error) {
 	if m.block.ByServer(name) {
+		log.Println(name, "server is not eligible: blocked")
 		return false, nil
 	}
 
 	if !m.robots.Allowed(name, RobotsTxtPublicRooms) {
-		log.Println(name, "robots.txt disallow parsing")
+		log.Println(name, "server is not eligible: robots.txt")
 		m.block.Add(name)
 		return false, nil
 	}
 
-	log.Println(name, "discovering...")
 	server := &model.MatrixServer{
 		Name:      name,
 		Online:    true,
@@ -186,22 +184,24 @@ func (m *Crawler) discoverServer(name string) (valid bool, err error) {
 		server.Contacts = *contacts
 	}
 
-	if !m.validateDiscoveredServer(name) {
-		log.Println(name, "server is not eligible, removing")
+	err = m.validateDiscoveredServer(name)
+	if err != nil {
+		log.Println(name, "server is not eligible:", err)
 		m.block.Add(name)
 		return false, nil
 	}
 
+	log.Println(name, "server is eligible")
 	return true, m.data.AddServer(server)
 }
 
 // AddServers by name in bulk, intended for HTTP API
 func (m *Crawler) AddServers(names []string, workers int) {
 	wp := workpool.New(workers)
+	discoveredServers := m.discoverServerNames(names, workers)
 	validServers := []string{}
-	for _, server := range names {
+	for _, server := range discoveredServers {
 		name := server
-		name = m.sanitizeServerName(name)
 		wp.Do(func() error {
 			existingURL, _ := m.data.GetServer(name) //nolint:errcheck
 			if existingURL != "" {
@@ -224,7 +224,11 @@ func (m *Crawler) AddServers(names []string, workers int) {
 // AddServer by name, intended for HTTP API
 // returns http status code to send to the reporter
 func (m *Crawler) AddServer(name string) int {
-	name = m.sanitizeServerName(name)
+	name = m.fed.QueryServerName(name)
+	if name == "" {
+		return http.StatusUnprocessableEntity
+	}
+
 	existingURL, _ := m.data.GetServer(name) //nolint:errcheck
 	if existingURL != "" {
 		return http.StatusAlreadyReported
@@ -360,8 +364,9 @@ func (m *Crawler) GetAvatar(serverName string, mediaID string) (io.Reader, strin
 
 // validateDiscoveredServer performs simple check to public rooms endpoint
 // to ensure discovered server is actually alive
-func (m *Crawler) validateDiscoveredServer(name string) bool {
-	return m.getPublicRoomsPage(name, "1", "") != nil
+func (m *Crawler) validateDiscoveredServer(name string) error {
+	_, err := m.fed.QueryPublicRooms(name, "1", "")
+	return err
 }
 
 // getServerContacts as per MSC1929
@@ -410,14 +415,19 @@ func (m *Crawler) getPublicRooms(name string) {
 	limit := "10000"
 	for {
 		start := time.Now()
-		resp := m.getPublicRoomsPage(name, limit, since)
-		if resp == nil || len(resp.Chunk) == 0 {
-			log.Println(name, "response is empty")
+		resp, err := m.fed.QueryPublicRooms(name, limit, since)
+		if err != nil {
+			log.Println(name, "cannot query public rooms:", err)
+			return
+		}
+		if len(resp.Chunk) == 0 {
+			log.Println(name, "no public rooms available")
 			return
 		}
 
 		added += len(resp.Chunk)
-		for _, room := range resp.Chunk {
+		for _, rdRoom := range resp.Chunk {
+			room := rdRoom.Convert()
 			if !m.roomAllowed(name, room) {
 				added--
 				continue
@@ -434,45 +444,4 @@ func (m *Crawler) getPublicRooms(name string) {
 
 		since = resp.NextBatch
 	}
-}
-
-func (m *Crawler) getPublicRoomsPage(name, limit, since string) *matrixRoomsResp {
-	endpoint := m.proxyURL + "/_matrix/client/v3/publicRooms?server=" + name + "&limit=" + limit
-	if since != "" {
-		endpoint = endpoint + "&since=" + url.QueryEscape(since)
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-	defer cancel()
-
-	resp, err := m.call(ctx, endpoint, true)
-	if err != nil {
-		if strings.Contains(err.Error(), "Timeout") || strings.Contains(err.Error(), "deadline") {
-			log.Println(name, "cannot get public rooms (timeout)")
-			return nil
-		}
-
-		log.Println(name, "cannot get public rooms", err)
-		return nil
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		log.Println(name, "cannot get public rooms", resp.Status)
-		return nil
-	}
-
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Println(name, "cannot read public rooms", err)
-		return nil
-	}
-
-	var roomsResp *matrixRoomsResp
-	err = json.Unmarshal(data, &roomsResp)
-	if err != nil {
-		log.Println(name, "cannot unmarshal public rooms", err)
-		return nil
-	}
-	return roomsResp
 }

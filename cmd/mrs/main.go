@@ -72,7 +72,8 @@ func main() {
 	if err != nil {
 		log.Panic(err)
 	}
-	crawlerSvc := services.NewCrawler(cfg.Servers, cfg.Proxy.Server, cfg.Proxy.Token, cfg.Public.API, robotsSvc, blockSvc, dataRepo, detector)
+	crawlerSvc := services.NewCrawler(cfg.Servers, cfg.Public.API, matrixSvc, robotsSvc, blockSvc, dataRepo, detector)
+	matrixSvc.SetDiscover(crawlerSvc.AddServer)
 	statsSvc := services.NewStats(dataRepo, blockSvc, cfg.Public.UI, cfg.Webhooks.Stats)
 	cacheSvc := services.NewCache(cfg.Cache.MaxAge, cfg.Cache.Bunny.URL, cfg.Cache.Bunny.Key, statsSvc)
 	dataSvc := services.NewDataFacade(crawlerSvc, indexSvc, statsSvc, cacheSvc)

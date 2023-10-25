@@ -15,7 +15,7 @@ type matrixService interface {
 	GetWellKnown() []byte
 	GetVersion() []byte
 	GetKeyServer() []byte
-	PublicRooms(*http.Request, *model.RoomDirectoryRequest) []byte
+	PublicRooms(*http.Request, *model.RoomDirectoryRequest) (int, []byte)
 }
 
 func configureMatrixEndpoints(e *echo.Echo, matrixSvc matrixService) {
@@ -28,7 +28,6 @@ func configureMatrixEndpoints(e *echo.Echo, matrixSvc matrixService) {
 }
 
 // /_matrix/federation/v1/publicRooms
-// TODO: document in swagger
 func matrixRoomDirectory(matrixSvc matrixService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		req := &model.RoomDirectoryRequest{}
@@ -46,6 +45,6 @@ func matrixRoomDirectory(matrixSvc matrixService) echo.HandlerFunc {
 		r.Body = io.NopCloser(bytes.NewBuffer(body))
 		c.SetRequest(r)
 
-		return c.JSONBlob(http.StatusOK, matrixSvc.PublicRooms(c.Request(), req))
+		return c.JSONBlob(matrixSvc.PublicRooms(c.Request(), req))
 	}
 }

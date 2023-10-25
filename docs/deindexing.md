@@ -44,6 +44,9 @@ for Matrix protocol, MRS has several options to unlist/unpublish/block/remove yo
 While robots.txt is not part of the Matrix protocol, that's the easiest and convenient way to prevent your server from indexing.
 MRS supports several made-up endpoints to prevent indexing your server.
 
+> NOTE: due to the fact robots.txt is not part of the Matrix protocol, MRS treats it a bit differently than usual bots.
+> `User-agent: MRSBot` **MUST** be present in your robots.txt file to make it work (`User-agent: *` will be ignored!)
+
 ### whole server
 
 Just add the following to your `robots.txt`:

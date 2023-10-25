@@ -130,3 +130,13 @@ func ConstantTimeEq(s1, s2 string) bool {
 	b2 := []byte(s2)
 	return subtle.ConstantTimeEq(int32(len(b1)), int32(len(b2))) == 1 && subtle.ConstantTimeCompare(b1, b2) == 1
 }
+
+// Chunks divides slice by chunks with specified size
+func Chunks[T any](slice []T, chunkSize int) [][]T {
+	chunks := make([][]T, 0, (len(slice)+chunkSize-1)/chunkSize)
+
+	for chunkSize < len(slice) {
+		slice, chunks = slice[chunkSize:], append(chunks, slice[0:chunkSize:chunkSize])
+	}
+	return append(chunks, slice)
+}

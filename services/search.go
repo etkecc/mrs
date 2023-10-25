@@ -7,6 +7,14 @@ import (
 	"github.com/blevesearch/bleve/v2/search/query"
 
 	"gitlab.com/etke.cc/mrs/api/model"
+	"gitlab.com/etke.cc/mrs/api/utils"
+)
+
+const (
+	DefaultSearchLimit  = 10
+	DefaultSearchOffset = 0
+	DefaultSearchSortBy = "-members,-_score"
+	DefaultSearchQuery  = "Matrix Rooms Search"
 )
 
 // Search service
@@ -18,7 +26,7 @@ type Search struct {
 
 // SearchRepository interface
 type SearchRepository interface {
-	Search(searchQuery query.Query, limit, offset int, sortBy []string) ([]*model.Entry, error)
+	Search(searchQuery query.Query, limit, offset int, sortBy []string) ([]*model.Entry, int, error)
 }
 
 // SearchFieldsBoost field name => boost
@@ -41,17 +49,20 @@ func NewSearch(repo SearchRepository, block BlocklistService, stoplist []string)
 
 // Search things
 // ref: https://blevesearch.com/docs/Query-String-Query/
-func (s Search) Search(query string, limit, offset int, sortBy []string) ([]*model.Entry, error) {
+func (s Search) Search(query, sortBy string, limit, offset int) ([]*model.Entry, int, error) {
+	if query == "" {
+		query = DefaultSearchQuery
+	}
 	builtQuery := s.getSearchQuery(s.matchFields(query))
 	if builtQuery == nil {
-		return []*model.Entry{}, nil
+		return []*model.Entry{}, 0, nil
 	}
-	results, err := s.repo.Search(builtQuery, limit, offset, sortBy)
+	results, total, err := s.repo.Search(builtQuery, limit, offset, utils.StringToSlice(sortBy, DefaultSearchSortBy))
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return s.removeBlocked(results), nil
+	return s.removeBlocked(results), total, nil
 }
 
 // removeBlocked removes results from blocked servers from the search results

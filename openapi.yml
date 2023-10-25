@@ -17,7 +17,7 @@ paths:
   /.well-known/matrix/server:
     get:
       tags:
-        - public
+        - matrix
       summary: Matrix server delegation
       description: The delegated server information.
       operationId: matrix_server_delegation
@@ -36,7 +36,7 @@ paths:
   /_matrix/federation/v1/version:
     get:
       tags:
-        - public
+        - matrix
       summary: matrix server name and version
       description: Get the implementation name and version of this homeserver.
       operationId: matrix_server_version
@@ -62,7 +62,7 @@ paths:
   /_matrix/key/v2/server:
     get:
       tags:
-        - public
+        - matrix
       summary: matrix server's published signing keys
       description: Gets the homeserver’s published signing keys
       operationId: matrix_server_key
@@ -91,6 +91,53 @@ paths:
                   signatures:
                     type: object
                     additionalProperties: {}
+  /_matrix/federation/v1/publicRooms:
+    get:
+      tags:
+        - matrix
+      summary: the same search, but through Matrix Server-Server API
+      description: Gets all the public rooms indexed by MRS. Use https://spec.matrix.org/v1.8/server-server-api/#public-room-directory for details
+      operationId: matrix_server_publicrooms_get
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  documentation:
+                    type: string
+                    example: "https://spec.matrix.org/v1.8/server-server-api/#get_matrixfederationv1publicrooms"
+        '401':
+          description: unauthorized
+        '500':
+          description: internal server error
+      security:
+       - matrix:
+    post:
+      tags:
+        - matrix
+      summary: the same search, but through Matrix Server-Server API
+      description: Gets all the public rooms indexed by MRS. Use https://spec.matrix.org/v1.8/server-server-api/#public-room-directory for details
+      operationId: matrix_server_publicrooms_post
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  documentation:
+                    type: string
+                    example: "https://spec.matrix.org/v1.8/server-server-api/#post_matrixfederationv1publicrooms"
+        '401':
+          description: unauthorized
+        '500':
+          description: internal server error
+      security:
+       - matrix:
   /_health:
     get:
       tags:
@@ -646,6 +693,12 @@ components:
     moderation:
       type: http
       scheme: basic
+    matrix:
+      type: apiKey
+      in: header
+      name: Authorization
+      scheme: Bearer
+      bearerFormat: "X-Matrix"
     automaticToken:
       description: automatically generated token
       type: apiKey

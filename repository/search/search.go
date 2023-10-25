@@ -9,20 +9,20 @@ import (
 )
 
 // Search something!
-func (i *Index) Search(searchQuery query.Query, limit, offset int, sortBy []string) ([]*model.Entry, error) {
+func (i *Index) Search(searchQuery query.Query, limit, offset int, sortBy []string) (results []*model.Entry, total int, err error) {
 	req := bleve.NewSearchRequestOptions(searchQuery, limit, offset, false)
 	req.Fields = []string{"*"}
 	req.SortBy(sortBy)
 
 	resp, err := i.index.Search(req)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	if resp.Total == 0 {
-		return nil, nil
+		return nil, 0, nil
 	}
 
-	return parseSearchResults(resp.Hits), nil
+	return parseSearchResults(resp.Hits), int(resp.Total), nil
 }
 
 func parseSearchResults(result []*search.DocumentMatch) []*model.Entry {

@@ -34,3 +34,15 @@ type RoomDirectoryRoom struct {
 	Topic         string `json:"topic"`
 	WorldReadable bool   `json:"world_readable"`
 }
+
+// Convert room directory's room to matrix room
+func (r *RoomDirectoryRoom) Convert() *MatrixRoom {
+	return &MatrixRoom{
+		ID:      r.ID,
+		Alias:   r.Alias,
+		Name:    r.Name,
+		Topic:   r.Topic,
+		Avatar:  r.Avatar,
+		Members: r.Members,
+	}
+}

@@ -8,9 +8,19 @@ Additionally, SearXNG can be used over Tor for online anonymity.
 
 Just use the [SearXNG docs](https://docs.searxng.org/dev/engines/online/mrs.html).
 
-## [Matrix Server-Server API](https://spec.matrix.org/latest/)
+## [Matrix Federation API](https://spec.matrix.org/latest/)
 
-[Matrix Server-Server API endpoint](https://spec.matrix.org/v1.8/server-server-api/#public-room-directory) not yet implemented
+MRS implements the mandatory subset of Matrix Federation API to provide the Public Rooms Directory over federation,
+so you can use it in your matrix client apps directly.
+
+### Element Web/Desktop
+
+1. Click on `Search` (Ctrl+K) in the top-left corner
+2. Modal window will be opened, scroll down
+3. Click on `Public rooms`
+4. Under the search input, click on server selection (`Show: <your server name>`) and click on the `Add new server...`
+5. In the opened modal window enter the server name from the config.yml (`matrix.server_name` value).
+6. Click on `Add`
 
 ## [Synapse](https://matrix-org.github.io/synapse/latest/)
 

@@ -1,6 +1,8 @@
 # Matrix Rooms Search [![Donate on Liberapay](https://liberapay.com/assets/widgets/donate.svg)](https://liberapay.com/mrs/donate) 
 
-A fully-featured, standalone, matrix rooms search service.
+A fully-featured, standalone, matrix rooms search service, available both in web (via [HTTP API](./openapi.yml)) and natively in Matrix (via [Matrix Federation API](./docs/integrations.md)).
+
+Dependencies? None.
 
 <!-- vim-markdown-toc GitLab -->
 

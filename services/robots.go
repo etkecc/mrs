@@ -1,7 +1,9 @@
 package services
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -19,6 +21,8 @@ const (
 	// RobotsTxtPublicRoom is made up endpoint of a specific matrix room, as there is no better option
 	RobotsTxtPublicRoom = "/_matrix/federation/v1/publicRooms/%s"
 )
+
+var robotsTxtBot = []byte(version.Bot)
 
 // Robots - robots.txt parsing
 type Robots struct {
@@ -60,17 +64,34 @@ func (r *Robots) Allowed(serverName, endpoint string) bool {
 	return parsed.Test(version.Bot, endpoint)
 }
 
+// isEligible checks if robots.txt response is eligible for parsing
+func (r *Robots) isEligible(resp *http.Response) bool {
+	if resp.StatusCode != http.StatusOK {
+		return false
+	}
+	body, err := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if err != nil {
+		return false
+	}
+	if !bytes.Contains(body, robotsTxtBot) {
+		return false
+	}
+
+	resp.Body = io.NopCloser(bytes.NewBuffer(body))
+	return true
+}
+
 // parse robots.txt by server name
 func (r *Robots) parse(serverName string) {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Println(serverName, "robots.txt parser paniced", err)
+			r.set(serverName, nil)
 		}
 	}()
 
 	robotsURL, err := robots.Locate("https://" + serverName + "/")
 	if err != nil {
-		log.Println(serverName, "cannot locate robots.txt", err)
 		r.set(serverName, nil)
 		return
 	}
@@ -79,14 +100,17 @@ func (r *Robots) parse(serverName string) {
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, robotsURL, nil)
 	if err != nil {
-		log.Println(serverName, "cannot create robots.txt request", err)
 		r.set(serverName, nil)
 		return
 	}
 	req.Header.Set("User-Agent", version.UserAgent)
 	resp, err := r.client.Do(req)
 	if err != nil {
-		log.Println(serverName, "cannot get robots.txt", err)
+		r.set(serverName, nil)
+		return
+	}
+
+	if !r.isEligible(resp) {
 		r.set(serverName, nil)
 		return
 	}
@@ -94,7 +118,6 @@ func (r *Robots) parse(serverName string) {
 
 	parsed, err := robots.From(resp.StatusCode, resp.Body)
 	if err != nil {
-		log.Println(serverName, "cannot read robots.txt", err)
 		r.set(serverName, nil)
 		return
 	}
@@ -103,6 +126,10 @@ func (r *Robots) parse(serverName string) {
 
 // set parsed robots.txt
 func (r *Robots) set(serverName string, parsed *robots.Robots) {
+	if parsed == nil {
+		log.Println(serverName, "no robots.txt")
+	}
+
 	r.mu.Lock()
 	r.data[serverName] = parsed
 	r.mu.Unlock()

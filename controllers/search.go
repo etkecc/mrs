@@ -11,14 +11,8 @@ import (
 )
 
 type searchService interface {
-	Search(query string, limit, offset int, sortBy []string) ([]*model.Entry, error)
+	Search(query, sortBy string, limit, offset int) ([]*model.Entry, int, error)
 }
-
-const (
-	DefaultSearchLimit  = 10
-	DefaultSearchOffset = 0
-	DefaultSearchSortBy = "-members,-_score"
-)
 
 func search(svc searchService, path bool) echo.HandlerFunc {
 	return func(c echo.Context) error {
@@ -31,10 +25,10 @@ func search(svc searchService, path bool) echo.HandlerFunc {
 		if err != nil {
 			return err
 		}
-		limit := utils.StringToInt(paramfunc("l"), DefaultSearchLimit)
-		offset := utils.StringToInt(paramfunc("o"), DefaultSearchOffset)
-		sortBy := utils.StringToSlice(paramfunc("s"), DefaultSearchSortBy)
-		entries, err := svc.Search(query, limit, offset, sortBy)
+		limit := utils.StringToInt(paramfunc("l"))
+		offset := utils.StringToInt(paramfunc("o"))
+		sortBy := paramfunc("s")
+		entries, _, err := svc.Search(query, sortBy, limit, offset)
 		if err != nil {
 			return err
 		}

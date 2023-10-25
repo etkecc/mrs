@@ -5,7 +5,6 @@ type Config struct {
 	Port       string     `yaml:"port"`
 	Public     Public     `yaml:"public"`
 	Matrix     Matrix     `yaml:"matrix"`
-	Proxy      Proxy      `yaml:"proxy"`
 	Path       Paths      `yaml:"path"`
 	Batch      Batch      `yaml:"batch"`
 	Auth       Auth       `yaml:"auth"`
@@ -24,11 +23,6 @@ type Public struct {
 	Name string `yaml:"name"`
 	UI   string `yaml:"ui"`
 	API  string `yaml:"api"`
-}
-
-type Proxy struct {
-	Server string `yaml:"server"`
-	Token  string `yaml:"token"`
 }
 
 // Cache config

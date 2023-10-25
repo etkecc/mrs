@@ -3,9 +3,6 @@ public: # public-facing information
   name: MRS # instance name
   ui: http://localhost # UI URL
   api: https://localhost:8080 # public API URL
-proxy:
-  server: https://matrix.example.com # matrix server (actual url) to query public rooms over federation
-  token: '' # matrix session token
 matrix: # matrix server information
   server_name: localhost # server name (!), not api url
   keys: [] # keys, will be generated automatically on first run

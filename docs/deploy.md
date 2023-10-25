@@ -11,6 +11,7 @@
 
 1. Build mrs
 2. Copy `config.yml.sample` into `config.yml` and adjust it
+3. Run `mrs -genkey` ad add the key to the config
 3. Run mrs with `-c config.yml`
 4. You probably want to call `/-/full` admin API endpoint at start
 
