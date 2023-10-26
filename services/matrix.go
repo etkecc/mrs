@@ -138,9 +138,6 @@ func (m *Matrix) PublicRooms(req *http.Request, rdReq *model.RoomDirectoryReques
 		return http.StatusUnauthorized, nil
 	}
 	limit := rdReq.Limit
-	if limit == 0 {
-		limit = DefaultSearchLimit
-	}
 	offset := utils.StringToInt(rdReq.Since)
 	entries, total, err := m.search.Search(rdReq.Filter.GenericSearchTerm, "", limit, offset)
 	if err != nil {

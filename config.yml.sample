@@ -6,6 +6,21 @@ public: # public-facing information
 matrix: # matrix server information
   server_name: localhost # server name (!), not api url
   keys: [] # keys, will be generated automatically on first run
+search: # search config
+  defaults: # default options, if not provided by request
+    limit: 10
+    offset: 0
+    sort_by: "-_score" # by relevancy (desc)
+    empty_results: # stubs shown when no search query is provided (e.g., when first search request over matrix federation)
+      - id: "!stub1:example.com" # each element of "empty_results" is model.Entry, so you can define all its fields
+        alias: "#welcome:example.com"
+        name: "Welcome to the MRS"
+        topic: "Search something!"
+        avatar: "mxc://etke.cc/EPswbbDKYLNEjRYgEpHpRQue" # MRS room (#mrs:etke.cc) avatar
+        avatar_url: "https://apicdn.matrixrooms.info/avatar/etke.cc/EPswbbDKYLNEjRYgEpHpRQue" # MRS room (#mrs:etke.cc) avatar
+        server: "example.com"
+        members: 1
+        language: "-"
 auth: # auth configuration
   admin: # admin configuration
     login: admin

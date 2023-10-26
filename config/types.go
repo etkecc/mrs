@@ -5,6 +5,7 @@ type Config struct {
 	Port       string     `yaml:"port"`
 	Public     Public     `yaml:"public"`
 	Matrix     Matrix     `yaml:"matrix"`
+	Search     Search     `yaml:"search"`
 	Path       Paths      `yaml:"path"`
 	Batch      Batch      `yaml:"batch"`
 	Auth       Auth       `yaml:"auth"`
@@ -23,6 +24,32 @@ type Public struct {
 	Name string `yaml:"name"`
 	UI   string `yaml:"ui"`
 	API  string `yaml:"api"`
+}
+
+// Search config
+type Search struct {
+	Defaults     SearchDefaults `yaml:"defaults"`
+	EmptyResults []*SearchStub  `yaml:"empty_results"`
+}
+
+// SearchDefaults default params
+type SearchDefaults struct {
+	Limit  int    `yaml:"limit"`
+	Offset int    `yaml:"offset"`
+	SortBy string `yaml:"sort_by"`
+}
+
+// SearchStub is model.Entry, but for yaml
+type SearchStub struct {
+	ID        string `yaml:"id"`
+	Alias     string `yaml:"alias"`
+	Name      string `yaml:"name"`
+	Topic     string `yaml:"topic"`
+	Avatar    string `yaml:"avatar"`
+	AvatarURL string `yaml:"avatar_url"`
+	Server    string `yaml:"server"`
+	Members   int    `yaml:"members"`
+	Language  string `yaml:"language"`
 }
 
 // Cache config

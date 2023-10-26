@@ -6,19 +6,15 @@ import (
 	"github.com/blevesearch/bleve/v2"
 	"github.com/blevesearch/bleve/v2/search/query"
 
+	"gitlab.com/etke.cc/mrs/api/config"
 	"gitlab.com/etke.cc/mrs/api/model"
 	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
-const (
-	DefaultSearchLimit  = 10
-	DefaultSearchOffset = 0
-	DefaultSearchSortBy = "-members,-_score"
-	DefaultSearchQuery  = "Matrix Rooms Search"
-)
-
 // Search service
 type Search struct {
+	cfg       *config.Search
+	stub      []*model.Entry
 	repo      SearchRepository
 	block     BlocklistService
 	stopwords map[string]struct{}
@@ -38,26 +34,65 @@ var SearchFieldsBoost = map[string]float64{
 }
 
 // NewSearch creates new search service
-func NewSearch(repo SearchRepository, block BlocklistService, stoplist []string) Search {
+func NewSearch(cfg *config.Search, repo SearchRepository, block BlocklistService, stoplist []string) *Search {
 	stopwords := make(map[string]struct{}, len(stoplist))
 	for _, stopword := range stoplist {
 		stopwords[stopword] = struct{}{}
 	}
 
-	return Search{repo, block, stopwords}
+	s := &Search{
+		cfg:       cfg,
+		repo:      repo,
+		block:     block,
+		stopwords: stopwords,
+	}
+	s.initStubs()
+
+	return s
+}
+
+// initStubs prepares stub rooms from config
+func (s *Search) initStubs() {
+	s.stub = make([]*model.Entry, 0, len(s.cfg.EmptyResults))
+	for _, stub := range s.cfg.EmptyResults {
+		s.stub = append(s.stub, &model.Entry{
+			ID:        stub.ID,
+			Type:      "room",
+			Alias:     stub.Alias,
+			Name:      stub.Name,
+			Topic:     stub.Topic,
+			Avatar:    stub.Avatar,
+			Server:    stub.Server,
+			Members:   stub.Members,
+			Language:  stub.Language,
+			AvatarURL: stub.AvatarURL,
+		})
+	}
+}
+
+// emptyResults returned when no query is provided
+func (s *Search) emptyResults() ([]*model.Entry, int, error) {
+	return s.stub, len(s.stub), nil
 }
 
 // Search things
 // ref: https://blevesearch.com/docs/Query-String-Query/
-func (s Search) Search(query, sortBy string, limit, offset int) ([]*model.Entry, int, error) {
+func (s *Search) Search(query, sortBy string, limit, offset int) ([]*model.Entry, int, error) {
 	if query == "" {
-		query = DefaultSearchQuery
+		return s.emptyResults()
 	}
+	if limit == 0 {
+		limit = s.cfg.Defaults.Limit
+	}
+	if offset == 0 {
+		offset = s.cfg.Defaults.Offset
+	}
+
 	builtQuery := s.getSearchQuery(s.matchFields(query))
 	if builtQuery == nil {
 		return []*model.Entry{}, 0, nil
 	}
-	results, total, err := s.repo.Search(builtQuery, limit, offset, utils.StringToSlice(sortBy, DefaultSearchSortBy))
+	results, total, err := s.repo.Search(builtQuery, limit, offset, utils.StringToSlice(sortBy, s.cfg.Defaults.SortBy))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -66,7 +101,7 @@ func (s Search) Search(query, sortBy string, limit, offset int) ([]*model.Entry,
 }
 
 // removeBlocked removes results from blocked servers from the search results
-func (s Search) removeBlocked(results []*model.Entry) []*model.Entry {
+func (s *Search) removeBlocked(results []*model.Entry) []*model.Entry {
 	allowed := []*model.Entry{}
 	for _, entry := range results {
 		if entry.IsBlocked(s.block) {
@@ -79,7 +114,7 @@ func (s Search) removeBlocked(results []*model.Entry) []*model.Entry {
 	return allowed
 }
 
-func (s Search) matchFields(query string) (string, map[string]string) {
+func (s *Search) matchFields(query string) (string, map[string]string) {
 	if !strings.Contains(query, ":") { // if no key:value pair(-s) - nothing is here
 		return query, nil
 	}
@@ -113,7 +148,7 @@ type bleveQuery interface {
 	SetBoost(float64)
 }
 
-func (s Search) newMatchQuery(match, field string, phrase bool) bleveQuery {
+func (s *Search) newMatchQuery(match, field string, phrase bool) bleveQuery {
 	var searchQuery bleveQuery
 	if phrase {
 		searchQuery = bleve.NewMatchPhraseQuery(match)
@@ -127,7 +162,7 @@ func (s Search) newMatchQuery(match, field string, phrase bool) bleveQuery {
 }
 
 // shouldReject checks if query or fields contain words from the stoplist
-func (s Search) shouldReject(q string, fields map[string]string) bool {
+func (s *Search) shouldReject(q string, fields map[string]string) bool {
 	for k, v := range fields {
 		if _, ok := s.stopwords[k]; ok {
 			return true
@@ -144,7 +179,7 @@ func (s Search) shouldReject(q string, fields map[string]string) bool {
 	return false
 }
 
-func (s Search) getSearchQuery(q string, fields map[string]string) query.Query {
+func (s *Search) getSearchQuery(q string, fields map[string]string) query.Query {
 	// base/standard query
 	q = strings.TrimSpace(q)
 	if s.shouldReject(q, fields) {

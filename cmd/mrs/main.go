@@ -67,7 +67,7 @@ func main() {
 	robotsSvc := services.NewRobots()
 	blockSvc := services.NewBlocklist(cfg.Blocklist.Servers)
 	indexSvc := services.NewIndex(index, dataRepo, cfg.Batch.Rooms)
-	searchSvc := services.NewSearch(index, blockSvc, cfg.Blocklist.Queries)
+	searchSvc := services.NewSearch(&cfg.Search, index, blockSvc, cfg.Blocklist.Queries)
 	matrixSvc, err := services.NewMatrix(cfg, searchSvc)
 	if err != nil {
 		log.Panic(err)
