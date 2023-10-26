@@ -10,6 +10,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/raja/argon2pw"
 	"golang.org/x/exp/slices"
 
@@ -28,18 +29,6 @@ type cacheService interface {
 	MiddlewareImmutable() echo.MiddlewareFunc
 }
 
-var basicAuthSkipper = func(c echo.Context) bool {
-	v := c.Get("authorized")
-	if v == nil {
-		return false
-	}
-	skip, ok := v.(bool)
-	if !ok {
-		return false
-	}
-	return skip
-}
-
 // ConfigureRouter configures echo router
 func ConfigureRouter(
 	e *echo.Echo,
@@ -56,16 +45,17 @@ func ConfigureRouter(
 	configureMatrixEndpoints(e, matrixSvc)
 	rl := middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1))
 
+	e.GET("/metrics", echo.WrapHandler(promhttp.Handler()), auth("metrics", &cfg.Auth.Metrics))
 	e.GET("/stats", stats(statsSvc))
 	e.GET("/avatar/:name/:id", avatar(crawlerSvc), middleware.RateLimiter(middleware.NewRateLimiterMemoryStoreWithConfig(middleware.RateLimiterMemoryStoreConfig{Rate: 30, Burst: 30, ExpiresIn: 5 * time.Minute})), cacheSvc.MiddlewareImmutable())
 
-	e.GET("/search", search(searchSvc, false))
-	e.GET("/search/:q", search(searchSvc, true))
-	e.GET("/search/:q/:l", search(searchSvc, true))
-	e.GET("/search/:q/:l/:o", search(searchSvc, true))
-	e.GET("/search/:q/:l/:o/:s", search(searchSvc, true))
+	e.GET("/search", search(searchSvc, cfg.Matrix.ServerName, false))
+	e.GET("/search/:q", search(searchSvc, cfg.Matrix.ServerName, true))
+	e.GET("/search/:q/:l", search(searchSvc, cfg.Matrix.ServerName, true))
+	e.GET("/search/:q/:l/:o", search(searchSvc, cfg.Matrix.ServerName, true))
+	e.GET("/search/:q/:l/:o/:s", search(searchSvc, cfg.Matrix.ServerName, true))
 
-	e.POST("/discover/bulk", addServers(crawlerSvc, cfg.Workers.Discovery), discoveryAuth(cfg))
+	e.POST("/discover/bulk", addServers(crawlerSvc, cfg.Workers.Discovery), auth("discovery", &cfg.Auth.Discovery))
 	e.POST("/discover/:name", addServer(crawlerSvc), discoveryProtection(rl, cfg))
 
 	e.POST("/mod/report/:room_id", report(modSvc), rl) // doesn't use mod group to allow without auth
@@ -75,7 +65,8 @@ func ConfigureRouter(
 	m.GET("/ban/:room_id", ban(modSvc), rl)
 	m.GET("/unban/:room_id", unban(modSvc), rl)
 
-	a := adminGroup(e, cfg)
+	a := e.Group("-")
+	a.Use(auth("admin", &cfg.Auth.Admin))
 	a.GET("/servers", servers(crawlerSvc))
 	a.GET("/status", status(statsSvc))
 	a.POST("/discover", discover(dataSvc, cfg.Workers.Discovery))
@@ -137,18 +128,36 @@ func logBasicAuthLogin(c echo.Context, buf *bytes.Buffer) (int, error) {
 	return buf.WriteRune('-') //nolint:gocritic // interface constraint
 }
 
-func discoveryAuth(cfg *config.Config) echo.MiddlewareFunc {
-	return middleware.BasicAuth(func(login, password string, ctx echo.Context) (bool, error) {
-		if login != cfg.Auth.Discovery.Login || password != cfg.Auth.Discovery.Password {
-			return false, nil
-		}
-		return true, nil
+func auth(name string, cfg *config.AuthItem) echo.MiddlewareFunc {
+	return middleware.BasicAuthWithConfig(middleware.BasicAuthConfig{
+		Skipper: func(c echo.Context) bool { // hash auth
+			v := c.Get("authorized")
+			if v == nil {
+				return false
+			}
+			skip, ok := v.(bool)
+			if !ok {
+				return false
+			}
+			return skip
+		},
+		Validator: func(login, password string, ctx echo.Context) (bool, error) {
+			allowedIP := true
+			if len(cfg.IPs) != 0 {
+				allowedIP = slices.Contains(cfg.IPs, ctx.RealIP())
+			}
+			match := utils.ConstantTimeEq(cfg.Login, login) && utils.ConstantTimeEq(cfg.Password, password)
+			log.Printf("%s authorization attempt from=%s path=%s allowed_ip=%t allowed_credentials=%t",
+				name, ctx.RealIP(), ctx.Request().URL.Path, allowedIP, match,
+			)
+			return match && allowedIP, nil
+		},
 	})
 }
 
 // discoveryProtection rate limits anonymous requests, but allows authorized with basic auth requests
 func discoveryProtection(rl echo.MiddlewareFunc, cfg *config.Config) echo.MiddlewareFunc {
-	auth := discoveryAuth(cfg)
+	auth := auth("discovery", &cfg.Auth.Discovery)
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			if len(c.Request().Header.Get(echo.HeaderAuthorization)) > 0 {
@@ -157,27 +166,6 @@ func discoveryProtection(rl echo.MiddlewareFunc, cfg *config.Config) echo.Middle
 			return rl(next)(c)
 		}
 	}
-}
-
-func adminGroup(e *echo.Echo, cfg *config.Config) *echo.Group {
-	admin := e.Group("-")
-	admin.Use(middleware.BasicAuthWithConfig(middleware.BasicAuthConfig{
-		Skipper: basicAuthSkipper,
-		Validator: func(login, password string, ctx echo.Context) (bool, error) {
-			allowedIP := true
-			if len(cfg.Auth.Admin.IPs) != 0 {
-				allowedIP = slices.Contains(cfg.Auth.Admin.IPs, ctx.RealIP())
-			}
-			match := utils.ConstantTimeEq(cfg.Auth.Admin.Login, login) && utils.ConstantTimeEq(cfg.Auth.Admin.Password, password)
-
-			log.Printf("admin authorization attempt from=%s path=%s allowed_ip=%t allowed_credentials=%t",
-				ctx.RealIP(), ctx.Request().URL.Path, allowedIP, match,
-			)
-			return match && allowedIP, nil
-		},
-	}))
-
-	return admin
 }
 
 func hashAuth(c echo.Context, authPassword string) *bool {
@@ -216,15 +204,6 @@ func modGroup(e *echo.Echo, cfg *config.Config) *echo.Group {
 			return next(c)
 		}
 	})
-	mod.Use(middleware.BasicAuthWithConfig(middleware.BasicAuthConfig{
-		Skipper: basicAuthSkipper,
-		Validator: func(login, password string, ctx echo.Context) (bool, error) {
-			match := utils.ConstantTimeEq(cfg.Auth.Moderation.Login, login) && utils.ConstantTimeEq(cfg.Auth.Moderation.Password, password)
-			log.Printf("mod authorization attempt from=%s path=%s allowed_credentials=%t",
-				ctx.RealIP(), ctx.Request().URL.Path, match,
-			)
-			return match, nil
-		},
-	}))
+	mod.Use(auth("mod", &cfg.Auth.Moderation))
 	return mod
 }

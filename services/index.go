@@ -6,6 +6,7 @@ import (
 
 	"github.com/blevesearch/bleve/v2"
 
+	"gitlab.com/etke.cc/mrs/api/metrics"
 	"gitlab.com/etke.cc/mrs/api/model"
 )
 
@@ -55,5 +56,6 @@ func (i *Index) IndexBatch() error {
 	err := i.index.IndexBatch(i.batch)
 	i.batch.Reset()
 	log.Println("indexed batch of", size, "ops")
+	metrics.RoomsIndexed.Add(float64(size))
 	return err
 }

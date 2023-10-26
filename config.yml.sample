@@ -27,12 +27,21 @@ auth: # auth configuration
     password: changeme
     ips: # (optional) allow access to admin endpoints only from the following IPs
       - 127.0.0.1
+  metrics: # metrics endpoints
+    login: metrics
+    password: changeme
+    ips: # (optional) allow access to metrics endpoint only from the following IPs
+      - 127.0.0.1
   discovery: # (optional) protected discovery endpoint without rate limit
     login: discovery
     password: changeme
+    ips: # (optional) allow access to discovery endpoints only from the following IPs
+      - 127.0.0.1
   moderation: # moderation endpoints
     login: moderation
     password: changeme
+    ips: # (optional) allow access to moderation endpoints only from the following IPs
+      - 127.0.0.1
 cache: # (optional) cache config
   max_age: 0
   bunny: # (optional) bunny cdn cache purging, ref: https://docs.bunny.net/reference/pullzonepublic_purgecachepostbytag

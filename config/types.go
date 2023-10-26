@@ -66,19 +66,14 @@ type CacheBunny struct {
 
 // Auth config
 type Auth struct {
-	Admin      AuthAdmin `yaml:"admin"`
-	Discovery  AuthItem  `yaml:"discovery"`
-	Moderation AuthItem  `yaml:"moderation"`
+	Admin      AuthItem `yaml:"admin"`
+	Metrics    AuthItem `yaml:"metrics"`
+	Discovery  AuthItem `yaml:"discovery"`
+	Moderation AuthItem `yaml:"moderation"`
 }
 
 // AuthItem config (generic)
 type AuthItem struct {
-	Login    string `yaml:"login"`
-	Password string `yaml:"password"`
-}
-
-// AuthAdmin config
-type AuthAdmin struct {
 	Login    string   `yaml:"login"`
 	Password string   `yaml:"password"`
 	IPs      []string `yaml:"ips"`

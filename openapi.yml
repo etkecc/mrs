@@ -514,6 +514,18 @@ paths:
       security:
        - moderation:
        - automaticToken:
+  /metrics:
+    get:
+      tags:
+        - private
+      summary: Prometheus metrics
+      description: Get Prometheus metrics of the MRS instance
+      operationId: metrics
+      responses:
+        '200':
+          description: successful operation
+      security:
+       - metrics:
   /-/status:
     get:
       tags:
@@ -685,6 +697,9 @@ components:
           example: 2023-04-17T18:40:56Z
   securitySchemes:
     admin:
+      type: http
+      scheme: basic
+    metrics:
       type: http
       scheme: basic
     discovery:

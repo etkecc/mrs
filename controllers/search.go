@@ -5,7 +5,9 @@ import (
 	"net/url"
 
 	"github.com/labstack/echo/v4"
+	"github.com/prometheus/client_golang/prometheus"
 
+	"gitlab.com/etke.cc/mrs/api/metrics"
 	"gitlab.com/etke.cc/mrs/api/model"
 	"gitlab.com/etke.cc/mrs/api/utils"
 )
@@ -14,8 +16,14 @@ type searchService interface {
 	Search(query, sortBy string, limit, offset int) ([]*model.Entry, int, error)
 }
 
-func search(svc searchService, path bool) echo.HandlerFunc {
+func search(svc searchService, serverName string, path bool) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		defer metrics.SearchQueries.
+			With(prometheus.Labels{
+				"api":    "rest",
+				"server": serverName,
+			}).Inc()
+
 		paramfunc := c.QueryParam
 		if path {
 			paramfunc = c.Param

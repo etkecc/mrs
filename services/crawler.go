@@ -13,6 +13,7 @@ import (
 	"github.com/xxjwxc/gowp/workpool"
 	"gitlab.com/etke.cc/go/msc1929"
 
+	"gitlab.com/etke.cc/mrs/api/metrics"
 	"gitlab.com/etke.cc/mrs/api/model"
 	"gitlab.com/etke.cc/mrs/api/utils"
 )
@@ -131,6 +132,7 @@ func (m *Crawler) validateServers(servers []string, workers int) []string {
 		log.Printf("[%d/%d] servers validation in progress: %d of %d servers are valid", i+1, len(chunks), len(discovered), len(servers))
 	}
 	discovered = utils.Uniq(discovered)
+	metrics.ServersOnline.Add(float64(len(discovered)))
 	log.Printf("servers validation finished - from %d servers intended for discovery, only %d are valid (online and federateable)", len(servers), len(discovered))
 	return discovered
 }
@@ -160,6 +162,7 @@ func (m *Crawler) DiscoverServers(workers int) error {
 		})
 	}
 	perr := wp.Wait()
+	metrics.ServersIndexable.Add(float64(len(validServers)))
 	toRemove := utils.RemoveFromSlice(servers, validServers)
 	log.Printf("removing %d invalid/offline/blocked servers", len(toRemove))
 	m.data.RemoveServers(toRemove)
@@ -441,6 +444,7 @@ func (m *Crawler) getPublicRooms(name string) {
 			room.Parse(m.detector, m.publicURL)
 			m.data.AddRoomBatch(room)
 		}
+		metrics.RoomsParsed.Add(float64(added))
 		log.Println(name, "added", len(resp.Chunk), "rooms (", added, "of", resp.Total, ") took", time.Since(start))
 
 		if resp.NextBatch == "" {
