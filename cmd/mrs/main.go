@@ -66,15 +66,15 @@ func main() {
 	}
 	robotsSvc := services.NewRobots()
 	blockSvc := services.NewBlocklist(cfg.Blocklist.Servers)
+	statsSvc := services.NewStats(dataRepo, blockSvc, cfg.Public.UI, cfg.Webhooks.Stats)
 	indexSvc := services.NewIndex(index, dataRepo, cfg.Batch.Rooms)
-	searchSvc := services.NewSearch(&cfg.Search, index, blockSvc, cfg.Blocklist.Queries)
+	searchSvc := services.NewSearch(&cfg.Search, index, blockSvc, statsSvc, cfg.Blocklist.Queries)
 	matrixSvc, err := services.NewMatrix(cfg, searchSvc)
 	if err != nil {
 		log.Panic(err)
 	}
 	crawlerSvc := services.NewCrawler(cfg.Servers, cfg.Public.API, matrixSvc, robotsSvc, blockSvc, dataRepo, detector)
 	matrixSvc.SetDiscover(crawlerSvc.AddServer)
-	statsSvc := services.NewStats(dataRepo, blockSvc, cfg.Public.UI, cfg.Webhooks.Stats)
 	cacheSvc := services.NewCache(cfg.Cache.MaxAge, cfg.Cache.Bunny.URL, cfg.Cache.Bunny.Key, statsSvc)
 	dataSvc := services.NewDataFacade(crawlerSvc, indexSvc, statsSvc, cacheSvc)
 	mailSvc := services.NewEmail(&cfg.Public, &cfg.Email)

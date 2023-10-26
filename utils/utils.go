@@ -1,9 +1,12 @@
 package utils
 
 import (
+	"bytes"
 	"crypto/subtle"
+	"log"
 	"strconv"
 	"strings"
+	"text/template"
 )
 
 // MapKeys returns keys of the map
@@ -89,6 +92,7 @@ func Uniq[T comparable](slice []T) []T {
 	return uniqSlice
 }
 
+// StringToInt converts string to int with optional default value
 func StringToInt(value string, optionalDefaultValue ...int) int {
 	defaultValue := 0
 	if len(optionalDefaultValue) > 0 {
@@ -103,7 +107,13 @@ func StringToInt(value string, optionalDefaultValue ...int) int {
 	return vInt
 }
 
-func StringToSlice(value string, defaultValue string) []string {
+// StringToSlice converts comma-separated string to slice with optional default value
+func StringToSlice(value string, optionalDefaultValue ...string) []string {
+	var defaultValue string
+	if len(optionalDefaultValue) > 0 {
+		defaultValue = optionalDefaultValue[0]
+	}
+
 	value = strings.TrimSpace(value)
 	if idx := strings.Index(value, ","); idx == -1 {
 		value = defaultValue
@@ -139,4 +149,29 @@ func Chunks[T any](slice []T, chunkSize int) [][]T {
 		slice, chunks = slice[chunkSize:], append(chunks, slice[0:chunkSize:chunkSize])
 	}
 	return append(chunks, slice)
+}
+
+// Template parses template
+func Template(tplString string, vars any) (string, error) {
+	var result bytes.Buffer
+	tpl, err := template.New("template").Parse(tplString)
+	if err != nil {
+		return "", err
+	}
+	err = tpl.Execute(&result, vars)
+	if err != nil {
+		return "", err
+	}
+	return result.String(), nil
+}
+
+func MayTemplate(tplString string, vars any) string {
+	result, err := Template(tplString, vars)
+	if err != nil {
+		log.Println("templating error:", err)
+	}
+	if result == "" {
+		return tplString
+	}
+	return result
 }

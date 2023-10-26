@@ -14,8 +14,8 @@ import (
 // Search service
 type Search struct {
 	cfg       *config.Search
-	stub      []*model.Entry
 	repo      SearchRepository
+	stats     StatsService
 	block     BlocklistService
 	stopwords map[string]struct{}
 }
@@ -23,6 +23,10 @@ type Search struct {
 // SearchRepository interface
 type SearchRepository interface {
 	Search(searchQuery query.Query, limit, offset int, sortBy []string) ([]*model.Entry, int, error)
+}
+
+type StatsService interface {
+	Get() *model.IndexStats
 }
 
 // SearchFieldsBoost field name => boost
@@ -34,7 +38,7 @@ var SearchFieldsBoost = map[string]float64{
 }
 
 // NewSearch creates new search service
-func NewSearch(cfg *config.Search, repo SearchRepository, block BlocklistService, stoplist []string) *Search {
+func NewSearch(cfg *config.Search, repo SearchRepository, block BlocklistService, stats StatsService, stoplist []string) *Search {
 	stopwords := make(map[string]struct{}, len(stoplist))
 	for _, stopword := range stoplist {
 		stopwords[stopword] = struct{}{}
@@ -43,36 +47,39 @@ func NewSearch(cfg *config.Search, repo SearchRepository, block BlocklistService
 	s := &Search{
 		cfg:       cfg,
 		repo:      repo,
+		stats:     stats,
 		block:     block,
 		stopwords: stopwords,
 	}
-	s.initStubs()
 
 	return s
 }
 
-// initStubs prepares stub rooms from config
-func (s *Search) initStubs() {
-	s.stub = make([]*model.Entry, 0, len(s.cfg.EmptyResults))
+// getStubs prepares stub rooms from config and templates them with stats
+func (s *Search) getStubs() []*model.Entry {
+	stats := s.stats.Get()
+	stubs := make([]*model.Entry, 0, len(s.cfg.EmptyResults))
 	for _, stub := range s.cfg.EmptyResults {
-		s.stub = append(s.stub, &model.Entry{
-			ID:        stub.ID,
+		stubs = append(stubs, &model.Entry{
+			ID:        utils.MayTemplate(stub.ID, stats),
 			Type:      "room",
-			Alias:     stub.Alias,
-			Name:      stub.Name,
-			Topic:     stub.Topic,
-			Avatar:    stub.Avatar,
-			Server:    stub.Server,
+			Alias:     utils.MayTemplate(stub.Alias, stats),
+			Name:      utils.MayTemplate(stub.Name, stats),
+			Topic:     utils.MayTemplate(stub.Topic, stats),
+			Avatar:    utils.MayTemplate(stub.Avatar, stats),
+			Server:    utils.MayTemplate(stub.Server, stats),
 			Members:   stub.Members,
-			Language:  stub.Language,
-			AvatarURL: stub.AvatarURL,
+			Language:  utils.MayTemplate(stub.Language, stats),
+			AvatarURL: utils.MayTemplate(stub.AvatarURL, stats),
 		})
 	}
+	return stubs
 }
 
 // emptyResults returned when no query is provided
 func (s *Search) emptyResults() ([]*model.Entry, int, error) {
-	return s.stub, len(s.stub), nil
+	stubs := s.getStubs()
+	return stubs, len(stubs), nil
 }
 
 // Search things

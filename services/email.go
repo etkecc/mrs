@@ -1,9 +1,7 @@
 package services
 
 import (
-	"bytes"
 	"net/http"
-	"text/template"
 
 	"github.com/mattevans/postmark-go"
 
@@ -58,11 +56,11 @@ func (e *Email) SendReport(room *model.MatrixRoom, server *model.MatrixServer, r
 	}
 
 	vars := emailVars{Public: e.public, Room: room, Server: server, Reason: reason, RoomAliasOrID: aliasOrID}
-	subject, err := e.parseTemplate(e.cfg.Templates.Report.Subject, vars)
+	subject, err := utils.Template(e.cfg.Templates.Report.Subject, vars)
 	if err != nil {
 		return err
 	}
-	body, err := e.parseTemplate(e.cfg.Templates.Report.Body, vars)
+	body, err := utils.Template(e.cfg.Templates.Report.Body, vars)
 	if err != nil {
 		return err
 	}
@@ -96,17 +94,4 @@ func (e *Email) buildPMReqs(subject, text, html string, emails []string, cfg *co
 		})
 	}
 	return reqs
-}
-
-func (e *Email) parseTemplate(tplString string, vars emailVars) (string, error) {
-	var result bytes.Buffer
-	tpl, err := template.New("template").Parse(tplString)
-	if err != nil {
-		return "", err
-	}
-	err = tpl.Execute(&result, vars)
-	if err != nil {
-		return "", err
-	}
-	return result.String(), nil
 }
