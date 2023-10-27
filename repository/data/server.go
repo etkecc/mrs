@@ -41,6 +41,21 @@ func (d *Data) GetServer(name string) (string, error) {
 	return url, err
 }
 
+// EachServerInfo retruns each known matrix server
+func (d *Data) EachServerInfo(handler func(name string, data *model.MatrixServer)) {
+	var server *model.MatrixServer
+	d.db.View(func(tx *bbolt.Tx) error { //nolint:errcheck // that's ok
+		return tx.Bucket(serversInfoBucket).ForEach(func(k, v []byte) error {
+			err := json.Unmarshal(v, &server)
+			if err != nil {
+				return err
+			}
+			handler(string(k), server)
+			return nil
+		})
+	})
+}
+
 // GetServerInfo
 func (d *Data) GetServerInfo(name string) (*model.MatrixServer, error) {
 	var server *model.MatrixServer

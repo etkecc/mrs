@@ -13,7 +13,6 @@ import (
 	"github.com/xxjwxc/gowp/workpool"
 	"gitlab.com/etke.cc/go/msc1929"
 
-	"gitlab.com/etke.cc/mrs/api/metrics"
 	"gitlab.com/etke.cc/mrs/api/model"
 	"gitlab.com/etke.cc/mrs/api/utils"
 )
@@ -50,6 +49,7 @@ type DataRepository interface {
 	AddServer(*model.MatrixServer) error
 	GetServer(string) (string, error)
 	GetServerInfo(string) (*model.MatrixServer, error)
+	EachServerInfo(func(string, *model.MatrixServer))
 	AllServers() map[string]string
 	RemoveServer(string) error
 	RemoveServers([]string)
@@ -110,13 +110,23 @@ func (m *Crawler) validateServer(name string) (string, bool) {
 	if err == nil {
 		name = uri.Hostname()
 	}
+
+	// check if online
 	name = m.fed.QueryServerName(name)
 	if name == "" {
 		return "", false
 	}
+
+	// check if not blocked
+	if m.block.ByServer(name) {
+		return "", false
+	}
+
+	// check if federateable
 	if _, _, ferr := m.fed.QueryVersion(name); ferr != nil {
 		return "", false
 	}
+
 	return name, true
 }
 
@@ -141,7 +151,6 @@ func (m *Crawler) validateServers(servers []string, workers int) []string {
 		log.Printf("[%d/%d] servers validation in progress: %d of %d servers are valid", i+1, len(chunks), len(discovered), len(servers))
 	}
 	discovered = utils.Uniq(discovered)
-	metrics.ServersOnline.Add(float64(len(discovered)))
 	log.Printf("servers validation finished - from %d servers intended for discovery, only %d are valid (online and federateable)", len(servers), len(discovered))
 	return discovered
 }
@@ -163,52 +172,40 @@ func (m *Crawler) DiscoverServers(workers int) error {
 	toRemove := utils.RemoveFromSlice(discoveredServers, m.block.Slice())
 	m.data.RemoveServers(toRemove)
 
-	validServers := []string{}
 	wp := workpool.New(workers)
 	for _, server := range discoveredServers {
 		name := server
 		wp.Do(func() error {
-			valid, err := m.discoverServer(name)
-			if valid {
-				validServers = append(validServers, name)
-			}
+			_, err := m.discoverServer(name)
 			return err
 		})
 	}
-	perr := wp.Wait()
-	metrics.ServersIndexable.Add(float64(len(validServers)))
-
-	return perr
+	return wp.Wait()
 }
 
 func (m *Crawler) discoverServer(name string) (valid bool, err error) {
-	if m.block.ByServer(name) {
-		log.Println(name, "server is not eligible: blocked")
-		return false, nil
-	}
-
-	if !m.robots.Allowed(name, RobotsTxtPublicRooms) {
-		log.Println(name, "server is not eligible: robots.txt")
-		return false, nil
-	}
-
 	server := &model.MatrixServer{
 		Name:      name,
 		Online:    true,
 		UpdatedAt: time.Now().UTC(),
 	}
 
+	if !m.robots.Allowed(name, RobotsTxtPublicRooms) {
+		log.Println(name, "server is not eligible: robots.txt")
+		return false, m.data.AddServer(server) // not indexable yet, but online
+	}
+
 	if contacts := m.getServerContacts(name); contacts != nil {
 		server.Contacts = *contacts
 	}
 
-	err = m.validateDiscoveredServer(name)
-	if err != nil {
+	if _, err = m.fed.QueryPublicRooms(name, "1", ""); err != nil {
 		log.Println(name, "server is not eligible:", err)
-		return false, nil
+		return false, m.data.AddServer(server) // not indexable yet, but online
 	}
 
 	log.Println(name, "server is eligible")
+	server.Indexable = true
 	return true, m.data.AddServer(server)
 }
 
@@ -380,13 +377,6 @@ func (m *Crawler) GetAvatar(serverName string, mediaID string) (io.Reader, strin
 	return converted, contentType
 }
 
-// validateDiscoveredServer performs simple check to public rooms endpoint
-// to ensure discovered server is actually alive
-func (m *Crawler) validateDiscoveredServer(name string) error {
-	_, err := m.fed.QueryPublicRooms(name, "1", "")
-	return err
-}
-
 // getServerContacts as per MSC1929
 func (m *Crawler) getServerContacts(name string) *model.MatrixServerContacts {
 	resp, err := msc1929.Get(name)
@@ -454,7 +444,6 @@ func (m *Crawler) getPublicRooms(name string) {
 			room.Parse(m.detector, m.publicURL)
 			m.data.AddRoomBatch(room)
 		}
-		metrics.RoomsParsed.Add(float64(added))
 		log.Println(name, "added", len(resp.Chunk), "rooms (", added, "of", resp.Total, ") took", time.Since(start))
 
 		if resp.NextBatch == "" {

@@ -7,23 +7,23 @@ import (
 
 var (
 	// ServersOnline - The total number of known matrix servers that are online and federateable
-	ServersOnline = promauto.NewCounter(prometheus.CounterOpts{
+	ServersOnline = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "mrs_servers_online",
 		Help: "The total number of known matrix servers that are online and federateable",
 	})
 	// ServersIndexable - The total number of online matrix server that serve public rooms directory over federation
-	ServersIndexable = promauto.NewCounter(prometheus.CounterOpts{
+	ServersIndexable = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "mrs_servers_indexable",
 		Help: "The total number of online matrix server that serve public rooms directory over federation",
 	})
 
 	// RoomsParsed - The total number of rooms parsed from the indexable servers
-	RoomsParsed = promauto.NewCounter(prometheus.CounterOpts{
+	RoomsParsed = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "mrs_rooms_parsed",
 		Help: "The total number of rooms parsed from the indexable servers",
 	})
 	// RoomsIndexed - The total number of rooms indexed from the indexable servers
-	RoomsIndexed = promauto.NewCounter(prometheus.CounterOpts{
+	RoomsIndexed = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "mrs_rooms_indexed",
 		Help: "The total number of rooms indexed from the indexable servers",
 	})

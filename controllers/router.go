@@ -55,8 +55,8 @@ func ConfigureRouter(
 	e.GET("/search/:q/:l/:o", search(searchSvc, cfg.Matrix.ServerName, true))
 	e.GET("/search/:q/:l/:o/:s", search(searchSvc, cfg.Matrix.ServerName, true))
 
-	e.POST("/discover/bulk", addServers(crawlerSvc, cfg.Workers.Discovery), auth("discovery", &cfg.Auth.Discovery))
-	e.POST("/discover/:name", addServer(crawlerSvc), discoveryProtection(rl, cfg))
+	e.POST("/discover/bulk", addServers(dataSvc, cfg.Workers.Discovery), auth("discovery", &cfg.Auth.Discovery))
+	e.POST("/discover/:name", addServer(dataSvc), discoveryProtection(rl, cfg))
 
 	e.POST("/mod/report/:room_id", report(modSvc), rl) // doesn't use mod group to allow without auth
 	m := modGroup(e, cfg)

@@ -10,6 +10,7 @@ import (
 type dataCrawlerService interface {
 	DiscoverServers(int) error
 	AddServer(string) int
+	AddServers([]string, int)
 	AllServers() map[string]string
 	ParseRooms(int)
 	EachRoom(func(string, *model.MatrixRoom))
@@ -25,6 +26,7 @@ type dataStatsService interface {
 	SetStartedAt(string, time.Time)
 	SetFinishedAt(string, time.Time)
 	Collect()
+	CollectServers(bool)
 }
 
 type dataCacheService interface {
@@ -47,6 +49,20 @@ func NewDataFacade(
 	cache dataCacheService,
 ) *DataFacade {
 	return &DataFacade{crawler, index, stats, cache}
+}
+
+// AddServer by name, intended for HTTP API
+// returns http status code to send to the reporter
+func (df *DataFacade) AddServer(name string) int {
+	defer df.stats.CollectServers(true)
+	return df.crawler.AddServer(name)
+}
+
+// AddServers by name in bulk, intended for HTTP API
+func (df *DataFacade) AddServers(names []string, workers int) {
+	df.crawler.AddServers(names, workers)
+
+	df.stats.CollectServers(true)
 }
 
 // DiscoverServers matrix servers

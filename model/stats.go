@@ -18,11 +18,13 @@ func (s *IndexStats) Clone() *IndexStats {
 	}
 	return &IndexStats{
 		Servers: IndexStatsServers{
-			Online:  s.Servers.Online,
-			Blocked: s.Servers.Blocked,
+			Online:    s.Servers.Online,
+			Indexable: s.Servers.Indexable,
+			Blocked:   s.Servers.Blocked,
 		},
 		Rooms: IndexStatsRooms{
-			All:      s.Rooms.All,
+			Indexed:  s.Rooms.Indexed,
+			Parsed:   s.Rooms.Parsed,
 			Banned:   s.Rooms.Banned,
 			Reported: s.Rooms.Reported,
 		},
@@ -43,13 +45,15 @@ func (s *IndexStats) Clone() *IndexStats {
 
 // IndexStatsServers structure
 type IndexStatsServers struct {
-	Online  int `json:"online"`
-	Blocked int `json:"blocked"`
+	Online    int `json:"online"`
+	Indexable int `json:"indexable"`
+	Blocked   int `json:"blocked"`
 }
 
 // IndexStatsRooms structure
 type IndexStatsRooms struct {
-	All      int `json:"all"`
+	Indexed  int `json:"indexed"`
+	Parsed   int `json:"parsed"`
 	Banned   int `json:"banned"`
 	Reported int `json:"reported"`
 }

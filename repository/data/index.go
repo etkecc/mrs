@@ -24,8 +24,10 @@ func (d *Data) GetIndexStats() *model.IndexStats {
 		bucket := tx.Bucket(indexBucket)
 
 		serversOnlineBytes := bucket.Get([]byte("servers_online"))
+		serversIndexableBytes := bucket.Get([]byte("servers_indexable"))
 		serversBlockedBytes := bucket.Get([]byte("servers_blocked"))
-		roomsBytes := bucket.Get([]byte("rooms"))
+		roomsIndexedBytes := bucket.Get([]byte("rooms"))
+		roomsParsedBytes := bucket.Get([]byte("rooms_parsed"))
 		roomsBannedBytes := bucket.Get([]byte("rooms_banned"))
 		roomsReportedBytes := bucket.Get([]byte("rooms_reported"))
 
@@ -39,8 +41,10 @@ func (d *Data) GetIndexStats() *model.IndexStats {
 		indexFinishedAt := bucket.Get([]byte("indexing_finished_at"))
 
 		stats.Servers.Online, _ = strconv.Atoi(string(serversOnlineBytes))
+		stats.Servers.Indexable, _ = strconv.Atoi(string(serversIndexableBytes))
 		stats.Servers.Blocked, _ = strconv.Atoi(string(serversBlockedBytes))
-		stats.Rooms.All, _ = strconv.Atoi(string(roomsBytes))
+		stats.Rooms.Indexed, _ = strconv.Atoi(string(roomsIndexedBytes))
+		stats.Rooms.Parsed, _ = strconv.Atoi(string(roomsParsedBytes))
 		stats.Rooms.Banned, _ = strconv.Atoi(string(roomsBannedBytes))
 		stats.Rooms.Reported, _ = strconv.Atoi(string(roomsReportedBytes))
 		stats.Discovery.StartedAt, _ = time.Parse(time.RFC3339, string(discoveryStartedAt))
@@ -63,6 +67,14 @@ func (d *Data) SetIndexOnlineServers(servers int) error {
 	})
 }
 
+// SetIndexIndexableServers sets count of discovered indexable servers
+func (d *Data) SetIndexIndexableServers(servers int) error {
+	return d.db.Update(func(tx *bbolt.Tx) error {
+		value := []byte(strconv.Itoa(servers))
+		return tx.Bucket(indexBucket).Put([]byte("servers_indexable"), value)
+	})
+}
+
 // SetIndexBlockedServers sets count of discovered online servers
 func (d *Data) SetIndexBlockedServers(servers int) error {
 	return d.db.Update(func(tx *bbolt.Tx) error {
@@ -71,11 +83,19 @@ func (d *Data) SetIndexBlockedServers(servers int) error {
 	})
 }
 
-// SetIndexRooms sets count of indexed rooms
-func (d *Data) SetIndexRooms(rooms int) error {
+// SetIndexIndexedRooms sets count of indexed rooms
+func (d *Data) SetIndexIndexedRooms(rooms int) error {
 	return d.db.Update(func(tx *bbolt.Tx) error {
 		value := []byte(strconv.Itoa(rooms))
 		return tx.Bucket(indexBucket).Put([]byte("rooms"), value)
+	})
+}
+
+// SetIndexParsedRooms sets count of parsed rooms
+func (d *Data) SetIndexParsedRooms(rooms int) error {
+	return d.db.Update(func(tx *bbolt.Tx) error {
+		value := []byte(strconv.Itoa(rooms))
+		return tx.Bucket(indexBucket).Put([]byte("rooms_parsed"), value)
 	})
 }
 

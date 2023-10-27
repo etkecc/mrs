@@ -13,6 +13,7 @@ import (
 
 	"golang.org/x/exp/constraints"
 
+	"gitlab.com/etke.cc/mrs/api/metrics"
 	"gitlab.com/etke.cc/mrs/api/model"
 )
 
@@ -20,8 +21,10 @@ type StatsRepository interface {
 	DataRepository
 	GetIndexStats() *model.IndexStats
 	SetIndexOnlineServers(servers int) error
+	SetIndexIndexableServers(servers int) error
 	SetIndexBlockedServers(servers int) error
-	SetIndexRooms(rooms int) error
+	SetIndexParsedRooms(rooms int) error
+	SetIndexIndexedRooms(rooms int) error
 	SetIndexBannedRooms(rooms int) error
 	SetIndexReportedRooms(rooms int) error
 	SetStartedAt(process string, startedAt time.Time) error
@@ -36,6 +39,7 @@ type Lenable interface {
 type Stats struct {
 	data        StatsRepository
 	block       Lenable
+	index       Lenable
 	stats       *model.IndexStats
 	prev        *model.IndexStats
 	webhookUser string
@@ -44,23 +48,32 @@ type Stats struct {
 }
 
 // NewStats service
-func NewStats(data StatsRepository, blocklist Lenable, uiurl, webhook string) *Stats {
+func NewStats(data StatsRepository, index, blocklist Lenable, uiurl, webhook string) *Stats {
 	if uiurl != "" {
 		parsedUIURL, err := url.Parse(uiurl)
 		if err == nil {
 			uiurl = parsedUIURL.Hostname()
 		}
 	}
-	stats := &Stats{data: data, block: blocklist, webhook: webhook, webhookUser: uiurl}
+	stats := &Stats{data: data, index: index, block: blocklist, webhook: webhook, webhookUser: uiurl}
 	stats.reload()
 
 	return stats
+}
+
+// setMetrics updates /metrics endpoint with actual stats
+func (s *Stats) setMetrics() {
+	metrics.ServersOnline.Set(float64(s.stats.Servers.Online))
+	metrics.ServersIndexable.Set(float64(s.stats.Servers.Indexable))
+	metrics.RoomsParsed.Set(float64(s.stats.Rooms.Parsed))
+	metrics.RoomsIndexed.Set(float64(s.stats.Rooms.Indexed))
 }
 
 // reload saved stats. Useful when you need to get updated timestamps, but don't want to parse whole db
 func (s *Stats) reload() {
 	s.prev = s.stats.Clone()
 	s.stats = s.data.GetIndexStats()
+	s.setMetrics()
 }
 
 // Get stats
@@ -84,7 +97,36 @@ func (s *Stats) SetFinishedAt(process string, finishedAt time.Time) {
 	s.stats = s.data.GetIndexStats()
 }
 
-// Collect stats from repository
+// CollectServers stats only
+func (s *Stats) CollectServers(reload bool) {
+	var online, indexable int
+	s.data.EachServerInfo(func(_ string, server *model.MatrixServer) {
+		if server.Online {
+			online++
+		}
+		if server.Indexable {
+			indexable++
+		}
+	})
+
+	if err := s.data.SetIndexOnlineServers(online); err != nil {
+		log.Println("cannot set online servers count", err)
+	}
+
+	if err := s.data.SetIndexIndexableServers(indexable); err != nil {
+		log.Println("cannot set indexable servers count", err)
+	}
+
+	if err := s.data.SetIndexBlockedServers(s.block.Len()); err != nil {
+		log.Println("cannot set blocked servers count", err)
+	}
+
+	if reload {
+		s.reload()
+	}
+}
+
+// Collect all stats from repository
 func (s *Stats) Collect() {
 	if s.collecting {
 		log.Println("stats collection already in progress, ignoring request")
@@ -93,19 +135,16 @@ func (s *Stats) Collect() {
 	s.collecting = true
 	defer func() { s.collecting = false }()
 
-	if err := s.data.SetIndexOnlineServers(len(s.data.AllServers())); err != nil {
-		log.Println("cannot set indexed servers count", err)
-	}
-
-	if err := s.data.SetIndexBlockedServers(s.block.Len()); err != nil {
-		log.Println("cannot set blocked servers count", err)
-	}
+	s.CollectServers(false)
 
 	var rooms int
 	s.data.EachRoom(func(_ string, _ *model.MatrixRoom) {
 		rooms++
 	})
-	if err := s.data.SetIndexRooms(rooms); err != nil {
+	if err := s.data.SetIndexParsedRooms(rooms); err != nil {
+		log.Println("cannot set parsed rooms count", err)
+	}
+	if err := s.data.SetIndexIndexedRooms(s.index.Len()); err != nil {
 		log.Println("cannot set indexed rooms count", err)
 	}
 	banned, berr := s.data.GetBannedRooms()
@@ -165,10 +204,10 @@ func (s *Stats) getWebhookText() string {
 	text.WriteString("**stats have been collected**\n\n")
 
 	serversDiff := s.stats.Servers.Online - s.prev.Servers.Online
-	roomsDiff := s.stats.Rooms.All - s.prev.Rooms.All
+	roomsDiff := s.stats.Rooms.Indexed - s.prev.Rooms.Indexed
 
 	text.WriteString(fmt.Sprintf("* `%d` `%s%d` servers online (`%d` blocked)\n", s.stats.Servers.Online, getSymbol(serversDiff), abs(serversDiff), s.stats.Servers.Blocked))
-	text.WriteString(fmt.Sprintf("* `%d` `%s%d` rooms (`%d` blocked, `%d` reported)\n", s.stats.Rooms.All, getSymbol(roomsDiff), abs(roomsDiff), s.stats.Rooms.Banned, s.stats.Rooms.Reported))
+	text.WriteString(fmt.Sprintf("* `%d` `%s%d` rooms (`%d` blocked, `%d` reported)\n", s.stats.Rooms.Indexed, getSymbol(roomsDiff), abs(roomsDiff), s.stats.Rooms.Banned, s.stats.Rooms.Reported))
 	text.WriteString("\n---\n\n")
 
 	discovery := s.stats.Discovery.FinishedAt.Sub(s.stats.Discovery.StartedAt)

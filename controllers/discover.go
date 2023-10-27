@@ -8,14 +8,14 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func addServer(crawler crawlerService) echo.HandlerFunc {
+func addServer(dataSvc dataService) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		code := crawler.AddServer(c.Param("name"))
+		code := dataSvc.AddServer(c.Param("name"))
 		return c.NoContent(code)
 	}
 }
 
-func addServers(crawler crawlerService, workers int) echo.HandlerFunc {
+func addServers(dataSvc dataService, workers int) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		defer c.Request().Body.Close()
 		jsonb, err := io.ReadAll(c.Request().Body)
@@ -28,7 +28,7 @@ func addServers(crawler crawlerService, workers int) echo.HandlerFunc {
 			return err
 		}
 
-		go crawler.AddServers(servers, workers)
+		go dataSvc.AddServers(servers, workers)
 		return c.NoContent(http.StatusAccepted)
 	}
 }

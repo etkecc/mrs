@@ -654,7 +654,11 @@ components:
           properties:
             online:
               type: integer
-              description: amount of discovered online servers
+              description: amount of discovered online & federatable matrix servers
+              example: 23
+            indexable:
+              type: integer
+              description: amount of discovered online & federatable matrix servers that public public rooms directory over federation
               example: 23
             blocked:
               type: integer
@@ -663,9 +667,13 @@ components:
         rooms:
           type: object
           properties:
-            all:
+            parsed:
               type: integer
-              description: amount of all indexed rooms from online servers
+              description: amount of all parsed rooms from online servers
+              example: 123
+            indexed:
+              type: integer
+              description: amount of all indexed (searchable) rooms from online servers
               example: 123
             banned:
               type: integer

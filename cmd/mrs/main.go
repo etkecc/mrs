@@ -66,7 +66,7 @@ func main() {
 	}
 	robotsSvc := services.NewRobots()
 	blockSvc := services.NewBlocklist(cfg.Blocklist.Servers)
-	statsSvc := services.NewStats(dataRepo, blockSvc, cfg.Public.UI, cfg.Webhooks.Stats)
+	statsSvc := services.NewStats(dataRepo, index, blockSvc, cfg.Public.UI, cfg.Webhooks.Stats)
 	indexSvc := services.NewIndex(index, dataRepo, cfg.Batch.Rooms)
 	searchSvc := services.NewSearch(&cfg.Search, index, blockSvc, statsSvc, cfg.Blocklist.Queries)
 	matrixSvc, err := services.NewMatrix(cfg, searchSvc)

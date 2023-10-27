@@ -11,7 +11,7 @@ func stats(stats statsService) echo.HandlerFunc {
 		info := stats.Get()
 		return c.JSON(http.StatusOK, map[string]int{
 			"servers": info.Servers.Online,
-			"rooms":   info.Rooms.All,
+			"rooms":   info.Rooms.Indexed,
 		})
 	}
 }

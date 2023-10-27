@@ -115,6 +115,12 @@ func NewIndex(path string, detector lingua.LanguageDetector, defaultLang string)
 	return &Index{index}, err
 }
 
+// Len returns size of the index (number of docs)
+func (i *Index) Len() int {
+	vUint, _ := i.index.DocCount() //nolint:errcheck // that's ok
+	return int(vUint)
+}
+
 // Close index
 func (i *Index) Close() error {
 	return i.index.Close()

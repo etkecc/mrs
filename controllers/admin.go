@@ -9,6 +9,8 @@ import (
 )
 
 type dataService interface {
+	AddServer(string) int
+	AddServers([]string, int)
 	DiscoverServers(int)
 	ParseRooms(int)
 	Ingest()
@@ -16,8 +18,6 @@ type dataService interface {
 }
 
 type crawlerService interface {
-	AddServer(string) int
-	AddServers([]string, int)
 	AllServers() map[string]string
 	GetAvatar(string, string) (io.Reader, string)
 }

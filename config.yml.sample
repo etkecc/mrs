@@ -15,7 +15,7 @@ search: # search config
       - id: "!stub1:example.com" # each element of "empty_results" is model.Entry, so you can define all its fields
         alias: "#welcome:example.com"
         name: "Welcome to the MRS"
-        topic: "Search something!"
+        topic: "Search something across {{ .Servers.Online }} matrix servers" # you can use model.IndexStats properties here
         avatar: "mxc://etke.cc/EPswbbDKYLNEjRYgEpHpRQue" # MRS room (#mrs:etke.cc) avatar
         avatar_url: "https://apicdn.matrixrooms.info/avatar/etke.cc/EPswbbDKYLNEjRYgEpHpRQue" # MRS room (#mrs:etke.cc) avatar
         server: "example.com"

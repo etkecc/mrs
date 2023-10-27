@@ -21,6 +21,7 @@ type MatrixServer struct {
 	Name      string               `json:"name"`
 	URL       string               `json:"url"`
 	Online    bool                 `json:"online"`
+	Indexable bool                 `json:"indexable"`
 	Contacts  MatrixServerContacts `json:"contacts"` // Contacts as per MSC1929
 	UpdatedAt time.Time            `json:"updated_at"`
 }
