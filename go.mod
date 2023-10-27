@@ -2,6 +2,8 @@ module gitlab.com/etke.cc/mrs/api
 
 go 1.21.0
 
+toolchain go1.21.3
+
 require (
 	github.com/benjaminestes/robots/v2 v2.0.5
 	github.com/blevesearch/bleve/v2 v2.3.10
