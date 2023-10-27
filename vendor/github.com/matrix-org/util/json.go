@@ -15,7 +15,7 @@ import (
 type JSONResponse struct {
 	// HTTP status code.
 	Code int
-	// JSON represents the JSON that should be serialized and sent to the client
+	// JSON represents the JSON that should be serialised and sent to the client
 	JSON interface{}
 	// Headers represent any headers that should be sent to the client
 	Headers map[string]string
@@ -118,7 +118,7 @@ func RequestWithLogging(req *http.Request) *http.Request {
 	ctx = context.WithValue(ctx, ctxValueRequestID, reqID)
 	req = req.WithContext(ctx)
 
-	if req.Method != "OPTIONS" {
+	if req.Method != http.MethodOptions {
 		logger := GetLogger(req.Context())
 		logger.Trace("Incoming request")
 	}
@@ -133,7 +133,7 @@ func MakeJSONAPI(handler JSONRequestHandler) http.HandlerFunc {
 	return Protect(func(w http.ResponseWriter, req *http.Request) {
 		req = RequestWithLogging(req)
 
-		if req.Method == "OPTIONS" {
+		if req.Method == http.MethodOptions {
 			SetCORSHeaders(w)
 			w.WriteHeader(200)
 			return
@@ -169,17 +169,17 @@ func respond(w http.ResponseWriter, req *http.Request, res JSONResponse) {
 
 	// Set status code and write the body
 	w.WriteHeader(res.Code)
-	if req.Method != "OPTIONS" {
+	if req.Method != http.MethodOptions {
 		logger.WithField("code", res.Code).Tracef("Responding (%d bytes)", len(resBytes))
 	}
-	w.Write(resBytes)
+	_, _ = w.Write(resBytes)
 }
 
 // WithCORSOptions intercepts all OPTIONS requests and responds with CORS headers. The request handler
 // is not invoked when this happens.
 func WithCORSOptions(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		if req.Method == "OPTIONS" {
+		if req.Method == http.MethodOptions {
 			SetCORSHeaders(w)
 			return
 		}

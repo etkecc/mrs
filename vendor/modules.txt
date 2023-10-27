@@ -1,4 +1,4 @@
-# github.com/RoaringBitmap/roaring v0.9.4
+# github.com/RoaringBitmap/roaring v1.6.0
 ## explicit; go 1.14
 github.com/RoaringBitmap/roaring
 github.com/RoaringBitmap/roaring/internal
@@ -10,10 +10,10 @@ github.com/benjaminestes/robots/v2
 # github.com/beorn7/perks v1.0.1
 ## explicit; go 1.11
 github.com/beorn7/perks/quantile
-# github.com/bits-and-blooms/bitset v1.2.0
-## explicit; go 1.14
+# github.com/bits-and-blooms/bitset v1.10.0
+## explicit; go 1.16
 github.com/bits-and-blooms/bitset
-# github.com/blevesearch/bleve/v2 v2.3.7
+# github.com/blevesearch/bleve/v2 v2.3.10
 ## explicit; go 1.19
 github.com/blevesearch/bleve/v2
 github.com/blevesearch/bleve/v2/analysis
@@ -86,10 +86,11 @@ github.com/blevesearch/bleve/v2/search/query
 github.com/blevesearch/bleve/v2/search/scorer
 github.com/blevesearch/bleve/v2/search/searcher
 github.com/blevesearch/bleve/v2/size
-# github.com/blevesearch/bleve_index_api v1.0.5
+github.com/blevesearch/bleve/v2/util
+# github.com/blevesearch/bleve_index_api v1.0.6
 ## explicit; go 1.18
 github.com/blevesearch/bleve_index_api
-# github.com/blevesearch/geo v0.1.17
+# github.com/blevesearch/geo v0.1.18
 ## explicit; go 1.18
 github.com/blevesearch/geo/geojson
 github.com/blevesearch/geo/s2
@@ -102,8 +103,8 @@ github.com/blevesearch/gtreap
 # github.com/blevesearch/mmap-go v1.0.4
 ## explicit; go 1.13
 github.com/blevesearch/mmap-go
-# github.com/blevesearch/scorch_segment_api/v2 v2.1.4
-## explicit; go 1.18
+# github.com/blevesearch/scorch_segment_api/v2 v2.1.6
+## explicit; go 1.19
 github.com/blevesearch/scorch_segment_api/v2
 # github.com/blevesearch/segment v0.9.1
 ## explicit; go 1.18
@@ -128,26 +129,26 @@ github.com/blevesearch/snowballstem/turkish
 # github.com/blevesearch/upsidedown_store_api v1.0.2
 ## explicit; go 1.18
 github.com/blevesearch/upsidedown_store_api
-# github.com/blevesearch/vellum v1.0.9
+# github.com/blevesearch/vellum v1.0.10
 ## explicit; go 1.18
 github.com/blevesearch/vellum
 github.com/blevesearch/vellum/levenshtein
 github.com/blevesearch/vellum/regexp
 github.com/blevesearch/vellum/utf8
-# github.com/blevesearch/zapx/v11 v11.3.7
-## explicit; go 1.18
+# github.com/blevesearch/zapx/v11 v11.3.10
+## explicit; go 1.19
 github.com/blevesearch/zapx/v11
-# github.com/blevesearch/zapx/v12 v12.3.7
-## explicit; go 1.18
+# github.com/blevesearch/zapx/v12 v12.3.10
+## explicit; go 1.19
 github.com/blevesearch/zapx/v12
-# github.com/blevesearch/zapx/v13 v13.3.7
-## explicit; go 1.18
+# github.com/blevesearch/zapx/v13 v13.3.10
+## explicit; go 1.19
 github.com/blevesearch/zapx/v13
-# github.com/blevesearch/zapx/v14 v14.3.7
-## explicit; go 1.18
+# github.com/blevesearch/zapx/v14 v14.3.10
+## explicit; go 1.19
 github.com/blevesearch/zapx/v14
-# github.com/blevesearch/zapx/v15 v15.3.9
-## explicit; go 1.18
+# github.com/blevesearch/zapx/v15 v15.3.13
+## explicit; go 1.19
 github.com/blevesearch/zapx/v15
 # github.com/cespare/xxhash/v2 v2.2.0
 ## explicit; go 1.11
@@ -155,8 +156,8 @@ github.com/cespare/xxhash/v2
 # github.com/golang-jwt/jwt v3.2.2+incompatible
 ## explicit
 github.com/golang-jwt/jwt
-# github.com/golang/geo v0.0.0-20210211234256-740aa86cb551
-## explicit; go 1.12
+# github.com/golang/geo v0.0.0-20230421003525-6adc56603217
+## explicit; go 1.18
 github.com/golang/geo/r1
 github.com/golang/geo/r2
 github.com/golang/geo/r3
@@ -164,7 +165,7 @@ github.com/golang/geo/s1
 # github.com/golang/protobuf v1.5.3
 ## explicit; go 1.9
 github.com/golang/protobuf/proto
-# github.com/golang/snappy v0.0.1
+# github.com/golang/snappy v0.0.4
 ## explicit
 github.com/golang/snappy
 # github.com/h2non/bimg v1.1.10-0.20230922201823-0fdc5cc0e1b8
@@ -178,7 +179,7 @@ github.com/hashicorp/golang-lru/v2/simplelru
 # github.com/json-iterator/go v1.1.12
 ## explicit; go 1.12
 github.com/json-iterator/go
-# github.com/labstack/echo/v4 v4.10.2
+# github.com/labstack/echo/v4 v4.11.2
 ## explicit; go 1.17
 github.com/labstack/echo/v4
 github.com/labstack/echo/v4/middleware
@@ -187,13 +188,12 @@ github.com/labstack/echo/v4/middleware
 github.com/labstack/gommon/bytes
 github.com/labstack/gommon/color
 github.com/labstack/gommon/log
-github.com/labstack/gommon/random
-# github.com/matrix-org/gomatrixserverlib v0.0.0-20231023121512-16e7431168be
+# github.com/matrix-org/gomatrixserverlib v0.0.0-20231024124730-58af9a2712ca
 ## explicit; go 1.18
 github.com/matrix-org/gomatrixserverlib
 github.com/matrix-org/gomatrixserverlib/spec
-# github.com/matrix-org/util v0.0.0-20200807132607-55161520e1d4
-## explicit; go 1.12
+# github.com/matrix-org/util v0.0.0-20221111132719-399730281e66
+## explicit; go 1.18
 github.com/matrix-org/util
 # github.com/mattevans/postmark-go v0.1.6
 ## explicit; go 1.17
@@ -201,12 +201,12 @@ github.com/mattevans/postmark-go
 # github.com/mattn/go-colorable v0.1.13
 ## explicit; go 1.15
 github.com/mattn/go-colorable
-# github.com/mattn/go-isatty v0.0.17
+# github.com/mattn/go-isatty v0.0.20
 ## explicit; go 1.15
 github.com/mattn/go-isatty
-# github.com/matttproud/golang_protobuf_extensions v1.0.4
-## explicit; go 1.9
-github.com/matttproud/golang_protobuf_extensions/pbutil
+# github.com/matttproud/golang_protobuf_extensions/v2 v2.0.0
+## explicit; go 1.19
+github.com/matttproud/golang_protobuf_extensions/v2/pbutil
 # github.com/mileusna/crontab v1.2.0
 ## explicit; go 1.14
 github.com/mileusna/crontab
@@ -219,7 +219,7 @@ github.com/modern-go/reflect2
 # github.com/mschoch/smat v0.2.0
 ## explicit; go 1.13
 github.com/mschoch/smat
-# github.com/pemistahl/lingua-go v1.3.3
+# github.com/pemistahl/lingua-go v1.4.0
 ## explicit; go 1.18
 github.com/pemistahl/lingua-go
 github.com/pemistahl/lingua-go/serialization
@@ -229,15 +229,15 @@ github.com/prometheus/client_golang/prometheus
 github.com/prometheus/client_golang/prometheus/internal
 github.com/prometheus/client_golang/prometheus/promauto
 github.com/prometheus/client_golang/prometheus/promhttp
-# github.com/prometheus/client_model v0.4.1-0.20230718164431-9a2bf3000d16
-## explicit; go 1.18
+# github.com/prometheus/client_model v0.5.0
+## explicit; go 1.19
 github.com/prometheus/client_model/go
-# github.com/prometheus/common v0.44.0
-## explicit; go 1.18
+# github.com/prometheus/common v0.45.0
+## explicit; go 1.20
 github.com/prometheus/common/expfmt
 github.com/prometheus/common/internal/bitbucket.org/ww/goautoneg
 github.com/prometheus/common/model
-# github.com/prometheus/procfs v0.11.1
+# github.com/prometheus/procfs v0.12.0
 ## explicit; go 1.19
 github.com/prometheus/procfs
 github.com/prometheus/procfs/internal/fs
@@ -248,19 +248,19 @@ github.com/raja/argon2pw
 # github.com/shopspring/decimal v1.3.1
 ## explicit; go 1.13
 github.com/shopspring/decimal
-# github.com/sirupsen/logrus v1.9.0
+# github.com/sirupsen/logrus v1.9.3
 ## explicit; go 1.13
 github.com/sirupsen/logrus
 # github.com/theovassiliou/base64url v0.0.0-20211006203958-1e011490eaaf
 ## explicit; go 1.13
 github.com/theovassiliou/base64url
-# github.com/tidwall/gjson v1.16.0
+# github.com/tidwall/gjson v1.17.0
 ## explicit; go 1.12
 github.com/tidwall/gjson
 # github.com/tidwall/match v1.1.1
 ## explicit; go 1.15
 github.com/tidwall/match
-# github.com/tidwall/pretty v1.2.0
+# github.com/tidwall/pretty v1.2.1
 ## explicit; go 1.16
 github.com/tidwall/pretty
 # github.com/tidwall/sjson v1.2.5
@@ -272,11 +272,11 @@ github.com/valyala/bytebufferpool
 # github.com/valyala/fasttemplate v1.2.2
 ## explicit; go 1.12
 github.com/valyala/fasttemplate
-# github.com/xxjwxc/gowp v0.0.0-20220528192505-f87b7668d4ff
+# github.com/xxjwxc/gowp v0.0.0-20230612082025-23a9b62c1da6
 ## explicit; go 1.13
 github.com/xxjwxc/gowp/workpool
-# github.com/xxjwxc/public v0.0.0-20210518123934-6cc0965f0bc5
-## explicit; go 1.14
+# github.com/xxjwxc/public v0.0.0-20231027063937-3894f5701bb0
+## explicit; go 1.21.0
 github.com/xxjwxc/public/myqueue
 # github.com/yuin/goldmark v1.5.6
 ## explicit; go 1.18
@@ -292,10 +292,10 @@ github.com/yuin/goldmark/util
 # gitlab.com/etke.cc/go/msc1929 v0.0.0-20231021182755-a89d9cb113c2
 ## explicit; go 1.18
 gitlab.com/etke.cc/go/msc1929
-# go.etcd.io/bbolt v1.3.5
-## explicit; go 1.12
+# go.etcd.io/bbolt v1.3.8
+## explicit; go 1.17
 go.etcd.io/bbolt
-# go.mau.fi/util v0.1.0
+# go.mau.fi/util v0.2.0
 ## explicit; go 1.20
 go.mau.fi/util/base58
 # golang.org/x/crypto v0.14.0
@@ -307,7 +307,7 @@ golang.org/x/crypto/blake2b
 golang.org/x/crypto/ed25519
 golang.org/x/crypto/hkdf
 golang.org/x/crypto/pbkdf2
-# golang.org/x/exp v0.0.0-20230905200255-921286631fa9
+# golang.org/x/exp v0.0.0-20231006140011-7918f672742d
 ## explicit; go 1.20
 golang.org/x/exp/constraints
 golang.org/x/exp/maps

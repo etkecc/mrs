@@ -22,6 +22,7 @@ import (
 	"github.com/blevesearch/bleve/v2/mapping"
 	"github.com/blevesearch/bleve/v2/search"
 	"github.com/blevesearch/bleve/v2/search/searcher"
+	"github.com/blevesearch/bleve/v2/util"
 	index "github.com/blevesearch/bleve_index_api"
 )
 
@@ -107,6 +108,8 @@ func (q *GeoShapeQuery) Searcher(ctx context.Context, i index.IndexReader,
 		field = m.DefaultSearchField()
 	}
 
+	ctx = context.WithValue(ctx, search.QueryTypeKey, search.Geo)
+
 	return searcher.NewGeoShapeSearcher(ctx, i, q.Geometry.Shape, q.Geometry.Relation, field,
 		q.BoostVal.Value(), options)
 }
@@ -121,7 +124,7 @@ func (q *Geometry) UnmarshalJSON(data []byte) error {
 		Relation string          `json:"relation"`
 	}{}
 
-	err := json.Unmarshal(data, &tmp)
+	err := util.UnmarshalJSON(data, &tmp)
 	if err != nil {
 		return err
 	}

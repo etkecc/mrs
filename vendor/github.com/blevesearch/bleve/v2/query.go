@@ -48,7 +48,9 @@ func NewConjunctionQuery(conjuncts ...query.Query) *query.ConjunctionQuery {
 // NewDateRangeQuery creates a new Query for ranges
 // of date values.
 // Date strings are parsed using the DateTimeParser configured in the
-//  top-level config.QueryDateTimeParser
+//
+//	top-level config.QueryDateTimeParser
+//
 // Either, but not both endpoints can be nil.
 func NewDateRangeQuery(start, end time.Time) *query.DateRangeQuery {
 	return query.NewDateRangeQuery(start, end)
@@ -57,11 +59,47 @@ func NewDateRangeQuery(start, end time.Time) *query.DateRangeQuery {
 // NewDateRangeInclusiveQuery creates a new Query for ranges
 // of date values.
 // Date strings are parsed using the DateTimeParser configured in the
-//  top-level config.QueryDateTimeParser
+//
+//	top-level config.QueryDateTimeParser
+//
 // Either, but not both endpoints can be nil.
 // startInclusive and endInclusive control inclusion of the endpoints.
 func NewDateRangeInclusiveQuery(start, end time.Time, startInclusive, endInclusive *bool) *query.DateRangeQuery {
 	return query.NewDateRangeInclusiveQuery(start, end, startInclusive, endInclusive)
+}
+
+// NewDateRangeStringQuery creates a new Query for ranges
+// of date values.
+// Date strings are parsed using the DateTimeParser set using
+//
+//	the DateRangeStringQuery.SetDateTimeParser() method.
+//
+// If no DateTimeParser is set, then the
+//
+//	top-level config.QueryDateTimeParser
+//
+// is used.
+func NewDateRangeStringQuery(start, end string) *query.DateRangeStringQuery {
+	return query.NewDateRangeStringQuery(start, end)
+}
+
+// NewDateRangeStringQuery creates a new Query for ranges
+// of date values.
+// Date strings are parsed using the DateTimeParser set using
+//
+//	the DateRangeStringQuery.SetDateTimeParser() method.
+//
+// this DateTimeParser is a custom date time parser defined in the index mapping,
+// using AddCustomDateTimeParser() method.
+// If no DateTimeParser is set, then the
+//
+//	top-level config.QueryDateTimeParser
+//
+// is used.
+// Either, but not both endpoints can be nil.
+// startInclusive and endInclusive control inclusion of the endpoints.
+func NewDateRangeInclusiveStringQuery(start, end string, startInclusive, endInclusive *bool) *query.DateRangeStringQuery {
+	return query.NewDateRangeStringInclusiveQuery(start, end, startInclusive, endInclusive)
 }
 
 // NewDisjunctionQuery creates a new compound Query.
@@ -224,4 +262,29 @@ func NewGeoDistanceQuery(lon, lat float64, distance string) *query.GeoDistanceQu
 // Both ipv4 and ipv6 are supported.
 func NewIPRangeQuery(cidr string) *query.IPRangeQuery {
 	return query.NewIPRangeQuery(cidr)
+}
+
+// NewGeoShapeQuery creates a new Query for matching the given geo shape.
+// This method can be used for creating geoshape queries for shape types
+// like: point, linestring, polygon, multipoint, multilinestring,
+// multipolygon and envelope.
+func NewGeoShapeQuery(coordinates [][][][]float64, typ, relation string) (*query.GeoShapeQuery, error) {
+	return query.NewGeoShapeQuery(coordinates, typ, relation)
+}
+
+// NewGeoShapeCircleQuery creates a new query for a geoshape that is a
+// circle given center point and the radius. Radius formats supported:
+// "5in" "5inch" "7yd" "7yards" "9ft" "9feet" "11km" "11kilometers"
+// "3nm" "3nauticalmiles" "13mm" "13millimeters" "15cm" "15centimeters"
+// "17mi" "17miles" "19m" "19meters" If the unit cannot be determined,
+// the entire string is parsed and the unit of meters is assumed.
+func NewGeoShapeCircleQuery(coordinates []float64, radius, relation string) (*query.GeoShapeQuery, error) {
+	return query.NewGeoShapeCircleQuery(coordinates, radius, relation)
+}
+
+// NewGeometryCollectionQuery creates a new query for the provided
+// geometrycollection coordinates and types, which could contain
+// multiple geo shapes.
+func NewGeometryCollectionQuery(coordinates [][][][][]float64, types []string, relation string) (*query.GeoShapeQuery, error) {
+	return query.NewGeometryCollectionQuery(coordinates, types, relation)
 }

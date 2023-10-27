@@ -22,6 +22,7 @@ import (
 	"github.com/blevesearch/bleve/v2/search"
 	index "github.com/blevesearch/bleve_index_api"
 	"github.com/blevesearch/geo/geojson"
+	"github.com/blevesearch/geo/s2"
 )
 
 func NewGeoShapeSearcher(ctx context.Context, indexReader index.IndexReader, shape index.GeoJSON,
@@ -54,7 +55,7 @@ func NewGeoShapeSearcher(ctx context.Context, indexReader index.IndexReader, sha
 	}
 
 	return NewFilteringSearcher(ctx, mSearcher,
-		buildRelationFilterOnShapes(dvReader, field, relation, shape)), nil
+		buildRelationFilterOnShapes(ctx, dvReader, field, relation, shape)), nil
 
 }
 
@@ -63,13 +64,19 @@ func NewGeoShapeSearcher(ctx context.Context, indexReader index.IndexReader, sha
 // implementation of doc values.
 var termSeparatorSplitSlice = []byte{0xff}
 
-func buildRelationFilterOnShapes(dvReader index.DocValueReader, field string,
+func buildRelationFilterOnShapes(ctx context.Context, dvReader index.DocValueReader, field string,
 	relation string, shape index.GeoJSON) FilterFunc {
 	// this is for accumulating the shape's actual complete value
 	// spread across multiple docvalue visitor callbacks.
 	var dvShapeValue []byte
 	var startReading, finishReading bool
 	var reader *bytes.Reader
+
+	var bufPool *s2.GeoBufferPool
+	if ctx != nil {
+		bufPool = ctx.Value(search.GeoBufferPoolCallbackKey).(search.GeoBufferPoolCallbackFunc)()
+	}
+
 	return func(d *search.DocumentMatch) bool {
 		var found bool
 
@@ -104,7 +111,7 @@ func buildRelationFilterOnShapes(dvReader index.DocValueReader, field string,
 					// apply the filter once the entire docvalue is finished reading.
 					if finishReading {
 						v, err := geojson.FilterGeoShapesOnRelation(shape,
-							dvShapeValue, relation, &reader)
+							dvShapeValue, relation, &reader, bufPool)
 						if err == nil && v {
 							found = true
 						}
@@ -116,6 +123,11 @@ func buildRelationFilterOnShapes(dvReader index.DocValueReader, field string,
 			})
 
 		if err == nil && found {
+			bytes := dvReader.BytesRead()
+			if bytes > 0 {
+				reportIOStats(ctx, bytes)
+				search.RecordSearchCost(ctx, search.AddM, bytes)
+			}
 			return found
 		}
 

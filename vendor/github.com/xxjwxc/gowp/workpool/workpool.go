@@ -79,10 +79,7 @@ func (p *WorkPool) IsDone() bool { // 判断是否完成 (非阻塞)
 
 // IsClosed Has it been closed?
 func (p *WorkPool) IsClosed() bool { // 是否已经关闭
-	if atomic.LoadInt32(&p.closed) == 1 { // closed
-		return true
-	}
-	return false
+	return atomic.LoadInt32(&p.closed) == 1
 }
 
 func (p *WorkPool) startQueue() {
@@ -107,13 +104,23 @@ func (p *WorkPool) startQueue() {
 }
 
 func (p *WorkPool) waitTask() {
+	var c int
+
 	for {
-		runtime.Gosched() // 出让时间片
+		c++
+
 		if p.IsDone() {
 			if atomic.LoadInt32(&p.isQueTask) == 0 {
 				break
 			}
 		}
+
+		if c <= 100 {
+			runtime.Gosched() // 出让时间片
+			continue
+		}
+
+		time.Sleep(20 * time.Microsecond) // 20us, cpu cost < 1%
 	}
 }
 
