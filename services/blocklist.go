@@ -10,25 +10,39 @@ import (
 // Blocklist service
 type Blocklist struct {
 	mu      *sync.Mutex
-	servers map[string]struct{}
+	static  map[string]struct{}
+	dynamic map[string]struct{}
 }
 
 // NewBlocklist creates new blocklist service
-func NewBlocklist(list []string) *Blocklist {
-	list = utils.Uniq(list)
-	servers := make(map[string]struct{}, len(list))
-	for _, server := range list {
+func NewBlocklist(static []string) *Blocklist {
+	static = utils.Uniq(static)
+	servers := make(map[string]struct{}, len(static))
+	for _, server := range static {
 		servers[server] = struct{}{}
 	}
 	return &Blocklist{
 		mu:      &sync.Mutex{},
-		servers: servers,
+		static:  servers,
+		dynamic: map[string]struct{}{},
 	}
 }
 
 // Len of the blocklist
 func (b *Blocklist) Len() int {
-	return len(b.servers)
+	return len(b.static) + len(b.dynamic)
+}
+
+// Slice returns slice of the static+dynamic blocklist
+func (b *Blocklist) Slice() []string {
+	return utils.Uniq(append(utils.MapKeys(b.dynamic), utils.MapKeys(b.static)...))
+}
+
+// Reset dynamic part of the blocklist
+func (b *Blocklist) Reset() {
+	b.mu.Lock()
+	b.dynamic = map[string]struct{}{}
+	b.mu.Unlock()
 }
 
 // Add server to blocklist
@@ -36,7 +50,7 @@ func (b *Blocklist) Add(server string) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	b.servers[server] = struct{}{}
+	b.dynamic[server] = struct{}{}
 }
 
 // ByID checks if server of matrixID is present in the blocklist
@@ -55,7 +69,10 @@ func (b *Blocklist) ByID(matrixID string) bool {
 
 // ByServer checks if server is present in the blocklist
 func (b *Blocklist) ByServer(server string) bool {
-	if _, ok := b.servers[server]; ok {
+	if _, ok := b.static[server]; ok {
+		return true
+	}
+	if _, ok := b.dynamic[server]; ok {
 		return true
 	}
 	return false

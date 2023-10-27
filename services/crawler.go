@@ -38,6 +38,8 @@ type BlocklistService interface {
 	Add(server string)
 	ByID(matrixID string) bool
 	ByServer(server string) bool
+	Slice() []string
+	Reset()
 }
 
 type RobotsService interface {
@@ -103,6 +105,21 @@ func NewCrawler(servers []string, publicURL string, fedSvc FederationService, ro
 	}
 }
 
+func (m *Crawler) validateServer(name string) (string, bool) {
+	uri, err := url.Parse("https://" + name)
+	if err == nil {
+		name = uri.Hostname()
+	}
+	name = m.fed.QueryServerName(name)
+	if name == "" {
+		return "", false
+	}
+	if _, _, ferr := m.fed.QueryVersion(name); ferr != nil {
+		return "", false
+	}
+	return name, true
+}
+
 // validateServers performs basic sanitization, checks if server is online and federateable
 func (m *Crawler) validateServers(servers []string, workers int) []string {
 	discovered := []string{}
@@ -111,20 +128,12 @@ func (m *Crawler) validateServers(servers []string, workers int) []string {
 	for i, chunk := range chunks {
 		wp := workpool.New(workers)
 		for _, server := range chunk {
-			name := server
+			srvName := server
 			wp.Do(func() error {
-				uri, err := url.Parse("https://" + name)
-				if err == nil {
-					name = uri.Hostname()
+				name, ok := m.validateServer(srvName)
+				if ok {
+					discovered = append(discovered, name)
 				}
-				name = m.fed.QueryServerName(name)
-				if name == "" {
-					return nil
-				}
-				if _, _, ferr := m.fed.QueryVersion(name); ferr != nil {
-					return nil
-				}
-				discovered = append(discovered, name)
 				return nil
 			})
 		}
@@ -149,6 +158,11 @@ func (m *Crawler) DiscoverServers(workers int) error {
 	servers := utils.MergeSlices(utils.MapKeys(m.data.AllServers()), m.servers)
 	discoveredServers := m.validateServers(servers, workers)
 
+	// remove blocked servers
+	m.block.Reset()
+	toRemove := utils.RemoveFromSlice(discoveredServers, m.block.Slice())
+	m.data.RemoveServers(toRemove)
+
 	validServers := []string{}
 	wp := workpool.New(workers)
 	for _, server := range discoveredServers {
@@ -163,9 +177,6 @@ func (m *Crawler) DiscoverServers(workers int) error {
 	}
 	perr := wp.Wait()
 	metrics.ServersIndexable.Add(float64(len(validServers)))
-	toRemove := utils.RemoveFromSlice(servers, validServers)
-	log.Printf("removing %d invalid/offline/blocked servers", len(toRemove))
-	m.data.RemoveServers(toRemove)
 
 	return perr
 }
@@ -178,7 +189,6 @@ func (m *Crawler) discoverServer(name string) (valid bool, err error) {
 
 	if !m.robots.Allowed(name, RobotsTxtPublicRooms) {
 		log.Println(name, "server is not eligible: robots.txt")
-		m.block.Add(name)
 		return false, nil
 	}
 
@@ -195,7 +205,6 @@ func (m *Crawler) discoverServer(name string) (valid bool, err error) {
 	err = m.validateDiscoveredServer(name)
 	if err != nil {
 		log.Println(name, "server is not eligible:", err)
-		m.block.Add(name)
 		return false, nil
 	}
 
@@ -209,10 +218,14 @@ func (m *Crawler) AddServers(names []string, workers int) {
 	discoveredServers := m.validateServers(names, workers)
 	validServers := []string{}
 	for _, server := range discoveredServers {
-		name := server
+		srvName := server
 		wp.Do(func() error {
-			existingURL, _ := m.data.GetServer(name) //nolint:errcheck
+			existingURL, _ := m.data.GetServer(srvName) //nolint:errcheck
 			if existingURL != "" {
+				return nil
+			}
+			name, ok := m.validateServer(srvName)
+			if !ok {
 				return nil
 			}
 
@@ -225,32 +238,29 @@ func (m *Crawler) AddServers(names []string, workers int) {
 	}
 
 	wp.Wait() //nolint:errcheck
-	toRemove := utils.RemoveFromSlice(names, validServers)
-	m.data.RemoveServers(toRemove)
 }
 
 // AddServer by name, intended for HTTP API
 // returns http status code to send to the reporter
 func (m *Crawler) AddServer(name string) int {
-	name = m.fed.QueryServerName(name)
-	if name == "" {
-		return http.StatusUnprocessableEntity
-	}
-
 	existingURL, _ := m.data.GetServer(name) //nolint:errcheck
 	if existingURL != "" {
 		return http.StatusAlreadyReported
 	}
 
-	valid, err := m.discoverServer(name)
-	if !valid {
-		m.data.RemoveServer(name) //nolint:errcheck
+	name, ok := m.validateServer(name)
+	if !ok {
+		return http.StatusUnprocessableEntity
 	}
 
+	valid, err := m.discoverServer(name)
 	if err != nil {
 		log.Println(name, "cannot add server", err)
-		return http.StatusInternalServerError
 	}
+	if !valid {
+		return http.StatusUnprocessableEntity
+	}
+
 	return http.StatusCreated
 }
 
