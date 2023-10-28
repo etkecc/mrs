@@ -5,6 +5,7 @@ go 1.21
 require (
 	github.com/benjaminestes/robots/v2 v2.0.5
 	github.com/blevesearch/bleve/v2 v2.3.10
+	github.com/fsnotify/fsnotify v1.6.0
 	github.com/h2non/bimg v1.1.10-0.20230922201823-0fdc5cc0e1b8
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/labstack/echo/v4 v4.11.2
@@ -16,6 +17,7 @@ require (
 	github.com/raja/argon2pw v1.0.1
 	github.com/theovassiliou/base64url v0.0.0-20211006203958-1e011490eaaf
 	github.com/xxjwxc/gowp v0.0.0-20230612082025-23a9b62c1da6
+	gitlab.com/etke.cc/go/fswatcher v1.0.0
 	gitlab.com/etke.cc/go/msc1929 v0.0.0-20231021182755-a89d9cb113c2
 	go.etcd.io/bbolt v1.3.8
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d

@@ -153,6 +153,9 @@ github.com/blevesearch/zapx/v15
 # github.com/cespare/xxhash/v2 v2.2.0
 ## explicit; go 1.11
 github.com/cespare/xxhash/v2
+# github.com/fsnotify/fsnotify v1.6.0
+## explicit; go 1.16
+github.com/fsnotify/fsnotify
 # github.com/golang-jwt/jwt v3.2.2+incompatible
 ## explicit
 github.com/golang-jwt/jwt
@@ -289,6 +292,9 @@ github.com/yuin/goldmark/renderer
 github.com/yuin/goldmark/renderer/html
 github.com/yuin/goldmark/text
 github.com/yuin/goldmark/util
+# gitlab.com/etke.cc/go/fswatcher v1.0.0
+## explicit; go 1.20
+gitlab.com/etke.cc/go/fswatcher
 # gitlab.com/etke.cc/go/msc1929 v0.0.0-20231021182755-a89d9cb113c2
 ## explicit; go 1.18
 gitlab.com/etke.cc/go/msc1929

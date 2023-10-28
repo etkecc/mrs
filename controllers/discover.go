@@ -15,7 +15,7 @@ func addServer(dataSvc dataService) echo.HandlerFunc {
 	}
 }
 
-func addServers(dataSvc dataService, workers int) echo.HandlerFunc {
+func addServers(dataSvc dataService, cfg configService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		defer c.Request().Body.Close()
 		jsonb, err := io.ReadAll(c.Request().Body)
@@ -28,7 +28,7 @@ func addServers(dataSvc dataService, workers int) echo.HandlerFunc {
 			return err
 		}
 
-		go dataSvc.AddServers(servers, workers)
+		go dataSvc.AddServers(servers, cfg.Get().Workers.Discovery)
 		return c.NoContent(http.StatusAccepted)
 	}
 }

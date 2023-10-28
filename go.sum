@@ -78,6 +78,8 @@ github.com/erikstmartin/go-testdb v0.0.0-20160219214506-8d10e4a1bae5/go.mod h1:a
 github.com/fortytw2/leaktest v1.3.0/go.mod h1:jDsjWgpAGjm2CA7WthBh/CdZYEPF31XHquHwclZch5g=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/fsnotify/fsnotify v1.4.9/go.mod h1:znqG4EE+3YCdAaPaxE2ZRY/06pZUdp0tY4IgpuI1SZQ=
+github.com/fsnotify/fsnotify v1.6.0 h1:n+5WquG0fcWoWp6xPWfHdbskMCQaFnG6PfBrh1Ky4HY=
+github.com/fsnotify/fsnotify v1.6.0/go.mod h1:sl3t1tCWJFWoRz9R8WJCbQihKKwmorjAbSClcnxKAGw=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/go-kit/kit v0.8.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2as=
 github.com/go-logfmt/logfmt v0.3.0/go.mod h1:Qt1PoO58o5twSAckw1HlFXLmHsOX5/0LbT9GBnD5lWE=
@@ -304,6 +306,8 @@ github.com/xxjwxc/public v0.0.0-20231023133117-987ece4caaa5 h1:gKokoZiRuA6rXgZfu
 github.com/xxjwxc/public v0.0.0-20231023133117-987ece4caaa5/go.mod h1:NBxSAIKj1WEvwHWtYlfx3gIReJuM729vH1bIC1y1ubU=
 github.com/yuin/goldmark v1.5.6 h1:COmQAWTCcGetChm3Ig7G/t8AFAN00t+o8Mt4cf7JpwA=
 github.com/yuin/goldmark v1.5.6/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
+gitlab.com/etke.cc/go/fswatcher v1.0.0 h1:uyiVn+1NVCjOLZrXSZouIDBDZBMwVipS4oYuvAFpPzo=
+gitlab.com/etke.cc/go/fswatcher v1.0.0/go.mod h1:MqTOxyhXfvaVZQUL9/Ksbl2ow1PTBVu3eqIldvMq0RE=
 gitlab.com/etke.cc/go/msc1929 v0.0.0-20231021182755-a89d9cb113c2 h1:Mq1og6qym46fWshMU5VNZNERJKkiw5/gZqy475mQ0rE=
 gitlab.com/etke.cc/go/msc1929 v0.0.0-20231021182755-a89d9cb113c2/go.mod h1:aUvEDisWulhS/u9R7BIiTfooe8gghmEOn8gFu0X6yD4=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
@@ -369,6 +373,7 @@ golang.org/x/sys v0.0.0-20211103235746-7861aae1554b/go.mod h1:oPkhp1MJrh7nUepCBc
 golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+golang.org/x/sys v0.0.0-20220908164124-27713097b956/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.6.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.13.0 h1:Af8nKPmuFypiUBjVoU9V20FiaFXOcuZI21p0ycVYYGE=
 golang.org/x/sys v0.13.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=

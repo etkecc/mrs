@@ -16,12 +16,12 @@ type searchService interface {
 	Search(query, sortBy string, limit, offset int) ([]*model.Entry, int, error)
 }
 
-func search(svc searchService, serverName string, path bool) echo.HandlerFunc {
+func search(svc searchService, cfg configService, path bool) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		defer metrics.SearchQueries.
 			With(prometheus.Labels{
 				"api":    "rest",
-				"server": serverName,
+				"server": cfg.Get().Matrix.ServerName,
 			}).Inc()
 
 		paramfunc := c.QueryParam

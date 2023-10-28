@@ -21,8 +21,7 @@ import (
 const RoomsBatch = 10000
 
 type Crawler struct {
-	servers     []string
-	publicURL   string
+	cfg         ConfigService
 	parsing     bool
 	discovering bool
 	eachrooming bool
@@ -93,15 +92,14 @@ var (
 )
 
 // NewCrawler service
-func NewCrawler(servers []string, publicURL string, fedSvc FederationService, robots RobotsService, block BlocklistService, data DataRepository, detector lingua.LanguageDetector) *Crawler {
+func NewCrawler(cfg ConfigService, fedSvc FederationService, robots RobotsService, block BlocklistService, data DataRepository, detector lingua.LanguageDetector) *Crawler {
 	return &Crawler{
-		publicURL: publicURL,
-		servers:   servers,
-		robots:    robots,
-		block:     block,
-		fed:       fedSvc,
-		data:      data,
-		detector:  detector,
+		cfg:      cfg,
+		robots:   robots,
+		block:    block,
+		fed:      fedSvc,
+		data:     data,
+		detector: detector,
 	}
 }
 
@@ -164,7 +162,7 @@ func (m *Crawler) DiscoverServers(workers int) error {
 	m.discovering = true
 	defer func() { m.discovering = false }()
 
-	servers := utils.MergeSlices(utils.MapKeys(m.data.AllServers()), m.servers)
+	servers := utils.MergeSlices(utils.MapKeys(m.data.AllServers()), m.cfg.Get().Servers)
 	discoveredServers := m.validateServers(servers, workers)
 
 	// remove blocked servers
@@ -441,7 +439,7 @@ func (m *Crawler) getPublicRooms(name string) {
 				continue
 			}
 
-			room.Parse(m.detector, m.publicURL)
+			room.Parse(m.detector, m.cfg.Get().Public.API)
 			m.data.AddRoomBatch(room)
 		}
 		log.Println(name, "added", len(resp.Chunk), "rooms (", added, "of", resp.Total, ") took", time.Since(start))

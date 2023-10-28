@@ -14,11 +14,14 @@ import (
 	"github.com/raja/argon2pw"
 	"golang.org/x/exp/slices"
 
-	"gitlab.com/etke.cc/mrs/api/config"
 	"gitlab.com/etke.cc/mrs/api/model"
 	"gitlab.com/etke.cc/mrs/api/utils"
 	"gitlab.com/etke.cc/mrs/api/version"
 )
+
+type configService interface {
+	Get() *model.Config
+}
 
 type statsService interface {
 	Get() *model.IndexStats
@@ -32,7 +35,7 @@ type cacheService interface {
 // ConfigureRouter configures echo router
 func ConfigureRouter(
 	e *echo.Echo,
-	cfg *config.Config,
+	cfg configService,
 	matrixSvc matrixService,
 	dataSvc dataService,
 	cacheSvc cacheService,
@@ -45,17 +48,17 @@ func ConfigureRouter(
 	configureMatrixEndpoints(e, matrixSvc)
 	rl := middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1))
 
-	e.GET("/metrics", echo.WrapHandler(promhttp.Handler()), auth("metrics", &cfg.Auth.Metrics))
+	e.GET("/metrics", echo.WrapHandler(promhttp.Handler()), auth("metrics", &cfg.Get().Auth.Metrics))
 	e.GET("/stats", stats(statsSvc))
 	e.GET("/avatar/:name/:id", avatar(crawlerSvc), middleware.RateLimiter(middleware.NewRateLimiterMemoryStoreWithConfig(middleware.RateLimiterMemoryStoreConfig{Rate: 30, Burst: 30, ExpiresIn: 5 * time.Minute})), cacheSvc.MiddlewareImmutable())
 
-	e.GET("/search", search(searchSvc, cfg.Matrix.ServerName, false))
-	e.GET("/search/:q", search(searchSvc, cfg.Matrix.ServerName, true))
-	e.GET("/search/:q/:l", search(searchSvc, cfg.Matrix.ServerName, true))
-	e.GET("/search/:q/:l/:o", search(searchSvc, cfg.Matrix.ServerName, true))
-	e.GET("/search/:q/:l/:o/:s", search(searchSvc, cfg.Matrix.ServerName, true))
+	e.GET("/search", search(searchSvc, cfg, false))
+	e.GET("/search/:q", search(searchSvc, cfg, true))
+	e.GET("/search/:q/:l", search(searchSvc, cfg, true))
+	e.GET("/search/:q/:l/:o", search(searchSvc, cfg, true))
+	e.GET("/search/:q/:l/:o/:s", search(searchSvc, cfg, true))
 
-	e.POST("/discover/bulk", addServers(dataSvc, cfg.Workers.Discovery), auth("discovery", &cfg.Auth.Discovery))
+	e.POST("/discover/bulk", addServers(dataSvc, cfg), auth("discovery", &cfg.Get().Auth.Discovery))
 	e.POST("/discover/:name", addServer(dataSvc), discoveryProtection(rl, cfg))
 
 	e.POST("/mod/report/:room_id", report(modSvc), rl) // doesn't use mod group to allow without auth
@@ -66,13 +69,13 @@ func ConfigureRouter(
 	m.GET("/unban/:room_id", unban(modSvc), rl)
 
 	a := e.Group("-")
-	a.Use(auth("admin", &cfg.Auth.Admin))
+	a.Use(auth("admin", &cfg.Get().Auth.Admin))
 	a.GET("/servers", servers(crawlerSvc))
 	a.GET("/status", status(statsSvc))
-	a.POST("/discover", discover(dataSvc, cfg.Workers.Discovery))
-	a.POST("/parse", parse(dataSvc, cfg.Workers.Parsing))
+	a.POST("/discover", discover(dataSvc, cfg))
+	a.POST("/parse", parse(dataSvc, cfg))
 	a.POST("/reindex", reindex(dataSvc))
-	a.POST("/full", full(dataSvc, cfg.Workers.Discovery, cfg.Workers.Parsing))
+	a.POST("/full", full(dataSvc, cfg))
 }
 
 func configureRouter(e *echo.Echo, cacheSvc cacheService) {
@@ -128,7 +131,7 @@ func logBasicAuthLogin(c echo.Context, buf *bytes.Buffer) (int, error) {
 	return buf.WriteRune('-') //nolint:gocritic // interface constraint
 }
 
-func auth(name string, cfg *config.AuthItem) echo.MiddlewareFunc {
+func auth(name string, cfg *model.ConfigAuthItem) echo.MiddlewareFunc {
 	return middleware.BasicAuthWithConfig(middleware.BasicAuthConfig{
 		Skipper: func(c echo.Context) bool { // hash auth
 			v := c.Get("authorized")
@@ -156,8 +159,8 @@ func auth(name string, cfg *config.AuthItem) echo.MiddlewareFunc {
 }
 
 // discoveryProtection rate limits anonymous requests, but allows authorized with basic auth requests
-func discoveryProtection(rl echo.MiddlewareFunc, cfg *config.Config) echo.MiddlewareFunc {
-	auth := auth("discovery", &cfg.Auth.Discovery)
+func discoveryProtection(rl echo.MiddlewareFunc, cfg configService) echo.MiddlewareFunc {
+	auth := auth("discovery", &cfg.Get().Auth.Discovery)
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			if len(c.Request().Header.Get(echo.HeaderAuthorization)) > 0 {
@@ -187,9 +190,9 @@ func hashAuth(c echo.Context, authPassword string) *bool {
 	return &ok
 }
 
-func modGroup(e *echo.Echo, cfg *config.Config) *echo.Group {
+func modGroup(e *echo.Echo, cfg configService) *echo.Group {
 	mod := e.Group("mod")
-	authPassword := cfg.Auth.Moderation.Login + cfg.Auth.Moderation.Password
+	authPassword := cfg.Get().Auth.Moderation.Login + cfg.Get().Auth.Moderation.Password
 	mod.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			ok := hashAuth(c, authPassword)
@@ -204,6 +207,6 @@ func modGroup(e *echo.Echo, cfg *config.Config) *echo.Group {
 			return next(c)
 		}
 	})
-	mod.Use(auth("mod", &cfg.Auth.Moderation))
+	mod.Use(auth("mod", &cfg.Get().Auth.Moderation))
 	return mod
 }

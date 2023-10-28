@@ -5,19 +5,18 @@ import (
 
 	"github.com/blevesearch/bleve/v2"
 	"github.com/blevesearch/bleve/v2/search/query"
+	"golang.org/x/exp/slices"
 
-	"gitlab.com/etke.cc/mrs/api/config"
 	"gitlab.com/etke.cc/mrs/api/model"
 	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
 // Search service
 type Search struct {
-	cfg       *config.Search
-	repo      SearchRepository
-	stats     StatsService
-	block     BlocklistService
-	stopwords map[string]struct{}
+	cfg   ConfigService
+	repo  SearchRepository
+	stats StatsService
+	block BlocklistService
 }
 
 // SearchRepository interface
@@ -38,18 +37,12 @@ var SearchFieldsBoost = map[string]float64{
 }
 
 // NewSearch creates new search service
-func NewSearch(cfg *config.Search, repo SearchRepository, block BlocklistService, stats StatsService, stoplist []string) *Search {
-	stopwords := make(map[string]struct{}, len(stoplist))
-	for _, stopword := range stoplist {
-		stopwords[stopword] = struct{}{}
-	}
-
+func NewSearch(cfg ConfigService, repo SearchRepository, block BlocklistService, stats StatsService) *Search {
 	s := &Search{
-		cfg:       cfg,
-		repo:      repo,
-		stats:     stats,
-		block:     block,
-		stopwords: stopwords,
+		cfg:   cfg,
+		repo:  repo,
+		stats: stats,
+		block: block,
 	}
 
 	return s
@@ -58,8 +51,8 @@ func NewSearch(cfg *config.Search, repo SearchRepository, block BlocklistService
 // getStubs prepares stub rooms from config and templates them with stats
 func (s *Search) getStubs() []*model.Entry {
 	stats := s.stats.Get()
-	stubs := make([]*model.Entry, 0, len(s.cfg.EmptyResults))
-	for _, stub := range s.cfg.EmptyResults {
+	stubs := make([]*model.Entry, 0, len(s.cfg.Get().Search.EmptyResults))
+	for _, stub := range s.cfg.Get().Search.EmptyResults {
 		stubs = append(stubs, &model.Entry{
 			ID:        utils.MayTemplate(stub.ID, stats),
 			Type:      "room",
@@ -89,17 +82,17 @@ func (s *Search) Search(query, sortBy string, limit, offset int) ([]*model.Entry
 		return s.emptyResults()
 	}
 	if limit == 0 {
-		limit = s.cfg.Defaults.Limit
+		limit = s.cfg.Get().Search.Defaults.Limit
 	}
 	if offset == 0 {
-		offset = s.cfg.Defaults.Offset
+		offset = s.cfg.Get().Search.Defaults.Offset
 	}
 
 	builtQuery := s.getSearchQuery(s.matchFields(query))
 	if builtQuery == nil {
 		return []*model.Entry{}, 0, nil
 	}
-	results, total, err := s.repo.Search(builtQuery, limit, offset, utils.StringToSlice(sortBy, s.cfg.Defaults.SortBy))
+	results, total, err := s.repo.Search(builtQuery, limit, offset, utils.StringToSlice(sortBy, s.cfg.Get().Search.Defaults.SortBy))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -170,16 +163,17 @@ func (s *Search) newMatchQuery(match, field string, phrase bool) bleveQuery {
 
 // shouldReject checks if query or fields contain words from the stoplist
 func (s *Search) shouldReject(q string, fields map[string]string) bool {
+	stopwords := s.cfg.Get().Blocklist.Queries
 	for k, v := range fields {
-		if _, ok := s.stopwords[k]; ok {
+		if slices.Contains(stopwords, k) {
 			return true
 		}
-		if _, ok := s.stopwords[v]; ok {
+		if slices.Contains(stopwords, v) {
 			return true
 		}
 	}
 	for _, k := range strings.Split(q, " ") {
-		if _, ok := s.stopwords[k]; ok {
+		if slices.Contains(stopwords, k) {
 			return true
 		}
 	}

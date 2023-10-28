@@ -19,7 +19,6 @@ import (
 	"github.com/matrix-org/gomatrixserverlib"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"gitlab.com/etke.cc/mrs/api/config"
 	"gitlab.com/etke.cc/mrs/api/metrics"
 	"gitlab.com/etke.cc/mrs/api/model"
 	"gitlab.com/etke.cc/mrs/api/utils"
@@ -58,7 +57,7 @@ type matrixSearchService interface {
 
 // Matrix server
 type Matrix struct {
-	name         string
+	cfg          ConfigService
 	keys         []*model.Key
 	search       matrixSearchService
 	wellknown    []byte        // /.well-known/matrix/server contents
@@ -71,7 +70,7 @@ type Matrix struct {
 }
 
 // NewMatrix creates new matrix server
-func NewMatrix(cfg *config.Config, search matrixSearchService) (*Matrix, error) {
+func NewMatrix(cfg ConfigService, search matrixSearchService) (*Matrix, error) {
 	keysCache, err := lru.New[string, map[string]ed25519.PublicKey](100000)
 	if err != nil {
 		return nil, err
@@ -86,16 +85,16 @@ func NewMatrix(cfg *config.Config, search matrixSearchService) (*Matrix, error) 
 	}
 
 	m := &Matrix{
-		name:       cfg.Matrix.ServerName,
+		cfg:        cfg,
 		search:     search,
 		urlsCache:  urlsCache,
 		keysCache:  keysCache,
 		namesCache: namesCache,
 	}
-	if err := m.initWellKnown(cfg.Public.API); err != nil {
+	if err := m.initWellKnown(cfg.Get().Public.API); err != nil {
 		return nil, err
 	}
-	if err := m.initKeys(cfg.Matrix.Keys); err != nil {
+	if err := m.initKeys(cfg.Get().Matrix.Keys); err != nil {
 		return nil, err
 	}
 	if err := m.initVersion(); err != nil {
@@ -177,7 +176,7 @@ func (m *Matrix) PublicRooms(req *http.Request, rdReq *model.RoomDirectoryReques
 // ValidateAuth validates matrix auth
 func (m *Matrix) ValidateAuth(r *http.Request) (serverName string, err error) {
 	defer r.Body.Close()
-	if m.name == devhost {
+	if m.cfg.Get().Matrix.ServerName == devhost {
 		log.Println("ignoring auth validation on dev host")
 		return "ignored", nil
 	}
@@ -315,7 +314,7 @@ func (m *Matrix) Authorize(serverName, method, uri string, body any) ([]string, 
 	obj := map[string]any{
 		"method":      method,
 		"uri":         uri,
-		"origin":      m.name,
+		"origin":      m.cfg.Get().Matrix.ServerName,
 		"destination": serverName,
 	}
 	if body != nil {
@@ -337,15 +336,15 @@ func (m *Matrix) Authorize(serverName, method, uri string, body any) ([]string, 
 		return nil, fmt.Errorf("cannot parse signatures: %v", objSigned["signatures"])
 	}
 
-	signatures, ok := allSignatures[m.name].(map[string]any)
+	signatures, ok := allSignatures[m.cfg.Get().Matrix.ServerName].(map[string]any)
 	if !ok {
-		return nil, fmt.Errorf("cannot parse own signatures: %v", allSignatures[m.name])
+		return nil, fmt.Errorf("cannot parse own signatures: %v", allSignatures[m.cfg.Get().Matrix.ServerName])
 	}
 	headers := make([]string, 0, len(signatures))
 	for keyID, sig := range signatures {
 		headers = append(headers, fmt.Sprintf(
 			`X-Matrix origin="%s",destination="%s",key="%s",sig="%s"`,
-			m.name, serverName, keyID, sig,
+			m.cfg.Get().Matrix.ServerName, serverName, keyID, sig,
 		))
 	}
 	return headers, nil
@@ -433,7 +432,7 @@ func (m *Matrix) initVersion() error {
 
 func (m *Matrix) initKeyServer() {
 	resp := matrixKeyResp{
-		ServerName:    m.name,
+		ServerName:    m.cfg.Get().Matrix.ServerName,
 		ValidUntilTS:  time.Now().UTC().Add(24 * time.Hour).UnixMilli(),
 		VerifyKeys:    map[string]map[string]string{},
 		OldVerifyKeys: map[string]map[string]any{},
@@ -451,7 +450,7 @@ func (m *Matrix) signJSON(input any) ([]byte, error) {
 		return nil, err
 	}
 	for _, key := range m.keys {
-		payload, err = gomatrixserverlib.SignJSON(m.name, gomatrixserverlib.KeyID(key.ID), key.Private, payload)
+		payload, err = gomatrixserverlib.SignJSON(m.cfg.Get().Matrix.ServerName, gomatrixserverlib.KeyID(key.ID), key.Private, payload)
 		if err != nil {
 			return nil, err
 		}
@@ -498,7 +497,7 @@ func (m *Matrix) validateAuth(obj map[string]any, canonical []byte, auth *matrix
 	if auth.Destination != obj["destination"] {
 		return fmt.Errorf("auth is for multiple servers")
 	}
-	if auth.Destination != "" && auth.Destination != m.name {
+	if auth.Destination != "" && auth.Destination != m.cfg.Get().Matrix.ServerName {
 		return fmt.Errorf("unknown destination")
 	}
 

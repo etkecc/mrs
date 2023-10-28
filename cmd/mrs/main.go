@@ -18,7 +18,6 @@ import (
 	"github.com/mileusna/crontab"
 	"github.com/pemistahl/lingua-go"
 
-	"gitlab.com/etke.cc/mrs/api/config"
 	"gitlab.com/etke.cc/mrs/api/controllers"
 	"gitlab.com/etke.cc/mrs/api/repository/data"
 	"gitlab.com/etke.cc/mrs/api/repository/search"
@@ -34,7 +33,6 @@ var (
 	dataRepo   *data.Data
 	index      *search.Index
 	cron       *crontab.Crontab
-	cfg        *config.Config
 	e          *echo.Echo
 )
 
@@ -50,39 +48,35 @@ func main() {
 		return
 	}
 
-	err := loadConfig()
+	cfg, err := services.NewConfig(configPath)
 	if err != nil {
 		log.Panic(err)
 	}
-	dataRepo, err = data.New(cfg.Path.Data)
+	dataRepo, err = data.New(cfg.Get().Path.Data)
 	if err != nil {
 		log.Panic(err)
 	}
 
-	detector := getLanguageDetector(cfg.Languages)
-	index, err = search.NewIndex(cfg.Path.Index, detector, "en")
+	detector := getLanguageDetector(cfg.Get().Languages)
+	index, err = search.NewIndex(cfg.Get().Path.Index, detector, "en")
 	if err != nil {
 		log.Panic(err)
 	}
 	robotsSvc := services.NewRobots()
-	blockSvc := services.NewBlocklist(cfg.Blocklist.Servers)
-	statsSvc := services.NewStats(dataRepo, index, blockSvc, cfg.Public.UI, cfg.Webhooks.Stats)
-	indexSvc := services.NewIndex(index, dataRepo, cfg.Batch.Rooms)
-	searchSvc := services.NewSearch(&cfg.Search, index, blockSvc, statsSvc, cfg.Blocklist.Queries)
+	blockSvc := services.NewBlocklist(cfg)
+	statsSvc := services.NewStats(cfg, dataRepo, index, blockSvc)
+	indexSvc := services.NewIndex(cfg, index, dataRepo)
+	searchSvc := services.NewSearch(cfg, index, blockSvc, statsSvc)
 	matrixSvc, err := services.NewMatrix(cfg, searchSvc)
 	if err != nil {
 		log.Panic(err)
 	}
-	crawlerSvc := services.NewCrawler(cfg.Servers, cfg.Public.API, matrixSvc, robotsSvc, blockSvc, dataRepo, detector)
+	crawlerSvc := services.NewCrawler(cfg, matrixSvc, robotsSvc, blockSvc, dataRepo, detector)
 	matrixSvc.SetDiscover(crawlerSvc.AddServer)
-	cacheSvc := services.NewCache(cfg.Cache.MaxAge, cfg.Cache.Bunny.URL, cfg.Cache.Bunny.Key, statsSvc)
+	cacheSvc := services.NewCache(cfg, statsSvc)
 	dataSvc := services.NewDataFacade(crawlerSvc, indexSvc, statsSvc, cacheSvc)
-	mailSvc := services.NewEmail(&cfg.Public, &cfg.Email)
-	modwh := cfg.Moderation.Webhook
-	if cfg.Webhooks.Moderation != "" {
-		modwh = cfg.Webhooks.Moderation
-	}
-	modSvc, merr := services.NewModeration(dataRepo, index, mailSvc, cfg.Auth.Moderation, cfg.Public, modwh)
+	mailSvc := services.NewEmail(cfg)
+	modSvc, merr := services.NewModeration(cfg, dataRepo, index, mailSvc)
 	if merr != nil {
 		log.Fatal("cannot start moderation service", err)
 	}
@@ -90,32 +84,14 @@ func main() {
 	e = echo.New()
 	controllers.ConfigureRouter(e, cfg, matrixSvc, dataSvc, cacheSvc, searchSvc, crawlerSvc, statsSvc, modSvc)
 
-	initCron(dataSvc)
+	initCron(cfg, dataSvc)
 	initShutdown(quit)
 
-	if err := e.Start(":" + cfg.Port); err != nil && err != http.ErrServerClosed {
+	if err := e.Start(":" + cfg.Get().Port); err != nil && err != http.ErrServerClosed {
 		log.Fatal("shutting down the server", err)
 	}
 
 	<-quit
-}
-
-func loadConfig() error {
-	newcfg, err := config.Read(configPath)
-	if err != nil {
-		return err
-	}
-
-	cfg = newcfg
-	if len(cfg.Matrix.Keys) != 0 {
-		return nil
-	}
-	key, err := generateKey()
-	if err != nil {
-		return err
-	}
-	cfg.Matrix.Keys = []string{key}
-	return config.Write(cfg, configPath)
 }
 
 func generateKey() (string, error) {
@@ -124,7 +100,7 @@ func generateKey() (string, error) {
 		return "", err
 	}
 	key := fmt.Sprintf("ed25519 %s %s", base64.RawURLEncoding.EncodeToString(pub[:4]), base64.RawStdEncoding.EncodeToString(priv.Seed()))
-	log.Println("WARNING", "AHTUNG", "ATTENTION!", "new key has been generated and written into the config file")
+	log.Println("WARNING", "AHTUNG", "ATTENTION!", "new key has been generated")
 	log.Println(key)
 
 	return key, nil
@@ -167,23 +143,23 @@ func initShutdown(quit chan struct{}) {
 	}()
 }
 
-func initCron(dataSvc *services.DataFacade) {
+func initCron(cfg *services.Config, dataSvc *services.DataFacade) {
 	cron = crontab.New()
-	if schedule := cfg.Cron.Discovery; schedule != "" {
+	if schedule := cfg.Get().Cron.Discovery; schedule != "" {
 		log.Println("cron", "discovery job enabled")
-		cron.MustAddJob(schedule, dataSvc.DiscoverServers, cfg.Workers.Discovery)
+		cron.MustAddJob(schedule, dataSvc.DiscoverServers, cfg.Get().Workers.Discovery)
 	}
-	if schedule := cfg.Cron.Parsing; schedule != "" {
+	if schedule := cfg.Get().Cron.Parsing; schedule != "" {
 		log.Println("cron", "parsing job enabled")
-		cron.MustAddJob(schedule, dataSvc.ParseRooms, cfg.Workers.Parsing)
+		cron.MustAddJob(schedule, dataSvc.ParseRooms, cfg.Get().Workers.Parsing)
 	}
-	if schedule := cfg.Cron.Indexing; schedule != "" {
+	if schedule := cfg.Get().Cron.Indexing; schedule != "" {
 		log.Println("cron", "indexing job enabled")
 		cron.MustAddJob(schedule, dataSvc.Ingest)
 	}
-	if schedule := cfg.Cron.Full; schedule != "" {
+	if schedule := cfg.Get().Cron.Full; schedule != "" {
 		log.Println("cron", "full job enabled")
-		cron.MustAddJob(schedule, dataSvc.Full, cfg.Workers.Discovery, cfg.Workers.Parsing)
+		cron.MustAddJob(schedule, dataSvc.Full, cfg.Get().Workers.Discovery, cfg.Get().Workers.Parsing)
 	}
 }
 

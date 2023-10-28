@@ -5,37 +5,33 @@ import (
 	"sync"
 
 	"gitlab.com/etke.cc/mrs/api/utils"
+	"golang.org/x/exp/slices"
 )
 
 // Blocklist service
 type Blocklist struct {
 	mu      *sync.Mutex
-	static  map[string]struct{}
+	cfg     ConfigService
 	dynamic map[string]struct{}
 }
 
 // NewBlocklist creates new blocklist service
-func NewBlocklist(static []string) *Blocklist {
-	static = utils.Uniq(static)
-	servers := make(map[string]struct{}, len(static))
-	for _, server := range static {
-		servers[server] = struct{}{}
-	}
+func NewBlocklist(cfg ConfigService) *Blocklist {
 	return &Blocklist{
 		mu:      &sync.Mutex{},
-		static:  servers,
+		cfg:     cfg,
 		dynamic: map[string]struct{}{},
 	}
 }
 
 // Len of the blocklist
 func (b *Blocklist) Len() int {
-	return len(b.static) + len(b.dynamic)
+	return len(b.cfg.Get().Blocklist.Servers) + len(b.dynamic)
 }
 
 // Slice returns slice of the static+dynamic blocklist
 func (b *Blocklist) Slice() []string {
-	return utils.Uniq(append(utils.MapKeys(b.dynamic), utils.MapKeys(b.static)...))
+	return utils.Uniq(append(utils.MapKeys(b.dynamic), b.cfg.Get().Blocklist.Servers...))
 }
 
 // Reset dynamic part of the blocklist
@@ -69,7 +65,7 @@ func (b *Blocklist) ByID(matrixID string) bool {
 
 // ByServer checks if server is present in the blocklist
 func (b *Blocklist) ByServer(server string) bool {
-	if _, ok := b.static[server]; ok {
+	if slices.Contains(b.cfg.Get().Blocklist.Servers, server) {
 		return true
 	}
 	if _, ok := b.dynamic[server]; ok {

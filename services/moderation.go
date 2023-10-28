@@ -12,7 +12,6 @@ import (
 
 	"github.com/raja/argon2pw"
 
-	"gitlab.com/etke.cc/mrs/api/config"
 	"gitlab.com/etke.cc/mrs/api/model"
 	"gitlab.com/etke.cc/mrs/api/utils"
 )
@@ -23,13 +22,10 @@ type EmailService interface {
 
 // Moderation service
 type Moderation struct {
-	apiURL  *url.URL
-	uiURL   *url.URL
-	auth    config.AuthItem
-	data    DataRepository
-	mail    EmailService
-	index   IndexRepository
-	webhook string
+	cfg   ConfigService
+	data  DataRepository
+	mail  EmailService
+	index IndexRepository
 }
 
 // webhookPayload for hookshot
@@ -40,24 +36,12 @@ type webhookPayload struct {
 }
 
 // NewModeration service
-func NewModeration(data DataRepository, index IndexRepository, mail EmailService, auth config.AuthItem, public config.Public, webhook string) (*Moderation, error) {
-	parsedAPIURL, err := url.Parse(public.API)
-	if err != nil {
-		return nil, err
-	}
-	parsedUIURL, err := url.Parse(public.UI)
-	if err != nil {
-		return nil, err
-	}
-
+func NewModeration(cfg ConfigService, data DataRepository, index IndexRepository, mail EmailService) (*Moderation, error) {
 	return &Moderation{
-		data:    data,
-		auth:    auth,
-		mail:    mail,
-		index:   index,
-		webhook: webhook,
-		apiURL:  parsedAPIURL,
-		uiURL:   parsedUIURL,
+		cfg:   cfg,
+		data:  data,
+		mail:  mail,
+		index: index,
 	}, nil
 }
 
@@ -93,21 +77,23 @@ func (m *Moderation) getReportText(roomID, reason string, room *model.MatrixRoom
 	text.WriteString(m.getServerContactsText(server.Contacts))
 
 	var queryParams string
-	hash, err := argon2pw.GenerateSaltedHash(m.auth.Login + m.auth.Password)
+	hash, err := argon2pw.GenerateSaltedHash(m.cfg.Get().Auth.Moderation.Login + m.cfg.Get().Auth.Moderation.Password)
 	if err != nil {
 		log.Println("cannot generate auth hash:", err)
 	} else {
 		queryParams = "?auth=" + utils.URLSafeEncode(hash)
 	}
 
+	apiURL, _ := url.Parse(m.cfg.Get().Public.API)
+
 	text.WriteString("[ban and erase](")
-	text.WriteString(m.apiURL.JoinPath("/mod/ban", roomID).String() + queryParams)
+	text.WriteString(apiURL.JoinPath("/mod/ban", roomID).String() + queryParams)
 	text.WriteString(") || [unban](")
-	text.WriteString(m.apiURL.JoinPath("/mod/unban", roomID).String() + queryParams)
+	text.WriteString(apiURL.JoinPath("/mod/unban", roomID).String() + queryParams)
 	text.WriteString(") || [list banned (all)](")
-	text.WriteString(m.apiURL.JoinPath("/mod/list").String() + queryParams)
+	text.WriteString(apiURL.JoinPath("/mod/list").String() + queryParams)
 	text.WriteString(") || [list banned (" + room.Server + ")](")
-	text.WriteString(m.apiURL.JoinPath("/mod/list/"+room.Server).String() + queryParams)
+	text.WriteString(apiURL.JoinPath("/mod/list/"+room.Server).String() + queryParams)
 	text.WriteString(")")
 
 	return text.String()
@@ -160,7 +146,7 @@ func (m *Moderation) Report(roomID, reason string) error {
 	}
 
 	payload, err := json.Marshal(webhookPayload{
-		Username: m.uiURL.Host,
+		Username: m.cfg.Get().Matrix.ServerName,
 		Markdown: m.getReportText(roomID, reason, room, server),
 	})
 	if err != nil {
@@ -171,7 +157,7 @@ func (m *Moderation) Report(roomID, reason string) error {
 		log.Printf("email sending failed: %+v", merr)
 	}
 
-	req, err := http.NewRequest("POST", m.webhook, bytes.NewReader(payload))
+	req, err := http.NewRequest("POST", m.cfg.Get().Webhooks.Moderation, bytes.NewReader(payload))
 	if err != nil {
 		return err
 	}

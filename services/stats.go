@@ -37,25 +37,18 @@ type Lenable interface {
 
 // Stats service
 type Stats struct {
-	data        StatsRepository
-	block       Lenable
-	index       Lenable
-	stats       *model.IndexStats
-	prev        *model.IndexStats
-	webhookUser string
-	webhook     string
-	collecting  bool
+	cfg        ConfigService
+	data       StatsRepository
+	block      Lenable
+	index      Lenable
+	stats      *model.IndexStats
+	prev       *model.IndexStats
+	collecting bool
 }
 
 // NewStats service
-func NewStats(data StatsRepository, index, blocklist Lenable, uiurl, webhook string) *Stats {
-	if uiurl != "" {
-		parsedUIURL, err := url.Parse(uiurl)
-		if err == nil {
-			uiurl = parsedUIURL.Hostname()
-		}
-	}
-	stats := &Stats{data: data, index: index, block: blocklist, webhook: webhook, webhookUser: uiurl}
+func NewStats(cfg ConfigService, data StatsRepository, index, blocklist Lenable) *Stats {
+	stats := &Stats{cfg: cfg, data: data, index: index, block: blocklist}
 	stats.reload()
 
 	return stats
@@ -168,12 +161,17 @@ func (s *Stats) Collect() {
 
 // sendWebhook send request to webhook if provided
 func (s *Stats) sendWebhook() {
-	if s.webhook == "" {
+	if s.cfg.Get().Webhooks.Stats == "" {
 		return
+	}
+	var user string
+	parsedUIURL, err := url.Parse(s.cfg.Get().Public.UI)
+	if err == nil {
+		user = parsedUIURL.Hostname()
 	}
 
 	payload, err := json.Marshal(webhookPayload{
-		Username: s.webhookUser,
+		Username: user,
 		Markdown: s.getWebhookText(),
 	})
 	if err != nil {
@@ -181,7 +179,7 @@ func (s *Stats) sendWebhook() {
 		return
 	}
 
-	req, err := http.NewRequest("POST", s.webhook, bytes.NewReader(payload))
+	req, err := http.NewRequest("POST", s.cfg.Get().Webhooks.Stats, bytes.NewReader(payload))
 	if err != nil {
 		log.Printf("webhook request marshaling failed: %v", err)
 		return
@@ -203,33 +201,19 @@ func (s *Stats) getWebhookText() string {
 	var text strings.Builder
 	text.WriteString("**stats have been collected**\n\n")
 
-	serversDiff := s.stats.Servers.Online - s.prev.Servers.Online
-	roomsDiff := s.stats.Rooms.Indexed - s.prev.Rooms.Indexed
-
-	text.WriteString(fmt.Sprintf("* `%d` `%s%d` servers online (`%d` blocked)\n", s.stats.Servers.Online, getSymbol(serversDiff), abs(serversDiff), s.stats.Servers.Blocked))
-	text.WriteString(fmt.Sprintf("* `%d` `%s%d` rooms (`%d` blocked, `%d` reported)\n", s.stats.Rooms.Indexed, getSymbol(roomsDiff), abs(roomsDiff), s.stats.Rooms.Banned, s.stats.Rooms.Reported))
+	text.WriteString(fmt.Sprintf("* `%d` servers online (`%d` blocked)\n", s.stats.Servers.Online, s.stats.Servers.Blocked))
+	text.WriteString(fmt.Sprintf("* `%d` rooms (`%d` blocked, `%d` reported)\n", s.stats.Rooms.Indexed, s.stats.Rooms.Banned, s.stats.Rooms.Reported))
 	text.WriteString("\n---\n\n")
 
 	discovery := s.stats.Discovery.FinishedAt.Sub(s.stats.Discovery.StartedAt)
-	discoveryPrev := s.prev.Discovery.FinishedAt.Sub(s.prev.Discovery.StartedAt)
-	discoveryDiff := discovery - discoveryPrev
-
 	parsing := s.stats.Parsing.FinishedAt.Sub(s.stats.Parsing.StartedAt)
-	parsingPrev := s.prev.Parsing.FinishedAt.Sub(s.prev.Parsing.FinishedAt)
-	parsingDiff := parsing - parsingPrev
-
 	indexing := s.stats.Indexing.FinishedAt.Sub(s.stats.Indexing.StartedAt)
-	indexingPrev := s.prev.Indexing.FinishedAt.Sub(s.prev.Indexing.StartedAt)
-	indexingDiff := indexing - indexingPrev
-
 	total := discovery + parsing + indexing
-	totalPrev := discoveryPrev + parsingPrev + indexingPrev
-	totalDiff := total - totalPrev
 
-	text.WriteString(fmt.Sprintf("* `%s` `%s%s` took discovery process\n", discovery.String(), getSymbol(discoveryDiff), discoveryDiff.String()))
-	text.WriteString(fmt.Sprintf("* `%s` `%s%s` took parsing process\n", parsing.String(), getSymbol(parsingDiff), parsingDiff.String()))
-	text.WriteString(fmt.Sprintf("* `%s` `%s%s` took indexing process\n", indexing.String(), getSymbol(indexingDiff), indexingDiff.String()))
-	text.WriteString(fmt.Sprintf("* `%s` `%s%s` total\n", total.String(), getSymbol(totalDiff), totalDiff.String()))
+	text.WriteString(fmt.Sprintf("* `%s` took discovery process\n", discovery.String()))
+	text.WriteString(fmt.Sprintf("* `%s` took parsing process\n", parsing.String()))
+	text.WriteString(fmt.Sprintf("* `%s` took indexing process\n", indexing.String()))
+	text.WriteString(fmt.Sprintf("* `%s` total\n", total.String()))
 
 	return text.String()
 }

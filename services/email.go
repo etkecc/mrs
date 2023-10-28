@@ -5,20 +5,17 @@ import (
 
 	"github.com/mattevans/postmark-go"
 
-	"gitlab.com/etke.cc/mrs/api/config"
 	"gitlab.com/etke.cc/mrs/api/model"
 	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
 // Email service
 type Email struct {
-	pm     *postmark.EmailService
-	cfg    *config.Email
-	public *config.Public
+	cfg ConfigService
 }
 
 type emailVars struct {
-	Public        *config.Public
+	Public        *model.ConfigPublic
 	Room          *model.MatrixRoom
 	Server        *model.MatrixServer
 	RoomAliasOrID string
@@ -26,17 +23,19 @@ type emailVars struct {
 }
 
 // NewEmail creates new email service
-func NewEmail(public *config.Public, email *config.Email) *Email {
-	e := &Email{cfg: email, public: public}
-	if e.validateConfig() {
-		e.pm = postmark.NewClient(&http.Client{
-			Transport: &postmark.AuthTransport{
-				Token: e.cfg.Postmark.Token,
-			},
-		}).Email
-	}
+func NewEmail(cfg ConfigService) *Email {
+	return &Email{cfg: cfg}
+}
 
-	return e
+func (e *Email) getClient() *postmark.EmailService {
+	if !e.validateConfig() {
+		return nil
+	}
+	return postmark.NewClient(&http.Client{
+		Transport: &postmark.AuthTransport{
+			Token: e.cfg.Get().Email.Postmark.Token,
+		},
+	}).Email
 }
 
 // SendReport sends report email
@@ -44,7 +43,8 @@ func (e *Email) SendReport(room *model.MatrixRoom, server *model.MatrixServer, r
 	if len(emails) == 0 {
 		return nil
 	}
-	if e.pm == nil {
+	client := e.getClient()
+	if client == nil {
 		return nil
 	}
 
@@ -55,33 +55,34 @@ func (e *Email) SendReport(room *model.MatrixRoom, server *model.MatrixServer, r
 		aliasOrID = room.ID
 	}
 
-	vars := emailVars{Public: e.public, Room: room, Server: server, Reason: reason, RoomAliasOrID: aliasOrID}
-	subject, err := utils.Template(e.cfg.Templates.Report.Subject, vars)
+	vars := emailVars{Public: e.cfg.Get().Public, Room: room, Server: server, Reason: reason, RoomAliasOrID: aliasOrID}
+	subject, err := utils.Template(e.cfg.Get().Email.Templates.Report.Subject, vars)
 	if err != nil {
 		return err
 	}
-	body, err := utils.Template(e.cfg.Templates.Report.Body, vars)
+	body, err := utils.Template(e.cfg.Get().Email.Templates.Report.Body, vars)
 	if err != nil {
 		return err
 	}
 	text, html := utils.MarkdownRender(body)
-	reqs := e.buildPMReqs(subject, text, html, emails, &e.cfg.Postmark.Report)
-	_, _, err = e.pm.SendBatch(reqs)
+	reqs := e.buildPMReqs(subject, text, html, emails, &e.cfg.Get().Email.Postmark.Report)
+	_, _, err = client.SendBatch(reqs)
 
 	return err
 }
 
 // validateConfig checks if all config vars are set
 func (e *Email) validateConfig() bool {
-	return !(e.cfg.Postmark.Token == "" ||
-		e.cfg.Postmark.Report.From == "" ||
-		e.cfg.Postmark.Report.Stream == "" ||
-		e.cfg.Templates.Report.Body == "" ||
-		e.cfg.Templates.Report.Subject == "")
+	cfg := e.cfg.Get().Email
+	return !(cfg.Postmark.Token == "" ||
+		cfg.Postmark.Report.From == "" ||
+		cfg.Postmark.Report.Stream == "" ||
+		cfg.Templates.Report.Body == "" ||
+		cfg.Templates.Report.Subject == "")
 }
 
 // buildPMReqs builds postmark email for each email
-func (e *Email) buildPMReqs(subject, text, html string, emails []string, cfg *config.EmailPostmarkType) []*postmark.Email {
+func (e *Email) buildPMReqs(subject, text, html string, emails []string, cfg *model.ConfigEmailPostmarkType) []*postmark.Email {
 	reqs := make([]*postmark.Email, 0, len(emails))
 	for _, to := range emails {
 		reqs = append(reqs, &postmark.Email{

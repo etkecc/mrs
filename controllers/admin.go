@@ -43,16 +43,16 @@ func status(stats statsService) echo.HandlerFunc {
 	}
 }
 
-func discover(data dataService, workers int) echo.HandlerFunc {
+func discover(data dataService, cfg configService) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		go data.DiscoverServers(workers)
+		go data.DiscoverServers(cfg.Get().Workers.Discovery)
 		return c.NoContent(http.StatusCreated)
 	}
 }
 
-func parse(data dataService, workers int) echo.HandlerFunc {
+func parse(data dataService, cfg configService) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		go data.ParseRooms(workers)
+		go data.ParseRooms(cfg.Get().Workers.Parsing)
 		return c.NoContent(http.StatusCreated)
 	}
 }
@@ -64,9 +64,9 @@ func reindex(data dataService) echo.HandlerFunc {
 	}
 }
 
-func full(data dataService, discoveryWorkers int, parsingWorkers int) echo.HandlerFunc {
+func full(data dataService, cfg configService) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		go data.Full(discoveryWorkers, parsingWorkers)
+		go data.Full(cfg.Get().Workers.Discovery, cfg.Get().Workers.Parsing)
 		return c.NoContent(http.StatusCreated)
 	}
 }

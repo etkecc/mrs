@@ -25,9 +25,8 @@ var noncacheablePaths = map[string]struct{}{
 
 // Cache service
 type Cache struct {
-	maxAge string
-	bunny  cacheBunny
-	stats  cacheStats
+	cfg   ConfigService
+	stats cacheStats
 }
 
 type cacheBunny struct {
@@ -37,15 +36,10 @@ type cacheBunny struct {
 }
 
 // NewCache service
-func NewCache(maxAge int, bunnyURL string, bunnyKey string, stats cacheStats) *Cache {
+func NewCache(cfg ConfigService, stats cacheStats) *Cache {
 	return &Cache{
-		maxAge: strconv.Itoa(maxAge),
-		stats:  stats,
-		bunny: cacheBunny{
-			enabled: bunnyURL != "" && bunnyKey != "",
-			url:     bunnyURL,
-			key:     bunnyKey,
-		},
+		cfg:   cfg,
+		stats: stats,
 	}
 }
 
@@ -65,10 +59,9 @@ func (cache *Cache) Middleware() echo.MiddlewareFunc {
 			}
 
 			resp := c.Response()
-			resp.Header().Set("Cache-Control", "max-age="+cache.maxAge+", public")
-			if cache.bunny.enabled {
-				resp.Header().Set("CDN-Tag", "mutable")
-			}
+			maxAge := strconv.Itoa(cache.cfg.Get().Cache.MaxAge)
+			resp.Header().Set("Cache-Control", "max-age="+maxAge+", public")
+			resp.Header().Set("CDN-Tag", "mutable")
 			if !noncacheable {
 				resp.Header().Set("Last-Modified", lastModified)
 			}
@@ -91,9 +84,7 @@ func (cache *Cache) MiddlewareImmutable() echo.MiddlewareFunc {
 
 			resp := c.Response()
 			resp.Header().Del("Last-Modified")
-			if cache.bunny.enabled {
-				resp.Header().Set("CDN-Tag", "immutable")
-			}
+			resp.Header().Set("CDN-Tag", "immutable")
 			resp.Header().Set("Cache-Control", "max-age="+MaxCacheAge+", immutable")
 			return next(c)
 		}
@@ -108,16 +99,18 @@ func (cache *Cache) Purge() {
 // purgeBunnyCDN cache
 // ref: https://docs.bunny.net/reference/pullzonepublic_purgecachepostbytag
 func (cache *Cache) purgeBunnyCDN() {
-	if !cache.bunny.enabled {
+	bunny := cache.cfg.Get().Cache.Bunny
+	if bunny.Key == "" || bunny.URL == "" {
 		return
+
 	}
-	req, err := http.NewRequest("POST", cache.bunny.url, bytes.NewBuffer([]byte(`{"CacheTag":"mutable"}}`)))
+	req, err := http.NewRequest("POST", bunny.URL, bytes.NewBuffer([]byte(`{"CacheTag":"mutable"}}`)))
 	if err != nil {
 		log.Println("cannot purge bunny cache", err)
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("AccessKey", cache.bunny.key)
+	req.Header.Set("AccessKey", bunny.Key)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
