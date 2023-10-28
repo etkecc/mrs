@@ -1,8 +1,6 @@
 module gitlab.com/etke.cc/mrs/api
 
-go 1.21.0
-
-toolchain go1.21.3
+go 1.21
 
 require (
 	github.com/benjaminestes/robots/v2 v2.0.5
@@ -71,7 +69,7 @@ require (
 	github.com/tidwall/sjson v1.2.5 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
-	github.com/xxjwxc/public v0.0.0-20231027063937-3894f5701bb0 // indirect
+	github.com/xxjwxc/public v0.0.0-20231023133117-987ece4caaa5 // indirect
 	github.com/yuin/goldmark v1.5.6 // indirect
 	go.mau.fi/util v0.2.0 // indirect
 	golang.org/x/crypto v0.14.0 // indirect

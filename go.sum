@@ -300,8 +300,8 @@ github.com/xxjwxc/gowp v0.0.0-20230612082025-23a9b62c1da6 h1:u/XfxctLMBf43S1ATmf
 github.com/xxjwxc/gowp v0.0.0-20230612082025-23a9b62c1da6/go.mod h1:oaLsbo1ZWr4jYanHCB6zQetBkmQHNNH8N9E7xbmrLWc=
 github.com/xxjwxc/public v0.0.0-20200603115833-341beff27850/go.mod h1:fp3M+FEQrCgWD1fZ/PLwZkCTglf086OEhC9LcydAUnc=
 github.com/xxjwxc/public v0.0.0-20210518123934-6cc0965f0bc5/go.mod h1:za2pkqdDH64CbdyuZz6dqI+IhjCgstXeoWD3IAWbiAc=
-github.com/xxjwxc/public v0.0.0-20231027063937-3894f5701bb0 h1:cCUXy5QfI55oDd1Z2slG01RemNEVkNyF0l99JMUS0/0=
-github.com/xxjwxc/public v0.0.0-20231027063937-3894f5701bb0/go.mod h1:IHBDepME8ofo6bZEJhsvv6Gkw5u7S796D+EX1TLQNMk=
+github.com/xxjwxc/public v0.0.0-20231023133117-987ece4caaa5 h1:gKokoZiRuA6rXgZfuOfmrbTJv1UEwclPAGtHV7WlaoU=
+github.com/xxjwxc/public v0.0.0-20231023133117-987ece4caaa5/go.mod h1:NBxSAIKj1WEvwHWtYlfx3gIReJuM729vH1bIC1y1ubU=
 github.com/yuin/goldmark v1.5.6 h1:COmQAWTCcGetChm3Ig7G/t8AFAN00t+o8Mt4cf7JpwA=
 github.com/yuin/goldmark v1.5.6/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
 gitlab.com/etke.cc/go/msc1929 v0.0.0-20231021182755-a89d9cb113c2 h1:Mq1og6qym46fWshMU5VNZNERJKkiw5/gZqy475mQ0rE=

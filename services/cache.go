@@ -18,6 +18,11 @@ type cacheStats interface {
 	Get() *model.IndexStats
 }
 
+var noncacheablePaths = map[string]struct{}{
+	"/search":                            {},
+	"/_matrix/federation/v1/publicRooms": {},
+}
+
 // Cache service
 type Cache struct {
 	maxAge string
@@ -52,9 +57,10 @@ func (cache *Cache) Middleware() echo.MiddlewareFunc {
 				return next(c)
 			}
 
+			_, noncacheable := noncacheablePaths[c.Request().URL.Path]
 			lastModified := cache.stats.Get().Indexing.FinishedAt.Format(http.TimeFormat)
 			ifModifiedSince := c.Request().Header.Get("if-modified-since")
-			if lastModified == ifModifiedSince && (c.Request().URL.Path != "/search") {
+			if lastModified == ifModifiedSince && !noncacheable {
 				return c.NoContent(http.StatusNotModified)
 			}
 
@@ -63,7 +69,7 @@ func (cache *Cache) Middleware() echo.MiddlewareFunc {
 			if cache.bunny.enabled {
 				resp.Header().Set("CDN-Tag", "mutable")
 			}
-			if c.Request().URL.Path != "/search" {
+			if !noncacheable {
 				resp.Header().Set("Last-Modified", lastModified)
 			}
 			return next(c)

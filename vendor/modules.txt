@@ -275,8 +275,8 @@ github.com/valyala/fasttemplate
 # github.com/xxjwxc/gowp v0.0.0-20230612082025-23a9b62c1da6
 ## explicit; go 1.13
 github.com/xxjwxc/gowp/workpool
-# github.com/xxjwxc/public v0.0.0-20231027063937-3894f5701bb0
-## explicit; go 1.21.0
+# github.com/xxjwxc/public v0.0.0-20231023133117-987ece4caaa5
+## explicit; go 1.21
 github.com/xxjwxc/public/myqueue
 # github.com/yuin/goldmark v1.5.6
 ## explicit; go 1.18
