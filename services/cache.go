@@ -29,12 +29,6 @@ type Cache struct {
 	stats cacheStats
 }
 
-type cacheBunny struct {
-	enabled bool
-	url     string
-	key     string
-}
-
 // NewCache service
 func NewCache(cfg ConfigService, stats cacheStats) *Cache {
 	return &Cache{
@@ -102,7 +96,6 @@ func (cache *Cache) purgeBunnyCDN() {
 	bunny := cache.cfg.Get().Cache.Bunny
 	if bunny.Key == "" || bunny.URL == "" {
 		return
-
 	}
 	req, err := http.NewRequest("POST", bunny.URL, bytes.NewBuffer([]byte(`{"CacheTag":"mutable"}}`)))
 	if err != nil {

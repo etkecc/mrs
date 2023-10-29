@@ -36,13 +36,13 @@ type webhookPayload struct {
 }
 
 // NewModeration service
-func NewModeration(cfg ConfigService, data DataRepository, index IndexRepository, mail EmailService) (*Moderation, error) {
+func NewModeration(cfg ConfigService, data DataRepository, index IndexRepository, mail EmailService) *Moderation {
 	return &Moderation{
 		cfg:   cfg,
 		data:  data,
 		mail:  mail,
 		index: index,
-	}, nil
+	}
 }
 
 func (m *Moderation) getReportText(roomID, reason string, room *model.MatrixRoom, server *model.MatrixServer) string {
@@ -84,7 +84,11 @@ func (m *Moderation) getReportText(roomID, reason string, room *model.MatrixRoom
 		queryParams = "?auth=" + utils.URLSafeEncode(hash)
 	}
 
-	apiURL, _ := url.Parse(m.cfg.Get().Public.API)
+	apiURL, err := url.Parse(m.cfg.Get().Public.API)
+	if err != nil {
+		log.Println("ERROR: cannot parse public api url:", err)
+		return text.String()
+	}
 
 	text.WriteString("[ban and erase](")
 	text.WriteString(apiURL.JoinPath("/mod/ban", roomID).String() + queryParams)

@@ -4,8 +4,9 @@ import (
 	"strings"
 	"sync"
 
-	"gitlab.com/etke.cc/mrs/api/utils"
 	"golang.org/x/exp/slices"
+
+	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
 // Blocklist service

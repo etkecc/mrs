@@ -11,38 +11,6 @@ type IndexStats struct {
 	Indexing  IndexStatsTime    `json:"indexing"`
 }
 
-// Clone stats
-func (s *IndexStats) Clone() *IndexStats {
-	if s == nil {
-		return nil
-	}
-	return &IndexStats{
-		Servers: IndexStatsServers{
-			Online:    s.Servers.Online,
-			Indexable: s.Servers.Indexable,
-			Blocked:   s.Servers.Blocked,
-		},
-		Rooms: IndexStatsRooms{
-			Indexed:  s.Rooms.Indexed,
-			Parsed:   s.Rooms.Parsed,
-			Banned:   s.Rooms.Banned,
-			Reported: s.Rooms.Reported,
-		},
-		Discovery: IndexStatsTime{
-			StartedAt:  s.Discovery.StartedAt,
-			FinishedAt: s.Discovery.FinishedAt,
-		},
-		Parsing: IndexStatsTime{
-			StartedAt:  s.Parsing.StartedAt,
-			FinishedAt: s.Parsing.FinishedAt,
-		},
-		Indexing: IndexStatsTime{
-			StartedAt:  s.Indexing.StartedAt,
-			FinishedAt: s.Indexing.FinishedAt,
-		},
-	}
-}
-
 // IndexStatsServers structure
 type IndexStatsServers struct {
 	Online    int `json:"online"`

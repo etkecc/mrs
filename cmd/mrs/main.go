@@ -76,10 +76,7 @@ func main() {
 	cacheSvc := services.NewCache(cfg, statsSvc)
 	dataSvc := services.NewDataFacade(crawlerSvc, indexSvc, statsSvc, cacheSvc)
 	mailSvc := services.NewEmail(cfg)
-	modSvc, merr := services.NewModeration(cfg, dataRepo, index, mailSvc)
-	if merr != nil {
-		log.Fatal("cannot start moderation service", err)
-	}
+	modSvc := services.NewModeration(cfg, dataRepo, index, mailSvc)
 
 	e = echo.New()
 	controllers.ConfigureRouter(e, cfg, matrixSvc, dataSvc, cacheSvc, searchSvc, crawlerSvc, statsSvc, modSvc)

@@ -11,8 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/exp/constraints"
-
 	"gitlab.com/etke.cc/mrs/api/metrics"
 	"gitlab.com/etke.cc/mrs/api/model"
 )
@@ -42,7 +40,6 @@ type Stats struct {
 	block      Lenable
 	index      Lenable
 	stats      *model.IndexStats
-	prev       *model.IndexStats
 	collecting bool
 }
 
@@ -64,7 +61,6 @@ func (s *Stats) setMetrics() {
 
 // reload saved stats. Useful when you need to get updated timestamps, but don't want to parse whole db
 func (s *Stats) reload() {
-	s.prev = s.stats.Clone()
 	s.stats = s.data.GetIndexStats()
 	s.setMetrics()
 }
@@ -216,27 +212,4 @@ func (s *Stats) getWebhookText() string {
 	text.WriteString(fmt.Sprintf("* `%s` total\n", total.String()))
 
 	return text.String()
-}
-
-type Number interface {
-	constraints.Float | constraints.Integer | constraints.Signed | constraints.Unsigned
-}
-
-// diffText tries to find difference and return it in a human-friendly way, e.g. prev=1, curr=5 -> "+4"
-func getSymbol[T Number](diff T) string {
-	if diff == 0 {
-		return ""
-	}
-
-	if diff > 0 {
-		return "+"
-	}
-	return "-"
-}
-
-func abs[T Number](number T) T {
-	if number < 0 {
-		return 0 - number
-	}
-	return number
 }
