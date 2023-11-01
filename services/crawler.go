@@ -46,6 +46,7 @@ type RobotsService interface {
 
 type DataRepository interface {
 	AddServer(*model.MatrixServer) error
+	HasServer(string) bool
 	GetServer(string) (string, error)
 	GetServerInfo(string) (*model.MatrixServer, error)
 	EachServerInfo(func(string, *model.MatrixServer))
@@ -70,6 +71,7 @@ type FederationService interface {
 	QueryPublicRooms(serverName, limit, since string) (*model.RoomDirectoryResponse, error)
 	QueryServerName(serverName string) string
 	QueryVersion(serverName string) (string, string, error)
+	QueryCSURL(serverName string) string
 }
 
 var (
@@ -194,6 +196,7 @@ func (m *Crawler) DiscoverServers(workers int) error {
 func (m *Crawler) discoverServer(name string) (valid bool, err error) {
 	server := &model.MatrixServer{
 		Name:      name,
+		URL:       m.fed.QueryCSURL(name),
 		Online:    true,
 		UpdatedAt: time.Now().UTC(),
 	}
@@ -227,8 +230,7 @@ func (m *Crawler) AddServers(names []string, workers int) {
 	for _, server := range discoveredServers.Slice() {
 		srvName := server
 		wp.Do(func() error {
-			existingURL, _ := m.data.GetServer(srvName) //nolint:errcheck
-			if existingURL != "" {
+			if m.data.HasServer(srvName) {
 				return nil
 			}
 			name, ok := m.validateServer(srvName)
@@ -250,8 +252,7 @@ func (m *Crawler) AddServers(names []string, workers int) {
 // AddServer by name, intended for HTTP API
 // returns http status code to send to the reporter
 func (m *Crawler) AddServer(name string) int {
-	existingURL, _ := m.data.GetServer(name) //nolint:errcheck
-	if existingURL != "" {
+	if m.data.HasServer(name) {
 		return http.StatusAlreadyReported
 	}
 

@@ -27,6 +27,17 @@ func (d *Data) AddServer(server *model.MatrixServer) error {
 	})
 }
 
+// HasServer checks if server is already exists
+func (d *Data) HasServer(name string) bool {
+	var has bool
+	d.db.View(func(tx *bbolt.Tx) error { //nolint:errcheck // that's ok
+		v := tx.Bucket(serversBucket).Get([]byte(name))
+		has = v != nil
+		return nil
+	})
+	return has
+}
+
 // GetServer URL
 func (d *Data) GetServer(name string) (string, error) {
 	var url string

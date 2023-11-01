@@ -40,6 +40,14 @@ type wellKnownServerResp struct {
 	Host string `json:"m.server"`
 }
 
+type wellKnownClientResp struct {
+	Homeserver wellKnownClientRespHomeserver `json:"m.homeserver"`
+}
+
+type wellKnownClientRespHomeserver struct {
+	BaseURL string `json:"base_url"`
+}
+
 type versionResp struct {
 	Server map[string]string `json:"server"`
 }
@@ -64,7 +72,8 @@ type Matrix struct {
 	version      []byte        // /_matrix/federation/v1/version contents
 	keyServer    matrixKeyResp // /_matrix/key/v2/server template
 	discoverFunc func(string) int
-	urlsCache    *lru.Cache[string, string]
+	surlsCache   *lru.Cache[string, string]
+	curlsCache   *lru.Cache[string, string]
 	keysCache    *lru.Cache[string, map[string]ed25519.PublicKey]
 	namesCache   *lru.Cache[string, string]
 }
@@ -79,7 +88,11 @@ func NewMatrix(cfg ConfigService, search matrixSearchService) (*Matrix, error) {
 	if err != nil {
 		return nil, err
 	}
-	urlsCache, err := lru.New[string, string](100000)
+	surlsCache, err := lru.New[string, string](100000)
+	if err != nil {
+		return nil, err
+	}
+	curlsCache, err := lru.New[string, string](100000)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +100,8 @@ func NewMatrix(cfg ConfigService, search matrixSearchService) (*Matrix, error) {
 	m := &Matrix{
 		cfg:        cfg,
 		search:     search,
-		urlsCache:  urlsCache,
+		surlsCache: surlsCache,
+		curlsCache: curlsCache,
 		keysCache:  keysCache,
 		namesCache: namesCache,
 	}
@@ -307,6 +321,23 @@ func (m *Matrix) QueryPublicRooms(serverName, limit, since string) (*model.RoomD
 		return nil, err
 	}
 	return roomsResp, nil
+}
+
+// QueryCSURL returns URL of Matrix CS API server
+func (m *Matrix) QueryCSURL(serverName string) string {
+	cached, ok := m.curlsCache.Get(serverName)
+	if ok {
+		return cached
+	}
+
+	csurl := "https://" + serverName
+	fromWellKnown, err := m.parseClientWellKnown(serverName)
+	if err == nil {
+		csurl = fromWellKnown
+	}
+
+	m.curlsCache.Add(serverName, csurl)
+	return csurl
 }
 
 // Authorize request
@@ -530,8 +561,39 @@ func (m *Matrix) parseAuths(r *http.Request) []*matrixAuth {
 	return auths
 }
 
-// parseWellKnown returns Federation API host:port
-func (m *Matrix) parseWellKnown(serverName string) (string, error) {
+// parseClientWellKnown returns URL of the Matrix CS API server
+func (m *Matrix) parseClientWellKnown(serverName string) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://"+serverName+"/.well-known/matrix/client", nil)
+	if err != nil {
+		return "", err
+	}
+	resp, err := matrixClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("no /.well-known/matrix/client")
+	}
+
+	datab, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	var wellknown *wellKnownClientResp
+	if wkerr := json.Unmarshal(datab, &wellknown); wkerr != nil {
+		return "", wkerr
+	}
+	if wellknown.Homeserver.BaseURL == "" {
+		return "", fmt.Errorf("/.well-known/matrix/client is empty")
+	}
+	return wellknown.Homeserver.BaseURL, nil
+}
+
+// parseServerWellKnown returns Federation API host:port
+func (m *Matrix) parseServerWellKnown(serverName string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://"+serverName+"/.well-known/matrix/server", nil)
@@ -584,7 +646,7 @@ func (m *Matrix) parseSRV(service, serverName string) (string, error) {
 
 // dcrURL stands for discover-cache-and-return URL, shortcut for m.getURL
 func (m *Matrix) dcrURL(serverName, url string, discover bool) string {
-	m.urlsCache.Add(serverName, url)
+	m.surlsCache.Add(serverName, url)
 
 	if m.discoverFunc != nil && discover {
 		go m.discoverFunc(serverName)
@@ -595,12 +657,12 @@ func (m *Matrix) dcrURL(serverName, url string, discover bool) string {
 
 // getURL returns Federation API URL
 func (m *Matrix) getURL(serverName string, discover bool) string {
-	cached, ok := m.urlsCache.Get(serverName)
+	cached, ok := m.surlsCache.Get(serverName)
 	if ok {
 		return cached
 	}
 
-	fromWellKnown, err := m.parseWellKnown(serverName)
+	fromWellKnown, err := m.parseServerWellKnown(serverName)
 	if err == nil {
 		return m.dcrURL(serverName, "https://"+fromWellKnown, discover)
 	}
