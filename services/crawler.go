@@ -153,6 +153,22 @@ func (m *Crawler) validateServers(servers []string, workers int) []string {
 	return discovered
 }
 
+func (m *Crawler) loadServers() []string {
+	servers := utils.MergeSlices(utils.MapKeys(m.data.AllServers()), m.cfg.Get().Servers)
+	log.Printf("loaded %d servers from config and db", len(servers))
+	fromRooms := []string{}
+	m.EachRoom(func(_ string, data *model.MatrixRoom) {
+		fromRooms = append(fromRooms, data.Server)
+		if data.Alias != "" {
+			fromRooms = append(fromRooms, utils.ServerFrom(data.Alias))
+		}
+	})
+	fromRooms = utils.Uniq(fromRooms)
+	servers = utils.MergeSlices(servers, fromRooms)
+	log.Printf("loaded %d servers from already parsed rooms, total known servers = %d", len(fromRooms), len(servers))
+	return servers
+}
+
 // DiscoverServers across federation and remove invalid ones
 func (m *Crawler) DiscoverServers(workers int) error {
 	if m.discovering {
@@ -162,8 +178,7 @@ func (m *Crawler) DiscoverServers(workers int) error {
 	m.discovering = true
 	defer func() { m.discovering = false }()
 
-	servers := utils.MergeSlices(utils.MapKeys(m.data.AllServers()), m.cfg.Get().Servers)
-	discoveredServers := m.validateServers(servers, workers)
+	discoveredServers := m.validateServers(m.loadServers(), workers)
 
 	// remove blocked servers
 	m.block.Reset()
