@@ -129,10 +129,10 @@ func (m *Crawler) validateServer(name string) (string, bool) {
 }
 
 // validateServers performs basic sanitization, checks if server is online and federateable
-func (m *Crawler) validateServers(servers []string, workers int) []string {
-	discovered := []string{}
-	chunks := utils.Chunks(servers, 1000)
-	log.Printf("validating %d servers using %d workers in %d chunks", len(servers), workers, len(chunks))
+func (m *Crawler) validateServers(servers *utils.List[string, string], workers int) *utils.List[string, string] {
+	discovered := utils.NewList[string, string]()
+	chunks := utils.Chunks(servers.Slice(), 1000)
+	log.Printf("validating %d servers using %d workers in %d chunks", servers.Len(), workers, len(chunks))
 	for i, chunk := range chunks {
 		wp := workpool.New(workers)
 		for _, server := range chunk {
@@ -140,32 +140,32 @@ func (m *Crawler) validateServers(servers []string, workers int) []string {
 			wp.Do(func() error {
 				name, ok := m.validateServer(srvName)
 				if ok {
-					discovered = append(discovered, name)
+					discovered.Add(name)
 				}
 				return nil
 			})
 		}
 		wp.Wait() //nolint:errcheck
-		log.Printf("[%d/%d] servers validation in progress: %d of %d servers are valid", i+1, len(chunks), len(discovered), len(servers))
+		log.Printf("[%d/%d] servers validation in progress: %d of %d servers are valid", i+1, len(chunks), discovered.Len(), servers.Len())
 	}
-	discovered = utils.Uniq(discovered)
-	log.Printf("servers validation finished - from %d servers intended for discovery, only %d are valid (online and federateable)", len(servers), len(discovered))
+
+	log.Printf("servers validation finished - from %d servers intended for discovery, only %d are valid (online and federateable)", servers.Len(), discovered.Len())
 	return discovered
 }
 
-func (m *Crawler) loadServers() []string {
-	servers := utils.MergeSlices(utils.MapKeys(m.data.AllServers()), m.cfg.Get().Servers)
-	log.Printf("loaded %d servers from config and db", len(servers))
-	fromRooms := []string{}
+func (m *Crawler) loadServers() *utils.List[string, string] {
+	servers := utils.NewList[string, string]()
+	servers.AddMapKeys(m.data.AllServers())
+	servers.AddSlice(m.cfg.Get().Servers)
+	log.Printf("loaded %d servers from config and db", servers.Len())
 	m.EachRoom(func(_ string, data *model.MatrixRoom) {
-		fromRooms = append(fromRooms, data.Server)
+		servers.Add(data.Server)
 		if data.Alias != "" {
-			fromRooms = append(fromRooms, utils.ServerFrom(data.Alias))
+			servers.Add(utils.ServerFrom(data.Alias))
 		}
 	})
-	fromRooms = utils.Uniq(fromRooms)
-	servers = utils.MergeSlices(servers, fromRooms)
-	log.Printf("loaded %d servers from already parsed rooms, total known servers = %d", len(fromRooms), len(servers))
+
+	log.Printf("added servers from already parsed rooms, total known servers = %d", servers.Len())
 	return servers
 }
 
@@ -180,13 +180,8 @@ func (m *Crawler) DiscoverServers(workers int) error {
 
 	discoveredServers := m.validateServers(m.loadServers(), workers)
 
-	// remove blocked servers
-	m.block.Reset()
-	toRemove := utils.RemoveFromSlice(discoveredServers, m.block.Slice())
-	m.data.RemoveServers(toRemove)
-
 	wp := workpool.New(workers)
-	for _, server := range discoveredServers {
+	for _, server := range discoveredServers.Slice() {
 		name := server
 		wp.Do(func() error {
 			_, err := m.discoverServer(name)
@@ -225,9 +220,11 @@ func (m *Crawler) discoverServer(name string) (valid bool, err error) {
 // AddServers by name in bulk, intended for HTTP API
 func (m *Crawler) AddServers(names []string, workers int) {
 	wp := workpool.New(workers)
-	discoveredServers := m.validateServers(names, workers)
+	list := utils.NewList[string, string]()
+	list.AddSlice(names)
+	discoveredServers := m.validateServers(list, workers)
 	validServers := []string{}
-	for _, server := range discoveredServers {
+	for _, server := range discoveredServers.Slice() {
 		srvName := server
 		wp.Do(func() error {
 			existingURL, _ := m.data.GetServer(srvName) //nolint:errcheck
