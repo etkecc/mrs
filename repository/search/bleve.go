@@ -2,6 +2,7 @@ package search
 
 import (
 	"log"
+	"os"
 
 	"github.com/blevesearch/bleve/v2"
 	"github.com/blevesearch/bleve/v2/analysis/analyzer/custom"
@@ -15,8 +16,13 @@ import (
 	"gitlab.com/etke.cc/mrs/api/repository/search/multilang"
 )
 
+const backupSuffix = ".bak"
+
 type Index struct {
-	index bleve.Index
+	index       bleve.Index
+	path        string
+	detector    lingua.LanguageDetector
+	defaultLang string
 }
 
 var (
@@ -103,16 +109,44 @@ func getIndexMapping() mapping.IndexMapping {
 
 // NewIndex creates or opens an index
 func NewIndex(path string, detector lingua.LanguageDetector, defaultLang string) (*Index, error) {
-	multilang.Register(detector, defaultLang)
-	index, err := bleve.Open(path)
+	i := &Index{
+		path:        path,
+		detector:    detector,
+		defaultLang: defaultLang,
+	}
+	err := i.load()
+
+	return i, err
+}
+
+// load index from path
+func (i *Index) load() error {
+	multilang.Register(i.detector, i.defaultLang)
+	index, err := bleve.Open(i.path)
 	if err != nil {
-		index, err = bleve.New(path, getIndexMapping())
+		index, err = bleve.New(i.path, getIndexMapping())
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
+	i.index = index
+	return nil
+}
 
-	return &Index{index}, err
+// Swap index
+func (i *Index) Swap() error {
+	if err := i.index.Close(); err != nil {
+		return err
+	}
+
+	if err := os.RemoveAll(i.path + backupSuffix); err != nil {
+		log.Println("WARN: cannot remove index backup:", err)
+	}
+
+	if err := os.Rename(i.path, i.path+backupSuffix); err != nil {
+		log.Println("ERROR: cannot move index", err)
+	}
+	return i.load()
 }
 
 // Len returns size of the index (number of docs)

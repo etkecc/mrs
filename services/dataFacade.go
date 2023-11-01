@@ -17,6 +17,7 @@ type dataCrawlerService interface {
 }
 
 type dataIndexService interface {
+	EmptyIndex() error
 	RoomsBatch(roomID string, data *model.Entry) error
 	IndexBatch() error
 }
@@ -88,6 +89,9 @@ func (df *DataFacade) ParseRooms(workers int) {
 // Ingest data into search index
 func (df *DataFacade) Ingest() {
 	log.Println("ingesting matrix rooms...")
+	if err := df.index.EmptyIndex(); err != nil {
+		log.Println("ERROR: cannot create empty index:", err)
+	}
 	start := time.Now().UTC()
 	df.stats.SetStartedAt("indexing", start)
 	df.crawler.EachRoom(func(roomID string, room *model.MatrixRoom) {

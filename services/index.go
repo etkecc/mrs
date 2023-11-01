@@ -22,6 +22,7 @@ type Index struct {
 type IndexRepository interface {
 	Index(roomID string, data *model.Entry) error
 	Delete(roomID string) error
+	Swap() error
 	IndexBatch(*bleve.Batch) error
 	NewBatch() *bleve.Batch
 }
@@ -35,6 +36,11 @@ func NewIndex(cfg ConfigService, index IndexRepository, data DataRepository) *In
 		data:  data,
 		batch: batch,
 	}
+}
+
+// EmptyIndex creates new empty index
+func (i *Index) EmptyIndex() error {
+	return i.index.Swap()
 }
 
 // RoomsBatch indexes rooms in batches

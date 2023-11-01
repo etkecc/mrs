@@ -18,6 +18,12 @@ const (
 
 // Register multilang analyzer
 func Register(detector lingua.LanguageDetector, defaultLang string) {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Println("ERROR: cannot register multilang analyzer:", err)
+		}
+	}()
+
 	registry.RegisterCharFilter(Name, func(config map[string]interface{}, cache *registry.Cache) (analysis.CharFilter, error) {
 		return &CharFilter{detector: detector, fallback: defaultLang}, nil
 	})
