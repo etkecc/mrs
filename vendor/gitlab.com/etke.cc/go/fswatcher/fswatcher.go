@@ -1,7 +1,6 @@
 package fswatcher
 
 import (
-	"log"
 	"math"
 	"path/filepath"
 	"sync"
@@ -61,7 +60,6 @@ func (w *Watcher) Start(handler func(e fsnotify.Event)) {
 		var found bool
 		for _, f := range w.files {
 			if f == e.Name {
-				log.Println(e.Name)
 				found = true
 			}
 		}

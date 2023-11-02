@@ -3,9 +3,11 @@ package model
 import (
 	"context"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/cespare/xxhash/v2"
 	"github.com/pemistahl/lingua-go"
 
 	"gitlab.com/etke.cc/mrs/api/utils"
@@ -69,11 +71,18 @@ func (r *MatrixRoom) Entry() *Entry {
 }
 
 // Parse matrix room info to prepare custom fields
-func (r *MatrixRoom) Parse(detector lingua.LanguageDetector, mrsPublicURL string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+func (r *MatrixRoom) Parse(detector lingua.LanguageDetector, mrsPublicURL, mrsServerName string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
 	defer cancel()
 
 	r.Topic = utils.Truncate(r.Topic, 400)
+	if ctx.Err() != nil {
+		return
+	}
+
+	if r.Alias == "" {
+		r.Alias = "#" + strconv.Itoa(int(xxhash.Sum64String(r.ID))) + ":" + mrsServerName
+	}
 	if ctx.Err() != nil {
 		return
 	}
@@ -89,6 +98,22 @@ func (r *MatrixRoom) Parse(detector lingua.LanguageDetector, mrsPublicURL string
 	}
 
 	r.parseLanguage(detector)
+}
+
+// Servers returns all servers from the room object, except own server
+func (r *MatrixRoom) Servers(ownServerName string) []string {
+	servers := []string{}
+	if server := utils.ServerFrom(r.ID); server != ownServerName {
+		servers = append(servers, server)
+	}
+	if server := utils.ServerFrom(r.Alias); server != ownServerName {
+		servers = append(servers, server)
+	}
+	if server := r.Server; server != ownServerName {
+		servers = append(servers, server)
+	}
+
+	return utils.Uniq(servers)
 }
 
 // parseServer from room ID

@@ -52,6 +52,16 @@ type versionResp struct {
 	Server map[string]string `json:"server"`
 }
 
+type queryDirectoryResp struct {
+	RoomID  string   `json:"room_id"`
+	Servers []string `json:"string"`
+}
+
+type errorResp struct {
+	Code  string `json:"errcode"`
+	Error string `json:"error"`
+}
+
 type matrixAuth struct {
 	Origin      string
 	Destination string
@@ -63,10 +73,15 @@ type matrixSearchService interface {
 	Search(query, sortBy string, limit, offset int) ([]*model.Entry, int, error)
 }
 
+type matrixDataRepository interface {
+	EachRoom(handler func(roomID string, data *model.MatrixRoom))
+}
+
 // Matrix server
 type Matrix struct {
 	cfg          ConfigService
 	keys         []*model.Key
+	data         matrixDataRepository
 	search       matrixSearchService
 	wellknown    []byte        // /.well-known/matrix/server contents
 	version      []byte        // /_matrix/federation/v1/version contents
@@ -79,7 +94,7 @@ type Matrix struct {
 }
 
 // NewMatrix creates new matrix server
-func NewMatrix(cfg ConfigService, search matrixSearchService) (*Matrix, error) {
+func NewMatrix(cfg ConfigService, data matrixDataRepository, search matrixSearchService) (*Matrix, error) {
 	keysCache, err := lru.New[string, map[string]ed25519.PublicKey](100000)
 	if err != nil {
 		return nil, err
@@ -99,6 +114,7 @@ func NewMatrix(cfg ConfigService, search matrixSearchService) (*Matrix, error) {
 
 	m := &Matrix{
 		cfg:        cfg,
+		data:       data,
 		search:     search,
 		surlsCache: surlsCache,
 		curlsCache: curlsCache,
@@ -148,8 +164,8 @@ func (m *Matrix) GetKeyServer() []byte {
 // PublicRooms returns /_matrix/federation/v1/publicRooms response
 func (m *Matrix) PublicRooms(req *http.Request, rdReq *model.RoomDirectoryRequest) (int, []byte) {
 	origin, err := m.ValidateAuth(req)
-	log.Printf("auth: origin=%s err=%v", origin, err)
 	if err != nil {
+		log.Println("AUTH ERROR: matrix auth failed:", err)
 		return http.StatusUnauthorized, nil
 	}
 
@@ -187,57 +203,6 @@ func (m *Matrix) PublicRooms(req *http.Request, rdReq *model.RoomDirectoryReques
 	return http.StatusOK, value
 }
 
-// ValidateAuth validates matrix auth
-func (m *Matrix) ValidateAuth(r *http.Request) (serverName string, err error) {
-	defer r.Body.Close()
-	if m.cfg.Get().Matrix.ServerName == devhost {
-		log.Println("ignoring auth validation on dev host")
-		return "ignored", nil
-	}
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		return "", err
-	}
-	content := make(map[string]any)
-	if len(body) > 0 {
-		if jerr := json.Unmarshal(body, &content); jerr != nil {
-			return "", jerr
-		}
-	}
-
-	auths := m.parseAuths(r)
-	if len(auths) == 0 {
-		return "", fmt.Errorf("no auth provided")
-	}
-	obj := map[string]any{
-		"method":      r.Method,
-		"uri":         r.RequestURI,
-		"origin":      auths[0].Origin,
-		"destination": auths[0].Destination,
-	}
-	if len(content) > 0 {
-		obj["content"] = content
-	}
-	canonical, err := utils.JSON(obj)
-	if err != nil {
-		return "", err
-	}
-	keys := m.queryKeys(auths[0].Origin)
-	if len(keys) == 0 {
-		return "", fmt.Errorf("no server keys available")
-	}
-	for _, auth := range auths {
-		if err := m.validateAuth(obj, canonical, auth, keys); err != nil {
-			log.Println("canonical", string(canonical))
-			log.Println("content", content)
-			log.Println("obj", obj)
-			return "", err
-		}
-	}
-
-	return auths[0].Origin, nil
-}
-
 // QueryServerName finds server name on the /_matrix/key/v2/server page
 func (m *Matrix) QueryServerName(serverName string) string {
 	cached, ok := m.namesCache.Get(serverName)
@@ -251,6 +216,40 @@ func (m *Matrix) QueryServerName(serverName string) string {
 	}
 	m.namesCache.Add(serverName, discovered)
 	return discovered
+}
+
+// QueryDirectory is /_matrix/federation/v1/query/directory
+func (m *Matrix) QueryDirectory(req *http.Request, alias string) (int, []byte) {
+	_, err := m.ValidateAuth(req)
+	if err != nil {
+		log.Println("AUTH ERROR: matrix auth failed:", err)
+		return http.StatusUnauthorized, m.getErrorResp("M_UNAUTHORIZED", "authorization failed")
+	}
+	if alias == "" {
+		return http.StatusNotFound, m.getErrorResp("M_NOT_FOUND", "room not found")
+	}
+
+	var room *model.MatrixRoom
+	m.data.EachRoom(func(_ string, data *model.MatrixRoom) {
+		if data.Alias == alias {
+			room = data
+		}
+	})
+	if room == nil {
+		return http.StatusNotFound, m.getErrorResp("M_NOT_FOUND", "room not found")
+	}
+
+	resp := &queryDirectoryResp{
+		RoomID:  room.ID,
+		Servers: room.Servers(m.cfg.Get().Matrix.ServerName),
+	}
+	respb, err := utils.JSON(resp)
+	if err != nil {
+		log.Println("ERROR: cannot marshal query directory resp:", err)
+		return http.StatusInternalServerError, nil
+	}
+
+	return http.StatusOK, respb
 }
 
 // QueryVersion from /_matrix/federation/v1/version
@@ -340,6 +339,57 @@ func (m *Matrix) QueryCSURL(serverName string) string {
 	return csurl
 }
 
+// ValidateAuth validates matrix auth
+func (m *Matrix) ValidateAuth(r *http.Request) (serverName string, err error) {
+	defer r.Body.Close()
+	if m.cfg.Get().Matrix.ServerName == devhost {
+		log.Println("ignoring auth validation on dev host")
+		return "ignored", nil
+	}
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		return "", err
+	}
+	content := make(map[string]any)
+	if len(body) > 0 {
+		if jerr := json.Unmarshal(body, &content); jerr != nil {
+			return "", jerr
+		}
+	}
+
+	auths := m.parseAuths(r)
+	if len(auths) == 0 {
+		return "", fmt.Errorf("no auth provided")
+	}
+	obj := map[string]any{
+		"method":      r.Method,
+		"uri":         r.RequestURI,
+		"origin":      auths[0].Origin,
+		"destination": auths[0].Destination,
+	}
+	if len(content) > 0 {
+		obj["content"] = content
+	}
+	canonical, err := utils.JSON(obj)
+	if err != nil {
+		return "", err
+	}
+	keys := m.queryKeys(auths[0].Origin)
+	if len(keys) == 0 {
+		return "", fmt.Errorf("no server keys available")
+	}
+	for _, auth := range auths {
+		if err := m.validateAuth(obj, canonical, auth, keys); err != nil {
+			log.Println("canonical", string(canonical))
+			log.Println("content", content)
+			log.Println("obj", obj)
+			return "", err
+		}
+	}
+
+	return auths[0].Origin, nil
+}
+
 // Authorize request
 func (m *Matrix) Authorize(serverName, method, uri string, body any) ([]string, error) {
 	obj := map[string]any{
@@ -379,6 +429,15 @@ func (m *Matrix) Authorize(serverName, method, uri string, body any) ([]string, 
 		))
 	}
 	return headers, nil
+}
+
+// getErrorResp returns canonical json of matrix error
+func (m *Matrix) getErrorResp(code, message string) []byte {
+	respb, err := utils.JSON(errorResp{Code: code, Error: message})
+	if err != nil {
+		log.Println("ERROR: cannot marshal canonical json", err)
+	}
+	return respb
 }
 
 func (m *Matrix) buildPublicRoomsReq(serverName, limit, since string) (*http.Request, error) {

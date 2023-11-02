@@ -5,6 +5,7 @@ go 1.21
 require (
 	github.com/benjaminestes/robots/v2 v2.0.5
 	github.com/blevesearch/bleve/v2 v2.3.10
+	github.com/cespare/xxhash/v2 v2.2.0
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/h2non/bimg v1.1.10-0.20230922201823-0fdc5cc0e1b8
 	github.com/hashicorp/golang-lru/v2 v2.0.7
@@ -46,7 +47,6 @@ require (
 	github.com/blevesearch/zapx/v13 v13.3.10 // indirect
 	github.com/blevesearch/zapx/v14 v14.3.10 // indirect
 	github.com/blevesearch/zapx/v15 v15.3.13 // indirect
-	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang/geo v0.0.0-20230421003525-6adc56603217 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect

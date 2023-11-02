@@ -67,7 +67,7 @@ func main() {
 	statsSvc := services.NewStats(cfg, dataRepo, index, blockSvc)
 	indexSvc := services.NewIndex(cfg, index, dataRepo)
 	searchSvc := services.NewSearch(cfg, index, blockSvc, statsSvc)
-	matrixSvc, err := services.NewMatrix(cfg, searchSvc)
+	matrixSvc, err := services.NewMatrix(cfg, dataRepo, searchSvc)
 	if err != nil {
 		log.Panic(err)
 	}
