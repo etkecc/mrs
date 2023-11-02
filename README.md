@@ -12,6 +12,7 @@ Dependencies? None.
     * [API](#api)
 * [Quick Start](#quick-start)
     * [Integrations](#integrations)
+* [Support](#support)
 
 <!-- vim-markdown-toc -->
 
@@ -44,3 +45,7 @@ Check [docs/deploy.md](./docs/deploy.md) and [docs/bootstrapping.md](./docs/boot
 ### Integrations
 
 Check [docs/integrations.md](./docs/integrations.md)
+
+## Support
+
+[#mrs:etke.cc](https://matrix.to/#/#mrs:etke.cc) matrix room
