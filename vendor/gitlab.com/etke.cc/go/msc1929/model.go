@@ -1,5 +1,7 @@
 package msc1929
 
+import "net/mail"
+
 // Contact details
 type Contact struct {
 	Email    string `json:"email_address,omitempty"`
@@ -45,8 +47,8 @@ func (r *Response) hydrate() {
 func (r *Response) parseEmails(contacts []Contact) []string {
 	emails := []string{}
 	for _, contact := range contacts {
-		if contact.Email != "" {
-			emails = append(emails, contact.Email)
+		if email, _ := mail.ParseAddress(contact.Email); email != nil {
+			emails = append(emails, email.Address)
 		}
 	}
 	return emails

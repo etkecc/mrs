@@ -19,7 +19,7 @@ require (
 	github.com/theovassiliou/base64url v0.0.0-20211006203958-1e011490eaaf
 	github.com/xxjwxc/gowp v0.0.0-20230612082025-23a9b62c1da6
 	gitlab.com/etke.cc/go/fswatcher v1.0.0
-	gitlab.com/etke.cc/go/msc1929 v0.0.0-20231021182755-a89d9cb113c2
+	gitlab.com/etke.cc/go/msc1929 v0.0.0-20231103161506-0223f5f91511
 	go.etcd.io/bbolt v1.3.8
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d
 	gopkg.in/yaml.v3 v3.0.1

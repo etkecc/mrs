@@ -295,7 +295,7 @@ github.com/yuin/goldmark/util
 # gitlab.com/etke.cc/go/fswatcher v1.0.0
 ## explicit; go 1.20
 gitlab.com/etke.cc/go/fswatcher
-# gitlab.com/etke.cc/go/msc1929 v0.0.0-20231021182755-a89d9cb113c2
+# gitlab.com/etke.cc/go/msc1929 v0.0.0-20231103161506-0223f5f91511
 ## explicit; go 1.18
 gitlab.com/etke.cc/go/msc1929
 # go.etcd.io/bbolt v1.3.8
