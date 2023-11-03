@@ -3,7 +3,6 @@ package controllers
 import (
 	"bytes"
 	"encoding/base64"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -150,9 +149,14 @@ func auth(name string, cfg *model.ConfigAuthItem) echo.MiddlewareFunc {
 				allowedIP = slices.Contains(cfg.IPs, ctx.RealIP())
 			}
 			match := utils.ConstantTimeEq(cfg.Login, login) && utils.ConstantTimeEq(cfg.Password, password)
-			log.Printf("%s authorization attempt from=%s path=%s allowed_ip=%t allowed_credentials=%t",
-				name, ctx.RealIP(), ctx.Request().URL.Path, allowedIP, match,
-			)
+			utils.Logger.
+				Info().
+				Str("section", name).
+				Str("from", ctx.RealIP()).
+				Str("path", ctx.Request().URL.Path).
+				Bool("allowed_ip", allowedIP).
+				Bool("allowed_credentials", match).
+				Msg("authorization attempt")
 			return match && allowedIP, nil
 		},
 	})
@@ -183,7 +187,14 @@ func hashAuth(c echo.Context, authPassword string) *bool {
 
 	var ok bool
 	defer func() {
-		log.Printf("hash authorization attempt from=%s path=%s allowed_credentials=%t panic=%v", c.RealIP(), c.Request().URL.Path, ok, recover())
+		utils.Logger.
+			Info().
+			Any("error", recover()).
+			Str("section", "hash").
+			Str("from", c.RealIP()).
+			Str("path", c.Request().URL.Path).
+			Bool("allowed_credentials", ok).
+			Msg("authorization attempt")
 	}()
 	ok, _ = argon2pw.CompareHashWithPassword(hash, authPassword) //nolint:errcheck
 

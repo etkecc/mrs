@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -156,7 +155,7 @@ func (m *Matrix) GetKeyServer() []byte {
 	resp.ValidUntilTS = time.Now().UTC().Add(24 * 7 * time.Hour).UnixMilli()
 	payload, err := m.signJSON(resp)
 	if err != nil {
-		log.Println("ERROR: cannot sign payload:", err)
+		utils.Logger.Error().Err(err).Msg("cannot sign payload")
 	}
 	return payload
 }
@@ -165,7 +164,7 @@ func (m *Matrix) GetKeyServer() []byte {
 func (m *Matrix) PublicRooms(req *http.Request, rdReq *model.RoomDirectoryRequest) (int, []byte) {
 	origin, err := m.ValidateAuth(req)
 	if err != nil {
-		log.Println("AUTH ERROR: matrix auth failed:", err)
+		utils.Logger.Warn().Err(err).Msg("matrix auth failed")
 		return http.StatusUnauthorized, nil
 	}
 
@@ -175,10 +174,13 @@ func (m *Matrix) PublicRooms(req *http.Request, rdReq *model.RoomDirectoryReques
 	}).Inc()
 
 	limit := rdReq.Limit
+	if limit > m.cfg.Get().Search.Defaults.Limit {
+		limit = m.cfg.Get().Search.Defaults.Limit
+	}
 	offset := utils.StringToInt(rdReq.Since)
 	entries, total, err := m.search.Search(rdReq.Filter.GenericSearchTerm, "", limit, offset)
 	if err != nil {
-		log.Println("ERROR: cannot search from matrix:", err)
+		utils.Logger.Error().Err(err).Msg("search from matrix failed")
 		return http.StatusInternalServerError, nil
 	}
 	chunk := make([]*model.RoomDirectoryRoom, 0, len(entries))
@@ -197,7 +199,7 @@ func (m *Matrix) PublicRooms(req *http.Request, rdReq *model.RoomDirectoryReques
 		Total:     total,
 	})
 	if err != nil {
-		log.Println("ERROR: cannot marshal room directory json:", err)
+		utils.Logger.Error().Err(err).Msg("cannot marshal room directory json")
 		return http.StatusInternalServerError, nil
 	}
 	return http.StatusOK, value
@@ -222,7 +224,7 @@ func (m *Matrix) QueryServerName(serverName string) string {
 func (m *Matrix) QueryDirectory(req *http.Request, alias string) (int, []byte) {
 	_, err := m.ValidateAuth(req)
 	if err != nil {
-		log.Println("AUTH ERROR: matrix auth failed:", err)
+		utils.Logger.Warn().Err(err).Msg("matrix auth failed")
 		return http.StatusUnauthorized, m.getErrorResp("M_UNAUTHORIZED", "authorization failed")
 	}
 	if alias == "" {
@@ -245,7 +247,7 @@ func (m *Matrix) QueryDirectory(req *http.Request, alias string) (int, []byte) {
 	}
 	respb, err := utils.JSON(resp)
 	if err != nil {
-		log.Println("ERROR: cannot marshal query directory resp:", err)
+		utils.Logger.Error().Err(err).Msg("cannot marshal query directory resp")
 		return http.StatusInternalServerError, nil
 	}
 
@@ -343,7 +345,7 @@ func (m *Matrix) QueryCSURL(serverName string) string {
 func (m *Matrix) ValidateAuth(r *http.Request) (serverName string, err error) {
 	defer r.Body.Close()
 	if m.cfg.Get().Matrix.ServerName == devhost {
-		log.Println("ignoring auth validation on dev host")
+		utils.Logger.Warn().Msg("ignoring auth validation on dev host")
 		return "ignored", nil
 	}
 	body, err := io.ReadAll(r.Body)
@@ -380,9 +382,13 @@ func (m *Matrix) ValidateAuth(r *http.Request) (serverName string, err error) {
 	}
 	for _, auth := range auths {
 		if err := m.validateAuth(obj, canonical, auth, keys); err != nil {
-			log.Println("canonical", string(canonical))
-			log.Println("content", content)
-			log.Println("obj", obj)
+			utils.Logger.
+				Warn().
+				Err(err).
+				Str("canonical", string(canonical)).
+				Any("content", content).
+				Any("obj", obj).
+				Msg("matrix auth validation failed")
 			return "", err
 		}
 	}
@@ -435,7 +441,7 @@ func (m *Matrix) Authorize(serverName, method, uri string, body any) ([]string, 
 func (m *Matrix) getErrorResp(code, message string) []byte {
 	respb, err := utils.JSON(errorResp{Code: code, Error: message})
 	if err != nil {
-		log.Println("ERROR: cannot marshal canonical json", err)
+		utils.Logger.Error().Err(err).Msg("cannot marshal canonical json")
 	}
 	return respb
 }
@@ -568,7 +574,7 @@ func (m *Matrix) parseAuth(authorization string) *matrixAuth {
 		case "sig":
 			sig, err := base64.RawStdEncoding.DecodeString(value)
 			if err != nil {
-				log.Println("ERROR: cannot decode signature:", err)
+				utils.Logger.Warn().Err(err).Msg("cannot decode signature")
 				return nil
 			}
 			auth.Signature = sig
@@ -777,21 +783,21 @@ func (m *Matrix) queryKeys(serverName string) map[string]ed25519.PublicKey {
 	}
 	resp, err := m.lookupKeys(serverName, true)
 	if err != nil {
-		log.Println("ERROR: keys query failed:", err)
+		utils.Logger.Warn().Err(err).Msg("keys query failed")
 		return nil
 	}
 	if resp.ServerName != serverName {
-		log.Println("ERROR: server name doesn't match")
+		utils.Logger.Warn().Msg("server name doesn't match")
 		return nil
 	}
 	if resp.ValidUntilTS <= time.Now().UnixMilli() {
-		log.Println("ERROR: server keys are expired")
+		utils.Logger.Warn().Msg("server keys are expired")
 	}
 	keys := map[string]ed25519.PublicKey{}
 	for id, data := range resp.VerifyKeys {
 		pub, err := base64.RawStdEncoding.DecodeString(data["key"])
 		if err != nil {
-			log.Println("ERROR: failed to decode server key:", err)
+			utils.Logger.Warn().Err(err).Msg("failed to decode server key")
 			continue
 		}
 		keys[id] = pub

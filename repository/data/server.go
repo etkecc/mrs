@@ -2,11 +2,11 @@ package data
 
 import (
 	"encoding/json"
-	"log"
 
 	"go.etcd.io/bbolt"
 
 	"gitlab.com/etke.cc/mrs/api/model"
+	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
 // AddServer info
@@ -14,13 +14,13 @@ func (d *Data) AddServer(server *model.MatrixServer) error {
 	return d.db.Batch(func(tx *bbolt.Tx) error {
 		err := tx.Bucket(serversBucket).Put([]byte(server.Name), []byte(server.URL))
 		if err != nil {
-			log.Println(server.Name, "cannot add server", err)
+			utils.Logger.Error().Err(err).Str("server", server.Name).Msg("cannot add server")
 			return err
 		}
 
 		serverb, merr := json.Marshal(server)
 		if merr != nil {
-			log.Println(server.Name, "cannot marshal server", merr)
+			utils.Logger.Error().Err(err).Str("server", server.Name).Msg("cannot marshal server")
 			return merr
 		}
 		return tx.Bucket(serversInfoBucket).Put([]byte(server.Name), serverb)

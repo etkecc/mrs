@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -79,14 +78,14 @@ func (m *Moderation) getReportText(roomID, reason string, room *model.MatrixRoom
 	var queryParams string
 	hash, err := argon2pw.GenerateSaltedHash(m.cfg.Get().Auth.Moderation.Login + m.cfg.Get().Auth.Moderation.Password)
 	if err != nil {
-		log.Println("cannot generate auth hash:", err)
+		utils.Logger.Error().Err(err).Msg("cannot generate auth hash")
 	} else {
 		queryParams = "?auth=" + utils.URLSafeEncode(hash)
 	}
 
 	apiURL, err := url.Parse(m.cfg.Get().Public.API)
 	if err != nil {
-		log.Println("ERROR: cannot parse public api url:", err)
+		utils.Logger.Error().Err(err).Msg("cannot parse public api url")
 		return text.String()
 	}
 
@@ -158,7 +157,7 @@ func (m *Moderation) Report(roomID, reason string) error {
 	}
 
 	if merr := m.mail.SendReport(room, server, reason, server.Contacts.Emails); merr != nil {
-		log.Printf("email sending failed: %+v", merr)
+		utils.Logger.Warn().Err(merr).Msg("email sending failed")
 	}
 
 	req, err := http.NewRequest("POST", m.cfg.Get().Webhooks.Moderation, bytes.NewReader(payload))

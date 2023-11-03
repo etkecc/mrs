@@ -3,12 +3,12 @@ package controllers
 import (
 	"bytes"
 	"io"
-	"log"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
 
 	"gitlab.com/etke.cc/mrs/api/model"
+	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
 type matrixService interface {
@@ -45,7 +45,7 @@ func matrixRoomDirectory(matrixSvc matrixService) echo.HandlerFunc {
 		c.SetRequest(r)
 
 		if err := c.Bind(req); err != nil {
-			log.Println("directory request binding failed:", err)
+			utils.Logger.Error().Err(err).Msg("directory request binding failed")
 		}
 		r.Body = io.NopCloser(bytes.NewBuffer(body))
 		c.SetRequest(r)

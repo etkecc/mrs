@@ -1,13 +1,13 @@
 package services
 
 import (
-	"log"
 	"sync"
 
 	"github.com/blevesearch/bleve/v2"
 
 	"gitlab.com/etke.cc/mrs/api/metrics"
 	"gitlab.com/etke.cc/mrs/api/model"
+	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
 type Index struct {
@@ -58,10 +58,10 @@ func (i *Index) RoomsBatch(roomID string, data *model.Entry) error {
 // IndexBatch performs indexing of the current batch
 func (i *Index) IndexBatch() error {
 	size := i.batch.Size()
-	log.Println("indexing batch of", size, "ops")
+	utils.Logger.Info().Int("len", size).Msg("indexing batch...")
 	err := i.index.IndexBatch(i.batch)
 	i.batch.Reset()
-	log.Println("indexed batch of", size, "ops")
+	utils.Logger.Info().Int("len", size).Msg("indexed batch")
 	metrics.RoomsIndexed.Add(float64(size))
 	return err
 }

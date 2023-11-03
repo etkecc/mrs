@@ -1,8 +1,9 @@
 package batch
 
 import (
-	"log"
 	"sync"
+
+	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
 // Batch struct
@@ -36,7 +37,7 @@ func (b *Batch[T]) Add(item T) {
 // Flush / store batch
 func (b *Batch[T]) Flush() {
 	b.Lock()
-	log.Println("data.Batch", "storing batch of", len(b.data), "items")
+	utils.Logger.Info().Int("len", len(b.data)).Msg("storing data batch")
 	b.flushfunc(b.data)
 	b.data = make([]T, 0, b.size)
 	b.Unlock()

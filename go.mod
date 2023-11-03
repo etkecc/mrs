@@ -5,6 +5,7 @@ go 1.21.0
 toolchain go1.21.3
 
 require (
+	github.com/archdx/zerolog-sentry v1.6.1
 	github.com/benjaminestes/robots/v2 v2.0.5
 	github.com/blevesearch/bleve/v2 v2.3.10
 	github.com/cespare/xxhash/v2 v2.2.0
@@ -18,6 +19,7 @@ require (
 	github.com/pemistahl/lingua-go v1.4.0
 	github.com/prometheus/client_golang v1.17.0
 	github.com/raja/argon2pw v1.0.1
+	github.com/rs/zerolog v1.31.0
 	github.com/theovassiliou/base64url v0.0.0-20211006203958-1e011490eaaf
 	github.com/xxjwxc/gowp v0.0.0-20230612082025-23a9b62c1da6
 	gitlab.com/etke.cc/go/fswatcher v1.0.0
@@ -49,6 +51,8 @@ require (
 	github.com/blevesearch/zapx/v13 v13.3.10 // indirect
 	github.com/blevesearch/zapx/v14 v14.3.10 // indirect
 	github.com/blevesearch/zapx/v15 v15.3.13 // indirect
+	github.com/buger/jsonparser v1.1.1 // indirect
+	github.com/getsentry/sentry-go v0.24.1 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang/geo v0.0.0-20230421003525-6adc56603217 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect

@@ -1,7 +1,6 @@
 package search
 
 import (
-	"log"
 	"os"
 
 	"github.com/blevesearch/bleve/v2"
@@ -14,6 +13,7 @@ import (
 	"github.com/pemistahl/lingua-go"
 
 	"gitlab.com/etke.cc/mrs/api/repository/search/multilang"
+	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
 const backupSuffix = ".bak"
@@ -60,17 +60,17 @@ func getIndexMapping() mapping.IndexMapping {
 	m.DefaultType = "room"
 	err := m.AddCustomCharFilter("matrix_chars", charfilter)
 	if err != nil {
-		log.Println("index", "cannot create custom char filter", err)
+		utils.Logger.Error().Err(err).Msg("cannot create custom char filter")
 	}
 
 	err = m.AddCustomAnalyzer("matrix_id", analyzerID)
 	if err != nil {
-		log.Println("index", "cannot create matrix_id analyzer", err)
+		utils.Logger.Error().Err(err).Msg("cannot create matrix_id analyzer")
 	}
 
 	err = m.AddCustomAnalyzer("matrix_alias", analyzerAlias)
 	if err != nil {
-		log.Println("index", "cannot create matrix_alias analyzer", err)
+		utils.Logger.Error().Err(err).Msg("cannot create matrix_alias analyzer")
 	}
 
 	textFM := bleve.NewTextFieldMapping()
@@ -140,11 +140,11 @@ func (i *Index) Swap() error {
 	}
 
 	if err := os.RemoveAll(i.path + backupSuffix); err != nil {
-		log.Println("WARN: cannot remove index backup:", err)
+		utils.Logger.Warn().Err(err).Msg("cannot remove index backup")
 	}
 
 	if err := os.Rename(i.path, i.path+backupSuffix); err != nil {
-		log.Println("ERROR: cannot move index", err)
+		utils.Logger.Error().Err(err).Msg("cannot move index")
 	}
 	return i.load()
 }

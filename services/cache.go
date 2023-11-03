@@ -2,13 +2,13 @@ package services
 
 import (
 	"bytes"
-	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/labstack/echo/v4"
 
 	"gitlab.com/etke.cc/mrs/api/model"
+	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
 // MaxCacheAge to be used on immutable resources
@@ -102,7 +102,7 @@ func (cache *Cache) purgeBunnyCDN() {
 	}
 	req, err := http.NewRequest("POST", bunny.URL, bytes.NewBuffer([]byte(`{"CacheTag":"mutable"}}`)))
 	if err != nil {
-		log.Println("cannot purge bunny cache", err)
+		utils.Logger.Error().Err(err).Msg("cannot purge bunny cache")
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
@@ -110,11 +110,11 @@ func (cache *Cache) purgeBunnyCDN() {
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		log.Println("cannot purge bunny cache", err)
+		utils.Logger.Error().Err(err).Msg("cannot purge bunny cache")
 		return
 	}
 	resp.Body.Close() // no need
 	if resp.StatusCode != http.StatusNoContent {
-		log.Println("cannot purge bunny cache - http status code is", resp.StatusCode)
+		utils.Logger.Error().Err(err).Int("status_code", resp.StatusCode).Msg("cannot purge bunny cache")
 	}
 }

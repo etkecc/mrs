@@ -1,11 +1,11 @@
 package multilang
 
 import (
-	"log"
-
 	"github.com/blevesearch/bleve/v2/analysis"
 	"github.com/blevesearch/bleve/v2/registry"
 	"github.com/pemistahl/lingua-go"
+
+	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
 const (
@@ -20,7 +20,7 @@ const (
 func Register(detector lingua.LanguageDetector, defaultLang string) {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Println("ERROR: cannot register multilang analyzer:", err)
+			utils.Logger.Warn().Any("error", err).Msg("cannot register multilang analyzer")
 		}
 	}()
 
@@ -30,7 +30,7 @@ func Register(detector lingua.LanguageDetector, defaultLang string) {
 	registry.RegisterTokenizer(Name, func(config map[string]interface{}, cache *registry.Cache) (analysis.Tokenizer, error) {
 		analyzer, err := cache.AnalyzerNamed(defaultLang)
 		if err != nil {
-			log.Println(Name, "cannot find analyzer by name", defaultLang, err)
+			utils.Logger.Error().Err(err).Str("tokenizer", Name).Str("analyzer", defaultLang).Msg("cannot find analyzer by name")
 			return nil, err
 		}
 		return &Tokenizer{cache: cache, fallback: analyzer}, nil
@@ -38,12 +38,12 @@ func Register(detector lingua.LanguageDetector, defaultLang string) {
 	registry.RegisterAnalyzer(Name, func(config map[string]interface{}, cache *registry.Cache) (analysis.Analyzer, error) {
 		charfilter, err := cache.CharFilterNamed(Name)
 		if err != nil {
-			log.Println(Name, "cannot find multilang char filter", err)
+			utils.Logger.Error().Err(err).Str("analyzer", Name).Msg("cannot find multilang char filter")
 			return nil, err
 		}
 		tokenizer, err := cache.TokenizerNamed(Name)
 		if err != nil {
-			log.Println(Name, "cannot find multilang tokenizer", err)
+			utils.Logger.Error().Err(err).Str("analyzer", Name).Msg("cannot find multilang tokenizer")
 			return nil, err
 		}
 		analyzer := &analysis.DefaultAnalyzer{

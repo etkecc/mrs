@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -13,6 +12,7 @@ import (
 
 	"gitlab.com/etke.cc/mrs/api/metrics"
 	"gitlab.com/etke.cc/mrs/api/model"
+	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
 type StatsRepository interface {
@@ -73,7 +73,7 @@ func (s *Stats) Get() *model.IndexStats {
 // SetStartedAt of the process
 func (s *Stats) SetStartedAt(process string, startedAt time.Time) {
 	if err := s.data.SetStartedAt(process, startedAt); err != nil {
-		log.Println("cannot set", process, "started_at", err)
+		utils.Logger.Error().Err(err).Str("process", process).Msg("cannot set started_at")
 	}
 	s.stats = s.data.GetIndexStats()
 }
@@ -81,7 +81,7 @@ func (s *Stats) SetStartedAt(process string, startedAt time.Time) {
 // SetFinishedAt of the process
 func (s *Stats) SetFinishedAt(process string, finishedAt time.Time) {
 	if err := s.data.SetFinishedAt(process, finishedAt); err != nil {
-		log.Println("cannot set", process, "finished_at", err)
+		utils.Logger.Error().Err(err).Str("process", process).Msg("cannot set finished_at")
 	}
 	s.stats = s.data.GetIndexStats()
 }
@@ -99,15 +99,15 @@ func (s *Stats) CollectServers(reload bool) {
 	})
 
 	if err := s.data.SetIndexOnlineServers(online); err != nil {
-		log.Println("cannot set online servers count", err)
+		utils.Logger.Error().Err(err).Msg("cannot set online servers count")
 	}
 
 	if err := s.data.SetIndexIndexableServers(indexable); err != nil {
-		log.Println("cannot set indexable servers count", err)
+		utils.Logger.Error().Err(err).Msg("cannot set indexable servers count")
 	}
 
 	if err := s.data.SetIndexBlockedServers(s.block.Len()); err != nil {
-		log.Println("cannot set blocked servers count", err)
+		utils.Logger.Error().Err(err).Msg("cannot set blocked servers count")
 	}
 
 	if reload {
@@ -118,7 +118,7 @@ func (s *Stats) CollectServers(reload bool) {
 // Collect all stats from repository
 func (s *Stats) Collect() {
 	if s.collecting {
-		log.Println("stats collection already in progress, ignoring request")
+		utils.Logger.Info().Msg("stats collection already in progress, ignoring request")
 		return
 	}
 	s.collecting = true
@@ -131,24 +131,24 @@ func (s *Stats) Collect() {
 		rooms++
 	})
 	if err := s.data.SetIndexParsedRooms(rooms); err != nil {
-		log.Println("cannot set parsed rooms count", err)
+		utils.Logger.Error().Err(err).Msg("cannot set parsed rooms count")
 	}
 	if err := s.data.SetIndexIndexedRooms(s.index.Len()); err != nil {
-		log.Println("cannot set indexed rooms count", err)
+		utils.Logger.Error().Err(err).Msg("cannot set indexed rooms count")
 	}
 	banned, berr := s.data.GetBannedRooms()
 	if berr != nil {
-		log.Println("cannot get banned rooms count", berr)
+		utils.Logger.Error().Err(berr).Msg("cannot get banned rooms count")
 	}
 	if err := s.data.SetIndexBannedRooms(len(banned)); err != nil {
-		log.Println("cannot set banned rooms count", err)
+		utils.Logger.Error().Err(berr).Msg("cannot set banned rooms count")
 	}
 	reported, rerr := s.data.GetReportedRooms()
 	if rerr != nil {
-		log.Println("cannot get reported rooms count", rerr)
+		utils.Logger.Error().Err(berr).Msg("cannot get reported rooms count")
 	}
 	if err := s.data.SetIndexReportedRooms(len(reported)); err != nil {
-		log.Println("cannot set reported rooms count", err)
+		utils.Logger.Error().Err(berr).Msg("cannot set reported rooms count")
 	}
 
 	s.reload()
@@ -171,25 +171,25 @@ func (s *Stats) sendWebhook() {
 		Markdown: s.getWebhookText(),
 	})
 	if err != nil {
-		log.Printf("webhook payload marshaling failed: %v", err)
+		utils.Logger.Error().Err(err).Msg("webhook payload marshaling failed")
 		return
 	}
 
 	req, err := http.NewRequest("POST", s.cfg.Get().Webhooks.Stats, bytes.NewReader(payload))
 	if err != nil {
-		log.Printf("webhook request marshaling failed: %v", err)
+		utils.Logger.Error().Err(err).Msg("webhook request failed")
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		log.Printf("webhook sending failed: %v", err)
+		utils.Logger.Error().Err(err).Msg("webhook sending failed")
 		return
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusAccepted && resp.StatusCode != http.StatusOK {
 		body, err := io.ReadAll(resp.Body)
-		log.Printf("backend returned HTTP %d: %s %v", resp.StatusCode, string(body), err)
+		utils.Logger.Error().Err(err).Int("status_code", resp.StatusCode).Str("body", string(body)).Msg("webhook sending failed")
 	}
 }
 

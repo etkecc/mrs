@@ -1,10 +1,10 @@
 package services
 
 import (
-	"log"
 	"time"
 
 	"gitlab.com/etke.cc/mrs/api/model"
+	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
 type dataCrawlerService interface {
@@ -68,46 +68,46 @@ func (df *DataFacade) AddServers(names []string, workers int) {
 
 // DiscoverServers matrix servers
 func (df *DataFacade) DiscoverServers(workers int) {
-	log.Println("discovering matrix servers...")
+	utils.Logger.Info().Msg("discovering matrix servers...")
 	start := time.Now().UTC()
 	df.stats.SetStartedAt("discovery", start)
 	err := df.crawler.DiscoverServers(workers)
 	df.stats.SetFinishedAt("discovery", time.Now().UTC())
-	log.Println("servers discovery has been finished", err, "took", time.Since(start))
+	utils.Logger.Info().Err(err).Dur("took", time.Since(start)).Msg("servers discovery has been finished")
 }
 
 // ParseRooms from discovered servers
 func (df *DataFacade) ParseRooms(workers int) {
-	log.Println("parsing matrix rooms...")
+	utils.Logger.Info().Msg("parsing matrix rooms...")
 	start := time.Now().UTC()
 	df.stats.SetStartedAt("parsing", start)
 	df.crawler.ParseRooms(workers)
 	df.stats.SetFinishedAt("parsing", time.Now().UTC())
-	log.Println("all available matrix rooms have been parsed; took", time.Since(start))
+	utils.Logger.Info().Dur("took", time.Since(start)).Msg("matrix rooms have been parsed")
 }
 
 // Ingest data into search index
 func (df *DataFacade) Ingest() {
-	log.Println("ingesting matrix rooms...")
+	utils.Logger.Info().Msg("indexing matrix rooms...")
 	if err := df.index.EmptyIndex(); err != nil {
-		log.Println("ERROR: cannot create empty index:", err)
+		utils.Logger.Error().Err(err).Msg("cannot create empty index")
 	}
 	start := time.Now().UTC()
 	df.stats.SetStartedAt("indexing", start)
 	df.crawler.EachRoom(func(roomID string, room *model.MatrixRoom) {
 		if err := df.index.RoomsBatch(roomID, room.Entry()); err != nil {
-			log.Println(room.Alias, "cannot add to batch", err)
+			utils.Logger.Warn().Err(err).Str("id", room.ID).Msg("cannot add room to batch")
 		}
 	})
 	if err := df.index.IndexBatch(); err != nil {
-		log.Println("indexing of the last batch failed", err)
+		utils.Logger.Warn().Err(err).Msg("indexing of the last batch failed")
 	}
 	df.stats.SetFinishedAt("indexing", time.Now().UTC())
-	log.Println("all available matrix rooms have been ingested; took", time.Since(start))
+	utils.Logger.Info().Dur("took", time.Since(start)).Msg("matrix rooms have been indexed")
 
-	log.Println("purging cache...")
+	utils.Logger.Info().Msg("purging cache...")
 	df.cache.Purge()
-	log.Println("cache has been purged")
+	utils.Logger.Info().Msg("cache has been purged")
 }
 
 // Full data pipeline (discovery, parsing, indexing)
@@ -116,7 +116,7 @@ func (df *DataFacade) Full(discoveryWorkers, parsingWorkers int) {
 	df.ParseRooms(parsingWorkers)
 	df.Ingest()
 
-	log.Println("collecting stats...")
+	utils.Logger.Info().Msg("collecting stats...")
 	df.stats.Collect()
-	log.Println("stats have been collected")
+	utils.Logger.Info().Msg("stats have been collected")
 }

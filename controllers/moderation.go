@@ -1,10 +1,11 @@
 package controllers
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+
+	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
 type moderationService interface {
@@ -23,12 +24,12 @@ func report(svc moderationService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		var report reportSubmission
 		if err := c.Bind(&report); err != nil {
-			log.Println("report", "bind error:", err)
+			utils.Logger.Error().Err(err).Msg("cannot bind report")
 			return err
 		}
 
 		if err := svc.Report(report.RoomID, report.Reason); err != nil {
-			log.Println("report", err)
+			utils.Logger.Error().Err(err).Msg("cannot report room")
 			return err
 		}
 

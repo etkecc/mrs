@@ -3,7 +3,6 @@ package utils
 import (
 	"bytes"
 	"crypto/subtle"
-	"log"
 	"strconv"
 	"strings"
 	"text/template"
@@ -168,7 +167,7 @@ func Template(tplString string, vars any) (string, error) {
 func MayTemplate(tplString string, vars any) string {
 	result, err := Template(tplString, vars)
 	if err != nil {
-		log.Println("templating error:", err)
+		Logger.Error().Err(err).Msg("templating failed")
 	}
 	if result == "" {
 		return tplString

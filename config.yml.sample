@@ -1,4 +1,5 @@
 port: 8080
+sentry_dsn: '' # optional sentry dsn
 public: # public-facing information
   name: MRS # instance name
   ui: http://localhost # UI URL

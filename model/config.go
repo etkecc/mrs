@@ -3,6 +3,7 @@ package model
 // Config is MRS configuration model
 type Config struct {
 	Port      string           `yaml:"port"`
+	SentryDSN string           `yaml:"sentry_dsn"`
 	Public    *ConfigPublic    `yaml:"public"`
 	Matrix    *ConfigMatrix    `yaml:"matrix"`
 	Search    *ConfigSearch    `yaml:"search"`

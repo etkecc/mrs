@@ -3,7 +3,6 @@ package services
 import (
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -132,9 +131,10 @@ func (m *Crawler) validateServer(name string) (string, bool) {
 
 // validateServers performs basic sanitization, checks if server is online and federateable
 func (m *Crawler) validateServers(servers *utils.List[string, string], workers int) *utils.List[string, string] {
+	log := utils.Logger
 	discovered := utils.NewList[string, string]()
 	chunks := utils.Chunks(servers.Slice(), 1000)
-	log.Printf("validating %d servers using %d workers in %d chunks", servers.Len(), workers, len(chunks))
+	log.Info().Int("servers", servers.Len()).Int("workers", workers).Int("chunks", len(chunks)).Msg("validating servers")
 	for i, chunk := range chunks {
 		wp := workpool.New(workers)
 		for _, server := range chunk {
@@ -148,10 +148,10 @@ func (m *Crawler) validateServers(servers *utils.List[string, string], workers i
 			})
 		}
 		wp.Wait() //nolint:errcheck
-		log.Printf("[%d/%d] servers validation in progress: %d of %d servers are valid", i+1, len(chunks), discovered.Len(), servers.Len())
+		log.Info().Int("chunk", i+1).Int("of", len(chunks)).Int("valid", discovered.Len()).Int("total", servers.Len()).Msg("servers validation in progress")
 	}
 
-	log.Printf("servers validation finished - from %d servers intended for discovery, only %d are valid (online and federateable)", servers.Len(), discovered.Len())
+	log.Info().Int("valid", discovered.Len()).Int("of", servers.Len()).Msg("servers validation finished")
 	return discovered
 }
 
@@ -159,7 +159,7 @@ func (m *Crawler) loadServers() *utils.List[string, string] {
 	servers := utils.NewList[string, string]()
 	servers.AddMapKeys(m.data.AllServers())
 	servers.AddSlice(m.cfg.Get().Servers)
-	log.Printf("loaded %d servers from config and db", servers.Len())
+	utils.Logger.Info().Int("servers", servers.Len()).Msg("loaded servers from config and db")
 	m.EachRoom(func(_ string, data *model.MatrixRoom) {
 		servers.Add(data.Server)
 		if data.Alias != "" {
@@ -167,14 +167,14 @@ func (m *Crawler) loadServers() *utils.List[string, string] {
 		}
 	})
 
-	log.Printf("added servers from already parsed rooms, total known servers = %d", servers.Len())
+	utils.Logger.Info().Int("servers", servers.Len()).Msg("added servers from already parsed rooms")
 	return servers
 }
 
 // DiscoverServers across federation and remove invalid ones
 func (m *Crawler) DiscoverServers(workers int) error {
 	if m.discovering {
-		log.Println("servers discovery already in progress, ignoring request")
+		utils.Logger.Info().Msg("servers discovery already in progress, ignoring request")
 		return nil
 	}
 	m.discovering = true
@@ -202,7 +202,7 @@ func (m *Crawler) discoverServer(name string) (valid bool, err error) {
 	}
 
 	if !m.robots.Allowed(name, RobotsTxtPublicRooms) {
-		log.Println(name, "server is not eligible: robots.txt")
+		utils.Logger.Info().Str("server", name).Str("reason", "robots.txt").Msg("not eligible")
 		return false, m.data.AddServer(server) // not indexable yet, but online
 	}
 
@@ -211,11 +211,11 @@ func (m *Crawler) discoverServer(name string) (valid bool, err error) {
 	}
 
 	if _, err = m.fed.QueryPublicRooms(name, "1", ""); err != nil {
-		log.Println(name, "server is not eligible:", err)
+		utils.Logger.Info().Str("server", name).Str("reason", err.Error()).Msg("not eligible")
 		return false, m.data.AddServer(server) // not indexable yet, but online
 	}
 
-	log.Println(name, "server is eligible")
+	utils.Logger.Info().Str("server", name).Msg("eligible")
 	server.Indexable = true
 	return true, m.data.AddServer(server)
 }
@@ -263,7 +263,7 @@ func (m *Crawler) AddServer(name string) int {
 
 	valid, err := m.discoverServer(name)
 	if err != nil {
-		log.Println(name, "cannot add server", err)
+		utils.Logger.Warn().Err(err).Str("server", name).Msg("cannot add server")
 	}
 	if !valid {
 		return http.StatusUnprocessableEntity
@@ -280,7 +280,7 @@ func (m *Crawler) AllServers() map[string]string {
 // ParseRooms across all discovered servers
 func (m *Crawler) ParseRooms(workers int) {
 	if m.parsing {
-		log.Println("rooms parsing already in progress, ignoring request")
+		utils.Logger.Info().Msg("room parsing already in progress, ignoring request")
 		return
 	}
 	m.parsing = true
@@ -293,18 +293,18 @@ func (m *Crawler) ParseRooms(workers int) {
 		workers = total
 	}
 	wp := workpool.New(workers)
-	log.Println("parsing rooms of", total, "servers using", workers, "workers")
+	utils.Logger.Info().Int("servers", total).Int("workers", workers).Msg("parsing rooms")
 	for _, srvName := range servers {
 		name := srvName
 		if m.block.ByServer(name) {
 			if err := m.data.RemoveServer(name); err != nil {
-				log.Println(name, "cannot remove blocked server", err)
+				utils.Logger.Error().Err(err).Str("server", name).Msg("cannot remove blocked server")
 			}
 			continue
 		}
 
 		wp.Do(func() error {
-			log.Println(name, "parsing rooms...")
+			utils.Logger.Info().Str("server", name).Msg("parsing rooms...")
 			m.getPublicRooms(name)
 			return nil
 		})
@@ -316,7 +316,7 @@ func (m *Crawler) ParseRooms(workers int) {
 // EachRoom allows to work with each known room
 func (m *Crawler) EachRoom(handler func(roomID string, data *model.MatrixRoom)) {
 	if m.eachrooming {
-		log.Println("iterating over each room is already in progress, ignoring request")
+		utils.Logger.Info().Msg("iterating over each room is already in progress, ignoring request")
 		return
 	}
 	m.eachrooming = true
@@ -392,7 +392,7 @@ func (m *Crawler) GetAvatar(serverName string, mediaID string) (io.Reader, strin
 func (m *Crawler) getServerContacts(name string) *model.MatrixServerContacts {
 	resp, err := msc1929.Get(name)
 	if err != nil {
-		log.Println(name, "cannot get server contacts", err)
+		utils.Logger.Warn().Err(err).Str("server", name).Msg("cannot get server contacts")
 		return nil
 	}
 	if resp.IsEmpty() {
@@ -436,11 +436,11 @@ func (m *Crawler) getPublicRooms(name string) {
 		start := time.Now()
 		resp, err := m.fed.QueryPublicRooms(name, limit, since)
 		if err != nil {
-			log.Println(name, "cannot query public rooms:", err)
+			utils.Logger.Warn().Err(err).Str("server", name).Msg("cannot query public rooms")
 			return
 		}
 		if len(resp.Chunk) == 0 {
-			log.Println(name, "no public rooms available")
+			utils.Logger.Info().Str("server", name).Msg("no public rooms available")
 			return
 		}
 
@@ -455,7 +455,13 @@ func (m *Crawler) getPublicRooms(name string) {
 			room.Parse(m.detector, m.cfg.Get().Public.API, m.cfg.Get().Matrix.ServerName)
 			m.data.AddRoomBatch(room)
 		}
-		log.Println(name, "added", len(resp.Chunk), "rooms (", added, "of", resp.Total, ") took", time.Since(start))
+		utils.Logger.
+			Info().
+			Str("server", name).
+			Int("added", len(resp.Chunk)).
+			Int("of", resp.Total).
+			Dur("took", time.Since(start)).
+			Msg("added rooms")
 
 		if resp.NextBatch == "" {
 			return

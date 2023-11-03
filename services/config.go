@@ -1,7 +1,6 @@
 package services
 
 import (
-	"log"
 	"os"
 	"sync"
 
@@ -10,6 +9,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"gitlab.com/etke.cc/mrs/api/model"
+	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
 // Config service
@@ -41,7 +41,7 @@ func NewConfig(path string) (*Config, error) {
 	}
 	go c.fsw.Start(func(_ fsnotify.Event) {
 		if err := c.Read(); err != nil {
-			log.Println("ERROR: cannot reload config:", err)
+			utils.Logger.Error().Err(err).Msg("cannot reload config")
 		}
 	})
 
@@ -58,7 +58,7 @@ func (c *Config) Read() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	log.Println("reading config")
+	utils.Logger.Info().Msg("reading config")
 	configb, err := os.ReadFile(c.path)
 	if err != nil {
 		return err

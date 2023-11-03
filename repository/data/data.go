@@ -2,12 +2,12 @@ package data
 
 import (
 	"encoding/json"
-	"log"
 
 	"go.etcd.io/bbolt"
 
 	"gitlab.com/etke.cc/mrs/api/model"
 	"gitlab.com/etke.cc/mrs/api/repository/batch"
+	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
 type Data struct {
@@ -32,13 +32,13 @@ func New(path string) (*Data, error) {
 				for _, room := range rooms {
 					roomb, err := json.Marshal(room)
 					if err != nil {
-						log.Println(room.Server, room.ID, "cannot marshal room", err)
+						utils.Logger.Error().Err(err).Str("id", room.ID).Str("server", room.Server).Msg("cannot marshal room")
 						continue
 					}
 
 					err = tx.Bucket(roomsBucket).Put([]byte(room.ID), roomb)
 					if err != nil {
-						log.Println(room.Server, room.ID, "cannot add room", err)
+						utils.Logger.Error().Err(err).Str("id", room.ID).Str("server", room.Server).Msg("cannot add room")
 						continue
 					}
 				}

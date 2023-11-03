@@ -7,7 +7,6 @@ import (
 	"encoding/base64"
 	"flag"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -22,6 +21,7 @@ import (
 	"gitlab.com/etke.cc/mrs/api/repository/data"
 	"gitlab.com/etke.cc/mrs/api/repository/search"
 	"gitlab.com/etke.cc/mrs/api/services"
+	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
 // AllLanguages to load all language models at once
@@ -43,24 +43,26 @@ func main() {
 	flag.Parse()
 	if runGenKey {
 		if _, err := generateKey(); err != nil {
-			log.Panic(err)
+			utils.Logger.Fatal().Err(err).Msg("cannot generate key")
 		}
 		return
 	}
 
 	cfg, err := services.NewConfig(configPath)
 	if err != nil {
-		log.Panic(err)
+		utils.Logger.Fatal().Err(err).Msg("cannot read config")
 	}
+	utils.Logger = utils.SetupLogger("info", cfg.Get().SentryDSN)
+
 	dataRepo, err = data.New(cfg.Get().Path.Data)
 	if err != nil {
-		log.Panic(err)
+		utils.Logger.Fatal().Err(err).Msg("cannot open data repo")
 	}
 
 	detector := getLanguageDetector(cfg.Get().Languages)
 	index, err = search.NewIndex(cfg.Get().Path.Index, detector, "en")
 	if err != nil {
-		log.Panic(err)
+		utils.Logger.Fatal().Err(err).Msg("cannot open index repo")
 	}
 	robotsSvc := services.NewRobots()
 	blockSvc := services.NewBlocklist(cfg)
@@ -69,7 +71,7 @@ func main() {
 	searchSvc := services.NewSearch(cfg, index, blockSvc, statsSvc)
 	matrixSvc, err := services.NewMatrix(cfg, dataRepo, searchSvc)
 	if err != nil {
-		log.Panic(err)
+		utils.Logger.Fatal().Err(err).Msg("cannot start matrix service")
 	}
 	crawlerSvc := services.NewCrawler(cfg, matrixSvc, robotsSvc, blockSvc, dataRepo, detector)
 	matrixSvc.SetDiscover(crawlerSvc.AddServer)
@@ -85,7 +87,7 @@ func main() {
 	initShutdown(quit)
 
 	if err := e.Start(":" + cfg.Get().Port); err != nil && err != http.ErrServerClosed {
-		log.Fatal("shutting down the server", err)
+		utils.Logger.Fatal().Err(err).Msg("http server failed")
 	}
 
 	<-quit
@@ -97,8 +99,7 @@ func generateKey() (string, error) {
 		return "", err
 	}
 	key := fmt.Sprintf("ed25519 %s %s", base64.RawURLEncoding.EncodeToString(pub[:4]), base64.RawStdEncoding.EncodeToString(priv.Seed()))
-	log.Println("WARNING", "AHTUNG", "ATTENTION!", "new key has been generated")
-	log.Println(key)
+	utils.Logger.Warn().Str("key", key).Msg("ATTENTION! A new key has been generated")
 
 	return key, nil
 }
@@ -143,28 +144,28 @@ func initShutdown(quit chan struct{}) {
 func initCron(cfg *services.Config, dataSvc *services.DataFacade) {
 	cron = crontab.New()
 	if schedule := cfg.Get().Cron.Discovery; schedule != "" {
-		log.Println("cron", "discovery job enabled")
+		utils.Logger.Info().Str("job", "discovery").Msg("cron job enabled")
 		cron.MustAddJob(schedule, dataSvc.DiscoverServers, cfg.Get().Workers.Discovery)
 	}
 	if schedule := cfg.Get().Cron.Parsing; schedule != "" {
-		log.Println("cron", "parsing job enabled")
+		utils.Logger.Info().Str("job", "parsing").Msg("cron job enabled")
 		cron.MustAddJob(schedule, dataSvc.ParseRooms, cfg.Get().Workers.Parsing)
 	}
 	if schedule := cfg.Get().Cron.Indexing; schedule != "" {
-		log.Println("cron", "indexing job enabled")
+		utils.Logger.Info().Str("job", "indexing").Msg("cron job enabled")
 		cron.MustAddJob(schedule, dataSvc.Ingest)
 	}
 	if schedule := cfg.Get().Cron.Full; schedule != "" {
-		log.Println("cron", "full job enabled")
+		utils.Logger.Info().Str("job", "full").Msg("cron job enabled")
 		cron.MustAddJob(schedule, dataSvc.Full, cfg.Get().Workers.Discovery, cfg.Get().Workers.Parsing)
 	}
 }
 
 func shutdown() {
-	log.Println("shutting down...")
+	utils.Logger.Info().Msg("shutting down...")
 	cron.Shutdown()
 	if err := index.Close(); err != nil {
-		log.Println(err)
+		utils.Logger.Error().Err(err).Msg("cannot close the index")
 	}
 	dataRepo.Close()
 	// api was not started yet
@@ -174,6 +175,6 @@ func shutdown() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := e.Shutdown(ctx); err != nil {
-		log.Fatal(err) //nolint:gocritic // that's intended
+		utils.Logger.Fatal().Err(err).Msg("http server shutdown failed")
 	}
 }
