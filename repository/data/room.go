@@ -21,6 +21,52 @@ func (d *Data) FlushRoomBatch() {
 	d.rb.Flush()
 }
 
+func (d *Data) SetBiggestRooms(rooms []*model.MatrixRoom) error {
+	data := make(map[string][]byte, len(rooms))
+	for _, room := range rooms {
+		roomb, err := json.Marshal(room)
+		if err != nil {
+			utils.Logger.Error().Err(err).Str("id", room.ID).Str("server", room.Server).Msg("cannot marshal room")
+			return err
+		}
+		data[room.ID] = roomb
+	}
+
+	return d.db.Update(func(tx *bbolt.Tx) error {
+		if err := tx.DeleteBucket(biggestRoomsBucket); err != nil {
+			return err
+		}
+		bucket, cerr := tx.CreateBucket(biggestRoomsBucket)
+		if cerr != nil {
+			return cerr
+		}
+
+		for id, room := range data {
+			if err := bucket.Put([]byte(id), room); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+func (d *Data) GetBiggestRooms() []*model.MatrixRoom {
+	rooms := []*model.MatrixRoom{}
+	d.db.View(func(tx *bbolt.Tx) error { //nolint:errcheck
+		return tx.Bucket(biggestRoomsBucket).ForEach(func(k, v []byte) error {
+			var room *model.MatrixRoom
+			err := json.Unmarshal(v, &room)
+			if err != nil {
+				utils.Logger.Error().Err(err).Msg("cannot unmarshal a biggest room")
+				return err
+			}
+			rooms = append(rooms, room)
+			return nil
+		})
+	})
+	return rooms
+}
+
 // GetRoom info
 func (d *Data) GetRoom(roomID string) (*model.MatrixRoom, error) {
 	var room *model.MatrixRoom

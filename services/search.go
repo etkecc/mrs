@@ -14,9 +14,15 @@ import (
 // Search service
 type Search struct {
 	cfg   ConfigService
+	data  searchDataRepository
 	repo  SearchRepository
 	stats StatsService
 	block BlocklistService
+	empty []*model.Entry
+}
+
+type searchDataRepository interface {
+	GetBiggestRooms() []*model.MatrixRoom
 }
 
 // SearchRepository interface
@@ -37,15 +43,26 @@ var SearchFieldsBoost = map[string]float64{
 }
 
 // NewSearch creates new search service
-func NewSearch(cfg ConfigService, repo SearchRepository, block BlocklistService, stats StatsService) *Search {
+func NewSearch(cfg ConfigService, data searchDataRepository, repo SearchRepository, block BlocklistService, stats StatsService) *Search {
 	s := &Search{
 		cfg:   cfg,
+		data:  data,
 		repo:  repo,
 		stats: stats,
 		block: block,
 	}
+	s.SetEmptyQueryResults(data.GetBiggestRooms())
 
 	return s
+}
+
+func (s *Search) SetEmptyQueryResults(rooms []*model.MatrixRoom) {
+	entries := make([]*model.Entry, 0, len(rooms))
+	for _, room := range rooms {
+		entries = append(entries, room.Entry())
+	}
+
+	s.empty = entries
 }
 
 // Search things
@@ -60,7 +77,7 @@ func (s *Search) Search(q, sortBy string, limit, offset int) ([]*model.Entry, in
 
 	var builtQuery query.Query
 	if q == "" {
-		builtQuery = bleve.NewWildcardQuery("*")
+		return s.getEmptyQueryResults()
 	} else {
 		builtQuery = s.getSearchQuery(s.matchFields(q))
 	}
@@ -73,6 +90,13 @@ func (s *Search) Search(q, sortBy string, limit, offset int) ([]*model.Entry, in
 	}
 
 	return s.removeBlocked(results), total, nil
+}
+
+func (s *Search) getEmptyQueryResults() ([]*model.Entry, int, error) {
+	if s.empty == nil {
+		return []*model.Entry{}, 0, nil
+	}
+	return s.empty, len(s.empty), nil
 }
 
 // removeBlocked removes results from blocked servers from the search results

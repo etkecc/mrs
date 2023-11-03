@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"time"
 
+	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/pemistahl/lingua-go"
 	"github.com/xxjwxc/gowp/workpool"
 	"gitlab.com/etke.cc/go/msc1929"
@@ -56,6 +57,8 @@ type DataRepository interface {
 	FlushRoomBatch()
 	GetRoom(string) (*model.MatrixRoom, error)
 	EachRoom(func(string, *model.MatrixRoom))
+	SetBiggestRooms([]*model.MatrixRoom) error
+	GetBiggestRooms() []*model.MatrixRoom
 	GetBannedRooms(...string) ([]string, error)
 	RemoveRooms([]string)
 	BanRoom(string) error
@@ -311,6 +314,25 @@ func (m *Crawler) ParseRooms(workers int) {
 	}
 	wp.Wait() //nolint:errcheck
 	m.data.FlushRoomBatch()
+	m.calculateBiggestRooms()
+}
+
+func (m *Crawler) calculateBiggestRooms() {
+	rooms, _ := lru.New[string, *model.MatrixRoom](MatrixSearchLimit) //nolint:errcheck // that's ok
+	biggest := &model.MatrixRoom{}
+	m.data.EachRoom(func(id string, room *model.MatrixRoom) {
+		if room.Members > biggest.Members {
+			biggest = room
+			rooms.Add(id, room)
+		}
+	})
+	if err := m.data.SetBiggestRooms(rooms.Values()); err != nil {
+		utils.Logger.Error().Err(err).Msg("cannot set biggest rooms")
+	}
+}
+
+func (m *Crawler) GetBiggestRooms() []*model.MatrixRoom {
+	return m.data.GetBiggestRooms()
 }
 
 // EachRoom allows to work with each known room

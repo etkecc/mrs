@@ -24,7 +24,10 @@ import (
 	"gitlab.com/etke.cc/mrs/api/version"
 )
 
-const devhost = "localhost"
+const (
+	MatrixSearchLimit = 100 // default matrix (!) search limit
+	devhost           = "localhost"
+)
 
 // matrixKeyResp is response of /_matrix/key/v2/server
 type matrixKeyResp struct {
@@ -174,7 +177,7 @@ func (m *Matrix) PublicRooms(req *http.Request, rdReq *model.RoomDirectoryReques
 	}).Inc()
 
 	limit := rdReq.Limit
-	if limit > m.cfg.Get().Search.Defaults.Limit {
+	if limit > MatrixSearchLimit {
 		limit = m.cfg.Get().Search.Defaults.Limit
 	}
 	offset := utils.StringToInt(rdReq.Since)

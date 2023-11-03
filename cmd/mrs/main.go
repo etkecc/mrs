@@ -68,7 +68,7 @@ func main() {
 	blockSvc := services.NewBlocklist(cfg)
 	statsSvc := services.NewStats(cfg, dataRepo, index, blockSvc)
 	indexSvc := services.NewIndex(cfg, index, dataRepo)
-	searchSvc := services.NewSearch(cfg, index, blockSvc, statsSvc)
+	searchSvc := services.NewSearch(cfg, dataRepo, index, blockSvc, statsSvc)
 	matrixSvc, err := services.NewMatrix(cfg, dataRepo, searchSvc)
 	if err != nil {
 		utils.Logger.Fatal().Err(err).Msg("cannot start matrix service")
@@ -76,7 +76,7 @@ func main() {
 	crawlerSvc := services.NewCrawler(cfg, matrixSvc, robotsSvc, blockSvc, dataRepo, detector)
 	matrixSvc.SetDiscover(crawlerSvc.AddServer)
 	cacheSvc := services.NewCache(cfg, statsSvc)
-	dataSvc := services.NewDataFacade(crawlerSvc, indexSvc, statsSvc, cacheSvc)
+	dataSvc := services.NewDataFacade(crawlerSvc, indexSvc, searchSvc, statsSvc, cacheSvc)
 	mailSvc := services.NewEmail(cfg)
 	modSvc := services.NewModeration(cfg, dataRepo, index, mailSvc)
 
