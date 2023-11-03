@@ -153,7 +153,7 @@ func (m *Matrix) GetVersion() []byte {
 // GetKeyServer returns jsonblob-eligible response for /_matrix/key/v2/server
 func (m *Matrix) GetKeyServer() []byte {
 	resp := m.keyServer
-	resp.ValidUntilTS = time.Now().UTC().Add(24 * time.Hour).UnixMilli()
+	resp.ValidUntilTS = time.Now().UTC().Add(24 * 7 * time.Hour).UnixMilli()
 	payload, err := m.signJSON(resp)
 	if err != nil {
 		log.Println("ERROR: cannot sign payload:", err)

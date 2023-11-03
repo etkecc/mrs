@@ -45,20 +45,23 @@ func (cache *Cache) Middleware() echo.MiddlewareFunc {
 				return next(c)
 			}
 
+			resp := c.Response()
 			_, noncacheable := noncacheablePaths[c.Request().URL.Path]
+			if noncacheable {
+				resp.Header().Set("Cache-Control", "no-cache")
+				return next(c)
+			}
+
 			lastModified := cache.stats.Get().Indexing.FinishedAt.Format(http.TimeFormat)
 			ifModifiedSince := c.Request().Header.Get("if-modified-since")
-			if lastModified == ifModifiedSince && !noncacheable {
+			if lastModified == ifModifiedSince {
 				return c.NoContent(http.StatusNotModified)
 			}
 
-			resp := c.Response()
 			maxAge := strconv.Itoa(cache.cfg.Get().Cache.MaxAge)
 			resp.Header().Set("Cache-Control", "max-age="+maxAge+", public")
 			resp.Header().Set("CDN-Tag", "mutable")
-			if !noncacheable {
-				resp.Header().Set("Last-Modified", lastModified)
-			}
+			resp.Header().Set("Last-Modified", lastModified)
 			return next(c)
 		}
 	}

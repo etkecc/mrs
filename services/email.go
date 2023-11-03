@@ -1,6 +1,7 @@
 package services
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/mattevans/postmark-go"
@@ -41,10 +42,12 @@ func (e *Email) getClient() *postmark.EmailService {
 // SendReport sends report email
 func (e *Email) SendReport(room *model.MatrixRoom, server *model.MatrixServer, reason string, emails []string) error {
 	if len(emails) == 0 {
+		log.Println("email sending canceled: 0 email")
 		return nil
 	}
 	client := e.getClient()
 	if client == nil {
+		log.Println("email sending canceled: no client")
 		return nil
 	}
 
