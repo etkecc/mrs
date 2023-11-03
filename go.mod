@@ -1,12 +1,14 @@
 module gitlab.com/etke.cc/mrs/api
 
-go 1.21
+go 1.21.0
+
+toolchain go1.21.3
 
 require (
 	github.com/benjaminestes/robots/v2 v2.0.5
 	github.com/blevesearch/bleve/v2 v2.3.10
 	github.com/cespare/xxhash/v2 v2.2.0
-	github.com/fsnotify/fsnotify v1.6.0
+	github.com/fsnotify/fsnotify v1.7.0
 	github.com/h2non/bimg v1.1.10-0.20230922201823-0fdc5cc0e1b8
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/labstack/echo/v4 v4.11.2
@@ -31,13 +33,13 @@ require (
 	github.com/RoaringBitmap/roaring v1.6.0 // indirect
 	github.com/benjaminestes/robots v1.0.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/bits-and-blooms/bitset v1.10.0 // indirect
-	github.com/blevesearch/bleve_index_api v1.0.6 // indirect
+	github.com/bits-and-blooms/bitset v1.11.0 // indirect
+	github.com/blevesearch/bleve_index_api v1.1.2 // indirect
 	github.com/blevesearch/geo v0.1.18 // indirect
 	github.com/blevesearch/go-porterstemmer v1.0.3 // indirect
 	github.com/blevesearch/gtreap v0.1.1 // indirect
 	github.com/blevesearch/mmap-go v1.0.4 // indirect
-	github.com/blevesearch/scorch_segment_api/v2 v2.1.6 // indirect
+	github.com/blevesearch/scorch_segment_api/v2 v2.2.2 // indirect
 	github.com/blevesearch/segment v0.9.1 // indirect
 	github.com/blevesearch/snowballstem v0.9.0 // indirect
 	github.com/blevesearch/upsidedown_store_api v1.0.2 // indirect
@@ -71,8 +73,8 @@ require (
 	github.com/tidwall/sjson v1.2.5 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
-	github.com/xxjwxc/public v0.0.0-20231023133117-987ece4caaa5 // indirect
-	github.com/yuin/goldmark v1.5.6 // indirect
+	github.com/xxjwxc/public v0.0.0-20231031134607-41d2b0c879dd // indirect
+	github.com/yuin/goldmark v1.6.0 // indirect
 	go.mau.fi/util v0.2.0 // indirect
 	golang.org/x/crypto v0.14.0 // indirect
 	golang.org/x/net v0.17.0 // indirect
