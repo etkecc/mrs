@@ -48,39 +48,9 @@ func NewSearch(cfg ConfigService, repo SearchRepository, block BlocklistService,
 	return s
 }
 
-// getStubs prepares stub rooms from config and templates them with stats
-func (s *Search) getStubs() []*model.Entry {
-	stats := s.stats.Get()
-	stubs := make([]*model.Entry, 0, len(s.cfg.Get().Search.EmptyResults))
-	for _, stub := range s.cfg.Get().Search.EmptyResults {
-		stubs = append(stubs, &model.Entry{
-			ID:        utils.MayTemplate(stub.ID, stats),
-			Type:      "room",
-			Alias:     utils.MayTemplate(stub.Alias, stats),
-			Name:      utils.MayTemplate(stub.Name, stats),
-			Topic:     utils.MayTemplate(stub.Topic, stats),
-			Avatar:    utils.MayTemplate(stub.Avatar, stats),
-			Server:    utils.MayTemplate(stub.Server, stats),
-			Members:   stub.Members,
-			Language:  utils.MayTemplate(stub.Language, stats),
-			AvatarURL: utils.MayTemplate(stub.AvatarURL, stats),
-		})
-	}
-	return stubs
-}
-
-// emptyResults returned when no query is provided
-func (s *Search) emptyResults() ([]*model.Entry, int, error) {
-	stubs := s.getStubs()
-	return stubs, len(stubs), nil
-}
-
 // Search things
 // ref: https://blevesearch.com/docs/Query-String-Query/
-func (s *Search) Search(query, sortBy string, limit, offset int) ([]*model.Entry, int, error) {
-	if query == "" {
-		return s.emptyResults()
-	}
+func (s *Search) Search(q, sortBy string, limit, offset int) ([]*model.Entry, int, error) {
 	if limit == 0 {
 		limit = s.cfg.Get().Search.Defaults.Limit
 	}
@@ -88,7 +58,12 @@ func (s *Search) Search(query, sortBy string, limit, offset int) ([]*model.Entry
 		offset = s.cfg.Get().Search.Defaults.Offset
 	}
 
-	builtQuery := s.getSearchQuery(s.matchFields(query))
+	var builtQuery query.Query
+	if q == "" {
+		builtQuery = bleve.NewWildcardQuery("*")
+	} else {
+		builtQuery = s.getSearchQuery(s.matchFields(q))
+	}
 	if builtQuery == nil {
 		return []*model.Entry{}, 0, nil
 	}

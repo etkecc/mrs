@@ -28,8 +28,7 @@ type ConfigPublic struct {
 
 // ConfigSearch - search-related configuration
 type ConfigSearch struct {
-	Defaults     ConfigSearchDefaults `yaml:"defaults"`
-	EmptyResults []*Entry             `yaml:"empty_results"`
+	Defaults ConfigSearchDefaults `yaml:"defaults"`
 }
 
 // ConfigSearchDefaults default params
