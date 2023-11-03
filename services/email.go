@@ -68,8 +68,12 @@ func (e *Email) SendReport(room *model.MatrixRoom, server *model.MatrixServer, r
 		return err
 	}
 	text, html := utils.MarkdownRender(body)
-	reqs := e.buildPMReqs(subject, text, html, emails, &e.cfg.Get().Email.Postmark.Report)
-	_, _, err = client.SendBatch(reqs)
+	for _, req := range e.buildPMReqs(subject, text, html, emails, &e.cfg.Get().Email.Postmark.Report) {
+		log.Println("sending email to", req.To)
+		if _, _, err = client.Send(req); err != nil {
+			log.Println("email sending failed:", err)
+		}
+	}
 
 	return err
 }
