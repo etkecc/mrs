@@ -181,17 +181,24 @@ func (m *Crawler) DiscoverServers(workers int) error {
 	m.discovering = true
 	defer func() { m.discovering = false }()
 
-	discoveredServers := m.validateServers(m.loadServers(), workers)
+	allServers := m.loadServers()
+	validServers := m.validateServers(m.loadServers(), workers)
 
 	wp := workpool.New(workers)
-	for _, server := range discoveredServers.Slice() {
+	for _, server := range validServers.Slice() {
 		name := server
 		wp.Do(func() error {
 			_, err := m.discoverServer(name)
 			return err
 		})
 	}
-	return wp.Wait()
+	err := wp.Wait()
+
+	allServers.RemoveSlice(validServers.Slice())
+	utils.Logger.Info().Int("offline", allServers.Len()).Msg("removing offline servers")
+	m.data.RemoveServers(allServers.Slice())
+
+	return err
 }
 
 func (m *Crawler) discoverServer(name string) (valid bool, err error) {

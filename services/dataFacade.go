@@ -80,7 +80,7 @@ func (df *DataFacade) DiscoverServers(workers int) {
 	df.stats.SetStartedAt("discovery", start)
 	err := df.crawler.DiscoverServers(workers)
 	df.stats.SetFinishedAt("discovery", time.Now().UTC())
-	utils.Logger.Info().Err(err).Dur("took", time.Since(start)).Msg("servers discovery has been finished")
+	utils.Logger.Info().Err(err).Str("took", time.Since(start).String()).Msg("servers discovery has been finished")
 }
 
 // ParseRooms from discovered servers
@@ -90,7 +90,7 @@ func (df *DataFacade) ParseRooms(workers int) {
 	df.stats.SetStartedAt("parsing", start)
 	df.crawler.ParseRooms(workers)
 	df.stats.SetFinishedAt("parsing", time.Now().UTC())
-	utils.Logger.Info().Dur("took", time.Since(start)).Msg("matrix rooms have been parsed")
+	utils.Logger.Info().Str("took", time.Since(start).String()).Msg("matrix rooms have been parsed")
 
 	df.search.SetEmptyQueryResults(df.crawler.GetBiggestRooms())
 }
@@ -112,7 +112,7 @@ func (df *DataFacade) Ingest() {
 		utils.Logger.Warn().Err(err).Msg("indexing of the last batch failed")
 	}
 	df.stats.SetFinishedAt("indexing", time.Now().UTC())
-	utils.Logger.Info().Dur("took", time.Since(start)).Msg("matrix rooms have been indexed")
+	utils.Logger.Info().Str("took", time.Since(start).String()).Msg("matrix rooms have been indexed")
 
 	utils.Logger.Info().Msg("purging cache...")
 	df.cache.Purge()
