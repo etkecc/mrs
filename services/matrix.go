@@ -313,7 +313,7 @@ func (m *Matrix) QueryPublicRooms(serverName, limit, since string) (*model.RoomD
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body) //nolint:errcheck // intended
-		return nil, fmt.Errorf("cannot get public rooms: %s; %s", resp.Status, string(body))
+		return nil, fmt.Errorf("cannot get public rooms: %s; %s", resp.Status, utils.Truncate(string(body), 400))
 	}
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {

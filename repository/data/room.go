@@ -2,6 +2,7 @@ package data
 
 import (
 	"encoding/json"
+	"strconv"
 
 	"go.etcd.io/bbolt"
 
@@ -23,13 +24,13 @@ func (d *Data) FlushRoomBatch() {
 
 func (d *Data) SetBiggestRooms(rooms []*model.MatrixRoom) error {
 	data := make(map[string][]byte, len(rooms))
-	for _, room := range rooms {
+	for i, room := range rooms {
 		roomb, err := json.Marshal(room)
 		if err != nil {
 			utils.Logger.Error().Err(err).Str("id", room.ID).Str("server", room.Server).Msg("cannot marshal room")
 			return err
 		}
-		data[room.ID] = roomb
+		data[strconv.Itoa(i)] = roomb
 	}
 
 	return d.db.Update(func(tx *bbolt.Tx) error {

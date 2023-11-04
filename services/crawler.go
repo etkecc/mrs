@@ -6,9 +6,9 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"sort"
 	"time"
 
-	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/pemistahl/lingua-go"
 	"github.com/xxjwxc/gowp/workpool"
 	"gitlab.com/etke.cc/go/msc1929"
@@ -318,18 +318,35 @@ func (m *Crawler) ParseRooms(workers int) {
 }
 
 func (m *Crawler) calculateBiggestRooms() {
+	type roomCount struct {
+		id      string
+		members int
+	}
+
 	utils.Logger.Info().Msg("calculating biggest rooms...")
-	rooms, _ := lru.New[string, *model.MatrixRoom](MatrixSearchLimit) //nolint:errcheck // that's ok
-	var biggest int
+	started := time.Now().UTC()
+	counts := []roomCount{}
 	m.data.EachRoom(func(_ string, data *model.MatrixRoom) {
-		if data.Members > biggest {
-			room := *data
-			biggest = room.Members
-			rooms.ContainsOrAdd(room.ID, &room)
-		}
+		counts = append(counts, roomCount{data.ID, data.Members})
 	})
-	utils.Logger.Info().Int("rooms", rooms.Len()).Msg("biggest rooms have been calculated")
-	if err := m.data.SetBiggestRooms(rooms.Values()); err != nil {
+
+	sort.Slice(counts, func(i, j int) bool {
+		return counts[i].members > counts[j].members
+	})
+	rooms := make([]*model.MatrixRoom, 0, MatrixSearchLimit)
+	if len(counts) > MatrixSearchLimit {
+		counts = counts[:MatrixSearchLimit]
+	}
+	for _, count := range counts {
+		room, err := m.data.GetRoom(count.id)
+		if err != nil {
+			utils.Logger.Error().Err(err).Str("id", count.id).Msg("cannot get room")
+			continue
+		}
+		rooms = append(rooms, room)
+	}
+	utils.Logger.Info().Str("took", time.Since(started).String()).Msg("biggest rooms have been calculated")
+	if err := m.data.SetBiggestRooms(rooms); err != nil {
 		utils.Logger.Error().Err(err).Msg("cannot set biggest rooms")
 	}
 }
@@ -485,7 +502,7 @@ func (m *Crawler) getPublicRooms(name string) {
 			Str("server", name).
 			Int("added", len(resp.Chunk)).
 			Int("of", resp.Total).
-			Dur("took", time.Since(start)).
+			Str("took", time.Since(start).String()).
 			Msg("added rooms")
 
 		if resp.NextBatch == "" {
