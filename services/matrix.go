@@ -297,15 +297,6 @@ func (m *Matrix) QueryVersion(serverName string) (server, version string, err er
 
 // QueryPublicRooms over federation
 func (m *Matrix) QueryPublicRooms(serverName, limit, since string) (*model.RoomDirectoryResponse, error) {
-	serverName, err := m.QueryServerName(serverName)
-	if err != nil {
-		return nil, err
-	}
-
-	if serverName == "" {
-		return nil, fmt.Errorf("server is offline")
-	}
-
 	req, err := m.buildPublicRoomsReq(serverName, limit, since)
 	if err != nil {
 		return nil, err
