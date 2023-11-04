@@ -3,7 +3,6 @@ package services
 import (
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"net/url"
 	"sort"
@@ -79,21 +78,7 @@ type FederationService interface {
 
 var (
 	matrixMediaFallbacks = []string{"https://matrix-client.matrix.org"}
-	matrixDialer         = &net.Dialer{
-		Timeout:   5 * time.Second,
-		KeepAlive: 120 * time.Second,
-	}
-	matrixClient = &http.Client{
-		Timeout: 120 * time.Second,
-		Transport: &http.Transport{
-			MaxIdleConns:        1000,
-			MaxConnsPerHost:     100,
-			MaxIdleConnsPerHost: 5,
-			TLSHandshakeTimeout: 10 * time.Second,
-			DialContext:         matrixDialer.DialContext,
-			Dial:                matrixDialer.Dial,
-		},
-	}
+	matrixClient         = &http.Client{Timeout: 120 * time.Second}
 )
 
 // NewCrawler service

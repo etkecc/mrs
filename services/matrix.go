@@ -1,7 +1,6 @@
 package services
 
 import (
-	"context"
 	"crypto/ed25519"
 	"encoding/base64"
 	"encoding/json"
@@ -262,13 +261,7 @@ func (m *Matrix) QueryDirectory(req *http.Request, alias string) (int, []byte) {
 
 // QueryVersion from /_matrix/federation/v1/version
 func (m *Matrix) QueryVersion(serverName string) (server, version string, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, m.getURL(serverName, false)+"/_matrix/federation/v1/version", nil)
-	if err != nil {
-		return "", "", err
-	}
-	resp, err := matrixClient.Do(req)
+	resp, err := matrixClient.Get(m.getURL(serverName, false) + "/_matrix/federation/v1/version")
 	if err != nil {
 		return "", "", err
 	}
@@ -629,13 +622,7 @@ func (m *Matrix) parseAuths(r *http.Request) []*matrixAuth {
 
 // parseClientWellKnown returns URL of the Matrix CS API server
 func (m *Matrix) parseClientWellKnown(serverName string) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://"+serverName+"/.well-known/matrix/client", nil)
-	if err != nil {
-		return "", err
-	}
-	resp, err := matrixClient.Do(req)
+	resp, err := matrixClient.Get("https://" + serverName + "/.well-known/matrix/client")
 	if err != nil {
 		return "", err
 	}
@@ -660,13 +647,7 @@ func (m *Matrix) parseClientWellKnown(serverName string) (string, error) {
 
 // parseServerWellKnown returns Federation API host:port
 func (m *Matrix) parseServerWellKnown(serverName string) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://"+serverName+"/.well-known/matrix/server", nil)
-	if err != nil {
-		return "", err
-	}
-	resp, err := matrixClient.Do(req)
+	resp, err := matrixClient.Get("https://" + serverName + "/.well-known/matrix/server")
 	if err != nil {
 		return "", err
 	}
@@ -750,21 +731,11 @@ func (m *Matrix) lookupKeys(serverName string, discover bool) (*matrixKeyResp, e
 	if err != nil {
 		return nil, err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, keysURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("User-Agent", version.UserAgent)
-	resp, err := matrixClient.Do(req)
+	resp, err := matrixClient.Get(keysURL.String())
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return nil, err
-	}
 	datab, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
