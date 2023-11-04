@@ -108,6 +108,10 @@ func NewCrawler(cfg ConfigService, fedSvc FederationService, robots RobotsServic
 }
 
 func (m *Crawler) validateServer(name string) (string, bool) {
+	if m.cfg.Get().Matrix.ServerName == name {
+		return "", false
+	}
+
 	uri, err := url.Parse("https://" + name)
 	if err == nil {
 		name = uri.Hostname()
@@ -197,6 +201,10 @@ func (m *Crawler) DiscoverServers(workers int) error {
 }
 
 func (m *Crawler) discoverServer(name string) (valid bool, err error) {
+	if m.cfg.Get().Matrix.ServerName == name {
+		return false, fmt.Errorf("don't need to discover own instance")
+	}
+
 	server := &model.MatrixServer{
 		Name:      name,
 		URL:       m.fed.QueryCSURL(name),
