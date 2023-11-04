@@ -318,14 +318,17 @@ func (m *Crawler) ParseRooms(workers int) {
 }
 
 func (m *Crawler) calculateBiggestRooms() {
+	utils.Logger.Info().Msg("calculating biggest rooms...")
 	rooms, _ := lru.New[string, *model.MatrixRoom](MatrixSearchLimit) //nolint:errcheck // that's ok
-	biggest := &model.MatrixRoom{}
-	m.data.EachRoom(func(id string, room *model.MatrixRoom) {
-		if room.Members > biggest.Members {
-			biggest = room
-			rooms.Add(id, room)
+	var biggest int
+	m.data.EachRoom(func(_ string, data *model.MatrixRoom) {
+		if data.Members > biggest {
+			room := *data
+			biggest = room.Members
+			rooms.ContainsOrAdd(room.ID, &room)
 		}
 	})
+	utils.Logger.Info().Int("rooms", rooms.Len()).Msg("biggest rooms have been calculated")
 	if err := m.data.SetBiggestRooms(rooms.Values()); err != nil {
 		utils.Logger.Error().Err(err).Msg("cannot set biggest rooms")
 	}
