@@ -218,6 +218,7 @@ func (m *Matrix) QueryServerName(serverName string) string {
 	resp, err := m.lookupKeys(serverName, false)
 	if err == nil && resp != nil {
 		discovered = resp.ServerName
+		utils.Logger.Info().Err(err).Str("original", serverName).Str("discovered", discovered).Msg("queried server name")
 	}
 	m.namesCache.Add(serverName, discovered)
 	return discovered
