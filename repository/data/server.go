@@ -27,6 +27,21 @@ func (d *Data) AddServer(server *model.MatrixServer) error {
 	})
 }
 
+// BatchServers adds a batch of servers at once
+func (d *Data) BatchServers(servers []string) error {
+	return d.db.Batch(func(tx *bbolt.Tx) error {
+		bucket := tx.Bucket(serversBucket)
+		for _, server := range servers {
+			if v := bucket.Get([]byte(server)); v == nil {
+				if err := bucket.Put([]byte(server), []byte("")); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	})
+}
+
 // HasServer checks if server is already exists
 func (d *Data) HasServer(name string) bool {
 	var has bool

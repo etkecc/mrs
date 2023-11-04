@@ -51,6 +51,7 @@ type DataRepository interface {
 	GetServerInfo(string) (*model.MatrixServer, error)
 	EachServerInfo(func(string, *model.MatrixServer))
 	AllServers() map[string]string
+	BatchServers([]string) error
 	RemoveServer(string) error
 	RemoveServers([]string)
 	AddRoomBatch(*model.MatrixRoom)
@@ -167,14 +168,7 @@ func (m *Crawler) loadServers() *utils.List[string, string] {
 	servers.AddMapKeys(m.data.AllServers())
 	servers.AddSlice(m.cfg.Get().Servers)
 	utils.Logger.Info().Int("servers", servers.Len()).Msg("loaded servers from config and db")
-	m.EachRoom(func(_ string, data *model.MatrixRoom) {
-		servers.Add(data.Server)
-		if data.Alias != "" {
-			servers.Add(utils.ServerFrom(data.Alias))
-		}
-	})
 
-	utils.Logger.Info().Int("servers", servers.Len()).Msg("added servers from already parsed rooms")
 	return servers
 }
 
@@ -297,17 +291,20 @@ func (m *Crawler) ParseRooms(workers int) {
 	m.parsing = true
 	defer func() { m.parsing = false }()
 
-	servers := utils.MapKeys(m.data.AllServers())
+	servers := utils.NewList[string, string]()
+	servers.AddMapKeys(m.data.AllServers())
+	servers.RemoveSlice(m.block.Slice())
+	total := servers.Len()
 
-	total := len(servers)
 	if total < workers {
 		workers = total
 	}
 	wp := workpool.New(workers)
 	utils.Logger.Info().Int("servers", total).Int("workers", workers).Msg("parsing rooms")
-	for _, srvName := range servers {
+	for _, srvName := range servers.Slice() {
 		name := srvName
 		if m.block.ByServer(name) {
+			servers.Remove(name)
 			if err := m.data.RemoveServer(name); err != nil {
 				utils.Logger.Error().Err(err).Str("server", name).Msg("cannot remove blocked server")
 			}
@@ -316,12 +313,18 @@ func (m *Crawler) ParseRooms(workers int) {
 
 		wp.Do(func() error {
 			utils.Logger.Info().Str("server", name).Msg("parsing rooms...")
-			m.getPublicRooms(name)
+			m.getPublicRooms(servers, name)
 			return nil
 		})
 	}
 	wp.Wait() //nolint:errcheck
 	m.data.FlushRoomBatch()
+
+	servers.RemoveSlice(m.block.Slice())
+	if err := m.data.BatchServers(servers.Slice()); err != nil {
+		utils.Logger.Error().Err(err).Msg("writing batch of servers failed")
+	}
+
 	m.calculateBiggestRooms()
 }
 
@@ -478,7 +481,7 @@ func (m *Crawler) roomAllowed(name string, room *model.MatrixRoom) bool {
 
 // getPublicRooms reads public rooms of the given server from the matrix client-server api
 // and sends them into channel
-func (m *Crawler) getPublicRooms(name string) {
+func (m *Crawler) getPublicRooms(servers *utils.List[string, string], name string) {
 	var since string
 	var added int
 	limit := "10000"
@@ -503,6 +506,8 @@ func (m *Crawler) getPublicRooms(name string) {
 			}
 
 			room.Parse(m.detector, m.cfg.Get().Public.API, m.cfg.Get().Matrix.ServerName)
+			servers.AddSlice(room.Servers(m.cfg.Get().Matrix.ServerName))
+
 			m.data.AddRoomBatch(room)
 		}
 		utils.Logger.
