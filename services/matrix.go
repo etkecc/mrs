@@ -209,19 +209,21 @@ func (m *Matrix) PublicRooms(req *http.Request, rdReq *model.RoomDirectoryReques
 }
 
 // QueryServerName finds server name on the /_matrix/key/v2/server page
-func (m *Matrix) QueryServerName(serverName string) string {
+func (m *Matrix) QueryServerName(serverName string) (string, error) {
 	cached, ok := m.namesCache.Get(serverName)
 	if ok {
-		return cached
+		return cached, nil
 	}
 	discovered := ""
 	resp, err := m.lookupKeys(serverName, false)
 	if err == nil && resp != nil {
 		discovered = resp.ServerName
-		utils.Logger.Info().Err(err).Str("original", serverName).Str("discovered", discovered).Msg("queried server name")
+		m.namesCache.Add(serverName, discovered)
+	} else {
+		utils.Logger.Warn().Err(err).Str("server", serverName).Msg("cannot query server name")
 	}
-	m.namesCache.Add(serverName, discovered)
-	return discovered
+
+	return discovered, err
 }
 
 // QueryDirectory is /_matrix/federation/v1/query/directory
@@ -295,7 +297,11 @@ func (m *Matrix) QueryVersion(serverName string) (server, version string, err er
 
 // QueryPublicRooms over federation
 func (m *Matrix) QueryPublicRooms(serverName, limit, since string) (*model.RoomDirectoryResponse, error) {
-	serverName = m.QueryServerName(serverName)
+	serverName, err := m.QueryServerName(serverName)
+	if err != nil {
+		return nil, err
+	}
+
 	if serverName == "" {
 		return nil, fmt.Errorf("server is offline")
 	}

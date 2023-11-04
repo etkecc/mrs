@@ -71,7 +71,7 @@ type DataRepository interface {
 
 type FederationService interface {
 	QueryPublicRooms(serverName, limit, since string) (*model.RoomDirectoryResponse, error)
-	QueryServerName(serverName string) string
+	QueryServerName(serverName string) (string, error)
 	QueryVersion(serverName string) (string, string, error)
 	QueryCSURL(serverName string) string
 }
@@ -114,8 +114,8 @@ func (m *Crawler) validateServer(name string) (string, bool) {
 	}
 
 	// check if online
-	name = m.fed.QueryServerName(name)
-	if name == "" {
+	name, err = m.fed.QueryServerName(name)
+	if name == "" || err != nil {
 		return "", false
 	}
 
