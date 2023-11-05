@@ -434,7 +434,6 @@ func (m *Crawler) GetAvatar(serverName string, mediaID string) (io.Reader, strin
 func (m *Crawler) getServerContacts(name string) *model.MatrixServerContacts {
 	resp, err := msc1929.Get(name)
 	if err != nil {
-		utils.Logger.Warn().Err(err).Str("server", name).Msg("cannot get server contacts")
 		return nil
 	}
 	if resp.IsEmpty() {

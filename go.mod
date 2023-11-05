@@ -43,6 +43,7 @@ require (
 	github.com/blevesearch/scorch_segment_api/v2 v2.2.2 // indirect
 	github.com/blevesearch/segment v0.9.1 // indirect
 	github.com/blevesearch/snowballstem v0.9.0 // indirect
+	github.com/blevesearch/stempel v0.2.0 // indirect
 	github.com/blevesearch/upsidedown_store_api v1.0.2 // indirect
 	github.com/blevesearch/vellum v1.0.10 // indirect
 	github.com/blevesearch/zapx/v11 v11.3.10 // indirect
@@ -51,7 +52,7 @@ require (
 	github.com/blevesearch/zapx/v14 v14.3.10 // indirect
 	github.com/blevesearch/zapx/v15 v15.3.13 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
-	github.com/getsentry/sentry-go v0.24.1 // indirect
+	github.com/getsentry/sentry-go v0.25.0 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang/geo v0.0.0-20230421003525-6adc56603217 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
@@ -80,9 +81,9 @@ require (
 	go.mau.fi/util v0.2.0 // indirect
 	golang.org/x/crypto v0.14.0 // indirect
 	golang.org/x/net v0.17.0 // indirect
-	golang.org/x/sys v0.13.0 // indirect
-	golang.org/x/text v0.13.0 // indirect
-	golang.org/x/time v0.3.0 // indirect
+	golang.org/x/sys v0.14.0 // indirect
+	golang.org/x/text v0.14.0 // indirect
+	golang.org/x/time v0.4.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/eapache/queue.v1 v1.1.0 // indirect
 )

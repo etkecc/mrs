@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
@@ -16,6 +17,23 @@ import (
 type BlocklistService interface {
 	ByID(matrixID string) bool
 	ByServer(server string) bool
+}
+
+// MatrixError model
+type MatrixError struct {
+	HTTP    string `json:"-"`       // HTTP Status e.g., 401 Unauthorized
+	Code    string `json:"errcode"` // Matrix error code, e.g M_UNAUTHORIZED
+	Message string `json:"error"`   // Matrix error message
+}
+
+// Error string
+func (e MatrixError) Error() string {
+	return fmt.Sprintf("%s (%s): %s", e.HTTP, e.Code, e.Message)
+}
+
+// MarshalJSON error
+func (e MatrixError) MarshalJSON() ([]byte, error) {
+	return utils.JSON(e)
 }
 
 // MatrixServer info

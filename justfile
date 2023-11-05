@@ -10,8 +10,8 @@ default:
     @just --list --justfile {{ justfile() }}
 
 # update go deps
-update:
-    go get ./cmd/mrs
+update *flags:
+    go get {{flags}} ./cmd/mrs
     go mod tidy
     go mod vendor
 

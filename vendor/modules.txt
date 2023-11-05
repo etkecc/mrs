@@ -52,6 +52,8 @@ github.com/blevesearch/bleve/v2/analysis/lang/in
 github.com/blevesearch/bleve/v2/analysis/lang/it
 github.com/blevesearch/bleve/v2/analysis/lang/nl
 github.com/blevesearch/bleve/v2/analysis/lang/no
+github.com/blevesearch/bleve/v2/analysis/lang/pl
+github.com/blevesearch/bleve/v2/analysis/lang/pl/stempel
 github.com/blevesearch/bleve/v2/analysis/lang/pt
 github.com/blevesearch/bleve/v2/analysis/lang/ro
 github.com/blevesearch/bleve/v2/analysis/lang/ru
@@ -129,6 +131,9 @@ github.com/blevesearch/snowballstem/russian
 github.com/blevesearch/snowballstem/spanish
 github.com/blevesearch/snowballstem/swedish
 github.com/blevesearch/snowballstem/turkish
+# github.com/blevesearch/stempel v0.2.0
+## explicit; go 1.13
+github.com/blevesearch/stempel/javadata
 # github.com/blevesearch/upsidedown_store_api v1.0.2
 ## explicit; go 1.18
 github.com/blevesearch/upsidedown_store_api
@@ -162,7 +167,7 @@ github.com/cespare/xxhash/v2
 # github.com/fsnotify/fsnotify v1.7.0
 ## explicit; go 1.17
 github.com/fsnotify/fsnotify
-# github.com/getsentry/sentry-go v0.24.1
+# github.com/getsentry/sentry-go v0.25.0
 ## explicit; go 1.18
 github.com/getsentry/sentry-go
 github.com/getsentry/sentry-go/internal/debug
@@ -332,14 +337,14 @@ golang.org/x/net/http2
 golang.org/x/net/http2/h2c
 golang.org/x/net/http2/hpack
 golang.org/x/net/idna
-# golang.org/x/sys v0.13.0
-## explicit; go 1.17
+# golang.org/x/sys v0.14.0
+## explicit; go 1.18
 golang.org/x/sys/cpu
 golang.org/x/sys/execabs
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/text v0.13.0
-## explicit; go 1.17
+# golang.org/x/text v0.14.0
+## explicit; go 1.18
 golang.org/x/text/cases
 golang.org/x/text/internal
 golang.org/x/text/internal/language
@@ -350,8 +355,8 @@ golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
-# golang.org/x/time v0.3.0
-## explicit
+# golang.org/x/time v0.4.0
+## explicit; go 1.18
 golang.org/x/time/rate
 # google.golang.org/protobuf v1.31.0
 ## explicit; go 1.11

@@ -57,11 +57,6 @@ type queryDirectoryResp struct {
 	Servers []string `json:"string"`
 }
 
-type errorResp struct {
-	Code  string `json:"errcode"`
-	Error string `json:"error"`
-}
-
 type matrixAuth struct {
 	Origin      string
 	Destination string
@@ -317,7 +312,11 @@ func (m *Matrix) QueryPublicRooms(serverName, limit, since string) (*model.RoomD
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body) //nolint:errcheck // intended
-		return nil, fmt.Errorf("cannot get public rooms: %s; %s", resp.Status, utils.Truncate(string(body), 400))
+		merr := m.parseErrorResp(resp.Status, body)
+		if merr == nil {
+			return nil, fmt.Errorf("cannot get public rooms: %s", resp.Status)
+		}
+		return nil, merr
 	}
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -447,11 +446,30 @@ func (m *Matrix) Authorize(serverName, method, uri string, body any) ([]string, 
 
 // getErrorResp returns canonical json of matrix error
 func (m *Matrix) getErrorResp(code, message string) []byte {
-	respb, err := utils.JSON(errorResp{Code: code, Error: message})
+	respb, err := (model.MatrixError{
+		Code:    code,
+		Message: message,
+	}).MarshalJSON()
 	if err != nil {
 		utils.Logger.Error().Err(err).Msg("cannot marshal canonical json")
 	}
 	return respb
+}
+
+func (m *Matrix) parseErrorResp(status string, body []byte) *model.MatrixError {
+	if len(body) == 0 {
+		return nil
+	}
+	var merr *model.MatrixError
+	if err := json.Unmarshal(body, &merr); err != nil {
+		return nil
+	}
+	if merr.Code == "" {
+		return nil
+	}
+
+	merr.HTTP = status
+	return merr
 }
 
 func (m *Matrix) buildPublicRoomsReq(serverName, limit, since string) (*http.Request, error) {
@@ -754,6 +772,10 @@ func (m *Matrix) lookupKeys(serverName string, discover bool) (*matrixKeyResp, e
 	if err != nil {
 		return nil, err
 	}
+	if merr := m.parseErrorResp(resp.Status, datab); merr != nil {
+		return nil, merr
+	}
+
 	var keysResp *matrixKeyResp
 	if err := json.Unmarshal(datab, &keysResp); err != nil {
 		return nil, err
