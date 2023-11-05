@@ -15,7 +15,6 @@ import (
 
 	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/matrix-org/gomatrixserverlib"
-	"github.com/prometheus/client_golang/prometheus"
 
 	"gitlab.com/etke.cc/mrs/api/metrics"
 	"gitlab.com/etke.cc/mrs/api/model"
@@ -170,10 +169,7 @@ func (m *Matrix) PublicRooms(req *http.Request, rdReq *model.RoomDirectoryReques
 		return http.StatusUnauthorized, nil
 	}
 
-	defer metrics.SearchQueries.With(prometheus.Labels{
-		"api":    "matrix",
-		"server": origin,
-	}).Inc()
+	defer metrics.IncSearchQueries("matrix", origin)
 
 	limit := rdReq.Limit
 	if limit > MatrixSearchLimit {

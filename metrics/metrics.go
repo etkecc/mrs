@@ -1,36 +1,32 @@
 package metrics
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
+	"fmt"
+	"net/http"
+
+	"github.com/VictoriaMetrics/metrics"
 )
 
 var (
 	// ServersOnline - The total number of known matrix servers that are online and federateable
-	ServersOnline = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "mrs_servers_online",
-		Help: "The total number of known matrix servers that are online and federateable",
-	})
+	ServersOnline = metrics.NewCounter("mrs_servers_online")
 	// ServersIndexable - The total number of online matrix server that serve public rooms directory over federation
-	ServersIndexable = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "mrs_servers_indexable",
-		Help: "The total number of online matrix server that serve public rooms directory over federation",
-	})
+	ServersIndexable = metrics.NewCounter("mrs_servers_indexable")
 
 	// RoomsParsed - The total number of rooms parsed from the indexable servers
-	RoomsParsed = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "mrs_rooms_parsed",
-		Help: "The total number of rooms parsed from the indexable servers",
-	})
+	RoomsParsed = metrics.NewCounter("mrs_rooms_parsed")
 	// RoomsIndexed - The total number of rooms indexed from the indexable servers
-	RoomsIndexed = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "mrs_rooms_indexed",
-		Help: "The total number of rooms indexed from the indexable servers",
-	})
-
-	// SearchQueries - The total number of search queries done through MRS, by api (rest or matrix) and server
-	SearchQueries = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "mrs_search_queries",
-		Help: "The total number of search queries done through MRS, by api (rest or matrix) and server",
-	}, []string{"api", "server"})
+	RoomsIndexed = metrics.NewCounter("mrs_rooms_indexed")
 )
+
+// IncSearchQueries increments search queries counter with labels
+func IncSearchQueries(api, server string) {
+	metrics.GetOrCreateCounter(fmt.Sprintf("mrs_search_queries{api=%q,server=%q}", api, server))
+}
+
+// Handler for metrics
+type Handler struct{}
+
+func (h *Handler) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
+	metrics.WritePrometheus(w, false)
+}

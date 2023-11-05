@@ -9,10 +9,10 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/raja/argon2pw"
 	"golang.org/x/exp/slices"
 
+	"gitlab.com/etke.cc/mrs/api/metrics"
 	"gitlab.com/etke.cc/mrs/api/model"
 	"gitlab.com/etke.cc/mrs/api/utils"
 	"gitlab.com/etke.cc/mrs/api/version"
@@ -47,7 +47,7 @@ func ConfigureRouter(
 	configureMatrixEndpoints(e, matrixSvc)
 	rl := middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1))
 
-	e.GET("/metrics", echo.WrapHandler(promhttp.Handler()), auth("metrics", &cfg.Get().Auth.Metrics))
+	e.GET("/metrics", echo.WrapHandler(&metrics.Handler{}), auth("metrics", &cfg.Get().Auth.Metrics))
 	e.GET("/stats", stats(statsSvc))
 	e.GET("/avatar/:name/:id", avatar(crawlerSvc), middleware.RateLimiter(middleware.NewRateLimiterMemoryStoreWithConfig(middleware.RateLimiterMemoryStoreConfig{Rate: 30, Burst: 30, ExpiresIn: 5 * time.Minute})), cacheSvc.MiddlewareImmutable())
 

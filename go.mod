@@ -5,6 +5,7 @@ go 1.21.0
 toolchain go1.21.3
 
 require (
+	github.com/VictoriaMetrics/metrics v1.24.0
 	github.com/archdx/zerolog-sentry v1.6.1
 	github.com/benjaminestes/robots/v2 v2.0.5
 	github.com/blevesearch/bleve/v2 v2.3.10
@@ -17,7 +18,6 @@ require (
 	github.com/mattevans/postmark-go v0.1.6
 	github.com/mileusna/crontab v1.2.0
 	github.com/pemistahl/lingua-go v1.4.0
-	github.com/prometheus/client_golang v1.17.0
 	github.com/raja/argon2pw v1.0.1
 	github.com/rs/zerolog v1.31.0
 	github.com/theovassiliou/base64url v0.0.0-20211006203958-1e011490eaaf
@@ -34,7 +34,6 @@ require (
 require (
 	github.com/RoaringBitmap/roaring v1.6.0 // indirect
 	github.com/benjaminestes/robots v1.0.0 // indirect
-	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.11.0 // indirect
 	github.com/blevesearch/bleve_index_api v1.1.2 // indirect
 	github.com/blevesearch/geo v0.1.18 // indirect
@@ -58,17 +57,14 @@ require (
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/kr/pretty v0.3.1 // indirect
 	github.com/labstack/gommon v0.4.0 // indirect
 	github.com/matrix-org/util v0.0.0-20221111132719-399730281e66 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/matttproud/golang_protobuf_extensions/v2 v2.0.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/mschoch/smat v0.2.0 // indirect
-	github.com/prometheus/client_model v0.5.0 // indirect
-	github.com/prometheus/common v0.45.0 // indirect
-	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/tidwall/gjson v1.17.0 // indirect
@@ -76,7 +72,9 @@ require (
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
+	github.com/valyala/fastrand v1.1.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
+	github.com/valyala/histogram v1.2.0 // indirect
 	github.com/xxjwxc/public v0.0.0-20231031134607-41d2b0c879dd // indirect
 	github.com/yuin/goldmark v1.6.0 // indirect
 	go.mau.fi/util v0.2.0 // indirect

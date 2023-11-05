@@ -53,10 +53,10 @@ func NewStats(cfg ConfigService, data StatsRepository, index, blocklist Lenable)
 
 // setMetrics updates /metrics endpoint with actual stats
 func (s *Stats) setMetrics() {
-	metrics.ServersOnline.Set(float64(s.stats.Servers.Online))
-	metrics.ServersIndexable.Set(float64(s.stats.Servers.Indexable))
-	metrics.RoomsParsed.Set(float64(s.stats.Rooms.Parsed))
-	metrics.RoomsIndexed.Set(float64(s.stats.Rooms.Indexed))
+	metrics.ServersOnline.Set(uint64(s.stats.Servers.Online))
+	metrics.ServersIndexable.Set(uint64(s.stats.Servers.Indexable))
+	metrics.RoomsParsed.Set(uint64(s.stats.Rooms.Parsed))
+	metrics.RoomsIndexed.Set(uint64(s.stats.Rooms.Indexed))
 }
 
 // reload saved stats. Useful when you need to get updated timestamps, but don't want to parse whole db

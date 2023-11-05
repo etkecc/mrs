@@ -5,7 +5,6 @@ import (
 	"net/url"
 
 	"github.com/labstack/echo/v4"
-	"github.com/prometheus/client_golang/prometheus"
 
 	"gitlab.com/etke.cc/mrs/api/metrics"
 	"gitlab.com/etke.cc/mrs/api/model"
@@ -18,11 +17,7 @@ type searchService interface {
 
 func search(svc searchService, cfg configService, path bool) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		defer metrics.SearchQueries.
-			With(prometheus.Labels{
-				"api":    "rest",
-				"server": cfg.Get().Matrix.ServerName,
-			}).Inc()
+		defer metrics.IncSearchQueries("rest", cfg.Get().Matrix.ServerName)
 
 		paramfunc := c.QueryParam
 		if path {

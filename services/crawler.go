@@ -16,9 +16,6 @@ import (
 	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
-// RoomsBatch is maximum rooms parsed/stored at once
-const RoomsBatch = 10000
-
 type Crawler struct {
 	cfg         ConfigService
 	parsing     bool
@@ -126,8 +123,8 @@ func (m *Crawler) validateServer(name string) (string, bool) {
 func (m *Crawler) validateServers(servers *utils.List[string, string], workers int) *utils.List[string, string] {
 	log := utils.Logger
 	discovered := utils.NewList[string, string]()
-	chunks := utils.Chunks(servers.Slice(), 1000)
-	log.Info().Int("servers", servers.Len()).Int("workers", workers).Int("chunks", len(chunks)).Msg("validating servers")
+	chunks := utils.Chunks(servers.Slice(), workers)
+	log.Info().Int("servers", servers.Len()).Int("chunks", len(chunks)).Msg("validating servers")
 	for i, chunk := range chunks {
 		wp := workpool.New(workers)
 		for _, server := range chunk {
