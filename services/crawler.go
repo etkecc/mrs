@@ -1,10 +1,8 @@
 package services
 
 import (
-	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"sort"
 	"time"
 
@@ -17,13 +15,13 @@ import (
 )
 
 type Crawler struct {
+	v           ValidatorService
 	cfg         ConfigService
 	parsing     bool
 	discovering bool
 	eachrooming bool
 	fed         FederationService
 	block       BlocklistService
-	robots      RobotsService
 	data        DataRepository
 	detector    lingua.LanguageDetector
 }
@@ -66,6 +64,12 @@ type DataRepository interface {
 	IsReported(string) bool
 }
 
+type ValidatorService interface {
+	IsOnline(server string) (string, bool)
+	IsIndexable(server string) bool
+	IsRoomAllowed(server string, room *model.MatrixRoom) bool
+}
+
 type FederationService interface {
 	QueryPublicRooms(serverName, limit, since string) (*model.RoomDirectoryResponse, error)
 	QueryServerName(serverName string) (string, error)
@@ -79,44 +83,15 @@ var (
 )
 
 // NewCrawler service
-func NewCrawler(cfg ConfigService, fedSvc FederationService, robots RobotsService, block BlocklistService, data DataRepository, detector lingua.LanguageDetector) *Crawler {
+func NewCrawler(cfg ConfigService, fedSvc FederationService, v ValidatorService, block BlocklistService, data DataRepository, detector lingua.LanguageDetector) *Crawler {
 	return &Crawler{
+		v:        v,
 		cfg:      cfg,
-		robots:   robots,
-		block:    block,
 		fed:      fedSvc,
+		block:    block,
 		data:     data,
 		detector: detector,
 	}
-}
-
-func (m *Crawler) validateServer(name string) (string, bool) {
-	if m.cfg.Get().Matrix.ServerName == name {
-		return "", false
-	}
-
-	uri, err := url.Parse("https://" + name)
-	if err == nil {
-		name = uri.Hostname()
-	}
-
-	// check if online
-	name, err = m.fed.QueryServerName(name)
-	if name == "" || err != nil {
-		return "", false
-	}
-
-	// check if not blocked
-	if m.block.ByServer(name) {
-		return "", false
-	}
-
-	// check if federateable
-	if _, _, ferr := m.fed.QueryVersion(name); ferr != nil {
-		return "", false
-	}
-
-	return name, true
 }
 
 // validateServers performs basic sanitization, checks if server is online and federateable
@@ -130,7 +105,7 @@ func (m *Crawler) validateServers(servers *utils.List[string, string], workers i
 		for _, server := range chunk {
 			srvName := server
 			wp.Do(func() error {
-				name, ok := m.validateServer(srvName)
+				name, ok := m.v.IsOnline(srvName)
 				if ok {
 					discovered.Add(name)
 				}
@@ -164,7 +139,7 @@ func (m *Crawler) DiscoverServers(workers int) error {
 	defer func() { m.discovering = false }()
 
 	allServers := m.loadServers()
-	validServers := m.validateServers(m.loadServers(), workers)
+	validServers := m.validateServers(allServers, workers)
 
 	wp := workpool.New(workers)
 	for _, server := range validServers.Slice() {
@@ -184,10 +159,6 @@ func (m *Crawler) DiscoverServers(workers int) error {
 }
 
 func (m *Crawler) discoverServer(name string) (valid bool, err error) {
-	if m.cfg.Get().Matrix.ServerName == name {
-		return false, fmt.Errorf("don't need to discover own instance")
-	}
-
 	server := &model.MatrixServer{
 		Name:      name,
 		URL:       m.fed.QueryCSURL(name),
@@ -195,22 +166,14 @@ func (m *Crawler) discoverServer(name string) (valid bool, err error) {
 		UpdatedAt: time.Now().UTC(),
 	}
 
-	if !m.robots.Allowed(name, RobotsTxtPublicRooms) {
-		utils.Logger.Info().Str("server", name).Str("reason", "robots.txt").Msg("not eligible")
-		return false, m.data.AddServer(server) // not indexable yet, but online
+	if m.v.IsIndexable(name) {
+		server.Indexable = true
 	}
 
 	if contacts := m.getServerContacts(name); contacts != nil {
 		server.Contacts = *contacts
 	}
 
-	if _, err = m.fed.QueryPublicRooms(name, "1", ""); err != nil {
-		utils.Logger.Info().Str("server", name).Str("reason", err.Error()).Msg("not eligible")
-		return false, m.data.AddServer(server) // not indexable yet, but online
-	}
-
-	utils.Logger.Info().Str("server", name).Msg("eligible")
-	server.Indexable = true
 	return true, m.data.AddServer(server)
 }
 
@@ -227,7 +190,7 @@ func (m *Crawler) AddServers(names []string, workers int) {
 			if m.data.HasServer(srvName) {
 				return nil
 			}
-			name, ok := m.validateServer(srvName)
+			name, ok := m.v.IsOnline(srvName)
 			if !ok {
 				return nil
 			}
@@ -250,7 +213,7 @@ func (m *Crawler) AddServer(name string) int {
 		return http.StatusAlreadyReported
 	}
 
-	name, ok := m.validateServer(name)
+	name, ok := m.v.IsOnline(name)
 	if !ok {
 		return http.StatusUnprocessableEntity
 	}
@@ -366,7 +329,7 @@ func (m *Crawler) EachRoom(handler func(roomID string, data *model.MatrixRoom)) 
 
 	toRemove := []string{}
 	m.data.EachRoom(func(id string, room *model.MatrixRoom) {
-		if !m.roomAllowed(room.Server, room) {
+		if !m.v.IsRoomAllowed(room.Server, room) {
 			toRemove = append(toRemove, id)
 			return
 		}
@@ -446,27 +409,6 @@ func (m *Crawler) getServerContacts(name string) *model.MatrixServerContacts {
 	}
 }
 
-// roomAllowed check if room is allowed (by blocklist and robots.txt)
-func (m *Crawler) roomAllowed(name string, room *model.MatrixRoom) bool {
-	if room.ID == "" {
-		return false
-	}
-	if m.block.ByID(room.ID) {
-		return false
-	}
-	if m.block.ByID(room.Alias) {
-		return false
-	}
-	if m.block.ByServer(room.Server) {
-		return false
-	}
-	if m.block.ByServer(name) {
-		return false
-	}
-
-	return m.robots.Allowed(name, fmt.Sprintf(RobotsTxtPublicRoom, room.ID))
-}
-
 // getPublicRooms reads public rooms of the given server from the matrix client-server api
 // and sends them into channel
 func (m *Crawler) getPublicRooms(servers *utils.List[string, string], name string) {
@@ -488,7 +430,7 @@ func (m *Crawler) getPublicRooms(servers *utils.List[string, string], name strin
 		added += len(resp.Chunk)
 		for _, rdRoom := range resp.Chunk {
 			room := rdRoom.Convert()
-			if !m.roomAllowed(name, room) {
+			if !m.v.IsRoomAllowed(name, room) {
 				added--
 				continue
 			}

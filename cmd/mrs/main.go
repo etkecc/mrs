@@ -73,7 +73,8 @@ func main() {
 	if err != nil {
 		utils.Logger.Fatal().Err(err).Msg("cannot start matrix service")
 	}
-	crawlerSvc := services.NewCrawler(cfg, matrixSvc, robotsSvc, blockSvc, dataRepo, detector)
+	validatorSvc := services.NewValidator(cfg, blockSvc, matrixSvc, robotsSvc)
+	crawlerSvc := services.NewCrawler(cfg, matrixSvc, validatorSvc, blockSvc, dataRepo, detector)
 	matrixSvc.SetDiscover(crawlerSvc.AddServer)
 	cacheSvc := services.NewCache(cfg, statsSvc)
 	dataSvc := services.NewDataFacade(crawlerSvc, indexSvc, searchSvc, statsSvc, cacheSvc)
