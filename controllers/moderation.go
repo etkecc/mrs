@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 
@@ -39,6 +40,10 @@ func report(svc moderationService) echo.HandlerFunc {
 
 func listBanned(svc moderationService) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		if strings.Contains(c.Request().UserAgent(), "bot") {
+			return c.NoContent(http.StatusForbidden)
+		}
+
 		serverName := c.Param("server_name")
 		var list []string
 		var err error
@@ -60,6 +65,10 @@ func listBanned(svc moderationService) echo.HandlerFunc {
 
 func ban(svc moderationService) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		if strings.Contains(c.Request().UserAgent(), "bot") {
+			return c.NoContent(http.StatusForbidden)
+		}
+
 		roomID := c.Param("room_id")
 		if err := svc.Ban(roomID); err != nil {
 			return err
@@ -71,6 +80,10 @@ func ban(svc moderationService) echo.HandlerFunc {
 
 func unban(svc moderationService) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		if strings.Contains(c.Request().UserAgent(), "bot") {
+			return c.NoContent(http.StatusForbidden)
+		}
+
 		roomID := c.Param("room_id")
 		if err := svc.Unban(roomID); err != nil {
 			return err
