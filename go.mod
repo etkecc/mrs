@@ -11,6 +11,7 @@ require (
 	github.com/blevesearch/bleve/v2 v2.3.10
 	github.com/cespare/xxhash/v2 v2.2.0
 	github.com/fsnotify/fsnotify v1.7.0
+	github.com/getsentry/sentry-go v0.25.0
 	github.com/h2non/bimg v1.1.10-0.20230922201823-0fdc5cc0e1b8
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/labstack/echo/v4 v4.11.2
@@ -52,7 +53,6 @@ require (
 	github.com/blevesearch/zapx/v14 v14.3.10 // indirect
 	github.com/blevesearch/zapx/v15 v15.3.13 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
-	github.com/getsentry/sentry-go v0.25.0 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang/geo v0.0.0-20230421003525-6adc56603217 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect

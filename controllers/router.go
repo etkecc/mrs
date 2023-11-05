@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	sentryecho "github.com/getsentry/sentry-go/echo"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/raja/argon2pw"
@@ -87,6 +88,7 @@ func configureRouter(e *echo.Echo, cacheSvc cacheService) {
 		CustomTagFunc:    logBasicAuthLogin,
 	}))
 	e.Use(middleware.Recover())
+	e.Use(sentryecho.New(sentryecho.Options{Repanic: true}))
 	e.Use(cacheSvc.Middleware())
 	e.Use(middleware.Secure())
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
