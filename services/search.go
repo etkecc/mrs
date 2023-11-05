@@ -68,6 +68,11 @@ func (s *Search) SetEmptyQueryResults(rooms []*model.MatrixRoom) {
 // Search things
 // ref: https://blevesearch.com/docs/Query-String-Query/
 func (s *Search) Search(q, sortBy string, limit, offset int) ([]*model.Entry, int, error) {
+	utils.Logger.Info().
+		Str("query", q).
+		Int("limit", limit).
+		Int("offset", offset).
+		Msg("search request")
 	if limit == 0 {
 		limit = s.cfg.Get().Search.Defaults.Limit
 	}
@@ -77,7 +82,7 @@ func (s *Search) Search(q, sortBy string, limit, offset int) ([]*model.Entry, in
 
 	var builtQuery query.Query
 	if q == "" {
-		return s.getEmptyQueryResults()
+		return s.getEmptyQueryResults(limit, offset)
 	} else {
 		builtQuery = s.getSearchQuery(s.matchFields(q))
 	}
@@ -92,11 +97,20 @@ func (s *Search) Search(q, sortBy string, limit, offset int) ([]*model.Entry, in
 	return s.removeBlocked(results), total, nil
 }
 
-func (s *Search) getEmptyQueryResults() ([]*model.Entry, int, error) {
+func (s *Search) getEmptyQueryResults(limit, offset int) ([]*model.Entry, int, error) {
 	if s.empty == nil {
 		return []*model.Entry{}, 0, nil
 	}
-	return s.empty, len(s.empty), nil
+	size := len(s.empty)
+	if offset > size {
+		offset = size
+	}
+	limit = offset + limit
+	if limit > size {
+		limit = size
+	}
+	result := s.empty[offset:limit]
+	return result, len(s.empty), nil
 }
 
 // removeBlocked removes results from blocked servers from the search results

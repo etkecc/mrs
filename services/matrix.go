@@ -172,6 +172,9 @@ func (m *Matrix) PublicRooms(req *http.Request, rdReq *model.RoomDirectoryReques
 	defer metrics.IncSearchQueries("matrix", origin)
 
 	limit := rdReq.Limit
+	if limit == 0 {
+		limit = MatrixSearchLimit
+	}
 	if limit > MatrixSearchLimit {
 		limit = m.cfg.Get().Search.Defaults.Limit
 	}
@@ -185,15 +188,30 @@ func (m *Matrix) PublicRooms(req *http.Request, rdReq *model.RoomDirectoryReques
 	for _, entry := range entries {
 		chunk = append(chunk, entry.RoomDirectory())
 	}
+
 	var prev int
 	if offset >= limit {
 		prev = offset - limit
 	}
+	var next int
+	if len(chunk) >= limit {
+		next = offset + len(chunk)
+	}
+
+	var prevBatch string
+	if prev > 0 {
+		prevBatch = strconv.Itoa(prev)
+	}
+
+	var nextBatch string
+	if next > 0 {
+		nextBatch = strconv.Itoa(next)
+	}
 
 	value, err := utils.JSON(model.RoomDirectoryResponse{
 		Chunk:     chunk,
-		PrevBatch: strconv.Itoa(prev),
-		NextBatch: strconv.Itoa(offset + len(chunk)),
+		PrevBatch: prevBatch,
+		NextBatch: nextBatch,
 		Total:     total,
 	})
 	if err != nil {
