@@ -21,7 +21,7 @@ var (
 
 // IncSearchQueries increments search queries counter with labels
 func IncSearchQueries(api, server string) {
-	metrics.GetOrCreateCounter(fmt.Sprintf("mrs_search_queries{api=%q,server=%q}", api, server))
+	metrics.GetOrCreateCounter(fmt.Sprintf("mrs_search_queries{api=%q,server=%q}", api, server)).Inc()
 }
 
 // Handler for metrics
