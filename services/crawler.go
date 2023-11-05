@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/pemistahl/lingua-go"
+	"github.com/rs/zerolog"
 	"github.com/xxjwxc/gowp/workpool"
 	"gitlab.com/etke.cc/go/msc1929"
 
@@ -97,24 +98,35 @@ func NewCrawler(cfg ConfigService, fedSvc FederationService, v ValidatorService,
 // validateServers performs basic sanitization, checks if server is online and federateable
 func (m *Crawler) validateServers(servers *utils.List[string, string], workers int) *utils.List[string, string] {
 	log := utils.Logger
+	wp := workpool.New(workers)
 	discovered := utils.NewList[string, string]()
-	chunks := utils.Chunks(servers.Slice(), workers)
-	log.Info().Int("servers", servers.Len()).Int("chunks", len(chunks)).Msg("validating servers")
-	for i, chunk := range chunks {
-		wp := workpool.New(workers)
-		for _, server := range chunk {
-			srvName := server
-			wp.Do(func() error {
-				name, ok := m.v.IsOnline(srvName)
-				if ok {
-					discovered.Add(name)
-				}
-				return nil
-			})
-		}
-		wp.Wait() //nolint:errcheck
-		log.Info().Int("chunk", i+1).Int("of", len(chunks)).Int("valid", discovered.Len()).Int("total", servers.Len()).Msg("servers validation in progress")
+	log.Info().Int("servers", servers.Len()).Int("workers", workers).Msg("validating servers")
+
+	for _, server := range servers.Slice() {
+		srvName := server
+		wp.Do(func() error {
+			name, ok := m.v.IsOnline(srvName)
+			if ok {
+				discovered.Add(name)
+			}
+			return nil
+		})
 	}
+	go func(wp *workpool.WorkPool, log *zerolog.Logger) {
+		for {
+			if wp.IsDone() {
+				return
+			}
+
+			log.Info().
+				Int("valid", discovered.Len()).
+				Int("of", servers.Len()).
+				Msg("servers validation in progress")
+
+			time.Sleep(1 * time.Minute)
+		}
+	}(wp, log)
+	wp.Wait() //nolint:errcheck
 
 	log.Info().Int("valid", discovered.Len()).Int("of", servers.Len()).Msg("servers validation finished")
 	return discovered
@@ -149,6 +161,20 @@ func (m *Crawler) DiscoverServers(workers int) error {
 			return err
 		})
 	}
+
+	go func(wp *workpool.WorkPool) {
+		for {
+			if wp.IsDone() {
+				return
+			}
+
+			utils.Logger.Info().
+				Int("of", validServers.Len()).
+				Msg("servers discovery in progress")
+
+			time.Sleep(1 * time.Minute)
+		}
+	}(wp)
 	err := wp.Wait()
 
 	allServers.RemoveSlice(validServers.Slice())
@@ -264,11 +290,24 @@ func (m *Crawler) ParseRooms(workers int) {
 		}
 
 		wp.Do(func() error {
-			utils.Logger.Info().Str("server", name).Msg("parsing rooms...")
 			m.getPublicRooms(servers, name)
 			return nil
 		})
 	}
+
+	go func(wp *workpool.WorkPool) {
+		for {
+			if wp.IsDone() {
+				return
+			}
+
+			utils.Logger.Info().
+				Int("of", servers.Len()).
+				Msg("parsing rooms in progress")
+
+			time.Sleep(1 * time.Minute)
+		}
+	}(wp)
 	wp.Wait() //nolint:errcheck
 	m.data.FlushRoomBatch()
 
