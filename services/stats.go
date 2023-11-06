@@ -89,13 +89,14 @@ func (s *Stats) SetFinishedAt(process string, finishedAt time.Time) {
 // CollectServers stats only
 func (s *Stats) CollectServers(reload bool) {
 	var online, indexable int
-	s.data.EachServerInfo(func(_ string, server *model.MatrixServer) {
+	s.data.FilterServers(func(server *model.MatrixServer) bool {
 		if server.Online {
 			online++
 		}
 		if server.Indexable {
 			indexable++
 		}
+		return false
 	})
 
 	if err := s.data.SetIndexOnlineServers(online); err != nil {

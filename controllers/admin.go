@@ -18,17 +18,13 @@ type dataService interface {
 }
 
 type crawlerService interface {
-	OnlineServers() map[string]string
+	OnlineServers() []string
 	GetAvatar(string, string) (io.Reader, string)
 }
 
 func servers(crawler crawlerService) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		srvmap := crawler.OnlineServers()
-		servers := make([]string, 0)
-		for name := range srvmap {
-			servers = append(servers, name)
-		}
+		servers := crawler.OnlineServers()
 		serversb, err := yaml.Marshal(servers)
 		if err != nil {
 			return err

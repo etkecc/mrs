@@ -8,7 +8,7 @@ import (
 )
 
 type dataCrawlerService interface {
-	DiscoverServers(int)
+	DiscoverServers(int, ...*utils.List[string, string])
 	AddServer(string) int
 	AddServers([]string, int)
 	ParseRooms(int)

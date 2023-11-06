@@ -41,12 +41,10 @@ type RobotsService interface {
 type DataRepository interface {
 	AddServer(*model.MatrixServer) error
 	HasServer(string) bool
-	GetServer(string) (string, error)
 	GetServerInfo(string) (*model.MatrixServer, error)
-	EachServerInfo(func(string, *model.MatrixServer))
-	OnlineServers() map[string]string
-	IndexableServers() map[string]string
+	FilterServers(func(server *model.MatrixServer) bool) map[string]*model.MatrixServer
 	BatchServers([]string) error
+	MarkServersOffline([]string)
 	RemoveServer(string) error
 	RemoveServers([]string)
 	AddRoomBatch(*model.MatrixRoom)
@@ -93,7 +91,7 @@ func NewCrawler(cfg ConfigService, fedSvc FederationService, v ValidatorService,
 }
 
 // DiscoverServers across federation and remove invalid ones
-func (m *Crawler) DiscoverServers(workers int) {
+func (m *Crawler) DiscoverServers(workers int, overrideList ...*utils.List[string, string]) {
 	if m.discovering {
 		utils.Logger.Info().Msg("servers discovery already in progress, ignoring request")
 		return
@@ -101,10 +99,17 @@ func (m *Crawler) DiscoverServers(workers int) {
 	m.discovering = true
 	defer func() { m.discovering = false }()
 
-	offline := m.discoverServers(m.loadServers(), workers)
+	var servers *utils.List[string, string]
+	if len(overrideList) > 0 {
+		servers = overrideList[0]
+	} else {
+		servers = m.loadServers()
+	}
 
-	utils.Logger.Info().Int("offline", offline.Len()).Msg("removing offline servers")
-	m.data.RemoveServers(offline.Slice())
+	offline := m.discoverServers(servers, workers)
+
+	utils.Logger.Info().Int("offline", offline.Len()).Msg("marking offline servers")
+	m.data.MarkServersOffline(offline.Slice())
 }
 
 // AddServers by name in bulk, intended for HTTP API
@@ -137,7 +142,7 @@ func (m *Crawler) ParseRooms(workers int) {
 	defer func() { m.parsing = false }()
 
 	servers := utils.NewList[string, string]()
-	servers.AddMapKeys(m.data.IndexableServers())
+	servers.AddSlice(m.IndexableServers())
 	servers.RemoveSlice(m.block.Slice())
 	slice := servers.Slice()
 	total := len(slice)
@@ -146,11 +151,13 @@ func (m *Crawler) ParseRooms(workers int) {
 		workers = total
 	}
 	wp := workpool.New(workers)
+	discoveredServers := utils.NewList[string, string]()
 	utils.Logger.Info().Int("servers", total).Int("workers", workers).Msg("parsing rooms")
 	for _, srvName := range slice {
 		name := srvName
 		wp.Do(func() error {
-			m.getPublicRooms(servers, name)
+			serversFromRooms := m.getPublicRooms(name)
+			discoveredServers.AddSlice(serversFromRooms.Slice())
 			return nil
 		})
 	}
@@ -160,13 +167,14 @@ func (m *Crawler) ParseRooms(workers int) {
 	})
 	wp.Wait() //nolint:errcheck
 	m.data.FlushRoomBatch()
-	utils.Logger.Info().Int("of", servers.Len()).Msg("parsing rooms has been finished")
+	discoveredServers.RemoveSlice(servers.Slice())
+	utils.Logger.
+		Info().
+		Int("of", servers.Len()).
+		Int("discovered_servers", discoveredServers.Len()).
+		Msg("parsing rooms has been finished")
 
-	utils.Logger.Info().Int("of", servers.Len()).Msg("storing discovered servers..")
-	servers.RemoveSlice(m.block.Slice())
-	if err := m.data.BatchServers(servers.Slice()); err != nil {
-		utils.Logger.Error().Err(err).Msg("writing batch of servers failed")
-	}
+	m.DiscoverServers(m.cfg.Get().Workers.Discovery, discoveredServers)
 
 	m.calculateBiggestRooms()
 }
@@ -193,13 +201,17 @@ func (m *Crawler) EachRoom(handler func(roomID string, data *model.MatrixRoom)) 
 }
 
 // OnlineServers returns all known online servers
-func (m *Crawler) OnlineServers() map[string]string {
-	return m.data.OnlineServers()
+func (m *Crawler) OnlineServers() []string {
+	return utils.MapKeys(m.data.FilterServers(func(server *model.MatrixServer) bool {
+		return server.Online
+	}))
 }
 
 // IndexableServers returns all known indexable servers
-func (m *Crawler) IndexableServers() map[string]string {
-	return m.data.IndexableServers()
+func (m *Crawler) IndexableServers() []string {
+	return utils.MapKeys(m.data.FilterServers(func(server *model.MatrixServer) bool {
+		return server.Online && server.Indexable
+	}))
 }
 
 func (m *Crawler) GetAvatar(serverName string, mediaID string) (io.Reader, string) {
@@ -212,9 +224,13 @@ func (m *Crawler) GetAvatar(serverName string, mediaID string) (io.Reader, strin
 }
 
 func (m *Crawler) loadServers() *utils.List[string, string] {
+	utils.Logger.Info().Msg("loading servers")
 	servers := utils.NewList[string, string]()
-	servers.AddMapKeys(m.data.OnlineServers())
 	servers.AddSlice(m.cfg.Get().Servers)
+	utils.Logger.Info().Int("servers", servers.Len()).Msg("loaded servers from config")
+	servers.AddSlice(utils.MapKeys(m.data.FilterServers(func(_ *model.MatrixServer) bool {
+		return true
+	})))
 	utils.Logger.Info().Int("servers", servers.Len()).Msg("loaded servers from config and db")
 
 	return servers
@@ -223,15 +239,16 @@ func (m *Crawler) loadServers() *utils.List[string, string] {
 // discoverServer parses server information
 func (m *Crawler) discoverServer(name string) *model.MatrixServer {
 	name, ok := m.v.IsOnline(name)
-	if !ok {
+	if name == "" {
 		return nil
 	}
+
 	server := &model.MatrixServer{
-		Name:      name,
-		URL:       m.fed.QueryCSURL(name),
-		Contacts:  m.getServerContacts(name),
-		Online:    true,
-		UpdatedAt: time.Now().UTC(),
+		Name:     name,
+		URL:      m.fed.QueryCSURL(name),
+		Contacts: m.getServerContacts(name),
+		Online:   ok,
+		OnlineAt: time.Now().UTC(),
 	}
 
 	if m.v.IsIndexable(name) {
@@ -257,11 +274,12 @@ func (m *Crawler) discoverServers(servers *utils.List[string, string], workers i
 		wp.Do(func() error {
 			server := m.discoverServer(srvName)
 			if server == nil {
-				offline.Add(srvName)
 				return nil
 			}
 			if server.Online {
 				online.Add(server.Name)
+			} else {
+				offline.Add(server.Name)
 			}
 			if server.Indexable {
 				indexable.Add(server.Name)
@@ -272,6 +290,7 @@ func (m *Crawler) discoverServers(servers *utils.List[string, string], workers i
 	go utils.PoolProgress(wp, func() {
 		utils.Logger.Info().
 			Int("online", online.Len()).
+			Int("offline", offline.Len()).
 			Int("indexable", indexable.Len()).
 			Int("of", servers.Len()).
 			Msg("servers discovery in progress")
@@ -280,6 +299,7 @@ func (m *Crawler) discoverServers(servers *utils.List[string, string], workers i
 
 	utils.Logger.Info().
 		Int("online", online.Len()).
+		Int("offline", offline.Len()).
 		Int("indexable", indexable.Len()).
 		Int("of", servers.Len()).
 		Msg("servers discovery finished")
@@ -320,9 +340,9 @@ func (m *Crawler) getMediaURLs(serverName, mediaID string) []string {
 	for _, serverURL := range matrixMediaFallbacks {
 		urls = append(urls, serverURL+"/_matrix/media/v3/download/"+serverName+"/"+mediaID)
 	}
-	serverURL, err := m.data.GetServer(serverName)
-	if err != nil && serverURL != "" {
-		urls = append(urls, serverURL+"/_matrix/media/v3/download/"+serverName+"/"+mediaID)
+	server, err := m.data.GetServerInfo(serverName)
+	if err != nil && server.URL != "" {
+		urls = append(urls, server.URL+"/_matrix/media/v3/download/"+serverName+"/"+mediaID)
 	}
 
 	return urls
@@ -377,20 +397,21 @@ func (m *Crawler) getServerContacts(name string) model.MatrixServerContacts {
 
 // getPublicRooms reads public rooms of the given server from the matrix client-server api
 // and sends them into channel
-func (m *Crawler) getPublicRooms(servers *utils.List[string, string], name string) {
+func (m *Crawler) getPublicRooms(name string) *utils.List[string, string] {
 	var since string
 	var added int
 	limit := "10000"
+	servers := utils.NewList[string, string]()
 	for {
 		start := time.Now()
 		resp, err := m.fed.QueryPublicRooms(name, limit, since)
 		if err != nil {
 			utils.Logger.Warn().Err(err).Str("server", name).Msg("cannot query public rooms")
-			return
+			return servers
 		}
 		if len(resp.Chunk) == 0 {
 			utils.Logger.Info().Str("server", name).Msg("no public rooms available")
-			return
+			return servers
 		}
 
 		added += len(resp.Chunk)
@@ -415,7 +436,7 @@ func (m *Crawler) getPublicRooms(servers *utils.List[string, string], name strin
 			Msg("added rooms")
 
 		if resp.NextBatch == "" {
-			return
+			return servers
 		}
 
 		since = resp.NextBatch

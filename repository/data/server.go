@@ -12,15 +12,9 @@ import (
 // AddServer info
 func (d *Data) AddServer(server *model.MatrixServer) error {
 	return d.db.Batch(func(tx *bbolt.Tx) error {
-		err := tx.Bucket(serversBucket).Put([]byte(server.Name), []byte(server.URL))
-		if err != nil {
-			utils.Logger.Error().Err(err).Str("server", server.Name).Msg("cannot add server")
-			return err
-		}
-
 		serverb, merr := json.Marshal(server)
 		if merr != nil {
-			utils.Logger.Error().Err(err).Str("server", server.Name).Msg("cannot marshal server")
+			utils.Logger.Error().Err(merr).Str("server", server.Name).Msg("cannot marshal server")
 			return merr
 		}
 		return tx.Bucket(serversInfoBucket).Put([]byte(server.Name), serverb)
@@ -30,11 +24,16 @@ func (d *Data) AddServer(server *model.MatrixServer) error {
 // BatchServers adds a batch of servers at once
 func (d *Data) BatchServers(servers []string) error {
 	return d.db.Batch(func(tx *bbolt.Tx) error {
-		bucket := tx.Bucket(serversBucket)
+		bucket := tx.Bucket(serversInfoBucket)
 		for _, server := range servers {
 			if v := bucket.Get([]byte(server)); v == nil {
-				if err := bucket.Put([]byte(server), []byte("")); err != nil {
-					return err
+				v, merr := json.Marshal(&model.MatrixServer{Name: server})
+				if merr != nil {
+					utils.Logger.Error().Err(merr).Msg("cannot marshal server")
+					continue
+				}
+				if err := bucket.Put([]byte(server), v); err != nil {
+					utils.Logger.Error().Err(err).Msg("cannot store server")
 				}
 			}
 		}
@@ -46,40 +45,11 @@ func (d *Data) BatchServers(servers []string) error {
 func (d *Data) HasServer(name string) bool {
 	var has bool
 	d.db.View(func(tx *bbolt.Tx) error { //nolint:errcheck // that's ok
-		v := tx.Bucket(serversBucket).Get([]byte(name))
+		v := tx.Bucket(serversInfoBucket).Get([]byte(name))
 		has = v != nil
 		return nil
 	})
 	return has
-}
-
-// GetServer URL
-func (d *Data) GetServer(name string) (string, error) {
-	var url string
-	err := d.db.View(func(tx *bbolt.Tx) error {
-		v := tx.Bucket(serversBucket).Get([]byte(name))
-		if v != nil {
-			url = string(v)
-		}
-
-		return nil
-	})
-	return url, err
-}
-
-// EachServerInfo retruns each known matrix server
-func (d *Data) EachServerInfo(handler func(name string, data *model.MatrixServer)) {
-	var server *model.MatrixServer
-	d.db.View(func(tx *bbolt.Tx) error { //nolint:errcheck // that's ok
-		return tx.Bucket(serversInfoBucket).ForEach(func(k, v []byte) error {
-			err := json.Unmarshal(v, &server)
-			if err != nil {
-				return err
-			}
-			handler(string(k), server)
-			return nil
-		})
-	})
 }
 
 // GetServerInfo
@@ -129,27 +99,50 @@ func (d *Data) RemoveServers(keys []string) {
 	})
 }
 
-// OnlineServers returns all known online servers
-//
-//nolint:errcheck
-func (d *Data) OnlineServers() map[string]string {
-	servers := make(map[string]string)
-	d.db.View(func(tx *bbolt.Tx) error {
-		return tx.Bucket(serversBucket).ForEach(func(k, v []byte) error {
-			servers[string(k)] = string(v)
-			return nil
-		})
-	})
+func (d *Data) markServerOffline(bucket *bbolt.Bucket, name string) {
+	var server *model.MatrixServer
+	key := []byte(name)
+	if v := bucket.Get(key); v != nil {
+		if merr := json.Unmarshal(v, &server); merr != nil {
+			utils.Logger.Error().Err(merr).Msg("cannot unmarshal server")
+		}
+	}
+	if server == nil {
+		server = &model.MatrixServer{Name: name}
+	}
 
-	return servers
+	server.Online = false
+	server.Indexable = false
+
+	datab, merr := json.Marshal(server)
+	if merr != nil {
+		utils.Logger.Error().Err(merr).Msg("cannot marshal server")
+		return
+	}
+
+	if err := bucket.Put(key, datab); err != nil {
+		utils.Logger.Error().Err(err).Msg("cannot store server")
+	}
 }
 
-// IndexableServers returns all known indexable servers
-//
-//nolint:errcheck
-func (d *Data) IndexableServers() map[string]string {
-	servers := make(map[string]string)
-	d.db.View(func(tx *bbolt.Tx) error {
+// MarkServersOffline from db
+func (d *Data) MarkServersOffline(keys []string) {
+	if len(keys) == 0 {
+		return
+	}
+
+	d.db.Batch(func(tx *bbolt.Tx) error { //nolint:errcheck
+		bucket := tx.Bucket(serversInfoBucket)
+		for _, k := range keys {
+			d.markServerOffline(bucket, k)
+		}
+		return nil
+	})
+}
+
+func (d *Data) FilterServers(filter func(server *model.MatrixServer) bool) map[string]*model.MatrixServer {
+	servers := make(map[string]*model.MatrixServer)
+	err := d.db.View(func(tx *bbolt.Tx) error {
 		return tx.Bucket(serversInfoBucket).ForEach(func(k, v []byte) error {
 			if v == nil {
 				return nil
@@ -158,13 +151,16 @@ func (d *Data) IndexableServers() map[string]string {
 			if err := json.Unmarshal(v, &server); err != nil {
 				utils.Logger.Error().Err(err).Str("server", string(k)).Msg("cannot unmarshal server")
 			}
-			if !server.Indexable {
-				return nil
+			if filter(server) {
+				servers[string(k)] = server
 			}
-			servers[string(k)] = server.URL
+
 			return nil
 		})
 	})
+	if err != nil {
+		utils.Logger.Error().Err(err).Msg("cannot filter servers")
+	}
 
 	return servers
 }
