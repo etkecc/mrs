@@ -65,6 +65,7 @@ type DataRepository interface {
 }
 
 type ValidatorService interface {
+	Domain(server string) bool
 	IsOnline(server string) (string, bool)
 	IsIndexable(server string) bool
 	IsRoomAllowed(server string, room *model.MatrixRoom) bool
@@ -284,6 +285,13 @@ func (m *Crawler) ParseRooms(workers int) {
 			servers.Remove(name)
 			if err := m.data.RemoveServer(name); err != nil {
 				utils.Logger.Error().Err(err).Str("server", name).Msg("cannot remove blocked server")
+			}
+			continue
+		}
+		if !m.v.Domain(name) {
+			servers.Remove(name)
+			if err := m.data.RemoveServer(name); err != nil {
+				utils.Logger.Error().Err(err).Str("server", name).Msg("cannot remove server with invalid domain")
 			}
 			continue
 		}

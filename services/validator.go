@@ -2,10 +2,14 @@ package services
 
 import (
 	"fmt"
+	"regexp"
 
 	"gitlab.com/etke.cc/mrs/api/model"
 	"gitlab.com/etke.cc/mrs/api/utils"
 )
+
+// based on W3C email regex, ref: https://www.w3.org/TR/2016/REC-html51-20161101/sec-forms.html#email-state-typeemail
+var domainRegex = regexp.MustCompile(`^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]$`)
 
 // Validator is matrix validation service
 type Validator struct {
@@ -25,9 +29,30 @@ func NewValidator(cfg ConfigService, block BlocklistService, matrix FederationSe
 	}
 }
 
+// Domain checks if domain name is valid
+func (v *Validator) Domain(server string) bool {
+	// own server
+	if v.cfg.Get().Matrix.ServerName == server {
+		return false
+	}
+
+	// check if domain is valid
+	if len(server) < 4 || len(server) > 77 {
+		return false
+	}
+
+	// check if domain is valid
+	if !domainRegex.MatchString(server) {
+		return false
+	}
+
+	return true
+}
+
 // IsOnline checks if matrix server is online and federatable
 func (v *Validator) IsOnline(server string) (string, bool) {
-	if v.cfg.Get().Matrix.ServerName == server {
+	// check if domain is valid
+	if !v.Domain(server) {
 		return "", false
 	}
 
@@ -48,8 +73,8 @@ func (v *Validator) IsOnline(server string) (string, bool) {
 // IsIndexable check if server is indexable
 func (v *Validator) IsIndexable(server string) bool {
 	log := utils.Logger.With().Str("server", server).Logger()
-	if v.cfg.Get().Matrix.ServerName == server {
-		log.Info().Str("reason", "own server").Msg("not indexable")
+	if !v.Domain(server) {
+		log.Info().Str("reason", "domain").Msg("not indexable")
 		return false
 	}
 	if _, _, err := v.matrix.QueryVersion(server); err != nil {
