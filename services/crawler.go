@@ -281,17 +281,10 @@ func (m *Crawler) ParseRooms(workers int) {
 	utils.Logger.Info().Int("servers", total).Int("workers", workers).Msg("parsing rooms")
 	for _, srvName := range servers.Slice() {
 		name := srvName
-		if m.block.ByServer(name) {
+		if m.block.ByServer(name) || !m.v.Domain(name) {
 			servers.Remove(name)
 			if err := m.data.RemoveServer(name); err != nil {
 				utils.Logger.Error().Err(err).Str("server", name).Msg("cannot remove blocked server")
-			}
-			continue
-		}
-		if !m.v.Domain(name) {
-			servers.Remove(name)
-			if err := m.data.RemoveServer(name); err != nil {
-				utils.Logger.Error().Err(err).Str("server", name).Msg("cannot remove server with invalid domain")
 			}
 			continue
 		}
