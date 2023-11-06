@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"crypto/ed25519"
 	"encoding/base64"
 	"encoding/json"
@@ -299,7 +300,9 @@ func (m *Matrix) QueryVersion(serverName string) (server, version string, err er
 
 // QueryPublicRooms over federation
 func (m *Matrix) QueryPublicRooms(serverName, limit, since string) (*model.RoomDirectoryResponse, error) {
-	req, err := m.buildPublicRoomsReq(serverName, limit, since)
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	defer cancel()
+	req, err := m.buildPublicRoomsReq(ctx, serverName, limit, since)
 	if err != nil {
 		return nil, err
 	}
@@ -472,7 +475,7 @@ func (m *Matrix) parseErrorResp(status string, body []byte) *model.MatrixError {
 	return merr
 }
 
-func (m *Matrix) buildPublicRoomsReq(serverName, limit, since string) (*http.Request, error) {
+func (m *Matrix) buildPublicRoomsReq(ctx context.Context, serverName, limit, since string) (*http.Request, error) {
 	apiURLStr := m.getURL(serverName, false)
 	apiURL, err := url.Parse(apiURLStr)
 	if err != nil {
@@ -496,7 +499,7 @@ func (m *Matrix) buildPublicRoomsReq(serverName, limit, since string) (*http.Req
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequest(http.MethodGet, apiURL.String(), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
