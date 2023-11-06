@@ -430,7 +430,7 @@ func (m *Crawler) getPublicRooms(name string) *utils.List[string, string] {
 		utils.Logger.
 			Info().
 			Str("server", name).
-			Int("added", len(resp.Chunk)).
+			Int("added", added).
 			Int("of", resp.Total).
 			Str("took", time.Since(start).String()).
 			Msg("added rooms")
