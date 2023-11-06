@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/pemistahl/lingua-go"
-	"github.com/rs/zerolog"
 	"github.com/xxjwxc/gowp/workpool"
 	"gitlab.com/etke.cc/go/msc1929"
 
@@ -97,10 +96,9 @@ func NewCrawler(cfg ConfigService, fedSvc FederationService, v ValidatorService,
 
 // validateServers performs basic sanitization, checks if server is online and federateable
 func (m *Crawler) validateServers(servers *utils.List[string, string], workers int) *utils.List[string, string] {
-	log := utils.Logger
 	wp := workpool.New(workers)
 	discovered := utils.NewList[string, string]()
-	log.Info().Int("servers", servers.Len()).Int("workers", workers).Msg("validating servers")
+	utils.Logger.Info().Int("servers", servers.Len()).Int("workers", workers).Msg("validating servers")
 
 	for _, server := range servers.Slice() {
 		srvName := server
@@ -112,23 +110,15 @@ func (m *Crawler) validateServers(servers *utils.List[string, string], workers i
 			return nil
 		})
 	}
-	go func(wp *workpool.WorkPool, log *zerolog.Logger) {
-		for {
-			if wp.IsDone() {
-				return
-			}
-
-			log.Info().
-				Int("valid", discovered.Len()).
-				Int("of", servers.Len()).
-				Msg("servers validation in progress")
-
-			time.Sleep(1 * time.Minute)
-		}
-	}(wp, log)
+	go utils.PoolProgress(wp, func() {
+		utils.Logger.Info().
+			Int("valid", discovered.Len()).
+			Int("of", servers.Len()).
+			Msg("servers validation in progress")
+	})
 	wp.Wait() //nolint:errcheck
 
-	log.Info().Int("valid", discovered.Len()).Int("of", servers.Len()).Msg("servers validation finished")
+	utils.Logger.Info().Int("valid", discovered.Len()).Int("of", servers.Len()).Msg("servers validation finished")
 	return discovered
 }
 
@@ -162,19 +152,9 @@ func (m *Crawler) DiscoverServers(workers int) error {
 		})
 	}
 
-	go func(wp *workpool.WorkPool) {
-		for {
-			if wp.IsDone() {
-				return
-			}
-
-			utils.Logger.Info().
-				Int("of", validServers.Len()).
-				Msg("servers discovery in progress")
-
-			time.Sleep(1 * time.Minute)
-		}
-	}(wp)
+	go utils.PoolProgress(wp, func() {
+		utils.Logger.Info().Int("of", validServers.Len()).Msg("servers discovery in progress")
+	})
 	err := wp.Wait()
 
 	allServers.RemoveSlice(validServers.Slice())
@@ -272,45 +252,38 @@ func (m *Crawler) ParseRooms(workers int) {
 	servers := utils.NewList[string, string]()
 	servers.AddMapKeys(m.data.AllServers())
 	servers.RemoveSlice(m.block.Slice())
-	total := servers.Len()
+	slice := servers.Slice()
+	total := len(slice)
 
 	if total < workers {
 		workers = total
 	}
 	wp := workpool.New(workers)
 	utils.Logger.Info().Int("servers", total).Int("workers", workers).Msg("parsing rooms")
-	for _, srvName := range servers.Slice() {
+	for _, srvName := range slice {
 		name := srvName
-		if m.block.ByServer(name) || !m.v.Domain(name) {
-			servers.Remove(name)
-			if err := m.data.RemoveServer(name); err != nil {
-				utils.Logger.Error().Err(err).Str("server", name).Msg("cannot remove blocked server")
-			}
-			continue
-		}
-
 		wp.Do(func() error {
+			if m.block.ByServer(name) || !m.v.Domain(name) {
+				servers.Remove(name)
+				if err := m.data.RemoveServer(name); err != nil {
+					utils.Logger.Error().Err(err).Str("server", name).Msg("cannot remove blocked server")
+				}
+				return nil
+			}
+
 			m.getPublicRooms(servers, name)
 			return nil
 		})
 	}
 
-	go func(wp *workpool.WorkPool) {
-		for {
-			if wp.IsDone() {
-				return
-			}
-
-			utils.Logger.Info().
-				Int("of", servers.Len()).
-				Msg("parsing rooms in progress")
-
-			time.Sleep(1 * time.Minute)
-		}
-	}(wp)
+	go utils.PoolProgress(wp, func() {
+		utils.Logger.Info().Int("of", servers.Len()).Msg("parsing rooms in progress")
+	})
 	wp.Wait() //nolint:errcheck
 	m.data.FlushRoomBatch()
+	utils.Logger.Info().Int("of", servers.Len()).Msg("parsing rooms has been finished")
 
+	utils.Logger.Info().Int("of", servers.Len()).Msg("storing discovered servers..")
 	servers.RemoveSlice(m.block.Slice())
 	if err := m.data.BatchServers(servers.Slice()); err != nil {
 		utils.Logger.Error().Err(err).Msg("writing batch of servers failed")
@@ -445,10 +418,6 @@ func (m *Crawler) getPublicRooms(servers *utils.List[string, string], name strin
 	limit := "10000"
 	for {
 		start := time.Now()
-		utils.Logger.Info().
-			Str("server", name).
-			Str("since", since).
-			Msg("parsing public rooms")
 		resp, err := m.fed.QueryPublicRooms(name, limit, since)
 		if err != nil {
 			utils.Logger.Warn().Err(err).Str("server", name).Msg("cannot query public rooms")

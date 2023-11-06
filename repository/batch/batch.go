@@ -2,6 +2,7 @@ package batch
 
 import (
 	"sync"
+	"time"
 
 	"gitlab.com/etke.cc/mrs/api/utils"
 )
@@ -37,8 +38,10 @@ func (b *Batch[T]) Add(item T) {
 // Flush / store batch
 func (b *Batch[T]) Flush() {
 	b.Lock()
+	started := time.Now().UTC()
 	utils.Logger.Info().Int("len", len(b.data)).Msg("storing data batch")
 	b.flushfunc(b.data)
+	utils.Logger.Info().Int("len", len(b.data)).Str("took", time.Since(started).String()).Msg("stored data batch")
 	b.data = make([]T, 0, b.size)
 	b.Unlock()
 }
