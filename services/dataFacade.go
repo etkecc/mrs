@@ -8,10 +8,9 @@ import (
 )
 
 type dataCrawlerService interface {
-	DiscoverServers(int) error
+	DiscoverServers(int)
 	AddServer(string) int
 	AddServers([]string, int)
-	AllServers() map[string]string
 	ParseRooms(int)
 	EachRoom(func(string, *model.MatrixRoom))
 }
@@ -71,9 +70,9 @@ func (df *DataFacade) DiscoverServers(workers int) {
 	utils.Logger.Info().Msg("discovering matrix servers...")
 	start := time.Now().UTC()
 	df.stats.SetStartedAt("discovery", start)
-	err := df.crawler.DiscoverServers(workers)
+	df.crawler.DiscoverServers(workers)
 	df.stats.SetFinishedAt("discovery", time.Now().UTC())
-	utils.Logger.Info().Err(err).Str("took", time.Since(start).String()).Msg("servers discovery has been finished")
+	utils.Logger.Info().Str("took", time.Since(start).String()).Msg("servers discovery has been finished")
 }
 
 // ParseRooms from discovered servers

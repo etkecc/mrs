@@ -67,6 +67,11 @@ func (v *Validator) IsOnline(server string) (string, bool) {
 		return "", false
 	}
 
+	// check if federateable
+	if _, _, err := v.matrix.QueryVersion(server); err != nil {
+		return "", false
+	}
+
 	return name, true
 }
 
@@ -75,10 +80,6 @@ func (v *Validator) IsIndexable(server string) bool {
 	log := utils.Logger.With().Str("server", server).Logger()
 	if !v.Domain(server) {
 		log.Info().Str("reason", "domain").Msg("not indexable")
-		return false
-	}
-	if _, _, err := v.matrix.QueryVersion(server); err != nil {
-		log.Info().Err(err).Str("reason", "offline").Msg("not indexable")
 		return false
 	}
 	if !v.robots.Allowed(server, RobotsTxtPublicRooms) {

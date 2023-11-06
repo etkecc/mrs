@@ -129,14 +129,39 @@ func (d *Data) RemoveServers(keys []string) {
 	})
 }
 
-// AllServers returns all known servers
+// OnlineServers returns all known online servers
 //
 //nolint:errcheck
-func (d *Data) AllServers() map[string]string {
+func (d *Data) OnlineServers() map[string]string {
 	servers := make(map[string]string)
 	d.db.View(func(tx *bbolt.Tx) error {
 		return tx.Bucket(serversBucket).ForEach(func(k, v []byte) error {
 			servers[string(k)] = string(v)
+			return nil
+		})
+	})
+
+	return servers
+}
+
+// IndexableServers returns all known indexable servers
+//
+//nolint:errcheck
+func (d *Data) IndexableServers() map[string]string {
+	servers := make(map[string]string)
+	d.db.View(func(tx *bbolt.Tx) error {
+		return tx.Bucket(serversInfoBucket).ForEach(func(k, v []byte) error {
+			if v == nil {
+				return nil
+			}
+			var server *model.MatrixServer
+			if err := json.Unmarshal(v, &server); err != nil {
+				utils.Logger.Error().Err(err).Str("server", string(k)).Msg("cannot unmarshal server")
+			}
+			if !server.Indexable {
+				return nil
+			}
+			servers[string(k)] = server.URL
 			return nil
 		})
 	})

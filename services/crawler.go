@@ -44,7 +44,8 @@ type DataRepository interface {
 	GetServer(string) (string, error)
 	GetServerInfo(string) (*model.MatrixServer, error)
 	EachServerInfo(func(string, *model.MatrixServer))
-	AllServers() map[string]string
+	OnlineServers() map[string]string
+	IndexableServers() map[string]string
 	BatchServers([]string) error
 	RemoveServer(string) error
 	RemoveServers([]string)
@@ -91,122 +92,24 @@ func NewCrawler(cfg ConfigService, fedSvc FederationService, v ValidatorService,
 	}
 }
 
-// validateServers performs basic sanitization, checks if server is online and federateable
-func (m *Crawler) validateServers(servers *utils.List[string, string], workers int) *utils.List[string, string] {
-	wp := workpool.New(workers)
-	discovered := utils.NewList[string, string]()
-	utils.Logger.Info().Int("servers", servers.Len()).Int("workers", workers).Msg("validating servers")
-
-	for _, server := range servers.Slice() {
-		srvName := server
-		wp.Do(func() error {
-			name, ok := m.v.IsOnline(srvName)
-			if ok {
-				discovered.Add(name)
-			}
-			return nil
-		})
-	}
-	go utils.PoolProgress(wp, func() {
-		utils.Logger.Info().
-			Int("valid", discovered.Len()).
-			Int("of", servers.Len()).
-			Msg("servers validation in progress")
-	})
-	wp.Wait() //nolint:errcheck
-
-	utils.Logger.Info().Int("valid", discovered.Len()).Int("of", servers.Len()).Msg("servers validation finished")
-	return discovered
-}
-
-func (m *Crawler) loadServers() *utils.List[string, string] {
-	servers := utils.NewList[string, string]()
-	servers.AddMapKeys(m.data.AllServers())
-	servers.AddSlice(m.cfg.Get().Servers)
-	utils.Logger.Info().Int("servers", servers.Len()).Msg("loaded servers from config and db")
-
-	return servers
-}
-
 // DiscoverServers across federation and remove invalid ones
-func (m *Crawler) DiscoverServers(workers int) error {
+func (m *Crawler) DiscoverServers(workers int) {
 	if m.discovering {
 		utils.Logger.Info().Msg("servers discovery already in progress, ignoring request")
-		return nil
+		return
 	}
 	m.discovering = true
 	defer func() { m.discovering = false }()
 
-	allServers := m.loadServers()
-	validServers := m.validateServers(allServers, workers)
+	offline := m.discoverServers(m.loadServers(), workers)
 
-	wp := workpool.New(workers)
-	for _, server := range validServers.Slice() {
-		name := server
-		wp.Do(func() error {
-			_, err := m.discoverServer(name)
-			return err
-		})
-	}
-
-	go utils.PoolProgress(wp, func() {
-		utils.Logger.Info().Int("of", validServers.Len()).Msg("servers discovery in progress")
-	})
-	err := wp.Wait()
-
-	allServers.RemoveSlice(validServers.Slice())
-	utils.Logger.Info().Int("offline", allServers.Len()).Msg("removing offline servers")
-	m.data.RemoveServers(allServers.Slice())
-
-	return err
-}
-
-func (m *Crawler) discoverServer(name string) (valid bool, err error) {
-	server := &model.MatrixServer{
-		Name:      name,
-		URL:       m.fed.QueryCSURL(name),
-		Online:    true,
-		UpdatedAt: time.Now().UTC(),
-	}
-
-	if m.v.IsIndexable(name) {
-		server.Indexable = true
-	}
-
-	if contacts := m.getServerContacts(name); contacts != nil {
-		server.Contacts = *contacts
-	}
-
-	return true, m.data.AddServer(server)
+	utils.Logger.Info().Int("offline", offline.Len()).Msg("removing offline servers")
+	m.data.RemoveServers(offline.Slice())
 }
 
 // AddServers by name in bulk, intended for HTTP API
 func (m *Crawler) AddServers(names []string, workers int) {
-	wp := workpool.New(workers)
-	list := utils.NewList[string, string]()
-	list.AddSlice(names)
-	discoveredServers := m.validateServers(list, workers)
-	validServers := []string{}
-	for _, server := range discoveredServers.Slice() {
-		srvName := server
-		wp.Do(func() error {
-			if m.data.HasServer(srvName) {
-				return nil
-			}
-			name, ok := m.v.IsOnline(srvName)
-			if !ok {
-				return nil
-			}
-
-			valid, err := m.discoverServer(name)
-			if valid {
-				validServers = append(validServers, name)
-			}
-			return err
-		})
-	}
-
-	wp.Wait() //nolint:errcheck
+	m.discoverServers(utils.NewListFromSlice(names), workers)
 }
 
 // AddServer by name, intended for HTTP API
@@ -216,25 +119,12 @@ func (m *Crawler) AddServer(name string) int {
 		return http.StatusAlreadyReported
 	}
 
-	name, ok := m.v.IsOnline(name)
-	if !ok {
-		return http.StatusUnprocessableEntity
-	}
-
-	valid, err := m.discoverServer(name)
-	if err != nil {
-		utils.Logger.Warn().Err(err).Str("server", name).Msg("cannot add server")
-	}
-	if !valid {
+	server := m.discoverServer(name)
+	if server == nil {
 		return http.StatusUnprocessableEntity
 	}
 
 	return http.StatusCreated
-}
-
-// AllServers returns map of all known servers
-func (m *Crawler) AllServers() map[string]string {
-	return m.data.AllServers()
 }
 
 // ParseRooms across all discovered servers
@@ -247,7 +137,7 @@ func (m *Crawler) ParseRooms(workers int) {
 	defer func() { m.parsing = false }()
 
 	servers := utils.NewList[string, string]()
-	servers.AddMapKeys(m.data.AllServers())
+	servers.AddMapKeys(m.data.IndexableServers())
 	servers.RemoveSlice(m.block.Slice())
 	slice := servers.Slice()
 	total := len(slice)
@@ -260,14 +150,6 @@ func (m *Crawler) ParseRooms(workers int) {
 	for _, srvName := range slice {
 		name := srvName
 		wp.Do(func() error {
-			if m.block.ByServer(name) || !m.v.Domain(name) {
-				servers.Remove(name)
-				if err := m.data.RemoveServer(name); err != nil {
-					utils.Logger.Error().Err(err).Str("server", name).Msg("cannot remove blocked server")
-				}
-				return nil
-			}
-
 			m.getPublicRooms(servers, name)
 			return nil
 		})
@@ -287,6 +169,121 @@ func (m *Crawler) ParseRooms(workers int) {
 	}
 
 	m.calculateBiggestRooms()
+}
+
+// EachRoom allows to work with each known room
+func (m *Crawler) EachRoom(handler func(roomID string, data *model.MatrixRoom)) {
+	if m.eachrooming {
+		utils.Logger.Info().Msg("iterating over each room is already in progress, ignoring request")
+		return
+	}
+	m.eachrooming = true
+	defer func() { m.eachrooming = false }()
+
+	toRemove := []string{}
+	m.data.EachRoom(func(id string, room *model.MatrixRoom) {
+		if !m.v.IsRoomAllowed(room.Server, room) {
+			toRemove = append(toRemove, id)
+			return
+		}
+
+		handler(id, room)
+	})
+	m.data.RemoveRooms(toRemove)
+}
+
+// OnlineServers returns all known online servers
+func (m *Crawler) OnlineServers() map[string]string {
+	return m.data.OnlineServers()
+}
+
+// IndexableServers returns all known indexable servers
+func (m *Crawler) IndexableServers() map[string]string {
+	return m.data.IndexableServers()
+}
+
+func (m *Crawler) GetAvatar(serverName string, mediaID string) (io.Reader, string) {
+	avatar, contentType := m.downloadAvatar(serverName, mediaID)
+	converted, ok := utils.Avatar(avatar)
+	if ok {
+		contentType = utils.AvatarMIME
+	}
+	return converted, contentType
+}
+
+func (m *Crawler) loadServers() *utils.List[string, string] {
+	servers := utils.NewList[string, string]()
+	servers.AddMapKeys(m.data.OnlineServers())
+	servers.AddSlice(m.cfg.Get().Servers)
+	utils.Logger.Info().Int("servers", servers.Len()).Msg("loaded servers from config and db")
+
+	return servers
+}
+
+// discoverServer parses server information
+func (m *Crawler) discoverServer(name string) *model.MatrixServer {
+	name, ok := m.v.IsOnline(name)
+	if !ok {
+		return nil
+	}
+	server := &model.MatrixServer{
+		Name:      name,
+		URL:       m.fed.QueryCSURL(name),
+		Contacts:  m.getServerContacts(name),
+		Online:    true,
+		UpdatedAt: time.Now().UTC(),
+	}
+
+	if m.v.IsIndexable(name) {
+		server.Indexable = true
+	}
+
+	if err := m.data.AddServer(server); err != nil {
+		utils.Logger.Error().Err(err).Msg("cannot store server")
+	}
+	return server
+}
+
+// discoverServers parses servers information and returns lists of OFFLINE servers
+func (m *Crawler) discoverServers(servers *utils.List[string, string], workers int) (offline *utils.List[string, string]) {
+	wp := workpool.New(workers)
+	online := utils.NewList[string, string]()
+	offline = utils.NewList[string, string]()
+	indexable := utils.NewList[string, string]() // just for stats
+	utils.Logger.Info().Int("servers", servers.Len()).Int("workers", workers).Msg("validating servers")
+
+	for _, server := range servers.Slice() {
+		srvName := server
+		wp.Do(func() error {
+			server := m.discoverServer(srvName)
+			if server == nil {
+				offline.Add(srvName)
+				return nil
+			}
+			if server.Online {
+				online.Add(server.Name)
+			}
+			if server.Indexable {
+				indexable.Add(server.Name)
+			}
+			return nil
+		})
+	}
+	go utils.PoolProgress(wp, func() {
+		utils.Logger.Info().
+			Int("online", online.Len()).
+			Int("indexable", indexable.Len()).
+			Int("of", servers.Len()).
+			Msg("servers discovery in progress")
+	})
+	wp.Wait() //nolint:errcheck
+
+	utils.Logger.Info().
+		Int("online", online.Len()).
+		Int("indexable", indexable.Len()).
+		Int("of", servers.Len()).
+		Msg("servers discovery finished")
+	return offline
 }
 
 func (m *Crawler) calculateBiggestRooms() {
@@ -314,27 +311,6 @@ func (m *Crawler) calculateBiggestRooms() {
 		utils.Logger.Error().Err(err).Msg("cannot set biggest rooms")
 	}
 	utils.Logger.Info().Str("took", time.Since(started).String()).Msg("biggest rooms have been calculated and stored")
-}
-
-// EachRoom allows to work with each known room
-func (m *Crawler) EachRoom(handler func(roomID string, data *model.MatrixRoom)) {
-	if m.eachrooming {
-		utils.Logger.Info().Msg("iterating over each room is already in progress, ignoring request")
-		return
-	}
-	m.eachrooming = true
-	defer func() { m.eachrooming = false }()
-
-	toRemove := []string{}
-	m.data.EachRoom(func(id string, room *model.MatrixRoom) {
-		if !m.v.IsRoomAllowed(room.Server, room) {
-			toRemove = append(toRemove, id)
-			return
-		}
-
-		handler(id, room)
-	})
-	m.data.RemoveRooms(toRemove)
 }
 
 // getMediaServers returns list of HTTP urls of the same media ID.
@@ -382,29 +358,21 @@ func (m *Crawler) downloadAvatar(serverName, mediaID string) (io.ReadCloser, str
 	return nil, ""
 }
 
-func (m *Crawler) GetAvatar(serverName string, mediaID string) (io.Reader, string) {
-	avatar, contentType := m.downloadAvatar(serverName, mediaID)
-	converted, ok := utils.Avatar(avatar)
-	if ok {
-		contentType = utils.AvatarMIME
-	}
-	return converted, contentType
-}
-
 // getServerContacts as per MSC1929
-func (m *Crawler) getServerContacts(name string) *model.MatrixServerContacts {
+func (m *Crawler) getServerContacts(name string) model.MatrixServerContacts {
+	var contacts model.MatrixServerContacts
 	resp, err := msc1929.Get(name)
 	if err != nil {
-		return nil
+		return contacts
 	}
 	if resp.IsEmpty() {
-		return nil
+		return contacts
 	}
-	return &model.MatrixServerContacts{
-		Emails: utils.Uniq(resp.Emails()),
-		MXIDs:  utils.Uniq(resp.MatrixIDs()),
-		URL:    resp.SupportPage,
-	}
+
+	contacts.Emails = utils.Uniq(resp.Emails())
+	contacts.MXIDs = utils.Uniq(resp.MatrixIDs())
+	contacts.URL = resp.SupportPage
+	return contacts
 }
 
 // getPublicRooms reads public rooms of the given server from the matrix client-server api

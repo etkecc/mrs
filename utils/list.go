@@ -18,6 +18,13 @@ func NewList[T comparable, V any]() *List[T, V] {
 	}
 }
 
+// NewListFromSlice creates a new list and popupates it from slice
+func NewListFromSlice[T comparable](slice []T) *List[T, T] {
+	list := NewList[T, T]()
+	list.AddSlice(slice)
+	return list
+}
+
 // AddMapKeys adds keys from map to the list
 func (l *List[T, V]) AddMapKeys(datamap map[T]V) {
 	for k := range datamap {
