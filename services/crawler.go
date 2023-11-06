@@ -445,6 +445,10 @@ func (m *Crawler) getPublicRooms(servers *utils.List[string, string], name strin
 	limit := "10000"
 	for {
 		start := time.Now()
+		utils.Logger.Info().
+			Str("server", name).
+			Str("since", since).
+			Msg("parsing public rooms")
 		resp, err := m.fed.QueryPublicRooms(name, limit, since)
 		if err != nil {
 			utils.Logger.Warn().Err(err).Str("server", name).Msg("cannot query public rooms")
