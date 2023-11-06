@@ -48,6 +48,10 @@ func (v *Validator) IsOnline(server string) (string, bool) {
 // IsIndexable check if server is indexable
 func (v *Validator) IsIndexable(server string) bool {
 	log := utils.Logger.With().Str("server", server).Logger()
+	if v.cfg.Get().Matrix.ServerName == server {
+		log.Info().Str("reason", "own server").Msg("not indexable")
+		return false
+	}
 	if _, _, err := v.matrix.QueryVersion(server); err != nil {
 		log.Info().Err(err).Str("reason", "offline").Msg("not indexable")
 		return false

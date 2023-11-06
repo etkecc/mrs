@@ -1,8 +1,9 @@
 package data
 
 import (
+	"bytes"
 	"encoding/json"
-	"strconv"
+	"fmt"
 
 	"go.etcd.io/bbolt"
 
@@ -22,39 +23,41 @@ func (d *Data) FlushRoomBatch() {
 	d.rb.Flush()
 }
 
-func (d *Data) SetBiggestRooms(rooms []*model.MatrixRoom) error {
-	data := make(map[string][]byte, len(rooms))
-	for i, room := range rooms {
-		roomb, err := json.Marshal(room)
-		if err != nil {
-			utils.Logger.Error().Err(err).Str("id", room.ID).Str("server", room.Server).Msg("cannot marshal room")
-			return err
-		}
-		data[strconv.Itoa(i)] = roomb
-	}
-
+func (d *Data) SetBiggestRooms(ids []string) error {
 	return d.db.Update(func(tx *bbolt.Tx) error {
 		if err := tx.DeleteBucket(biggestRoomsBucket); err != nil {
 			return err
 		}
-		bucket, cerr := tx.CreateBucket(biggestRoomsBucket)
+		brBucket, cerr := tx.CreateBucket(biggestRoomsBucket)
 		if cerr != nil {
 			return cerr
 		}
+		rBucket := tx.Bucket(roomsBucket)
 
-		for id, room := range data {
-			if err := bucket.Put([]byte(id), room); err != nil {
+		for i, id := range ids {
+			roomID := []byte(id)
+			v := rBucket.Get(roomID)
+			if v == nil {
+				continue
+			}
+			k := []byte(fmt.Sprintf("%06d", i+1))
+			if err := brBucket.Put(k, v); err != nil {
 				return err
 			}
 		}
+
 		return nil
 	})
 }
 
-func (d *Data) GetBiggestRooms() []*model.MatrixRoom {
+func (d *Data) GetBiggestRooms(limit, offset int) []*model.MatrixRoom {
+	min := []byte(fmt.Sprintf("%06d", offset))
+	max := []byte(fmt.Sprintf("%06d", limit))
 	rooms := []*model.MatrixRoom{}
+
 	d.db.View(func(tx *bbolt.Tx) error { //nolint:errcheck
-		return tx.Bucket(biggestRoomsBucket).ForEach(func(k, v []byte) error {
+		c := tx.Bucket(biggestRoomsBucket).Cursor()
+		for k, v := c.Seek(min); k != nil && bytes.Compare(k, max) <= 0; k, v = c.Next() {
 			var room *model.MatrixRoom
 			err := json.Unmarshal(v, &room)
 			if err != nil {
@@ -62,8 +65,8 @@ func (d *Data) GetBiggestRooms() []*model.MatrixRoom {
 				return err
 			}
 			rooms = append(rooms, room)
-			return nil
-		})
+		}
+		return nil
 	})
 	return rooms
 }

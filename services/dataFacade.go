@@ -13,7 +13,6 @@ type dataCrawlerService interface {
 	AddServers([]string, int)
 	AllServers() map[string]string
 	ParseRooms(int)
-	GetBiggestRooms() []*model.MatrixRoom
 	EachRoom(func(string, *model.MatrixRoom))
 }
 
@@ -21,10 +20,6 @@ type dataIndexService interface {
 	EmptyIndex() error
 	RoomsBatch(roomID string, data *model.Entry) error
 	IndexBatch() error
-}
-
-type dataSearchService interface {
-	SetEmptyQueryResults(rooms []*model.MatrixRoom)
 }
 
 type dataStatsService interface {
@@ -43,7 +38,6 @@ type dataCacheService interface {
 type DataFacade struct {
 	crawler dataCrawlerService
 	index   dataIndexService
-	search  dataSearchService
 	stats   dataStatsService
 	cache   dataCacheService
 }
@@ -52,11 +46,10 @@ type DataFacade struct {
 func NewDataFacade(
 	crawler dataCrawlerService,
 	index dataIndexService,
-	search dataSearchService,
 	stats dataStatsService,
 	cache dataCacheService,
 ) *DataFacade {
-	return &DataFacade{crawler, index, search, stats, cache}
+	return &DataFacade{crawler, index, stats, cache}
 }
 
 // AddServer by name, intended for HTTP API
@@ -91,8 +84,6 @@ func (df *DataFacade) ParseRooms(workers int) {
 	df.crawler.ParseRooms(workers)
 	df.stats.SetFinishedAt("parsing", time.Now().UTC())
 	utils.Logger.Info().Str("took", time.Since(start).String()).Msg("matrix rooms have been parsed")
-
-	df.search.SetEmptyQueryResults(df.crawler.GetBiggestRooms())
 }
 
 // Ingest data into search index

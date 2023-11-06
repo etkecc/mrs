@@ -18,11 +18,10 @@ type Search struct {
 	repo  SearchRepository
 	stats StatsService
 	block BlocklistService
-	empty []*model.Entry
 }
 
 type searchDataRepository interface {
-	GetBiggestRooms() []*model.MatrixRoom
+	GetBiggestRooms(limit, offset int) []*model.MatrixRoom
 }
 
 // SearchRepository interface
@@ -51,18 +50,8 @@ func NewSearch(cfg ConfigService, data searchDataRepository, repo SearchReposito
 		stats: stats,
 		block: block,
 	}
-	s.SetEmptyQueryResults(data.GetBiggestRooms())
 
 	return s
-}
-
-func (s *Search) SetEmptyQueryResults(rooms []*model.MatrixRoom) {
-	entries := make([]*model.Entry, 0, len(rooms))
-	for _, room := range rooms {
-		entries = append(entries, room.Entry())
-	}
-
-	s.empty = entries
 }
 
 // Search things
@@ -98,19 +87,13 @@ func (s *Search) Search(q, sortBy string, limit, offset int) ([]*model.Entry, in
 }
 
 func (s *Search) getEmptyQueryResults(limit, offset int) ([]*model.Entry, int, error) {
-	if s.empty == nil {
-		return []*model.Entry{}, 0, nil
+	rooms := s.data.GetBiggestRooms(limit, offset)
+	entries := make([]*model.Entry, 0, len(rooms))
+	for _, room := range rooms {
+		entries = append(entries, room.Entry())
 	}
-	size := len(s.empty)
-	if offset > size {
-		offset = size
-	}
-	limit = offset + limit
-	if limit > size {
-		limit = size
-	}
-	result := s.empty[offset:limit]
-	return result, len(s.empty), nil
+
+	return entries, len(entries), nil
 }
 
 // removeBlocked removes results from blocked servers from the search results

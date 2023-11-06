@@ -53,8 +53,7 @@ type DataRepository interface {
 	FlushRoomBatch()
 	GetRoom(string) (*model.MatrixRoom, error)
 	EachRoom(func(string, *model.MatrixRoom))
-	SetBiggestRooms([]*model.MatrixRoom) error
-	GetBiggestRooms() []*model.MatrixRoom
+	SetBiggestRooms([]string) error
 	GetBannedRooms(...string) ([]string, error)
 	RemoveRooms([]string)
 	BanRoom(string) error
@@ -335,26 +334,15 @@ func (m *Crawler) calculateBiggestRooms() {
 	sort.Slice(counts, func(i, j int) bool {
 		return counts[i].members > counts[j].members
 	})
-	rooms := make([]*model.MatrixRoom, 0, MatrixSearchLimit)
-	if len(counts) > MatrixSearchLimit {
-		counts = counts[:MatrixSearchLimit]
-	}
+	ids := make([]string, 0, len(counts))
 	for _, count := range counts {
-		room, err := m.data.GetRoom(count.id)
-		if err != nil {
-			utils.Logger.Error().Err(err).Str("id", count.id).Msg("cannot get room")
-			continue
-		}
-		rooms = append(rooms, room)
+		ids = append(ids, count.id)
 	}
-	utils.Logger.Info().Str("took", time.Since(started).String()).Msg("biggest rooms have been calculated")
-	if err := m.data.SetBiggestRooms(rooms); err != nil {
+	utils.Logger.Info().Str("took", time.Since(started).String()).Msg("biggest rooms have been calculated, storing")
+	if err := m.data.SetBiggestRooms(ids); err != nil {
 		utils.Logger.Error().Err(err).Msg("cannot set biggest rooms")
 	}
-}
-
-func (m *Crawler) GetBiggestRooms() []*model.MatrixRoom {
-	return m.data.GetBiggestRooms()
+	utils.Logger.Info().Str("took", time.Since(started).String()).Msg("biggest rooms have been calculated and stored")
 }
 
 // EachRoom allows to work with each known room

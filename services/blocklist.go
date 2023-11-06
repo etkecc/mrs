@@ -72,8 +72,5 @@ func (b *Blocklist) ByServer(server string) bool {
 	if _, ok := b.dynamic[server]; ok {
 		return true
 	}
-	if b.cfg.Get().Matrix.ServerName == server {
-		return true
-	}
 	return false
 }

@@ -77,7 +77,7 @@ func main() {
 	crawlerSvc := services.NewCrawler(cfg, matrixSvc, validatorSvc, blockSvc, dataRepo, detector)
 	matrixSvc.SetDiscover(crawlerSvc.AddServer)
 	cacheSvc := services.NewCache(cfg, statsSvc)
-	dataSvc := services.NewDataFacade(crawlerSvc, indexSvc, searchSvc, statsSvc, cacheSvc)
+	dataSvc := services.NewDataFacade(crawlerSvc, indexSvc, statsSvc, cacheSvc)
 	mailSvc := services.NewEmail(cfg)
 	modSvc := services.NewModeration(cfg, dataRepo, index, mailSvc)
 
