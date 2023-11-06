@@ -2,15 +2,14 @@ package services
 
 import (
 	"bytes"
-	"context"
 	"io"
-	"net"
 	"net/http"
 	"sync"
 	"time"
 
 	"github.com/benjaminestes/robots/v2"
 
+	"gitlab.com/etke.cc/mrs/api/utils"
 	"gitlab.com/etke.cc/mrs/api/version"
 )
 
@@ -25,31 +24,15 @@ var robotsTxtBot = []byte(version.Bot)
 
 // Robots - robots.txt parsing
 type Robots struct {
-	mu     *sync.Mutex
-	data   map[string]*robots.Robots
-	client *http.Client
+	mu   *sync.Mutex
+	data map[string]*robots.Robots
 }
 
 // NewRobots creates robots.txt parsing service
 func NewRobots() *Robots {
-	dialer := &net.Dialer{
-		Timeout: 5 * time.Second,
-	}
-
 	return &Robots{
 		mu:   &sync.Mutex{},
 		data: make(map[string]*robots.Robots),
-		client: &http.Client{
-			Timeout: 5 * time.Second,
-			Transport: &http.Transport{
-				MaxIdleConns:        1,
-				MaxConnsPerHost:     1,
-				MaxIdleConnsPerHost: 1,
-				TLSHandshakeTimeout: 10 * time.Second,
-				DialContext:         dialer.DialContext,
-				Dial:                dialer.Dial,
-			},
-		},
 	}
 }
 
@@ -95,15 +78,7 @@ func (r *Robots) parse(serverName string) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, robotsURL, nil)
-	if err != nil {
-		r.set(serverName, nil)
-		return
-	}
-	req.Header.Set("User-Agent", version.UserAgent)
-	resp, err := r.client.Do(req)
+	resp, err := utils.Get(robotsURL, 5*time.Second)
 	if err != nil {
 		r.set(serverName, nil)
 		return

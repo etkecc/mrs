@@ -77,10 +77,7 @@ type FederationService interface {
 	QueryCSURL(serverName string) string
 }
 
-var (
-	matrixMediaFallbacks = []string{"https://matrix-client.matrix.org"}
-	matrixClient         = &http.Client{Timeout: 120 * time.Second}
-)
+var matrixMediaFallbacks = []string{"https://matrix-client.matrix.org"}
 
 // NewCrawler service
 func NewCrawler(cfg ConfigService, fedSvc FederationService, v ValidatorService, block BlocklistService, data DataRepository, detector lingua.LanguageDetector) *Crawler {

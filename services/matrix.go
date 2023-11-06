@@ -271,7 +271,7 @@ func (m *Matrix) QueryDirectory(req *http.Request, alias string) (int, []byte) {
 
 // QueryVersion from /_matrix/federation/v1/version
 func (m *Matrix) QueryVersion(serverName string) (server, version string, err error) {
-	resp, err := matrixClient.Get(m.getURL(serverName, false) + "/_matrix/federation/v1/version")
+	resp, err := utils.Get(m.getURL(serverName, false) + "/_matrix/federation/v1/version")
 	if err != nil {
 		return "", "", err
 	}
@@ -300,14 +300,14 @@ func (m *Matrix) QueryVersion(serverName string) (server, version string, err er
 
 // QueryPublicRooms over federation
 func (m *Matrix) QueryPublicRooms(serverName, limit, since string) (*model.RoomDirectoryResponse, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), utils.DefaultTimeout)
 	defer cancel()
 	req, err := m.buildPublicRoomsReq(ctx, serverName, limit, since)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := matrixClient.Do(req)
+	resp, err := utils.HTTPClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -657,7 +657,7 @@ func (m *Matrix) parseAuths(r *http.Request) []*matrixAuth {
 
 // parseClientWellKnown returns URL of the Matrix CS API server
 func (m *Matrix) parseClientWellKnown(serverName string) (string, error) {
-	resp, err := matrixClient.Get("https://" + serverName + "/.well-known/matrix/client")
+	resp, err := utils.Get("https://" + serverName + "/.well-known/matrix/client")
 	if err != nil {
 		return "", err
 	}
@@ -682,7 +682,7 @@ func (m *Matrix) parseClientWellKnown(serverName string) (string, error) {
 
 // parseServerWellKnown returns Federation API host:port
 func (m *Matrix) parseServerWellKnown(serverName string) (string, error) {
-	resp, err := matrixClient.Get("https://" + serverName + "/.well-known/matrix/server")
+	resp, err := utils.Get("https://" + serverName + "/.well-known/matrix/server")
 	if err != nil {
 		return "", err
 	}
@@ -766,7 +766,7 @@ func (m *Matrix) lookupKeys(serverName string, discover bool) (*matrixKeyResp, e
 	if err != nil {
 		return nil, err
 	}
-	resp, err := matrixClient.Get(keysURL.String())
+	resp, err := utils.Get(keysURL.String())
 	if err != nil {
 		return nil, err
 	}
