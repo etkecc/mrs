@@ -17,6 +17,7 @@ type matrixService interface {
 	GetKeyServer() []byte
 	PublicRooms(*http.Request, *model.RoomDirectoryRequest) (int, []byte)
 	QueryDirectory(req *http.Request, alias string) (int, []byte)
+	QueryClientDirectory(alias string) (int, []byte)
 }
 
 func configureMatrixEndpoints(e *echo.Echo, matrixSvc matrixService) {
@@ -26,6 +27,12 @@ func configureMatrixEndpoints(e *echo.Echo, matrixSvc matrixService) {
 
 	e.GET("/_matrix/federation/v1/query/directory", func(c echo.Context) error {
 		return c.JSONBlob(matrixSvc.QueryDirectory(c.Request(), c.QueryParam("room_alias")))
+	})
+	e.GET("/_matrix/client/r0/directory/room/:room_alias", func(c echo.Context) error {
+		return c.JSONBlob(matrixSvc.QueryClientDirectory(c.Param("room_alias")))
+	})
+	e.GET("/_matrix/client/v3/directory/room/:room_alias", func(c echo.Context) error {
+		return c.JSONBlob(matrixSvc.QueryClientDirectory(c.Param("room_alias")))
 	})
 
 	e.GET("/_matrix/federation/v1/publicRooms", matrixRoomDirectory(matrixSvc))

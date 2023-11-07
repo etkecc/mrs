@@ -235,7 +235,7 @@ func (m *Matrix) QueryServerName(serverName string) (string, error) {
 	return discovered, err
 }
 
-// QueryDirectory is /_matrix/federation/v1/query/directory
+// QueryDirectory is /_matrix/federation/v1/query/directory?room_alias={roomAlias}
 func (m *Matrix) QueryDirectory(req *http.Request, alias string) (int, []byte) {
 	origin, err := m.ValidateAuth(req)
 	if err != nil {
@@ -245,6 +245,38 @@ func (m *Matrix) QueryDirectory(req *http.Request, alias string) (int, []byte) {
 	utils.Logger.Info().Str("alias", alias).Str("origin", origin).Msg("querying directory")
 	if alias == "" {
 		return http.StatusNotFound, m.getErrorResp("M_NOT_FOUND", "room not found")
+	}
+
+	var room *model.MatrixRoom
+	m.data.EachRoom(func(_ string, data *model.MatrixRoom) bool {
+		if data.Alias == alias {
+			room = data
+			return true
+		}
+		return false
+	})
+	if room == nil {
+		return http.StatusNotFound, m.getErrorResp("M_NOT_FOUND", "room not found")
+	}
+
+	resp := &queryDirectoryResp{
+		RoomID:  room.ID,
+		Servers: room.Servers(m.cfg.Get().Matrix.ServerName),
+	}
+	respb, err := utils.JSON(resp)
+	if err != nil {
+		utils.Logger.Error().Err(err).Msg("cannot marshal query directory resp")
+		return http.StatusInternalServerError, nil
+	}
+
+	return http.StatusOK, respb
+}
+
+// QueryClientDirectory is /_matrix/client/v3/directory/room/{roomAlias}
+func (m *Matrix) QueryClientDirectory(alias string) (int, []byte) {
+	utils.Logger.Info().Str("alias", alias).Str("origin", "client").Msg("querying directory")
+	if alias == "" {
+		return http.StatusBadRequest, m.getErrorResp("M_INVALID_PARAM", "Room alias invalid")
 	}
 
 	var room *model.MatrixRoom

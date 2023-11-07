@@ -124,6 +124,68 @@ paths:
           description: json marshaling failed
       security:
        - matrix:
+  /_matrix/client/r0/directory/room/{room_alias}:
+    get:
+      tags:
+        - matrix
+      summary: Requests that the server resolve a room alias to a room ID.
+      description: "The server will check indexed rooms to resolve the alias if the domain part of the alias does not correspond to the server’s own domain."
+      operationId: matrix_server_client_query_directory
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  room_id:
+                    type: string
+                    description: room id
+                    example: '!random:example.com'
+                  servers:
+                    type: array
+                    items:
+                      type: string
+                      description: server name
+                      example: example.com
+        '400':
+          description: invalid room alias
+        '404':
+          description: room not found
+        '500':
+          description: json marshaling failed
+  /_matrix/client/v3/directory/room/{room_alias}:
+    get:
+      tags:
+        - matrix
+      summary: Requests that the server resolve a room alias to a room ID.
+      description: "The server will check indexed rooms to resolve the alias if the domain part of the alias does not correspond to the server’s own domain."
+      operationId: matrix_server_client_query_directory
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  room_id:
+                    type: string
+                    description: room id
+                    example: '!random:example.com'
+                  servers:
+                    type: array
+                    items:
+                      type: string
+                      description: server name
+                      example: example.com
+        '400':
+          description: invalid room alias
+        '404':
+          description: room not found
+        '500':
+          description: json marshaling failed
   /_matrix/federation/v1/publicRooms:
     get:
       tags:
