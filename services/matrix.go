@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/ed25519"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net"
@@ -14,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/goccy/go-json"
 	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/matrix-org/gomatrixserverlib"
 

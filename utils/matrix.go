@@ -2,10 +2,10 @@ package utils
 
 import (
 	"bytes"
-	"encoding/json"
 	"io"
 	"strings"
 
+	"github.com/goccy/go-json"
 	"github.com/h2non/bimg"
 	"github.com/matrix-org/gomatrixserverlib"
 )

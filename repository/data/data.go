@@ -1,8 +1,7 @@
 package data
 
 import (
-	"encoding/json"
-
+	"github.com/goccy/go-json"
 	"go.etcd.io/bbolt"
 
 	"gitlab.com/etke.cc/mrs/api/model"

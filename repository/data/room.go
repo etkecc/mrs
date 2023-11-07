@@ -2,9 +2,9 @@ package data
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 
+	"github.com/goccy/go-json"
 	"go.etcd.io/bbolt"
 
 	"gitlab.com/etke.cc/mrs/api/model"

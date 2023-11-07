@@ -2,13 +2,13 @@ package services
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
 
+	"github.com/goccy/go-json"
 	"github.com/raja/argon2pw"
 
 	"gitlab.com/etke.cc/mrs/api/model"

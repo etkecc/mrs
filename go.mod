@@ -12,6 +12,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.2.0
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/getsentry/sentry-go v0.25.0
+	github.com/goccy/go-json v0.10.2
 	github.com/h2non/bimg v1.1.10-0.20230922201823-0fdc5cc0e1b8
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/labstack/echo/v4 v4.11.2
