@@ -12,7 +12,7 @@ type dataCrawlerService interface {
 	AddServer(string) int
 	AddServers([]string, int)
 	ParseRooms(int)
-	EachRoom(func(string, *model.MatrixRoom))
+	EachRoom(func(string, *model.MatrixRoom) bool)
 }
 
 type dataIndexService interface {
@@ -93,10 +93,11 @@ func (df *DataFacade) Ingest() {
 	}
 	start := time.Now().UTC()
 	df.stats.SetStartedAt("indexing", start)
-	df.crawler.EachRoom(func(roomID string, room *model.MatrixRoom) {
+	df.crawler.EachRoom(func(roomID string, room *model.MatrixRoom) bool {
 		if err := df.index.RoomsBatch(roomID, room.Entry()); err != nil {
 			utils.Logger.Warn().Err(err).Str("id", room.ID).Msg("cannot add room to batch")
 		}
+		return false
 	})
 	if err := df.index.IndexBatch(); err != nil {
 		utils.Logger.Warn().Err(err).Msg("indexing of the last batch failed")

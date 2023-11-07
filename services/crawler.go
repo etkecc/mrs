@@ -50,7 +50,7 @@ type DataRepository interface {
 	AddRoomBatch(*model.MatrixRoom)
 	FlushRoomBatch()
 	GetRoom(string) (*model.MatrixRoom, error)
-	EachRoom(func(string, *model.MatrixRoom))
+	EachRoom(func(string, *model.MatrixRoom) bool)
 	SetBiggestRooms([]string) error
 	GetBannedRooms(...string) ([]string, error)
 	RemoveRooms([]string)
@@ -180,7 +180,7 @@ func (m *Crawler) ParseRooms(workers int) {
 }
 
 // EachRoom allows to work with each known room
-func (m *Crawler) EachRoom(handler func(roomID string, data *model.MatrixRoom)) {
+func (m *Crawler) EachRoom(handler func(roomID string, data *model.MatrixRoom) bool) {
 	if m.eachrooming {
 		utils.Logger.Info().Msg("iterating over each room is already in progress, ignoring request")
 		return
@@ -189,13 +189,13 @@ func (m *Crawler) EachRoom(handler func(roomID string, data *model.MatrixRoom)) 
 	defer func() { m.eachrooming = false }()
 
 	toRemove := []string{}
-	m.data.EachRoom(func(id string, room *model.MatrixRoom) {
+	m.data.EachRoom(func(id string, room *model.MatrixRoom) bool {
 		if !m.v.IsRoomAllowed(room.Server, room) {
 			toRemove = append(toRemove, id)
-			return
+			return false
 		}
 
-		handler(id, room)
+		return handler(id, room)
 	})
 	m.data.RemoveRooms(toRemove)
 }
@@ -315,8 +315,9 @@ func (m *Crawler) calculateBiggestRooms() {
 	utils.Logger.Info().Msg("calculating biggest rooms...")
 	started := time.Now().UTC()
 	counts := []roomCount{}
-	m.data.EachRoom(func(_ string, data *model.MatrixRoom) {
+	m.data.EachRoom(func(_ string, data *model.MatrixRoom) bool {
 		counts = append(counts, roomCount{data.ID, data.Members})
+		return false
 	})
 
 	sort.Slice(counts, func(i, j int) bool {

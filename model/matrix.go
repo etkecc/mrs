@@ -31,11 +31,6 @@ func (e MatrixError) Error() string {
 	return fmt.Sprintf("%s (%s): %s", e.HTTP, e.Code, e.Message)
 }
 
-// MarshalJSON error
-func (e MatrixError) MarshalJSON() ([]byte, error) {
-	return utils.JSON(e)
-}
-
 // MatrixServer info
 type MatrixServer struct {
 	Name      string               `json:"name"`

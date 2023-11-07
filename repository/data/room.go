@@ -102,7 +102,7 @@ func (d *Data) RemoveRooms(keys []string) {
 // EachRoom allows to work with each known room
 //
 //nolint:errcheck
-func (d *Data) EachRoom(handler func(roomID string, data *model.MatrixRoom)) {
+func (d *Data) EachRoom(handler func(roomID string, data *model.MatrixRoom) bool) {
 	var room *model.MatrixRoom
 	d.db.View(func(tx *bbolt.Tx) error {
 		return tx.Bucket(roomsBucket).ForEach(func(k, v []byte) error {
@@ -115,7 +115,10 @@ func (d *Data) EachRoom(handler func(roomID string, data *model.MatrixRoom)) {
 				return nil
 			}
 
-			handler(string(k), room)
+			if handler(string(k), room) {
+				return fmt.Errorf("stop")
+			}
+
 			return nil
 		})
 	})

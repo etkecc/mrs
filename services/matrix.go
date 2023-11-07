@@ -55,7 +55,7 @@ type versionResp struct {
 
 type queryDirectoryResp struct {
 	RoomID  string   `json:"room_id"`
-	Servers []string `json:"string"`
+	Servers []string `json:"servers"`
 }
 
 type matrixAuth struct {
@@ -70,7 +70,7 @@ type matrixSearchService interface {
 }
 
 type matrixDataRepository interface {
-	EachRoom(handler func(roomID string, data *model.MatrixRoom))
+	EachRoom(handler func(roomID string, data *model.MatrixRoom) bool)
 }
 
 // Matrix server
@@ -237,20 +237,23 @@ func (m *Matrix) QueryServerName(serverName string) (string, error) {
 
 // QueryDirectory is /_matrix/federation/v1/query/directory
 func (m *Matrix) QueryDirectory(req *http.Request, alias string) (int, []byte) {
-	_, err := m.ValidateAuth(req)
+	origin, err := m.ValidateAuth(req)
 	if err != nil {
 		utils.Logger.Warn().Err(err).Msg("matrix auth failed")
 		return http.StatusUnauthorized, m.getErrorResp("M_UNAUTHORIZED", "authorization failed")
 	}
+	utils.Logger.Info().Str("alias", alias).Str("origin", origin).Msg("querying directory")
 	if alias == "" {
 		return http.StatusNotFound, m.getErrorResp("M_NOT_FOUND", "room not found")
 	}
 
 	var room *model.MatrixRoom
-	m.data.EachRoom(func(_ string, data *model.MatrixRoom) {
+	m.data.EachRoom(func(_ string, data *model.MatrixRoom) bool {
 		if data.Alias == alias {
 			room = data
+			return true
 		}
+		return false
 	})
 	if room == nil {
 		return http.StatusNotFound, m.getErrorResp("M_NOT_FOUND", "room not found")
@@ -449,10 +452,10 @@ func (m *Matrix) Authorize(serverName, method, uri string, body any) ([]string, 
 
 // getErrorResp returns canonical json of matrix error
 func (m *Matrix) getErrorResp(code, message string) []byte {
-	respb, err := (model.MatrixError{
+	respb, err := utils.JSON(model.MatrixError{
 		Code:    code,
 		Message: message,
-	}).MarshalJSON()
+	})
 	if err != nil {
 		utils.Logger.Error().Err(err).Msg("cannot marshal canonical json")
 	}

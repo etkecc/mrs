@@ -129,8 +129,9 @@ func (s *Stats) Collect() {
 	s.CollectServers(false)
 
 	var rooms int
-	s.data.EachRoom(func(_ string, _ *model.MatrixRoom) {
+	s.data.EachRoom(func(_ string, _ *model.MatrixRoom) bool {
 		rooms++
+		return false
 	})
 	if err := s.data.SetIndexParsedRooms(rooms); err != nil {
 		utils.Logger.Error().Err(err).Msg("cannot set parsed rooms count")
