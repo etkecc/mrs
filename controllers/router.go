@@ -1,10 +1,7 @@
 package controllers
 
 import (
-	"bytes"
-	"encoding/base64"
 	"net/http"
-	"strings"
 	"time"
 
 	sentryecho "github.com/getsentry/sentry-go/echo"
@@ -79,14 +76,6 @@ func ConfigureRouter(
 }
 
 func configureRouter(e *echo.Echo, cacheSvc cacheService) {
-	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
-		Skipper: func(c echo.Context) bool {
-			return c.Request().URL.Path == "/_health"
-		},
-		Format:           `${remote_ip} - ${custom} [${time_custom}] "${method} ${path} ${protocol}" ${status} ${bytes_out} "${referer}" "${user_agent}"` + "\n",
-		CustomTimeFormat: "2/Jan/2006:15:04:05 -0700",
-		CustomTagFunc:    logBasicAuthLogin,
-	}))
 	e.Use(middleware.Recover())
 	e.Use(sentryecho.New(sentryecho.Options{Repanic: true}))
 	e.Use(cacheSvc.Middleware())
@@ -107,29 +96,6 @@ func configureRouter(e *echo.Echo, cacheSvc cacheService) {
 	e.GET("/_health", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
 	})
-}
-
-// logBasicAuthLogin parses basic auth login (if provided) from headers
-func logBasicAuthLogin(c echo.Context, buf *bytes.Buffer) (int, error) {
-	auth := c.Request().Header.Get(echo.HeaderAuthorization)
-	l := len("basic")
-
-	if len(auth) > l+1 && strings.EqualFold(auth[:l], "basic") {
-		// Invalid base64 shouldn't be treated as error
-		// instead should be treated as invalid client input
-		b, err := base64.StdEncoding.DecodeString(auth[l+1:])
-		if err != nil {
-			return buf.WriteRune('-') //nolint:gocritic // interface constraint
-		}
-
-		cred := string(b)
-		for i := 0; i < len(cred); i++ {
-			if cred[i] == ':' {
-				return buf.WriteString(cred[:i])
-			}
-		}
-	}
-	return buf.WriteRune('-') //nolint:gocritic // interface constraint
 }
 
 func auth(name string, cfg *model.ConfigAuthItem) echo.MiddlewareFunc {

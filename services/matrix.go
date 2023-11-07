@@ -242,6 +242,13 @@ func (m *Matrix) QueryDirectory(req *http.Request, alias string) (int, []byte) {
 		utils.Logger.Warn().Err(err).Msg("matrix auth failed")
 		return http.StatusUnauthorized, m.getErrorResp("M_UNAUTHORIZED", "authorization failed")
 	}
+
+	var unescapedAlias string
+	var unescapeErr error
+	unescapedAlias, unescapeErr = url.QueryUnescape(alias)
+	if unescapeErr == nil {
+		alias = unescapedAlias
+	}
 	utils.Logger.Info().Str("alias", alias).Str("origin", origin).Msg("querying directory")
 	if alias == "" {
 		return http.StatusNotFound, m.getErrorResp("M_NOT_FOUND", "room not found")
@@ -274,6 +281,13 @@ func (m *Matrix) QueryDirectory(req *http.Request, alias string) (int, []byte) {
 
 // QueryClientDirectory is /_matrix/client/v3/directory/room/{roomAlias}
 func (m *Matrix) QueryClientDirectory(alias string) (int, []byte) {
+	var unescapedAlias string
+	var unescapeErr error
+	unescapedAlias, unescapeErr = url.PathUnescape(alias)
+	if unescapeErr == nil {
+		alias = unescapedAlias
+	}
+
 	utils.Logger.Info().Str("alias", alias).Str("origin", "client").Msg("querying directory")
 	if alias == "" {
 		return http.StatusBadRequest, m.getErrorResp("M_INVALID_PARAM", "Room alias invalid")
