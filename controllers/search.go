@@ -17,7 +17,7 @@ type searchService interface {
 
 func search(svc searchService, cfg configService, path bool) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		defer metrics.IncSearchQueries("rest", cfg.Get().Matrix.ServerName)
+		defer metrics.IncSearchQueries("rest", getOrigin(cfg, c.Request()))
 
 		paramfunc := c.QueryParam
 		if path {
