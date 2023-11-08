@@ -180,6 +180,14 @@ paths:
       summary: Requests that the server resolve a room alias to a room ID.
       description: "The server will check indexed rooms to resolve the alias if the domain part of the alias does not correspond to the server’s own domain."
       operationId: matrix_server_client_query_directory
+      parameters:
+        - name: room_alias
+          in: path
+          description: room alias
+          required: true
+          schema:
+            type: string
+            example: '#alias:example.com'
       responses:
         '200':
           description: successful operation
@@ -211,6 +219,14 @@ paths:
       summary: Requests that the server resolve a room alias to a room ID.
       description: "The server will check indexed rooms to resolve the alias if the domain part of the alias does not correspond to the server’s own domain."
       operationId: matrix_server_client_query_directory
+      parameters:
+        - name: room_alias
+          in: path
+          description: room alias
+          required: true
+          schema:
+            type: string
+            example: '#alias:example.com'
       responses:
         '200':
           description: successful operation
@@ -231,6 +247,68 @@ paths:
                       example: example.com
         '400':
           description: invalid room alias
+        '404':
+          description: room not found
+        '500':
+          description: json marshaling failed
+  /_matrix/client/r0/directory/list/room/{room_id}:
+    get:
+      tags:
+        - matrix
+      summary: Gets the visibility of a given room on the server’s public room directory.
+      description: "Visibility is always 'public' for the rooms known to MRS, otherwise 404 is returned"
+      operationId: matrix_server_client_query_directory
+      parameters:
+        - name: room_id
+          in: path
+          description: room id
+          required: true
+          schema:
+            type: string
+            example: '!roomID:example.com'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  visibility:
+                    type: string
+                    description: always public
+                    example: public
+        '404':
+          description: room not found
+        '500':
+          description: json marshaling failed
+  /_matrix/client/v3/directory/list/room/{room_id}:
+    get:
+      tags:
+        - matrix
+      summary: Gets the visibility of a given room on the server’s public room directory.
+      description: "Visibility is always 'public' for the rooms known to MRS, otherwise 404 is returned"
+      operationId: matrix_server_client_query_directory
+      parameters:
+        - name: room_id
+          in: path
+          description: room id
+          required: true
+          schema:
+            type: string
+            example: '!roomID:example.com'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  visibility:
+                    type: string
+                    description: always public
+                    example: public
         '404':
           description: room not found
         '500':

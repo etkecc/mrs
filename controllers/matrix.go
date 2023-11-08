@@ -17,9 +17,10 @@ type matrixService interface {
 	GetServerVersion() []byte
 	GetClientVersion() []byte
 	GetKeyServer() []byte
+	GetClientDirectory(alias string) (int, []byte)
+	GetClientRoomVisibility(roomID string) (int, []byte)
 	PublicRooms(*http.Request, *model.RoomDirectoryRequest) (int, []byte)
 	QueryDirectory(req *http.Request, alias string) (int, []byte)
-	QueryClientDirectory(alias string) (int, []byte)
 }
 
 func configureMatrixEndpoints(e *echo.Echo, matrixSvc matrixService) {
@@ -33,10 +34,16 @@ func configureMatrixEndpoints(e *echo.Echo, matrixSvc matrixService) {
 		return c.JSONBlob(matrixSvc.QueryDirectory(c.Request(), c.QueryParam("room_alias")))
 	})
 	e.GET("/_matrix/client/r0/directory/room/:room_alias", func(c echo.Context) error {
-		return c.JSONBlob(matrixSvc.QueryClientDirectory(c.Param("room_alias")))
+		return c.JSONBlob(matrixSvc.GetClientDirectory(c.Param("room_alias")))
 	})
 	e.GET("/_matrix/client/v3/directory/room/:room_alias", func(c echo.Context) error {
-		return c.JSONBlob(matrixSvc.QueryClientDirectory(c.Param("room_alias")))
+		return c.JSONBlob(matrixSvc.GetClientDirectory(c.Param("room_alias")))
+	})
+	e.GET("/_matrix/client/r0/directory/list/room/:room_id", func(c echo.Context) error {
+		return c.JSONBlob(matrixSvc.GetClientRoomVisibility(c.Param("room_id")))
+	})
+	e.GET("/_matrix/client/v3/directory/list/room/:room_id", func(c echo.Context) error {
+		return c.JSONBlob(matrixSvc.GetClientRoomVisibility(c.Param("room_id")))
 	})
 
 	e.GET("/_matrix/federation/v1/publicRooms", matrixRoomDirectory(matrixSvc))

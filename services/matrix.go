@@ -76,6 +76,7 @@ type matrixSearchService interface {
 
 type matrixDataRepository interface {
 	EachRoom(handler func(roomID string, data *model.MatrixRoom) bool)
+	GetRoom(roomID string) (*model.MatrixRoom, error)
 }
 
 // Matrix server
@@ -174,6 +175,71 @@ func (m *Matrix) GetKeyServer() []byte {
 	return payload
 }
 
+// GetClientDirectory is /_matrix/client/v3/directory/room/{roomAlias}
+func (m *Matrix) GetClientDirectory(alias string) (int, []byte) {
+	var unescapedAlias string
+	var unescapeErr error
+	unescapedAlias, unescapeErr = url.PathUnescape(alias)
+	if unescapeErr == nil {
+		alias = unescapedAlias
+	}
+
+	utils.Logger.Info().Str("alias", alias).Str("origin", "client").Msg("querying directory")
+	if alias == "" {
+		return http.StatusBadRequest, m.getErrorResp("M_INVALID_PARAM", "Room alias invalid")
+	}
+
+	var room *model.MatrixRoom
+	m.data.EachRoom(func(_ string, data *model.MatrixRoom) bool {
+		if data.Alias == alias {
+			room = data
+			return true
+		}
+		return false
+	})
+	if room == nil {
+		return http.StatusNotFound, m.getErrorResp("M_NOT_FOUND", "room not found")
+	}
+
+	resp := &queryDirectoryResp{
+		RoomID:  room.ID,
+		Servers: room.Servers(m.cfg.Get().Matrix.ServerName),
+	}
+	respb, err := utils.JSON(resp)
+	if err != nil {
+		utils.Logger.Error().Err(err).Msg("cannot marshal query directory resp")
+		return http.StatusInternalServerError, nil
+	}
+
+	return http.StatusOK, respb
+}
+
+// GetClientRoomVisibility is /_matrix/client/v3/directory/list/room/{roomID}
+func (m *Matrix) GetClientRoomVisibility(id string) (int, []byte) {
+	var unescapedID string
+	var unescapeErr error
+	unescapedID, unescapeErr = url.PathUnescape(id)
+	if unescapeErr == nil {
+		id = unescapedID
+	}
+
+	room, err := m.data.GetRoom(id)
+	if err != nil {
+		utils.Logger.Error().Err(err).Str("room", id).Msg("cannot get room")
+		return http.StatusInternalServerError, m.getErrorResp("M_INTERNAL_ERROR", "internal error")
+	}
+	if room == nil {
+		return http.StatusNotFound, m.getErrorResp("M_NOT_FOUND", "room not found")
+	}
+
+	resp, err := utils.JSON(map[string]string{"visibility": "public"}) // MRS doesn't have any other
+	if err != nil {
+		utils.Logger.Error().Err(err).Str("room", id).Msg("cannot marshal room visibility")
+		return http.StatusInternalServerError, m.getErrorResp("M_INTERNAL_ERROR", "internal error")
+	}
+	return http.StatusOK, resp
+}
+
 // PublicRooms returns /_matrix/federation/v1/publicRooms response
 func (m *Matrix) PublicRooms(req *http.Request, rdReq *model.RoomDirectoryRequest) (int, []byte) {
 	origin, err := m.ValidateAuth(req)
@@ -269,45 +335,6 @@ func (m *Matrix) QueryDirectory(req *http.Request, alias string) (int, []byte) {
 	utils.Logger.Info().Str("alias", alias).Str("origin", origin).Msg("querying directory")
 	if alias == "" {
 		return http.StatusNotFound, m.getErrorResp("M_NOT_FOUND", "room not found")
-	}
-
-	var room *model.MatrixRoom
-	m.data.EachRoom(func(_ string, data *model.MatrixRoom) bool {
-		if data.Alias == alias {
-			room = data
-			return true
-		}
-		return false
-	})
-	if room == nil {
-		return http.StatusNotFound, m.getErrorResp("M_NOT_FOUND", "room not found")
-	}
-
-	resp := &queryDirectoryResp{
-		RoomID:  room.ID,
-		Servers: room.Servers(m.cfg.Get().Matrix.ServerName),
-	}
-	respb, err := utils.JSON(resp)
-	if err != nil {
-		utils.Logger.Error().Err(err).Msg("cannot marshal query directory resp")
-		return http.StatusInternalServerError, nil
-	}
-
-	return http.StatusOK, respb
-}
-
-// QueryClientDirectory is /_matrix/client/v3/directory/room/{roomAlias}
-func (m *Matrix) QueryClientDirectory(alias string) (int, []byte) {
-	var unescapedAlias string
-	var unescapeErr error
-	unescapedAlias, unescapeErr = url.PathUnescape(alias)
-	if unescapeErr == nil {
-		alias = unescapedAlias
-	}
-
-	utils.Logger.Info().Str("alias", alias).Str("origin", "client").Msg("querying directory")
-	if alias == "" {
-		return http.StatusBadRequest, m.getErrorResp("M_INVALID_PARAM", "Room alias invalid")
 	}
 
 	var room *model.MatrixRoom
