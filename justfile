@@ -3,7 +3,6 @@ tag := if env_var_or_default("CI_COMMIT_TAG", "main") == "main" { "latest" } els
 repo := trim_end_match(replace(replace_regex(env_var_or_default("CI_REPOSITORY_URL", `git remote get-url origin`), ".*@|", ""), ":", "/"), ".git")
 project := file_name(repo)
 gitlab_image := "registry." + repo + ":" + tag
-etke_image := replace(gitlab_image, "gitlab.com", "etke.cc")
 
 # show help by default
 default:
@@ -52,4 +51,4 @@ login:
 # docker build
 docker:
     docker buildx create --use
-    docker buildx build --pull --provenance=false --platform {{ platforms }} --push -t {{ gitlab_image }} -t {{ etke_image }} .
+    docker buildx build --pull --provenance=false --platform {{ platforms }} --push -t {{ gitlab_image }} .
