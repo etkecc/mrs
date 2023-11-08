@@ -17,7 +17,7 @@ paths:
   /.well-known/matrix/server:
     get:
       tags:
-        - matrix
+        - Matrix S2S API
       summary: Matrix server delegation
       description: The delegated server information.
       operationId: matrix_server_delegation
@@ -36,7 +36,7 @@ paths:
   /.well-known/matrix/client:
     get:
       tags:
-        - matrix
+        - Matrix CS API
       summary: Matrix client delegation
       description: The delegated server information intended for clients
       operationId: matrix_client_delegation
@@ -58,7 +58,7 @@ paths:
   /_matrix/client/versions:
     get:
       tags:
-        - matrix
+        - Matrix CS API
       summary: Gets the versions of the specification supported by the server.
       description: The versions are made-up, because the whole point of that endpoint is to be a workaround for services like matrix.to
       operationId: matrix_client_versions
@@ -85,7 +85,7 @@ paths:
   /_matrix/federation/v1/version:
     get:
       tags:
-        - matrix
+        - Matrix S2S API
       summary: matrix server name and version
       description: Get the implementation name and version of this homeserver.
       operationId: matrix_server_version
@@ -111,7 +111,7 @@ paths:
   /_matrix/key/v2/server:
     get:
       tags:
-        - matrix
+        - Matrix S2S API
       summary: matrix server's published signing keys
       description: Gets the homeserver’s published signing keys
       operationId: matrix_server_key
@@ -143,7 +143,7 @@ paths:
   /_matrix/federation/v1/query/directory:
     get:
       tags:
-        - matrix
+        - Matrix S2S API
       summary: Performs a query to get the mapped room ID and list of resident homeservers in the room for a given room alias
       description: "Performs a query to get the mapped room ID and list of resident homeservers in the room for a given room alias. Homeservers should only query room aliases that belong to the target server (identified by the DNS Name in the alias). Servers may wish to cache the response to this query to avoid requesting the information too often."
       operationId: matrix_server_query_directory
@@ -176,7 +176,7 @@ paths:
   /_matrix/client/r0/directory/room/{room_alias}:
     get:
       tags:
-        - matrix
+        - Matrix CS API
       summary: Requests that the server resolve a room alias to a room ID.
       description: "The server will check indexed rooms to resolve the alias if the domain part of the alias does not correspond to the server’s own domain."
       operationId: matrix_server_client_query_directory
@@ -215,7 +215,7 @@ paths:
   /_matrix/client/v3/directory/room/{room_alias}:
     get:
       tags:
-        - matrix
+        - Matrix CS API
       summary: Requests that the server resolve a room alias to a room ID.
       description: "The server will check indexed rooms to resolve the alias if the domain part of the alias does not correspond to the server’s own domain."
       operationId: matrix_server_client_query_directory
@@ -254,7 +254,7 @@ paths:
   /_matrix/client/r0/directory/list/room/{room_id}:
     get:
       tags:
-        - matrix
+        - Matrix CS API
       summary: Gets the visibility of a given room on the server’s public room directory.
       description: "Visibility is always 'public' for the rooms known to MRS, otherwise 404 is returned"
       operationId: matrix_server_client_query_directory
@@ -285,7 +285,7 @@ paths:
   /_matrix/client/v3/directory/list/room/{room_id}:
     get:
       tags:
-        - matrix
+        - Matrix CS API
       summary: Gets the visibility of a given room on the server’s public room directory.
       description: "Visibility is always 'public' for the rooms known to MRS, otherwise 404 is returned"
       operationId: matrix_server_client_query_directory
@@ -316,7 +316,7 @@ paths:
   /_matrix/federation/v1/publicRooms:
     get:
       tags:
-        - matrix
+        - Matrix S2S API
       summary: the same search, but through Matrix Server-Server API
       description: Gets all the public rooms indexed by MRS. Use https://spec.matrix.org/v1.8/server-server-api/#public-room-directory for details
       operationId: matrix_server_publicrooms_get
@@ -339,7 +339,7 @@ paths:
         - matrix:
     post:
       tags:
-        - matrix
+        - Matrix S2S API
       summary: the same search, but through Matrix Server-Server API
       description: Gets all the public rooms indexed by MRS. Use https://spec.matrix.org/v1.8/server-server-api/#public-room-directory for details
       operationId: matrix_server_publicrooms_post
