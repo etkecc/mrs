@@ -33,6 +33,55 @@ paths:
                     type: string
                     description: The server name to delegate server-server communications to, with optional port
                     example: 'example.com:443'
+  /.well-known/matrix/client:
+    get:
+      tags:
+        - matrix
+      summary: Matrix client delegation
+      description: The delegated server information intended for clients
+      operationId: matrix_client_delegation
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  m.homeserver:
+                    type: object
+                    properties:
+                      base_url:
+                        type: string
+                        description: The server URL to use with clients
+                        example: 'https://example.com'
+  /_matrix/client/versions:
+    get:
+      tags:
+        - matrix
+      summary: Gets the versions of the specification supported by the server.
+      description: The versions are made-up, because the whole point of that endpoint is to be a workaround for services like matrix.to
+      operationId: matrix_client_versions
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  versions:
+                    type: array
+                    items:
+                      type: string
+                      example: 'v2.0'
+                  unstable_features:
+                    type: object
+                    properties:
+                      uk.half-shot.msc1929:
+                        type: boolean
+                        description: Made-up MSC1929 unstable feature
+                        example: true
   /_matrix/federation/v1/version:
     get:
       tags:
@@ -84,13 +133,13 @@ paths:
                     example: 1698164427133
                   verify_keys:
                     type: object
-                    additionalProperties: {}
+                    additionalProperties: { }
                   old_verify_keys:
                     type: object
-                    additionalProperties: {}
+                    additionalProperties: { }
                   signatures:
                     type: object
-                    additionalProperties: {}
+                    additionalProperties: { }
   /_matrix/federation/v1/query/directory:
     get:
       tags:
@@ -123,7 +172,7 @@ paths:
         '500':
           description: json marshaling failed
       security:
-       - matrix:
+        - matrix:
   /_matrix/client/r0/directory/room/{room_alias}:
     get:
       tags:
@@ -209,7 +258,7 @@ paths:
         '500':
           description: internal server error
       security:
-       - matrix:
+        - matrix:
     post:
       tags:
         - matrix
@@ -232,7 +281,7 @@ paths:
         '500':
           description: internal server error
       security:
-       - matrix:
+        - matrix:
   /_health:
     get:
       tags:
@@ -298,7 +347,7 @@ paths:
         '500':
           description: something is wrong, check the logs
       security:
-       - discovery:
+        - discovery:
   /discover/{server_name}:
     post:
       tags:
@@ -326,8 +375,8 @@ paths:
         '500':
           description: something is wrong, check the logs
       security:
-       - {}
-       - discovery:
+        - { }
+        - discovery:
   /avatar/{server_name}/{media_id}:
     get:
       tags:
@@ -508,6 +557,7 @@ paths:
         '204':
           description: no banned rooms yet
         '200':
+          description: successful operation
           content:
             application/json:
               schema:
@@ -517,8 +567,8 @@ paths:
                   description: banned matrix room ID
                   example: '!randomString:example.com'
       security:
-       - moderation:
-       - automaticToken:
+        - moderation:
+        - automaticToken:
   /mod/list/{server_name}:
     get:
       tags:
@@ -538,6 +588,7 @@ paths:
         '204':
           description: no banned rooms yet
         '200':
+          description: successful operation
           content:
             application/json:
               schema:
@@ -547,8 +598,8 @@ paths:
                   description: banned matrix room ID
                   example: '!randomString:example.com'
       security:
-       - moderation:
-       - automaticToken:
+        - moderation:
+        - automaticToken:
   /mod/ban/{room_id}:
     get:
       tags:
@@ -577,8 +628,8 @@ paths:
                     description: response message
                     example: 'the room has been banned'
       security:
-       - moderation:
-       - automaticToken:
+        - moderation:
+        - automaticToken:
   /mod/unban/{room_id}:
     get:
       tags:
@@ -607,8 +658,8 @@ paths:
                     description: response message
                     example: 'the room has been unbanned'
       security:
-       - moderation:
-       - automaticToken:
+        - moderation:
+        - automaticToken:
   /metrics:
     get:
       tags:
@@ -620,7 +671,7 @@ paths:
         '200':
           description: successful operation
       security:
-       - metrics:
+        - metrics:
   /-/status:
     get:
       tags:
@@ -635,7 +686,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Status'
       security:
-       - admin:
+        - admin:
   /-/servers:
     get:
       tags:
@@ -654,7 +705,7 @@ paths:
                   description: human-readable server name (matrix domain)
                   example: 'example.com'
       security:
-       - admin:
+        - admin:
   /-/discover:
     post:
       tags:
@@ -665,7 +716,7 @@ paths:
         '201':
           description: request acknowledged
       security:
-       - admin:
+        - admin:
   /-/parse:
     post:
       tags:
@@ -676,7 +727,7 @@ paths:
         '201':
           description: request acknowledged
       security:
-       - admin:
+        - admin:
   /-/reindex:
     post:
       tags:
@@ -687,7 +738,7 @@ paths:
         '201':
           description: request acknowledged
       security:
-       - admin:
+        - admin:
   /-/full:
     post:
       tags:
@@ -698,7 +749,7 @@ paths:
         '201':
           description: request acknowledged
       security:
-       - admin:
+        - admin:
 
 components:
   schemas:

@@ -12,8 +12,10 @@ import (
 )
 
 type matrixService interface {
-	GetWellKnown() []byte
-	GetVersion() []byte
+	GetServerWellKnown() []byte
+	GetClientWellKnown() []byte
+	GetServerVersion() []byte
+	GetClientVersion() []byte
 	GetKeyServer() []byte
 	PublicRooms(*http.Request, *model.RoomDirectoryRequest) (int, []byte)
 	QueryDirectory(req *http.Request, alias string) (int, []byte)
@@ -21,8 +23,10 @@ type matrixService interface {
 }
 
 func configureMatrixEndpoints(e *echo.Echo, matrixSvc matrixService) {
-	e.GET("/.well-known/matrix/server", func(c echo.Context) error { return c.JSONBlob(http.StatusOK, matrixSvc.GetWellKnown()) })
-	e.GET("/_matrix/federation/v1/version", func(c echo.Context) error { return c.JSONBlob(http.StatusOK, matrixSvc.GetVersion()) })
+	e.GET("/.well-known/matrix/server", func(c echo.Context) error { return c.JSONBlob(http.StatusOK, matrixSvc.GetServerWellKnown()) })
+	e.GET("/.well-known/matrix/client", func(c echo.Context) error { return c.JSONBlob(http.StatusOK, matrixSvc.GetClientWellKnown()) })
+	e.GET("/_matrix/client/versions", func(c echo.Context) error { return c.JSONBlob(http.StatusOK, matrixSvc.GetClientVersion()) })
+	e.GET("/_matrix/federation/v1/version", func(c echo.Context) error { return c.JSONBlob(http.StatusOK, matrixSvc.GetServerVersion()) })
 	e.GET("/_matrix/key/v2/server", func(c echo.Context) error { return c.JSONBlob(http.StatusOK, matrixSvc.GetKeyServer()) })
 
 	e.GET("/_matrix/federation/v1/query/directory", func(c echo.Context) error {

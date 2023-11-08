@@ -49,8 +49,13 @@ type wellKnownClientRespHomeserver struct {
 	BaseURL string `json:"base_url"`
 }
 
-type versionResp struct {
+type serverVersionResp struct {
 	Server map[string]string `json:"server"`
+}
+
+type clientVersionResp struct {
+	Versions         []string        `json:"versions"`
+	UnstableFeatures map[string]bool `json:"unstable_features"`
 }
 
 type queryDirectoryResp struct {
@@ -75,18 +80,20 @@ type matrixDataRepository interface {
 
 // Matrix server
 type Matrix struct {
-	cfg          ConfigService
-	keys         []*model.Key
-	data         matrixDataRepository
-	search       matrixSearchService
-	wellknown    []byte        // /.well-known/matrix/server contents
-	version      []byte        // /_matrix/federation/v1/version contents
-	keyServer    matrixKeyResp // /_matrix/key/v2/server template
-	discoverFunc func(string) int
-	surlsCache   *lru.Cache[string, string]
-	curlsCache   *lru.Cache[string, string]
-	keysCache    *lru.Cache[string, map[string]ed25519.PublicKey]
-	namesCache   *lru.Cache[string, string]
+	cfg             ConfigService
+	keys            []*model.Key
+	data            matrixDataRepository
+	search          matrixSearchService
+	wellknownServer []byte        // /.well-known/matrix/server contents
+	wellknownClient []byte        // /.well-known/matrix/client contents
+	versionServer   []byte        // /_matrix/federation/v1/version contents
+	versionClient   []byte        // /_matrix/client/versions contents
+	keyServer       matrixKeyResp // /_matrix/key/v2/server template
+	discoverFunc    func(string) int
+	surlsCache      *lru.Cache[string, string]
+	curlsCache      *lru.Cache[string, string]
+	keysCache       *lru.Cache[string, map[string]ed25519.PublicKey]
+	namesCache      *lru.Cache[string, string]
 }
 
 // NewMatrix creates new matrix server
@@ -136,14 +143,24 @@ func (m *Matrix) SetDiscover(discover func(string) int) {
 	m.discoverFunc = discover
 }
 
-// GetWellKnown returns json-eligible response for /.well-known/matrix/server
-func (m *Matrix) GetWellKnown() []byte {
-	return m.wellknown
+// GetServerWellKnown returns json-eligible response for /.well-known/matrix/server
+func (m *Matrix) GetServerWellKnown() []byte {
+	return m.wellknownServer
 }
 
-// GetVersion returns json-eligible response for /_matrix/federation/v1/version
-func (m *Matrix) GetVersion() []byte {
-	return m.version
+// GetClientWellKnown returns json-eligible response for /.well-known/matrix/client
+func (m *Matrix) GetClientWellKnown() []byte {
+	return m.wellknownClient
+}
+
+// GetServerVersion returns json-eligible response for /_matrix/federation/v1/version
+func (m *Matrix) GetServerVersion() []byte {
+	return m.versionServer
+}
+
+// GetClientVersion returns json-eligible response for /_matrix/client/versions
+func (m *Matrix) GetClientVersion() []byte {
+	return m.versionClient
 }
 
 // GetKeyServer returns jsonblob-eligible response for /_matrix/key/v2/server
@@ -333,7 +350,7 @@ func (m *Matrix) QueryVersion(serverName string) (server, version string, err er
 	if err != nil {
 		return "", "", err
 	}
-	var vResp *versionResp
+	var vResp *serverVersionResp
 	if jerr := json.Unmarshal(datab, &vResp); jerr != nil {
 		return "", "", jerr
 	}
@@ -586,22 +603,67 @@ func (m *Matrix) initWellKnown(apiURL string) error {
 		port = "443"
 	}
 
-	value, err := utils.JSON(map[string]string{
+	serverValue, err := utils.JSON(map[string]string{
 		"m.server": uri.Hostname() + ":" + port,
 	})
-	m.wellknown = value
-	return err
+	if err != nil {
+		return err
+	}
+	m.wellknownServer = serverValue
+
+	clientValue, err := utils.JSON(map[string]map[string]string{
+		"m.homeserver": {
+			"base_url": "https://" + uri.Host,
+		},
+	})
+	if err != nil {
+		return err
+	}
+	m.wellknownClient = clientValue
+	return nil
 }
 
 func (m *Matrix) initVersion() error {
-	value, err := utils.JSON(map[string]map[string]string{
-		"server": {
+	serverValue, err := utils.JSON(serverVersionResp{
+		Server: map[string]string{
 			"name":    version.Name,
 			"version": version.Version,
 		},
 	})
-	m.version = value
-	return err
+	if err != nil {
+		return err
+	}
+	m.versionServer = serverValue
+	clientValue, err := utils.JSON(clientVersionResp{
+		Versions: []string{ // copy of synapse versions with some made-up values, because MRS is not a client-facing server, but other services like matrix.to require such hacks.
+			"r0.0.1",
+			"r0.1.0",
+			"r0.2.0",
+			"r0.3.0",
+			"r0.4.0",
+			"r0.5.0",
+			"r0.6.0",
+			"r0.6.1",
+			"v1.1",
+			"v1.2",
+			"v1.3",
+			"v1.4",
+			"v1.5",
+			"v1.6",
+			"v1.7",
+			"v1.8",
+			"v1.9",
+			"v2.0",
+		},
+		UnstableFeatures: map[string]bool{
+			"uk.half-shot.msc1929": true, // the name is made-up as well, because the MSC itself doesn't contain any name
+		},
+	})
+	if err != nil {
+		return err
+	}
+	m.versionClient = clientValue
+	return nil
 }
 
 func (m *Matrix) initKeyServer() {
