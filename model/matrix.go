@@ -84,6 +84,20 @@ func (r *MatrixRoom) Entry() *Entry {
 	}
 }
 
+// DirectoryEntry converts matrix room into matrix room directory entry
+func (r *MatrixRoom) DirectoryEntry() *RoomDirectoryRoom {
+	return &RoomDirectoryRoom{
+		ID:            r.ID,
+		Guest:         false,
+		Name:          r.Name,
+		Alias:         r.Alias,
+		Topic:         r.Topic,
+		Avatar:        r.Avatar,
+		Members:       r.Members,
+		WorldReadable: true,
+	}
+}
+
 // Parse matrix room info to prepare custom fields
 func (r *MatrixRoom) Parse(detector lingua.LanguageDetector, mrsPublicURL, mrsServerName string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)

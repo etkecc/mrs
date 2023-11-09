@@ -39,3 +39,15 @@ Users are neither tracked nor profiled.
 Additionally, SearXNG can be used over Tor for online anonymity.
 
 Just use the [SearXNG docs](https://docs.searxng.org/dev/engines/online/mrs.html).
+
+## MSCs
+
+MSC stands for Matrix Spec Change - a proposed changes to the matrix protocol, but not yet included within it.
+
+### MSC1929
+
+Details: [docs/msc1929.md](./msc1929.md)
+
+### MSC3266
+
+Room preview API, available on `GET /_matrix/client/unstable/im.nheko.summary/summary/{room_id_or_alias}` endpoint, more details in the API spec file

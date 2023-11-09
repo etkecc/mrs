@@ -214,6 +214,40 @@ func (m *Matrix) GetClientDirectory(alias string) (int, []byte) {
 	return http.StatusOK, respb
 }
 
+// GetClientRoomSummary is /_matrix/client/unstable/im.nheko.summary/summary/{roomIdOrAlias}
+func (m *Matrix) GetClientRoomSummary(aliasOrID string) (int, []byte) {
+	var unescapedAliasOrID string
+	var unescapeErr error
+	unescapedAliasOrID, unescapeErr = url.PathUnescape(aliasOrID)
+	if unescapeErr == nil {
+		aliasOrID = unescapedAliasOrID
+	}
+
+	utils.Logger.Info().Str("aliasOrID", aliasOrID).Str("origin", "client").Msg("getting room summary")
+	if aliasOrID == "" {
+		return http.StatusBadRequest, m.getErrorResp("M_INVALID_PARAM", "Room alias or id is invalid")
+	}
+
+	var room *model.MatrixRoom
+	m.data.EachRoom(func(_ string, data *model.MatrixRoom) bool {
+		if data.Alias == aliasOrID || data.ID == aliasOrID {
+			room = data
+			return true
+		}
+		return false
+	})
+	if room == nil {
+		return http.StatusNotFound, m.getErrorResp("M_NOT_FOUND", "room not found")
+	}
+	respb, err := utils.JSON(room.DirectoryEntry())
+	if err != nil {
+		utils.Logger.Error().Err(err).Msg("cannot marshal room into room directory entry")
+		return http.StatusInternalServerError, nil
+	}
+
+	return http.StatusOK, respb
+}
+
 // GetClientRoomVisibility is /_matrix/client/v3/directory/list/room/{roomID}
 func (m *Matrix) GetClientRoomVisibility(id string) (int, []byte) {
 	var unescapedID string
@@ -683,7 +717,8 @@ func (m *Matrix) initVersion() error {
 			"v2.0",
 		},
 		UnstableFeatures: map[string]bool{
-			"uk.half-shot.msc1929": true, // the name is made-up as well, because the MSC itself doesn't contain any name
+			"uk.half-shot.msc1929":     true, // the name is made-up as well, because the MSC itself doesn't contain any name
+			"im.nheko.summary.msc3266": true,
 		},
 	})
 	if err != nil {

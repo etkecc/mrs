@@ -19,6 +19,7 @@ type matrixService interface {
 	GetKeyServer() []byte
 	GetClientDirectory(alias string) (int, []byte)
 	GetClientRoomVisibility(roomID string) (int, []byte)
+	GetClientRoomSummary(roomAliasOrID string) (int, []byte)
 	PublicRooms(*http.Request, *model.RoomDirectoryRequest) (int, []byte)
 	QueryDirectory(req *http.Request, alias string) (int, []byte)
 }
@@ -44,6 +45,9 @@ func configureMatrixEndpoints(e *echo.Echo, matrixSvc matrixService) {
 	})
 	e.GET("/_matrix/client/v3/directory/list/room/:room_id", func(c echo.Context) error {
 		return c.JSONBlob(matrixSvc.GetClientRoomVisibility(c.Param("room_id")))
+	})
+	e.GET("/_matrix/client/unstable/im.nheko.summary/summary/:room_id_alias", func(c echo.Context) error {
+		return c.JSONBlob(matrixSvc.GetClientRoomSummary(c.Param("room_id_alias")))
 	})
 
 	e.GET("/_matrix/federation/v1/publicRooms", matrixRoomDirectory(matrixSvc))
