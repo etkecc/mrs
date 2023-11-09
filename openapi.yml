@@ -381,6 +381,67 @@ paths:
           description: room not found
         '500':
           description: json marshaling failed
+  /_matrix/media/r0/thumbnail/{server_name}/{media_id}:
+    get:
+      tags:
+        - Matrix CS API
+      summary: Get room avatar
+      operationId: avatar
+      parameters:
+        - name: server_name
+          in: path
+          description: server name to get avatar from
+          required: true
+          schema:
+            type: string
+            example: example.com
+        - name: media_id
+          in: path
+          description: media ID of the avatar
+          required: true
+          schema:
+            type: string
+            example: tiHQGISntgETFKWJvQWUhUBw
+        - name: height
+          in: query
+          description: desired avatar height
+          schema:
+            type: int
+            example: 40
+        - name: width
+          in: query
+          description: desired avatar width
+          schema:
+            type: int
+            example: 40
+        - name: method
+          in: query
+          description: "one of: [crop, scale]."
+          schema:
+            type: string
+            example: "crop"
+      responses:
+        '200':
+          description: successful operation
+          content:
+            'image/jpeg':
+              schema:
+                type: string
+                format: binary
+            'image/png':
+              schema:
+                type: string
+                format: binary
+            'image/webp':
+              schema:
+                type: string
+                format: binary
+            'image/...':
+              schema:
+                type: string
+                format: binary
+        '204':
+          description: no results found.
   /_matrix/federation/v1/publicRooms:
     get:
       tags:

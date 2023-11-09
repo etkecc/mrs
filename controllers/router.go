@@ -42,7 +42,8 @@ func ConfigureRouter(
 	modSvc moderationService,
 ) {
 	configureRouter(e, cacheSvc)
-	configureMatrixEndpoints(e, matrixSvc)
+	configureMatrixS2SEndpoints(e, matrixSvc, cacheSvc)
+	configureMatrixCSEndpoints(e, matrixSvc, crawlerSvc, cacheSvc)
 	rl := middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1))
 
 	e.GET("/metrics", echo.WrapHandler(&metrics.Handler{}), auth("metrics", &cfg.Get().Auth.Metrics))

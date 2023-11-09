@@ -14,7 +14,7 @@ func avatar(svc crawlerService) echo.HandlerFunc {
 			return c.NoContent(http.StatusNoContent)
 		}
 
-		avatar, contentType := svc.GetAvatar(name, id)
+		avatar, contentType := svc.GetAvatar(name, id, c.QueryParams())
 		if contentType == "" {
 			return c.NoContent(http.StatusNoContent)
 		}

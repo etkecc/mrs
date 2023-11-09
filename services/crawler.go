@@ -3,7 +3,9 @@ package services
 import (
 	"io"
 	"net/http"
+	"net/url"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/pemistahl/lingua-go"
@@ -214,8 +216,8 @@ func (m *Crawler) IndexableServers() []string {
 	}))
 }
 
-func (m *Crawler) GetAvatar(serverName string, mediaID string) (io.Reader, string) {
-	avatar, contentType := m.downloadAvatar(serverName, mediaID)
+func (m *Crawler) GetAvatar(serverName, mediaID string, params url.Values) (io.Reader, string) {
+	avatar, contentType := m.downloadAvatar(serverName, mediaID, params)
 	converted, ok := utils.Avatar(avatar)
 	if ok {
 		contentType = utils.AvatarMIME
@@ -339,19 +341,28 @@ func (m *Crawler) calculateBiggestRooms() {
 func (m *Crawler) getMediaURLs(serverName, mediaID string) []string {
 	urls := make([]string, 0, len(matrixMediaFallbacks)+1)
 	for _, serverURL := range matrixMediaFallbacks {
-		urls = append(urls, serverURL+"/_matrix/media/v3/download/"+serverName+"/"+mediaID)
+		urls = append(urls, serverURL+"/_matrix/media/v3/thumbnail/"+serverName+"/"+mediaID)
 	}
 	server, err := m.data.GetServerInfo(serverName)
 	if err != nil && server.URL != "" {
-		urls = append(urls, server.URL+"/_matrix/media/v3/download/"+serverName+"/"+mediaID)
+		urls = append(urls, server.URL+"/_matrix/media/v3/thumbnail/"+serverName+"/"+mediaID)
 	}
 
 	return urls
 }
 
-func (m *Crawler) downloadAvatar(serverName, mediaID string) (io.ReadCloser, string) {
+func (m *Crawler) downloadAvatar(serverName, mediaID string, params url.Values) (io.ReadCloser, string) {
+	if len(params) == 0 {
+		params.Add("width", strconv.Itoa(utils.AvatarWidth))
+		params.Add("height", strconv.Itoa(utils.AvatarHeight))
+		params.Add("method", "crop")
+		params.Add("allow_remote", "true")
+	}
+	utils.Logger.Info().Str("server", serverName).Str("media_id", mediaID).Any("params", params).Msg("downloading avatar")
 	datachan := make(chan map[string]io.ReadCloser, 1)
 	for _, avatarURL := range m.getMediaURLs(serverName, mediaID) {
+		avatarURL += "?" + params.Encode()
+
 		go func(datachan chan map[string]io.ReadCloser, avatarURL string) {
 			select {
 			case <-datachan:
