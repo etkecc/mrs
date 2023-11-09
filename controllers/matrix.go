@@ -46,7 +46,12 @@ func configureMatrixEndpoints(e *echo.Echo, matrixSvc matrixService) {
 	e.GET("/_matrix/client/v3/directory/list/room/:room_id", func(c echo.Context) error {
 		return c.JSONBlob(matrixSvc.GetClientRoomVisibility(c.Param("room_id")))
 	})
+
+	// MSC3326 - correct and incorrect (but implemented by matrix.to) endpoints
 	e.GET("/_matrix/client/unstable/im.nheko.summary/summary/:room_id_alias", func(c echo.Context) error {
+		return c.JSONBlob(matrixSvc.GetClientRoomSummary(c.Param("room_id_alias")))
+	})
+	e.GET("_matrix/client/unstable/im.nheko.summary/rooms/:room_id_alias/summary", func(c echo.Context) error {
 		return c.JSONBlob(matrixSvc.GetClientRoomSummary(c.Param("room_id_alias")))
 	})
 

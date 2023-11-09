@@ -82,6 +82,10 @@ paths:
                         type: boolean
                         description: Made-up MSC1929 unstable feature
                         example: true
+                      im.nheko.summary.msc3266:
+                        type: boolean
+                        description: Made-up MSC3266 unstable feature
+                        example: true
   /_matrix/federation/v1/version:
     get:
       tags:
@@ -317,9 +321,41 @@ paths:
     get:
       tags:
         - Matrix CS API
-      summary: fetch a summary of a room by id or alias
-      description: "The API returns a summary of the given room, if it is known by MRS and publicly accessible"
-      operationId: matrix_server_client_query_room_summary
+      summary: MSC3266 - fetch a summary of a room by id or alias
+      description: "MSC3266 - The API returns a summary of the given room, if it is known by MRS and publicly accessible"
+      operationId: matrix_server_client_query_room_summary_correct
+      parameters:
+        - name: room_id_or_alias
+          in: path
+          description: room ID or alias
+          required: true
+          schema:
+            type: string
+            example: '#alias:example.com'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  documentation:
+                    type: string
+                    example: "https://github.com/deepbluev7/matrix-doc/blob/room-summaries/proposals/3266-room-summary.md#rationale-and-description-of-response-fields"
+        '400':
+          description: invalid room alias
+        '404':
+          description: room not found
+        '500':
+          description: json marshaling failed
+  /_matrix/client/unstable/im.nheko.summary/rooms/{room_id_or_alias}/summary:
+    get:
+      tags:
+        - Matrix CS API
+      summary: MSC3266 - fetch a summary of a room by id or alias
+      description: "MSC3266 - The API returns a summary of the given room, if it is known by MRS and publicly accessible"
+      operationId: matrix_server_client_query_room_summary_incorrect
       parameters:
         - name: room_id_or_alias
           in: path
