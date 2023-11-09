@@ -358,7 +358,6 @@ func (m *Crawler) downloadAvatar(serverName, mediaID string, params url.Values) 
 		params.Add("method", "crop")
 		params.Add("allow_remote", "true")
 	}
-	utils.Logger.Info().Str("server", serverName).Str("media_id", mediaID).Any("params", params).Msg("downloading avatar")
 	datachan := make(chan map[string]io.ReadCloser, 1)
 	for _, avatarURL := range m.getMediaURLs(serverName, mediaID) {
 		avatarURL += "?" + params.Encode()
