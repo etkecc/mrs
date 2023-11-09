@@ -2,17 +2,23 @@ package services
 
 import (
 	"bytes"
+	"io"
 	"net/http"
 	"strconv"
 
+	"github.com/goccy/go-json"
 	"github.com/labstack/echo/v4"
 
 	"gitlab.com/etke.cc/mrs/api/model"
 	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
-// MaxCacheAge to be used on immutable resources
-const MaxCacheAge = "31536000"
+const (
+	// MaxCacheAge to be used on immutable resources
+	MaxCacheAge   = "31536000"
+	bunnyIPv4List = "https://bunnycdn.com/api/system/edgeserverlist"
+	bunnyIPv6List = "https://bunnycdn.com/api/system/edgeserverlist/IPv6"
+)
 
 type cacheStats interface {
 	Get() *model.IndexStats
@@ -25,16 +31,60 @@ var noncacheablePaths = map[string]struct{}{
 
 // Cache service
 type Cache struct {
-	cfg   ConfigService
-	stats cacheStats
+	cfg      ConfigService
+	bunnyIPs map[string]struct{}
+	stats    cacheStats
 }
 
 // NewCache service
 func NewCache(cfg ConfigService, stats cacheStats) *Cache {
-	return &Cache{
-		cfg:   cfg,
-		stats: stats,
+	cache := &Cache{
+		cfg:      cfg,
+		bunnyIPs: make(map[string]struct{}),
+		stats:    stats,
 	}
+	cache.initBunnyIPs()
+	return cache
+}
+
+func (cache *Cache) pullBunnyIPs(uri string) []string {
+	resp, err := utils.Get(uri)
+	if err != nil {
+		utils.Logger.Error().Err(err).Msg("cannot get bunny ips")
+		return nil
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		utils.Logger.Error().Int("status_code", resp.StatusCode).Msg("cannot get bunny ips")
+		return nil
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		utils.Logger.Error().Err(err).Msg("cannot read bunny ips")
+		return nil
+	}
+	var ips []string
+	if err := json.Unmarshal(body, &ips); err != nil {
+		utils.Logger.Error().Err(err).Msg("cannot unmarshal bunny ips")
+		return nil
+	}
+	return ips
+}
+
+func (cache *Cache) initBunnyIPs() {
+	if cache.cfg.Get().Cache.Bunny.Key == "" {
+		return
+	}
+	for _, ip := range append(cache.pullBunnyIPs(bunnyIPv4List), cache.pullBunnyIPs(bunnyIPv6List)...) {
+		cache.bunnyIPs[ip] = struct{}{}
+	}
+	utils.Logger.Info().Int("count", len(cache.bunnyIPs)).Msg("bunny ips loaded")
+}
+
+// IsBunny returns true if the IP is a BunnyCDN IP
+func (cache *Cache) IsBunny(ip string) bool {
+	_, ok := cache.bunnyIPs[ip]
+	return ok
 }
 
 // Middleware returns echo middleware

@@ -9,7 +9,6 @@ require (
 	github.com/archdx/zerolog-sentry v1.6.1
 	github.com/benjaminestes/robots/v2 v2.0.5
 	github.com/blevesearch/bleve/v2 v2.3.10
-	github.com/cespare/xxhash/v2 v2.2.0
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/getsentry/sentry-go v0.25.0
 	github.com/goccy/go-json v0.10.2
@@ -28,6 +27,7 @@ require (
 	gitlab.com/etke.cc/go/msc1929 v0.0.0-20231103161506-0223f5f91511
 	go.etcd.io/bbolt v1.3.8
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d
+	golang.org/x/time v0.4.0
 	gopkg.in/yaml.v3 v3.0.1
 	maunium.net/go/mautrix v0.16.1
 	mvdan.cc/xurls/v2 v2.5.0
@@ -84,7 +84,6 @@ require (
 	golang.org/x/net v0.17.0 // indirect
 	golang.org/x/sys v0.14.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
-	golang.org/x/time v0.4.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/eapache/queue.v1 v1.1.0 // indirect
 )

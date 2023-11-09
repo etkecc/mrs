@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"net/http"
-	"time"
 
 	sentryecho "github.com/getsentry/sentry-go/echo"
 	"github.com/labstack/echo/v4"
@@ -25,6 +24,7 @@ type statsService interface {
 }
 
 type cacheService interface {
+	IsBunny(string) bool
 	Middleware() echo.MiddlewareFunc
 	MiddlewareImmutable() echo.MiddlewareFunc
 }
@@ -44,11 +44,10 @@ func ConfigureRouter(
 	configureRouter(e, cacheSvc)
 	configureMatrixS2SEndpoints(e, matrixSvc, cacheSvc)
 	configureMatrixCSEndpoints(e, matrixSvc, crawlerSvc, cacheSvc)
-	rl := middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1))
-
+	rl := getRL(1, cacheSvc)
 	e.GET("/metrics", echo.WrapHandler(&metrics.Handler{}), auth("metrics", &cfg.Get().Auth.Metrics))
 	e.GET("/stats", stats(statsSvc))
-	e.GET("/avatar/:name/:id", avatar(crawlerSvc), middleware.RateLimiter(middleware.NewRateLimiterMemoryStoreWithConfig(middleware.RateLimiterMemoryStoreConfig{Rate: 30, Burst: 30, ExpiresIn: 5 * time.Minute})), cacheSvc.MiddlewareImmutable())
+	e.GET("/avatar/:name/:id", avatar(crawlerSvc), getRL(30, cacheSvc))
 
 	e.GET("/search", search(searchSvc, cfg, false))
 	e.GET("/search/:q", search(searchSvc, cfg, true))

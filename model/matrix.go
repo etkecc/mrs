@@ -4,11 +4,9 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
-	"github.com/cespare/xxhash/v2"
 	"github.com/pemistahl/lingua-go"
 
 	"gitlab.com/etke.cc/mrs/api/utils"
@@ -99,18 +97,11 @@ func (r *MatrixRoom) DirectoryEntry() *RoomDirectoryRoom {
 }
 
 // Parse matrix room info to prepare custom fields
-func (r *MatrixRoom) Parse(detector lingua.LanguageDetector, mrsPublicURL, mrsServerName string) {
+func (r *MatrixRoom) Parse(detector lingua.LanguageDetector, mrsPublicURL string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
 	defer cancel()
 
 	r.Topic = utils.Truncate(r.Topic, 400)
-	if ctx.Err() != nil {
-		return
-	}
-
-	if r.Alias == "" {
-		r.Alias = "#" + strconv.Itoa(int(xxhash.Sum64String(r.ID))) + ":" + mrsServerName
-	}
 	if ctx.Err() != nil {
 		return
 	}

@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 
 	"gitlab.com/etke.cc/mrs/api/model"
 	"gitlab.com/etke.cc/mrs/api/utils"
@@ -43,7 +42,7 @@ func configureMatrixS2SEndpoints(e *echo.Echo, matrixSvc matrixService, cacheSvc
 }
 
 func configureMatrixCSEndpoints(e *echo.Echo, matrixSvc matrixService, crawlerSvc crawlerService, cacheSvc cacheService) {
-	rl := middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1))
+	rl := getRL(30, cacheSvc)
 	e.GET("/.well-known/matrix/client", func(c echo.Context) error { return c.JSONBlob(http.StatusOK, matrixSvc.GetClientWellKnown()) })
 	e.GET("/_matrix/client/versions", func(c echo.Context) error { return c.JSONBlob(http.StatusOK, matrixSvc.GetClientVersion()) })
 	e.GET("/_matrix/media/r0/thumbnail/:name/:id", avatar(crawlerSvc), rl, cacheSvc.MiddlewareImmutable())
