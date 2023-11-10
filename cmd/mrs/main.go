@@ -21,6 +21,7 @@ import (
 	"gitlab.com/etke.cc/mrs/api/repository/data"
 	"gitlab.com/etke.cc/mrs/api/repository/search"
 	"gitlab.com/etke.cc/mrs/api/services"
+	"gitlab.com/etke.cc/mrs/api/services/matrix"
 	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
@@ -69,7 +70,7 @@ func main() {
 	statsSvc := services.NewStats(cfg, dataRepo, index, blockSvc)
 	indexSvc := services.NewIndex(cfg, index, dataRepo)
 	searchSvc := services.NewSearch(cfg, dataRepo, index, blockSvc, statsSvc)
-	matrixSvc, err := services.NewMatrix(cfg, dataRepo, searchSvc)
+	matrixSvc, err := matrix.NewServer(cfg, dataRepo, searchSvc)
 	if err != nil {
 		utils.Logger.Fatal().Err(err).Msg("cannot start matrix service")
 	}

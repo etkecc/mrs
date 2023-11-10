@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"net/http"
+	"net/url"
 
 	"github.com/labstack/echo/v4"
 
@@ -20,6 +21,7 @@ type matrixService interface {
 	GetClientDirectory(alias string) (int, []byte)
 	GetClientRoomVisibility(roomID string) (int, []byte)
 	GetClientRoomSummary(roomAliasOrID string) (int, []byte)
+	GetClientMediaThumbnail(serverName, mediaID string, params url.Values) (io.Reader, string)
 	PublicRooms(*http.Request, *model.RoomDirectoryRequest) (int, []byte)
 	QueryDirectory(req *http.Request, alias string) (int, []byte)
 }
@@ -41,7 +43,7 @@ func configureMatrixS2SEndpoints(e *echo.Echo, matrixSvc matrixService, cacheSvc
 	e.POST("/_matrix/federation/v1/publicRooms", matrixRoomDirectory(matrixSvc), cacheSvc.MiddlewareSearch())
 }
 
-func configureMatrixCSEndpoints(e *echo.Echo, matrixSvc matrixService, crawlerSvc crawlerService, cacheSvc cacheService) {
+func configureMatrixCSEndpoints(e *echo.Echo, matrixSvc matrixService, cacheSvc cacheService) {
 	rl := getRL(30, cacheSvc)
 	e.GET("/.well-known/matrix/client", func(c echo.Context) error {
 		return c.JSONBlob(http.StatusOK, matrixSvc.GetClientWellKnown())
@@ -49,8 +51,8 @@ func configureMatrixCSEndpoints(e *echo.Echo, matrixSvc matrixService, crawlerSv
 	e.GET("/_matrix/client/versions", func(c echo.Context) error {
 		return c.JSONBlob(http.StatusOK, matrixSvc.GetClientVersion())
 	}, cacheSvc.MiddlewareImmutable())
-	e.GET("/_matrix/media/r0/thumbnail/:name/:id", avatar(crawlerSvc), rl, cacheSvc.MiddlewareImmutable())
-	e.GET("/_matrix/media/v3/thumbnail/:name/:id", avatar(crawlerSvc), rl, cacheSvc.MiddlewareImmutable())
+	e.GET("/_matrix/media/r0/thumbnail/:name/:id", avatar(matrixSvc), rl, cacheSvc.MiddlewareImmutable())
+	e.GET("/_matrix/media/v3/thumbnail/:name/:id", avatar(matrixSvc), rl, cacheSvc.MiddlewareImmutable())
 	e.GET("/_matrix/client/r0/directory/room/:room_alias", func(c echo.Context) error {
 		return c.JSONBlob(matrixSvc.GetClientDirectory(c.Param("room_alias")))
 	}, rl)

@@ -1,9 +1,7 @@
 package controllers
 
 import (
-	"io"
 	"net/http"
-	"net/url"
 
 	"github.com/labstack/echo/v4"
 	"gopkg.in/yaml.v3"
@@ -20,7 +18,6 @@ type dataService interface {
 
 type crawlerService interface {
 	OnlineServers() []string
-	GetAvatar(string, string, url.Values) (io.Reader, string)
 }
 
 func servers(crawler crawlerService) echo.HandlerFunc {

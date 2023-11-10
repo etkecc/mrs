@@ -19,10 +19,8 @@ import (
 const backupSuffix = ".bak"
 
 type Index struct {
-	index       bleve.Index
-	path        string
-	detector    lingua.LanguageDetector
-	defaultLang string
+	index bleve.Index
+	path  string
 }
 
 var (
@@ -109,10 +107,9 @@ func getIndexMapping() mapping.IndexMapping {
 
 // NewIndex creates or opens an index
 func NewIndex(path string, detector lingua.LanguageDetector, defaultLang string) (*Index, error) {
+	multilang.Register(detector, defaultLang)
 	i := &Index{
-		path:        path,
-		detector:    detector,
-		defaultLang: defaultLang,
+		path: path,
 	}
 	err := i.load()
 
@@ -121,7 +118,6 @@ func NewIndex(path string, detector lingua.LanguageDetector, defaultLang string)
 
 // load index from path
 func (i *Index) load() error {
-	multilang.Register(i.detector, i.defaultLang)
 	index, err := bleve.Open(i.path)
 	if err != nil {
 		index, err = bleve.New(i.path, getIndexMapping())

@@ -20,7 +20,7 @@ const (
 func Register(detector lingua.LanguageDetector, defaultLang string) {
 	defer func() {
 		if err := recover(); err != nil {
-			utils.Logger.Warn().Any("error", err).Msg("cannot register multilang analyzer")
+			utils.Logger.Error().Any("error", err).Msg("cannot register multilang analyzer")
 		}
 	}()
 

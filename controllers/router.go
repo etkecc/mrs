@@ -44,11 +44,11 @@ func ConfigureRouter(
 ) {
 	configureRouter(e, cacheSvc)
 	configureMatrixS2SEndpoints(e, matrixSvc, cacheSvc)
-	configureMatrixCSEndpoints(e, matrixSvc, crawlerSvc, cacheSvc)
+	configureMatrixCSEndpoints(e, matrixSvc, cacheSvc)
 	rl := getRL(1, cacheSvc)
 	e.GET("/metrics", echo.WrapHandler(&metrics.Handler{}), auth("metrics", &cfg.Get().Auth.Metrics))
 	e.GET("/stats", stats(statsSvc))
-	e.GET("/avatar/:name/:id", avatar(crawlerSvc), getRL(30, cacheSvc))
+	e.GET("/avatar/:name/:id", avatar(matrixSvc), getRL(30, cacheSvc))
 
 	searchCache := cacheSvc.MiddlewareSearch()
 	e.GET("/search", search(searchSvc, cfg, false), searchCache, rl)

@@ -1,11 +1,8 @@
 package services
 
 import (
-	"io"
 	"net/http"
-	"net/url"
 	"sort"
-	"strconv"
 	"time"
 
 	"github.com/pemistahl/lingua-go"
@@ -77,8 +74,6 @@ type FederationService interface {
 	QueryVersion(serverName string) (string, string, error)
 	QueryCSURL(serverName string) string
 }
-
-var matrixMediaFallbacks = []string{"https://matrix-client.matrix.org"}
 
 // NewCrawler service
 func NewCrawler(cfg ConfigService, fedSvc FederationService, v ValidatorService, block BlocklistService, data DataRepository, detector lingua.LanguageDetector) *Crawler {
@@ -224,15 +219,6 @@ func (m *Crawler) IndexableServers() []string {
 	}))
 }
 
-func (m *Crawler) GetAvatar(serverName, mediaID string, params url.Values) (io.Reader, string) {
-	avatar, contentType := m.downloadAvatar(serverName, mediaID, params)
-	converted, ok := utils.Avatar(avatar)
-	if ok {
-		contentType = utils.AvatarMIME
-	}
-	return converted, contentType
-}
-
 func (m *Crawler) loadServers() *utils.List[string, string] {
 	utils.Logger.Info().Msg("loading servers")
 	servers := utils.NewList[string, string]()
@@ -342,59 +328,6 @@ func (m *Crawler) calculateBiggestRooms() {
 		utils.Logger.Error().Err(err).Msg("cannot set biggest rooms")
 	}
 	utils.Logger.Info().Str("took", time.Since(started).String()).Msg("biggest rooms have been calculated and stored")
-}
-
-// getMediaServers returns list of HTTP urls of the same media ID.
-// that list contains the requested server plus fallback media servers
-func (m *Crawler) getMediaURLs(serverName, mediaID string) []string {
-	urls := make([]string, 0, len(matrixMediaFallbacks)+1)
-	for _, serverURL := range matrixMediaFallbacks {
-		urls = append(urls, serverURL+"/_matrix/media/v3/thumbnail/"+serverName+"/"+mediaID)
-	}
-	server, err := m.data.GetServerInfo(serverName)
-	if err != nil && server.URL != "" {
-		urls = append(urls, server.URL+"/_matrix/media/v3/thumbnail/"+serverName+"/"+mediaID)
-	}
-
-	return urls
-}
-
-func (m *Crawler) downloadAvatar(serverName, mediaID string, params url.Values) (io.ReadCloser, string) {
-	if len(params) == 0 {
-		params.Add("width", strconv.Itoa(utils.AvatarWidth))
-		params.Add("height", strconv.Itoa(utils.AvatarHeight))
-		params.Add("method", "crop")
-		params.Add("allow_remote", "true")
-	}
-	datachan := make(chan map[string]io.ReadCloser, 1)
-	for _, avatarURL := range m.getMediaURLs(serverName, mediaID) {
-		avatarURL += "?" + params.Encode()
-
-		go func(datachan chan map[string]io.ReadCloser, avatarURL string) {
-			select {
-			case <-datachan:
-				return
-			default:
-				resp, err := http.Get(avatarURL)
-				if err != nil {
-					return
-				}
-				if resp.StatusCode != http.StatusOK {
-					return
-				}
-				datachan <- map[string]io.ReadCloser{
-					resp.Header.Get("Content-Type"): resp.Body,
-				}
-			}
-		}(datachan, avatarURL)
-	}
-
-	for contentType, avatar := range <-datachan {
-		close(datachan)
-		return avatar, contentType
-	}
-
-	return nil, ""
 }
 
 // getServerContacts as per MSC1929

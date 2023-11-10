@@ -6,7 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func avatar(svc crawlerService) echo.HandlerFunc {
+func avatar(svc matrixService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		name := c.Param("name")
 		id := c.Param("id")
@@ -14,7 +14,7 @@ func avatar(svc crawlerService) echo.HandlerFunc {
 			return c.NoContent(http.StatusNoContent)
 		}
 
-		avatar, contentType := svc.GetAvatar(name, id, c.QueryParams())
+		avatar, contentType := svc.GetClientMediaThumbnail(name, id, c.QueryParams())
 		if contentType == "" {
 			return c.NoContent(http.StatusNoContent)
 		}
