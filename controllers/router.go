@@ -26,6 +26,7 @@ type statsService interface {
 type cacheService interface {
 	IsBunny(string) bool
 	Middleware() echo.MiddlewareFunc
+	MiddlewareSearch() echo.MiddlewareFunc
 	MiddlewareImmutable() echo.MiddlewareFunc
 }
 
@@ -49,11 +50,12 @@ func ConfigureRouter(
 	e.GET("/stats", stats(statsSvc))
 	e.GET("/avatar/:name/:id", avatar(crawlerSvc), getRL(30, cacheSvc))
 
-	e.GET("/search", search(searchSvc, cfg, false))
-	e.GET("/search/:q", search(searchSvc, cfg, true))
-	e.GET("/search/:q/:l", search(searchSvc, cfg, true))
-	e.GET("/search/:q/:l/:o", search(searchSvc, cfg, true))
-	e.GET("/search/:q/:l/:o/:s", search(searchSvc, cfg, true))
+	searchCache := cacheSvc.MiddlewareSearch()
+	e.GET("/search", search(searchSvc, cfg, false), searchCache, rl)
+	e.GET("/search/:q", search(searchSvc, cfg, true), searchCache, rl)
+	e.GET("/search/:q/:l", search(searchSvc, cfg, true), searchCache, rl)
+	e.GET("/search/:q/:l/:o", search(searchSvc, cfg, true), searchCache, rl)
+	e.GET("/search/:q/:l/:o/:s", search(searchSvc, cfg, true), searchCache, rl)
 
 	e.POST("/discover/bulk", addServers(dataSvc, cfg), auth("discovery", &cfg.Get().Auth.Discovery))
 	e.POST("/discover/:name", addServer(dataSvc), discoveryProtection(rl, cfg))

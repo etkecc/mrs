@@ -37,14 +37,18 @@ func configureMatrixS2SEndpoints(e *echo.Echo, matrixSvc matrixService, cacheSvc
 	e.GET("/_matrix/federation/v1/query/directory", func(c echo.Context) error {
 		return c.JSONBlob(matrixSvc.QueryDirectory(c.Request(), c.QueryParam("room_alias")))
 	})
-	e.GET("/_matrix/federation/v1/publicRooms", matrixRoomDirectory(matrixSvc))
-	e.POST("/_matrix/federation/v1/publicRooms", matrixRoomDirectory(matrixSvc))
+	e.GET("/_matrix/federation/v1/publicRooms", matrixRoomDirectory(matrixSvc), cacheSvc.MiddlewareSearch())
+	e.POST("/_matrix/federation/v1/publicRooms", matrixRoomDirectory(matrixSvc), cacheSvc.MiddlewareSearch())
 }
 
 func configureMatrixCSEndpoints(e *echo.Echo, matrixSvc matrixService, crawlerSvc crawlerService, cacheSvc cacheService) {
 	rl := getRL(30, cacheSvc)
-	e.GET("/.well-known/matrix/client", func(c echo.Context) error { return c.JSONBlob(http.StatusOK, matrixSvc.GetClientWellKnown()) })
-	e.GET("/_matrix/client/versions", func(c echo.Context) error { return c.JSONBlob(http.StatusOK, matrixSvc.GetClientVersion()) })
+	e.GET("/.well-known/matrix/client", func(c echo.Context) error {
+		return c.JSONBlob(http.StatusOK, matrixSvc.GetClientWellKnown())
+	}, cacheSvc.MiddlewareImmutable())
+	e.GET("/_matrix/client/versions", func(c echo.Context) error {
+		return c.JSONBlob(http.StatusOK, matrixSvc.GetClientVersion())
+	}, cacheSvc.MiddlewareImmutable())
 	e.GET("/_matrix/media/r0/thumbnail/:name/:id", avatar(crawlerSvc), rl, cacheSvc.MiddlewareImmutable())
 	e.GET("/_matrix/media/v3/thumbnail/:name/:id", avatar(crawlerSvc), rl, cacheSvc.MiddlewareImmutable())
 	e.GET("/_matrix/client/r0/directory/room/:room_alias", func(c echo.Context) error {

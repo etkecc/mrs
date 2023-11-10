@@ -25,13 +25,9 @@ type cacheStats interface {
 }
 
 var noncacheablePaths = map[string]struct{}{
-	"/_health":               {},
-	"/_matrix/key/v2/server": {},
-}
-
-var searchPaths = map[string]struct{}{
-	"/search":                            {},
-	"/_matrix/federation/v1/publicRooms": {},
+	"/_health":                               {},
+	"/_matrix/key/v2/server":                 {},
+	"/_matrix/federation/v1/query/directory": {},
 }
 
 // Cache service
@@ -92,7 +88,17 @@ func (cache *Cache) IsBunny(ip string) bool {
 	return ok
 }
 
-// Middleware returns echo middleware
+func (cache *Cache) clearHeaders(c echo.Context) {
+	c.Response().Header().Del("Cache-Control")
+	c.Response().Header().Del("CDN-Tag")
+	c.Response().Header().Del("Last-Modified")
+}
+
+func (cache *Cache) getLastModified() string {
+	return cache.stats.Get().Indexing.FinishedAt.Format(http.TimeFormat)
+}
+
+// Middleware returns cache middleware
 func (cache *Cache) Middleware() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
@@ -102,21 +108,47 @@ func (cache *Cache) Middleware() echo.MiddlewareFunc {
 
 			_, noncacheable := noncacheablePaths[c.Request().URL.Path]
 			if noncacheable {
+				cache.clearHeaders(c)
 				c.Response().Header().Set("Cache-Control", "no-cache")
 				return next(c)
 			}
 
-			lastModified := cache.stats.Get().Indexing.FinishedAt.Format(http.TimeFormat)
+			lastModified := cache.getLastModified()
 			ifModifiedSince := c.Request().Header.Get("if-modified-since")
 			if lastModified == ifModifiedSince {
 				return c.NoContent(http.StatusNotModified)
 			}
 
 			maxAge := strconv.Itoa(cache.cfg.Get().Cache.MaxAge)
-			if _, search := searchPaths[c.Request().URL.Path]; search {
-				maxAge = strconv.Itoa(cache.cfg.Get().Cache.MaxAgeSearch)
+			c.Response().Header().Set("Cache-Control", "max-age="+maxAge+", public")
+			c.Response().Header().Set("CDN-Tag", "mutable")
+			c.Response().Header().Set("Last-Modified", lastModified)
+			return next(c)
+		}
+	}
+}
+
+// MiddlewareSearch returns cache middleware for search endpoints
+func (cache *Cache) MiddlewareSearch() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			if c.Request().Method != http.MethodGet {
+				return next(c)
 			}
 
+			// do not cache search results with query in GET params or matrix search results
+			if c.Request().URL.Query().Has("q") || c.Request().URL.Query().Has("since") {
+				cache.clearHeaders(c)
+				return next(c)
+			}
+
+			lastModified := cache.getLastModified()
+			ifModifiedSince := c.Request().Header.Get("if-modified-since")
+			if lastModified == ifModifiedSince {
+				return c.NoContent(http.StatusNotModified)
+			}
+
+			maxAge := strconv.Itoa(cache.cfg.Get().Cache.MaxAgeSearch)
 			c.Response().Header().Set("Cache-Control", "max-age="+maxAge+", public")
 			c.Response().Header().Set("CDN-Tag", "mutable")
 			c.Response().Header().Set("Last-Modified", lastModified)
@@ -137,7 +169,7 @@ func (cache *Cache) MiddlewareImmutable() echo.MiddlewareFunc {
 				return c.NoContent(http.StatusNotModified)
 			}
 
-			c.Response().Header().Del("Last-Modified")
+			cache.clearHeaders(c)
 			c.Response().Header().Set("CDN-Tag", "immutable")
 			c.Response().Header().Set("Cache-Control", "max-age="+MaxCacheAge+", immutable")
 			return next(c)
