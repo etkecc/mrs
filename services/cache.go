@@ -25,6 +25,11 @@ type cacheStats interface {
 }
 
 var noncacheablePaths = map[string]struct{}{
+	"/_health":               {},
+	"/_matrix/key/v2/server": {},
+}
+
+var searchPaths = map[string]struct{}{
 	"/search":                            {},
 	"/_matrix/federation/v1/publicRooms": {},
 }
@@ -95,10 +100,9 @@ func (cache *Cache) Middleware() echo.MiddlewareFunc {
 				return next(c)
 			}
 
-			resp := c.Response()
 			_, noncacheable := noncacheablePaths[c.Request().URL.Path]
 			if noncacheable {
-				resp.Header().Set("Cache-Control", "no-cache")
+				c.Response().Header().Set("Cache-Control", "no-cache")
 				return next(c)
 			}
 
@@ -109,9 +113,13 @@ func (cache *Cache) Middleware() echo.MiddlewareFunc {
 			}
 
 			maxAge := strconv.Itoa(cache.cfg.Get().Cache.MaxAge)
-			resp.Header().Set("Cache-Control", "max-age="+maxAge+", public")
-			resp.Header().Set("CDN-Tag", "mutable")
-			resp.Header().Set("Last-Modified", lastModified)
+			if _, search := searchPaths[c.Request().URL.Path]; search {
+				maxAge = strconv.Itoa(cache.cfg.Get().Cache.MaxAgeSearch)
+			}
+
+			c.Response().Header().Set("Cache-Control", "max-age="+maxAge+", public")
+			c.Response().Header().Set("CDN-Tag", "mutable")
+			c.Response().Header().Set("Last-Modified", lastModified)
 			return next(c)
 		}
 	}
@@ -129,10 +137,9 @@ func (cache *Cache) MiddlewareImmutable() echo.MiddlewareFunc {
 				return c.NoContent(http.StatusNotModified)
 			}
 
-			resp := c.Response()
-			resp.Header().Del("Last-Modified")
-			resp.Header().Set("CDN-Tag", "immutable")
-			resp.Header().Set("Cache-Control", "max-age="+MaxCacheAge+", immutable")
+			c.Response().Header().Del("Last-Modified")
+			c.Response().Header().Set("CDN-Tag", "immutable")
+			c.Response().Header().Set("Cache-Control", "max-age="+MaxCacheAge+", immutable")
 			return next(c)
 		}
 	}

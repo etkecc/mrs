@@ -35,6 +35,7 @@ auth: # auth configuration
       - 127.0.0.1
 cache: # (optional) cache config
   max_age: 0
+  max_age_search: 0 # /search and /_matrix/federation/v1/publicRooms should have different max-age that aligns with full and/or index cron jobs
   bunny: # (optional) bunny cdn cache purging, ref: https://docs.bunny.net/reference/pullzonepublic_purgecachepostbytag
     url:
     key:

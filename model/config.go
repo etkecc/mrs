@@ -41,8 +41,9 @@ type ConfigSearchDefaults struct {
 
 // ConfigCache - cache-related configuration
 type ConfigCache struct {
-	MaxAge int              `yaml:"max_age"`
-	Bunny  ConfigCacheBunny `yaml:"bunny"`
+	MaxAge       int              `yaml:"max_age"`
+	MaxAgeSearch int              `yaml:"max_age_search"`
+	Bunny        ConfigCacheBunny `yaml:"bunny"`
 }
 
 // ConfigCacheBunny BunnyCDN cache purging config

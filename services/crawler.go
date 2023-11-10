@@ -116,7 +116,15 @@ func (m *Crawler) DiscoverServers(workers int, overrideList ...*utils.List[strin
 
 // AddServers by name in bulk, intended for HTTP API
 func (m *Crawler) AddServers(names []string, workers int) {
-	m.discoverServers(utils.NewListFromSlice(names), workers)
+	servers := utils.NewListFromSlice(names)
+	// exclude already known servers first
+	for _, server := range servers.Slice() {
+		if m.data.HasServer(server) {
+			servers.Remove(server)
+		}
+	}
+
+	m.discoverServers(servers, workers)
 }
 
 // AddServer by name, intended for HTTP API

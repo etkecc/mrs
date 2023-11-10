@@ -151,6 +151,14 @@ paths:
       summary: Performs a query to get the mapped room ID and list of resident homeservers in the room for a given room alias
       description: "Performs a query to get the mapped room ID and list of resident homeservers in the room for a given room alias. Homeservers should only query room aliases that belong to the target server (identified by the DNS Name in the alias). Servers may wish to cache the response to this query to avoid requesting the information too often."
       operationId: matrix_server_query_directory
+      parameters:
+        - name: room_alias
+          in: query
+          description: room alias
+          required: true
+          schema:
+            type: string
+            example: '#alias:example.com'
       responses:
         '200':
           description: successful operation
