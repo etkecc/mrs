@@ -3,7 +3,8 @@ WORKDIR /mrs
 COPY . .
 RUN just build
 
-FROM registry.gitlab.com/etke.cc/base/app
+FROM scratch
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /mrs/api /bin/mrs
 USER app
 ENTRYPOINT ["/bin/mrs"]

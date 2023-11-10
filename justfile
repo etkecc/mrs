@@ -10,7 +10,7 @@ default:
 
 # update go deps
 update *flags:
-    go get {{flags}} ./cmd/mrs
+    go get {{ flags }} ./cmd/mrs
     go mod tidy
     go mod vendor
 
@@ -42,7 +42,7 @@ run:
 
 # build app
 build:
-    go build -v -o {{ project }} ./cmd/mrs
+    CGO_ENABLED=0 go build -ldflags '-extldflags "-static"' -tags timetzdata -v -o {{ project }} ./cmd/mrs
 
 # docker login
 login:
