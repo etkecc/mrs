@@ -5,7 +5,7 @@ github.com/RoaringBitmap/roaring/internal
 # github.com/VictoriaMetrics/metrics v1.24.0
 ## explicit; go 1.20
 github.com/VictoriaMetrics/metrics
-# github.com/archdx/zerolog-sentry v1.6.1
+# github.com/archdx/zerolog-sentry v1.7.0
 ## explicit; go 1.20
 github.com/archdx/zerolog-sentry
 # github.com/benjaminestes/robots v1.0.0
@@ -92,7 +92,7 @@ github.com/blevesearch/bleve/v2/search/scorer
 github.com/blevesearch/bleve/v2/search/searcher
 github.com/blevesearch/bleve/v2/size
 github.com/blevesearch/bleve/v2/util
-# github.com/blevesearch/bleve_index_api v1.1.2
+# github.com/blevesearch/bleve_index_api v1.1.3
 ## explicit; go 1.20
 github.com/blevesearch/bleve_index_api
 # github.com/blevesearch/geo v0.1.18
@@ -108,7 +108,7 @@ github.com/blevesearch/gtreap
 # github.com/blevesearch/mmap-go v1.0.4
 ## explicit; go 1.13
 github.com/blevesearch/mmap-go
-# github.com/blevesearch/scorch_segment_api/v2 v2.2.2
+# github.com/blevesearch/scorch_segment_api/v2 v2.2.3
 ## explicit; go 1.20
 github.com/blevesearch/scorch_segment_api/v2
 # github.com/blevesearch/segment v0.9.1
@@ -161,6 +161,9 @@ github.com/blevesearch/zapx/v15
 # github.com/buger/jsonparser v1.1.1
 ## explicit; go 1.13
 github.com/buger/jsonparser
+# github.com/cespare/xxhash/v2 v2.2.0
+## explicit; go 1.11
+github.com/cespare/xxhash/v2
 # github.com/fsnotify/fsnotify v1.7.0
 ## explicit; go 1.17
 github.com/fsnotify/fsnotify
@@ -209,12 +212,12 @@ github.com/hashicorp/golang-lru/v2/simplelru
 github.com/json-iterator/go
 # github.com/kr/pretty v0.3.1
 ## explicit; go 1.12
-# github.com/labstack/echo/v4 v4.11.2
+# github.com/labstack/echo/v4 v4.11.3
 ## explicit; go 1.17
 github.com/labstack/echo/v4
 github.com/labstack/echo/v4/middleware
-# github.com/labstack/gommon v0.4.0
-## explicit; go 1.12
+# github.com/labstack/gommon v0.4.1
+## explicit; go 1.18
 github.com/labstack/gommon/bytes
 github.com/labstack/gommon/color
 github.com/labstack/gommon/log
@@ -294,7 +297,7 @@ github.com/valyala/histogram
 # github.com/xxjwxc/gowp v0.0.0-20230612082025-23a9b62c1da6
 ## explicit; go 1.13
 github.com/xxjwxc/gowp/workpool
-# github.com/xxjwxc/public v0.0.0-20231031134607-41d2b0c879dd
+# github.com/xxjwxc/public v0.0.0-20231114104601-c300c1c4621f
 ## explicit; go 1.21.0
 github.com/xxjwxc/public/myqueue
 # github.com/yuin/goldmark v1.6.0
@@ -317,11 +320,11 @@ gitlab.com/etke.cc/go/msc1929
 # go.etcd.io/bbolt v1.3.8
 ## explicit; go 1.17
 go.etcd.io/bbolt
-# go.mau.fi/util v0.2.0
+# go.mau.fi/util v0.2.1
 ## explicit; go 1.20
 go.mau.fi/util/base58
-# golang.org/x/crypto v0.14.0
-## explicit; go 1.17
+# golang.org/x/crypto v0.15.0
+## explicit; go 1.18
 golang.org/x/crypto/acme
 golang.org/x/crypto/acme/autocert
 golang.org/x/crypto/argon2
@@ -329,13 +332,13 @@ golang.org/x/crypto/blake2b
 golang.org/x/crypto/ed25519
 golang.org/x/crypto/hkdf
 golang.org/x/crypto/pbkdf2
-# golang.org/x/exp v0.0.0-20231006140011-7918f672742d
+# golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa
 ## explicit; go 1.20
 golang.org/x/exp/constraints
 golang.org/x/exp/maps
 golang.org/x/exp/slices
-# golang.org/x/net v0.17.0
-## explicit; go 1.17
+# golang.org/x/net v0.18.0
+## explicit; go 1.18
 golang.org/x/net/html
 golang.org/x/net/html/atom
 golang.org/x/net/http/httpguts
@@ -399,7 +402,7 @@ gopkg.in/eapache/queue.v1
 # gopkg.in/yaml.v3 v3.0.1
 ## explicit
 gopkg.in/yaml.v3
-# maunium.net/go/mautrix v0.16.1
+# maunium.net/go/mautrix v0.16.2
 ## explicit; go 1.20
 maunium.net/go/mautrix/crypto/attachment
 maunium.net/go/mautrix/crypto/utils

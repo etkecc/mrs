@@ -53,6 +53,7 @@ func main() {
 	if err != nil {
 		utils.Logger.Fatal().Err(err).Msg("cannot read config")
 	}
+	experiments := cfg.Get().Experiments
 	utils.Logger = utils.SetupLogger("info", cfg.Get().SentryDSN)
 
 	dataRepo, err = data.New(cfg.Get().Path.Data)
@@ -61,14 +62,14 @@ func main() {
 	}
 
 	detector := getLanguageDetector(cfg.Get().Languages)
-	index, err = search.NewIndex(cfg.Get().Path.Index, detector, "en")
+	index, err = search.NewIndex(cfg.Get().Path.Index, detector, "en", experiments.InMemoryIndex)
 	if err != nil {
 		utils.Logger.Fatal().Err(err).Msg("cannot open index repo")
 	}
 	robotsSvc := services.NewRobots()
 	blockSvc := services.NewBlocklist(cfg)
 	statsSvc := services.NewStats(cfg, dataRepo, index, blockSvc)
-	indexSvc := services.NewIndex(cfg, index, dataRepo)
+	indexSvc := services.NewIndex(cfg, index)
 	searchSvc := services.NewSearch(cfg, dataRepo, index, blockSvc, statsSvc)
 	matrixSvc, err := matrix.NewServer(cfg, dataRepo, searchSvc)
 	if err != nil {
@@ -79,6 +80,10 @@ func main() {
 	matrixSvc.SetDiscover(crawlerSvc.AddServer)
 	cacheSvc := services.NewCache(cfg, statsSvc)
 	dataSvc := services.NewDataFacade(crawlerSvc, indexSvc, statsSvc, cacheSvc)
+	if experiments.InMemoryIndex {
+		utils.Logger.Info().Msg("in-memory index is enabled, ingesting data...")
+		dataSvc.Ingest()
+	}
 	mailSvc := services.NewEmail(cfg)
 	modSvc := services.NewModeration(cfg, dataRepo, index, mailSvc)
 

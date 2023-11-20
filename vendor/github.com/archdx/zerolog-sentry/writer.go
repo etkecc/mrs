@@ -2,6 +2,7 @@ package zlogsentry
 
 import (
 	"crypto/x509"
+	"errors"
 	"io"
 	"net/http"
 	"time"
@@ -350,6 +351,29 @@ func New(dsn string, opts ...WriterOption) (*Writer, error) {
 
 	return &Writer{
 		hub:          sentry.CurrentHub(),
+		levels:       levels,
+		flushTimeout: cfg.flushTimeout,
+	}, nil
+}
+
+// NewWithHub creates a writer using an existing sentry Hub and options.
+func NewWithHub(hub *sentry.Hub, opts ...WriterOption) (*Writer, error) {
+	if hub == nil {
+		return nil, errors.New("hub cannot be nil")
+	}
+
+	cfg := newDefaultConfig()
+	for _, opt := range opts {
+		opt.apply(&cfg)
+	}
+
+	levels := make(map[zerolog.Level]struct{}, len(cfg.levels))
+	for _, lvl := range cfg.levels {
+		levels[lvl] = struct{}{}
+	}
+
+	return &Writer{
+		hub:          hub,
 		levels:       levels,
 		flushTimeout: cfg.flushTimeout,
 	}, nil

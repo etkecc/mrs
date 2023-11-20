@@ -2,6 +2,7 @@ package services
 
 import (
 	"sync"
+	"time"
 
 	"github.com/blevesearch/bleve/v2"
 
@@ -14,7 +15,6 @@ type Index struct {
 
 	cfg   ConfigService
 	index IndexRepository
-	data  DataRepository
 	batch *bleve.Batch
 }
 
@@ -27,12 +27,11 @@ type IndexRepository interface {
 }
 
 // NewIndex creates new index service
-func NewIndex(cfg ConfigService, index IndexRepository, data DataRepository) *Index {
+func NewIndex(cfg ConfigService, index IndexRepository) *Index {
 	batch := index.NewBatch()
 	return &Index{
 		cfg:   cfg,
 		index: index,
-		data:  data,
 		batch: batch,
 	}
 }
@@ -57,9 +56,10 @@ func (i *Index) RoomsBatch(roomID string, data *model.Entry) error {
 // IndexBatch performs indexing of the current batch
 func (i *Index) IndexBatch() error {
 	size := i.batch.Size()
+	started := time.Now()
 	utils.Logger.Info().Int("len", size).Msg("indexing batch...")
 	err := i.index.IndexBatch(i.batch)
 	i.batch.Reset()
-	utils.Logger.Info().Int("len", size).Msg("indexed batch")
+	utils.Logger.Info().Int("len", size).Str("took", time.Since(started).String()).Msg("indexed batch")
 	return err
 }

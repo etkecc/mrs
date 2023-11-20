@@ -19,8 +19,9 @@ import (
 const backupSuffix = ".bak"
 
 type Index struct {
-	index bleve.Index
-	path  string
+	index    bleve.Index
+	inmemory bool
+	path     string
 }
 
 var (
@@ -106,10 +107,11 @@ func getIndexMapping() mapping.IndexMapping {
 }
 
 // NewIndex creates or opens an index
-func NewIndex(path string, detector lingua.LanguageDetector, defaultLang string) (*Index, error) {
+func NewIndex(path string, detector lingua.LanguageDetector, defaultLang string, inMemory bool) (*Index, error) {
 	multilang.Register(detector, defaultLang)
 	i := &Index{
-		path: path,
+		path:     path,
+		inmemory: inMemory,
 	}
 	err := i.load()
 
@@ -118,9 +120,15 @@ func NewIndex(path string, detector lingua.LanguageDetector, defaultLang string)
 
 // load index from path
 func (i *Index) load() error {
-	index, err := bleve.Open(i.path)
-	if err != nil {
-		index, err = bleve.New(i.path, getIndexMapping())
+	var index bleve.Index
+	var err error
+	if i.inmemory {
+		index, err = bleve.NewMemOnly(getIndexMapping())
+		if err != nil {
+			return err
+		}
+	} else {
+		index, err = i.loadFS()
 		if err != nil {
 			return err
 		}
@@ -129,10 +137,25 @@ func (i *Index) load() error {
 	return nil
 }
 
+func (i *Index) loadFS() (bleve.Index, error) {
+	index, err := bleve.Open(i.path)
+	if err != nil {
+		index, err = bleve.New(i.path, getIndexMapping())
+		if err != nil {
+			return nil, err
+		}
+	}
+	return index, nil
+}
+
 // Swap index
 func (i *Index) Swap() error {
 	if err := i.index.Close(); err != nil {
 		return err
+	}
+
+	if i.inmemory {
+		return i.load()
 	}
 
 	if err := os.RemoveAll(i.path + backupSuffix); err != nil {

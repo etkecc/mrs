@@ -87,10 +87,12 @@ func (df *DataFacade) ParseRooms(workers int) {
 
 // Ingest data into search index
 func (df *DataFacade) Ingest() {
-	utils.Logger.Info().Msg("indexing matrix rooms...")
+	utils.Logger.Info().Msg("creating fresh index...")
 	if err := df.index.EmptyIndex(); err != nil {
 		utils.Logger.Error().Err(err).Msg("cannot create empty index")
 	}
+
+	utils.Logger.Info().Msg("indexing matrix rooms...")
 	start := time.Now().UTC()
 	df.stats.SetStartedAt("indexing", start)
 	df.crawler.EachRoom(func(roomID string, room *model.MatrixRoom) bool {

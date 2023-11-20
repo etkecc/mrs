@@ -24,3 +24,24 @@ type VectorField interface {
 	// Similarity metric to be used for scoring the vectors
 	Similarity() string
 }
+
+// -----------------------------------------------------------------------------
+
+const (
+	EuclideanDistance = "l2_norm"
+
+	// dotProduct(vecA, vecB) = vecA . vecB = |vecA| * |vecB| * cos(theta);
+	//  where, theta is the angle between vecA and vecB
+	// If vecA and vecB are normalized (unit magnitude), then
+	// vecA . vecB = cos(theta), which is the cosine similarity.
+	// Thus, we don't need a separate similarity type for cosine similarity
+	CosineSimilarity = "dot_product"
+)
+
+const DefaultSimilarityMetric = EuclideanDistance
+
+// Supported similarity metrics for vector fields
+var SupportedSimilarityMetrics = map[string]struct{}{
+	EuclideanDistance: {},
+	CosineSimilarity:  {},
+}

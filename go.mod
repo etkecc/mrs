@@ -6,14 +6,15 @@ toolchain go1.21.3
 
 require (
 	github.com/VictoriaMetrics/metrics v1.24.0
-	github.com/archdx/zerolog-sentry v1.6.1
+	github.com/archdx/zerolog-sentry v1.7.0
 	github.com/benjaminestes/robots/v2 v2.0.5
 	github.com/blevesearch/bleve/v2 v2.3.10
+	github.com/cespare/xxhash/v2 v2.2.0
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/getsentry/sentry-go v0.25.0
 	github.com/goccy/go-json v0.10.2
 	github.com/hashicorp/golang-lru/v2 v2.0.7
-	github.com/labstack/echo/v4 v4.11.2
+	github.com/labstack/echo/v4 v4.11.3
 	github.com/matrix-org/gomatrixserverlib v0.0.0-20231024124730-58af9a2712ca
 	github.com/mattevans/postmark-go v0.1.6
 	github.com/mileusna/crontab v1.2.0
@@ -25,10 +26,10 @@ require (
 	gitlab.com/etke.cc/go/fswatcher v1.0.0
 	gitlab.com/etke.cc/go/msc1929 v0.0.0-20231103161506-0223f5f91511
 	go.etcd.io/bbolt v1.3.8
-	golang.org/x/exp v0.0.0-20231006140011-7918f672742d
+	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa
 	golang.org/x/time v0.4.0
 	gopkg.in/yaml.v3 v3.0.1
-	maunium.net/go/mautrix v0.16.1
+	maunium.net/go/mautrix v0.16.2
 	mvdan.cc/xurls/v2 v2.5.0
 )
 
@@ -36,12 +37,12 @@ require (
 	github.com/RoaringBitmap/roaring v1.6.0 // indirect
 	github.com/benjaminestes/robots v1.0.0 // indirect
 	github.com/bits-and-blooms/bitset v1.11.0 // indirect
-	github.com/blevesearch/bleve_index_api v1.1.2 // indirect
+	github.com/blevesearch/bleve_index_api v1.1.3 // indirect
 	github.com/blevesearch/geo v0.1.18 // indirect
 	github.com/blevesearch/go-porterstemmer v1.0.3 // indirect
 	github.com/blevesearch/gtreap v0.1.1 // indirect
 	github.com/blevesearch/mmap-go v1.0.4 // indirect
-	github.com/blevesearch/scorch_segment_api/v2 v2.2.2 // indirect
+	github.com/blevesearch/scorch_segment_api/v2 v2.2.3 // indirect
 	github.com/blevesearch/segment v0.9.1 // indirect
 	github.com/blevesearch/snowballstem v0.9.0 // indirect
 	github.com/blevesearch/stempel v0.2.0 // indirect
@@ -59,7 +60,7 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
-	github.com/labstack/gommon v0.4.0 // indirect
+	github.com/labstack/gommon v0.4.1 // indirect
 	github.com/matrix-org/util v0.0.0-20221111132719-399730281e66 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
@@ -76,11 +77,11 @@ require (
 	github.com/valyala/fastrand v1.1.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/valyala/histogram v1.2.0 // indirect
-	github.com/xxjwxc/public v0.0.0-20231031134607-41d2b0c879dd // indirect
+	github.com/xxjwxc/public v0.0.0-20231114104601-c300c1c4621f // indirect
 	github.com/yuin/goldmark v1.6.0 // indirect
-	go.mau.fi/util v0.2.0 // indirect
-	golang.org/x/crypto v0.14.0 // indirect
-	golang.org/x/net v0.17.0 // indirect
+	go.mau.fi/util v0.2.1 // indirect
+	golang.org/x/crypto v0.15.0 // indirect
+	golang.org/x/net v0.18.0 // indirect
 	golang.org/x/sys v0.14.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect

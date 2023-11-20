@@ -365,6 +365,7 @@ func (m *Crawler) getPublicRooms(name string) *utils.List[string, string] {
 	var added int
 	limit := "10000"
 	servers := utils.NewList[string, string]()
+	withFakeAliases := m.cfg.Get().Experiments.FakeAliases
 	for {
 		start := time.Now()
 		resp, err := m.fed.QueryPublicRooms(name, limit, since)
@@ -386,6 +387,9 @@ func (m *Crawler) getPublicRooms(name string) *utils.List[string, string] {
 			}
 
 			room.Parse(m.detector, m.cfg.Get().Public.API)
+			if withFakeAliases {
+				room.ParseAlias(m.cfg.Get().Matrix.ServerName)
+			}
 			servers.AddSlice(room.Servers(m.cfg.Get().Matrix.ServerName))
 
 			m.data.AddRoomBatch(room)
