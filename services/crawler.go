@@ -181,7 +181,7 @@ func (m *Crawler) ParseRooms(workers int) {
 
 	m.DiscoverServers(m.cfg.Get().Workers.Discovery, discoveredServers)
 
-	m.calculateBiggestRooms()
+	m.afterRoomParsing()
 }
 
 // EachRoom allows to work with each known room
@@ -302,16 +302,22 @@ func (m *Crawler) discoverServers(servers *utils.List[string, string], workers i
 	return offline
 }
 
-func (m *Crawler) calculateBiggestRooms() {
+func (m *Crawler) afterRoomParsing() {
 	type roomCount struct {
 		id      string
 		members int
 	}
 
-	utils.Logger.Info().Msg("calculating biggest rooms...")
+	utils.Logger.Info().Msg("after room parsing......")
 	started := time.Now().UTC()
 	counts := []roomCount{}
-	m.data.EachRoom(func(_ string, data *model.MatrixRoom) bool {
+	toRemove := []string{}
+	m.data.EachRoom(func(id string, data *model.MatrixRoom) bool {
+		if started.Sub(data.ParsedAt) >= 24*7*time.Hour { // parsed more than a week ago
+			toRemove = append(toRemove, id)
+			return false
+		}
+
 		counts = append(counts, roomCount{data.ID, data.Members})
 		return false
 	})
@@ -328,6 +334,11 @@ func (m *Crawler) calculateBiggestRooms() {
 		utils.Logger.Error().Err(err).Msg("cannot set biggest rooms")
 	}
 	utils.Logger.Info().Str("took", time.Since(started).String()).Msg("biggest rooms have been calculated and stored")
+
+	if len(toRemove) > 0 {
+		utils.Logger.Info().Int("rooms", len(toRemove)).Msg("removing rooms last updated more than a week ago...")
+		m.data.RemoveRooms(toRemove)
+	}
 }
 
 // getServerContacts as per MSC1929

@@ -61,9 +61,10 @@ type MatrixRoom struct {
 	Members int    `json:"num_joined_members"`
 
 	// Parsed (custom) fields
-	Server    string `json:"server"`
-	Language  string `json:"language"`
-	AvatarURL string `json:"avatar_url_http"`
+	Server    string    `json:"server"`
+	Language  string    `json:"language"`
+	AvatarURL string    `json:"avatar_url_http"`
+	ParsedAt  time.Time `json:"parsed_at"`
 }
 
 // Entry converts matrix room to search entry
@@ -100,6 +101,11 @@ func (r *MatrixRoom) DirectoryEntry() *RoomDirectoryRoom {
 func (r *MatrixRoom) Parse(detector lingua.LanguageDetector, mrsPublicURL string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
 	defer cancel()
+
+	r.ParsedAt = time.Now().UTC()
+	if ctx.Err() != nil {
+		return
+	}
 
 	r.Topic = utils.Truncate(r.Topic, 400)
 	if ctx.Err() != nil {

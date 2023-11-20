@@ -38,7 +38,7 @@ test:
 
 # run app
 run:
-    @go run ./cmd/mrs -c ./config.yml
+    @go run ./cmd/mrs
 
 # build app
 build:
