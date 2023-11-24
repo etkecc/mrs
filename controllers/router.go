@@ -7,7 +7,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/raja/argon2pw"
-	"golang.org/x/exp/slices"
+	echobasicauth "gitlab.com/etke.cc/go/echo-basic-auth"
 
 	"gitlab.com/etke.cc/mrs/api/metrics"
 	"gitlab.com/etke.cc/mrs/api/model"
@@ -46,7 +46,7 @@ func ConfigureRouter(
 	configureMatrixS2SEndpoints(e, matrixSvc, cacheSvc)
 	configureMatrixCSEndpoints(e, matrixSvc, cacheSvc)
 	rl := getRL(1, cacheSvc)
-	e.GET("/metrics", echo.WrapHandler(&metrics.Handler{}), auth("metrics", &cfg.Get().Auth.Metrics))
+	e.GET("/metrics", echo.WrapHandler(&metrics.Handler{}), echobasicauth.NewMiddleware(&cfg.Get().Auth.Metrics))
 	e.GET("/stats", stats(statsSvc))
 	e.GET("/avatar/:name/:id", avatar(matrixSvc), getRL(30, cacheSvc))
 
@@ -57,7 +57,7 @@ func ConfigureRouter(
 	e.GET("/search/:q/:l/:o", search(searchSvc, cfg, true), searchCache, rl)
 	e.GET("/search/:q/:l/:o/:s", search(searchSvc, cfg, true), searchCache, rl)
 
-	e.POST("/discover/bulk", addServers(dataSvc, cfg), auth("discovery", &cfg.Get().Auth.Discovery))
+	e.POST("/discover/bulk", addServers(dataSvc, cfg), echobasicauth.NewMiddleware(&cfg.Get().Auth.Discovery))
 	e.POST("/discover/:name", addServer(dataSvc), discoveryProtection(rl, cfg))
 
 	e.POST("/mod/report/:room_id", report(modSvc), rl) // doesn't use mod group to allow without auth
@@ -68,7 +68,7 @@ func ConfigureRouter(
 	m.GET("/unban/:room_id", unban(modSvc), rl)
 
 	a := e.Group("-")
-	a.Use(auth("admin", &cfg.Get().Auth.Admin))
+	a.Use(echobasicauth.NewMiddleware(&cfg.Get().Auth.Admin))
 	a.GET("/servers", servers(crawlerSvc))
 	a.GET("/status", status(statsSvc))
 	a.POST("/discover", discover(dataSvc, cfg))
@@ -100,41 +100,9 @@ func configureRouter(e *echo.Echo, cacheSvc cacheService) {
 	})
 }
 
-func auth(name string, cfg *model.ConfigAuthItem) echo.MiddlewareFunc {
-	return middleware.BasicAuthWithConfig(middleware.BasicAuthConfig{
-		Skipper: func(c echo.Context) bool { // hash auth
-			v := c.Get("authorized")
-			if v == nil {
-				return false
-			}
-			skip, ok := v.(bool)
-			if !ok {
-				return false
-			}
-			return skip
-		},
-		Validator: func(login, password string, ctx echo.Context) (bool, error) {
-			allowedIP := true
-			if len(cfg.IPs) != 0 {
-				allowedIP = slices.Contains(cfg.IPs, ctx.RealIP())
-			}
-			match := utils.ConstantTimeEq(cfg.Login, login) && utils.ConstantTimeEq(cfg.Password, password)
-			utils.Logger.
-				Info().
-				Str("section", name).
-				Str("from", ctx.RealIP()).
-				Str("path", ctx.Request().URL.Path).
-				Bool("allowed_ip", allowedIP).
-				Bool("allowed_credentials", match).
-				Msg("authorization attempt")
-			return match && allowedIP, nil
-		},
-	})
-}
-
 // discoveryProtection rate limits anonymous requests, but allows authorized with basic auth requests
 func discoveryProtection(rl echo.MiddlewareFunc, cfg configService) echo.MiddlewareFunc {
-	auth := auth("discovery", &cfg.Get().Auth.Discovery)
+	auth := echobasicauth.NewMiddleware(&cfg.Get().Auth.Discovery)
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			if len(c.Request().Header.Get(echo.HeaderAuthorization)) > 0 {
@@ -188,6 +156,6 @@ func modGroup(e *echo.Echo, cfg configService) *echo.Group {
 			return next(c)
 		}
 	})
-	mod.Use(auth("mod", &cfg.Get().Auth.Moderation))
+	mod.Use(echobasicauth.NewMiddleware(&cfg.Get().Auth.Moderation))
 	return mod
 }

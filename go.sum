@@ -320,6 +320,10 @@ github.com/xxjwxc/public v0.0.0-20231114104601-c300c1c4621f h1:baRpAYzZ/FsmxjSf5
 github.com/xxjwxc/public v0.0.0-20231114104601-c300c1c4621f/go.mod h1:37y/Uj8+rjnAGLMN9Dsj3oy9ZjQTpYjyc612imliZ3c=
 github.com/yuin/goldmark v1.6.0 h1:boZcn2GTjpsynOsC0iJHnBWa4Bi0qzfJjthwauItG68=
 github.com/yuin/goldmark v1.6.0/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
+github.com/ziflex/lecho/v3 v3.5.0 h1:Z4TBr8SbUUnfaVc8tGJf1Jhu0G9Jxjl77lPW0riXKak=
+github.com/ziflex/lecho/v3 v3.5.0/go.mod h1:+eInrytYHxVPI6NQbua9xXGerB1x0ujj9jAV33yBIko=
+gitlab.com/etke.cc/go/echo-basic-auth v1.0.0 h1:EABSODEl/P1fy5Vj7A5xLxxESPDkMsof7K71QSC1fWM=
+gitlab.com/etke.cc/go/echo-basic-auth v1.0.0/go.mod h1:Diq394h14bfKfDN50muEcVAwt2FfH5JH74qAQigUp4A=
 gitlab.com/etke.cc/go/fswatcher v1.0.0 h1:uyiVn+1NVCjOLZrXSZouIDBDZBMwVipS4oYuvAFpPzo=
 gitlab.com/etke.cc/go/fswatcher v1.0.0/go.mod h1:MqTOxyhXfvaVZQUL9/Ksbl2ow1PTBVu3eqIldvMq0RE=
 gitlab.com/etke.cc/go/msc1929 v0.0.0-20231103161506-0223f5f91511 h1:e96tj8bvpJVIMp9pmo0tXIvK95H06C/8+oKZE4B/A/8=

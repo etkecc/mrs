@@ -16,6 +16,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/mileusna/crontab"
 	"github.com/pemistahl/lingua-go"
+	"github.com/ziflex/lecho/v3"
 
 	"gitlab.com/etke.cc/mrs/api/controllers"
 	"gitlab.com/etke.cc/mrs/api/repository/data"
@@ -88,6 +89,7 @@ func main() {
 	modSvc := services.NewModeration(cfg, dataRepo, index, mailSvc)
 
 	e = echo.New()
+	e.Logger = lecho.From(*utils.Logger)
 	controllers.ConfigureRouter(e, cfg, matrixSvc, dataSvc, cacheSvc, searchSvc, crawlerSvc, statsSvc, modSvc)
 
 	initCron(cfg, dataSvc)

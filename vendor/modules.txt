@@ -311,6 +311,12 @@ github.com/yuin/goldmark/renderer
 github.com/yuin/goldmark/renderer/html
 github.com/yuin/goldmark/text
 github.com/yuin/goldmark/util
+# github.com/ziflex/lecho/v3 v3.5.0
+## explicit; go 1.17
+github.com/ziflex/lecho/v3
+# gitlab.com/etke.cc/go/echo-basic-auth v1.0.0
+## explicit; go 1.21.0
+gitlab.com/etke.cc/go/echo-basic-auth
 # gitlab.com/etke.cc/go/fswatcher v1.0.0
 ## explicit; go 1.20
 gitlab.com/etke.cc/go/fswatcher

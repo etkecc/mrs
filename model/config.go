@@ -1,5 +1,7 @@
 package model
 
+import echobasicauth "gitlab.com/etke.cc/go/echo-basic-auth"
+
 // Config is MRS configuration model
 type Config struct {
 	Port        string            `yaml:"port"`
@@ -55,17 +57,10 @@ type ConfigCacheBunny struct {
 
 // ConfigAuth - auth-related configuration
 type ConfigAuth struct {
-	Admin      ConfigAuthItem `yaml:"admin"`
-	Metrics    ConfigAuthItem `yaml:"metrics"`
-	Discovery  ConfigAuthItem `yaml:"discovery"`
-	Moderation ConfigAuthItem `yaml:"moderation"`
-}
-
-// ConfigAuthItem generic auth config
-type ConfigAuthItem struct {
-	Login    string   `yaml:"login"`
-	Password string   `yaml:"password"`
-	IPs      []string `yaml:"ips"`
+	Admin      echobasicauth.Auth `yaml:"admin"`
+	Metrics    echobasicauth.Auth `yaml:"metrics"`
+	Discovery  echobasicauth.Auth `yaml:"discovery"`
+	Moderation echobasicauth.Auth `yaml:"moderation"`
 }
 
 // ConfigWebhooks - webhooks related config

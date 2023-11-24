@@ -23,6 +23,8 @@ require (
 	github.com/rs/zerolog v1.31.0
 	github.com/theovassiliou/base64url v0.0.0-20211006203958-1e011490eaaf
 	github.com/xxjwxc/gowp v0.0.0-20230612082025-23a9b62c1da6
+	github.com/ziflex/lecho/v3 v3.5.0
+	gitlab.com/etke.cc/go/echo-basic-auth v1.0.0
 	gitlab.com/etke.cc/go/fswatcher v1.0.0
 	gitlab.com/etke.cc/go/msc1929 v0.0.0-20231103161506-0223f5f91511
 	go.etcd.io/bbolt v1.3.8
