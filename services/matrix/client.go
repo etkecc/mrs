@@ -141,23 +141,7 @@ func (s *Server) GetClientMediaThumbnail(serverName, mediaID string, params url.
 	}
 	datachan := make(chan map[string]io.ReadCloser, 1)
 	for _, avatarURL := range urls {
-		go func(datachan chan map[string]io.ReadCloser, avatarURL string) {
-			select {
-			case <-datachan:
-				return
-			default:
-				resp, err := http.Get(avatarURL)
-				if err != nil {
-					return
-				}
-				if resp.StatusCode != http.StatusOK {
-					return
-				}
-				datachan <- map[string]io.ReadCloser{
-					resp.Header.Get("Content-Type"): resp.Body,
-				}
-			}
-		}(datachan, avatarURL)
+		go downloadThumbnail(datachan, avatarURL)
 	}
 
 	for contentType, avatar := range <-datachan {
@@ -166,4 +150,28 @@ func (s *Server) GetClientMediaThumbnail(serverName, mediaID string, params url.
 	}
 
 	return nil, ""
+}
+
+func downloadThumbnail(datachan chan map[string]io.ReadCloser, avatarURL string) {
+	defer func() {
+		if r := recover(); r != nil {
+			utils.Logger.Warn().Interface("panic", r).Msg("panic in downloadThumbnail")
+		}
+	}()
+
+	select {
+	case <-datachan:
+		return
+	default:
+		resp, err := http.Get(avatarURL)
+		if err != nil {
+			return
+		}
+		if resp.StatusCode != http.StatusOK {
+			return
+		}
+		datachan <- map[string]io.ReadCloser{
+			resp.Header.Get("Content-Type"): resp.Body,
+		}
+	}
 }
