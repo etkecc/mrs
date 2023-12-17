@@ -56,6 +56,7 @@ webhooks: # optional webhooks
   moderation: 'hookshot webhook url'
   stats: 'hookshot webhook url'
 email: # (optional) email integration, for now only for automatic reporting using MSC1929
+  moderation: 'moderation email address'
   postmark: # only postmark is supported for now
     server_token: your server token
     report:

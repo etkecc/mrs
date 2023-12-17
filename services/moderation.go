@@ -17,6 +17,7 @@ import (
 
 type EmailService interface {
 	SendReport(room *model.MatrixRoom, server *model.MatrixServer, reason string, emails []string) error
+	SendModReport(text, email string) error
 }
 
 // Moderation service
@@ -127,30 +128,15 @@ func (m *Moderation) getServerContactsText(contacts model.MatrixServerContacts) 
 	return text.String()
 }
 
-// Report a room
-func (m *Moderation) Report(roomID, reason string) error {
-	if m.data.IsReported(roomID) {
+// sendWebhook sends a report to the configured webhook
+func (m *Moderation) sendWebhook(room *model.MatrixRoom, server *model.MatrixServer, reason string) error {
+	if m.cfg.Get().Webhooks.Moderation == "" {
 		return nil
-	}
-
-	room, err := m.data.GetRoom(roomID)
-	if err != nil {
-		return err
-	}
-	if room == nil {
-		return fmt.Errorf("room not found")
-	}
-	server, err := m.data.GetServerInfo(room.Server)
-	if err != nil {
-		return err
-	}
-	if server == nil {
-		return fmt.Errorf("server not found")
 	}
 
 	payload, err := json.Marshal(webhookPayload{
 		Username: m.cfg.Get().Matrix.ServerName,
-		Markdown: m.getReportText(roomID, reason, room, server),
+		Markdown: m.getReportText(room.ID, reason, room, server),
 	})
 	if err != nil {
 		return err
@@ -173,6 +159,46 @@ func (m *Moderation) Report(roomID, reason string) error {
 	if resp.StatusCode != http.StatusAccepted && resp.StatusCode != http.StatusOK {
 		body, err := io.ReadAll(resp.Body)
 		return fmt.Errorf("backend returned HTTP %d: %s %v", resp.StatusCode, string(body), err)
+	}
+	return nil
+}
+
+// sendEmail sends a report to the configured moderators' email
+func (m *Moderation) sendEmail(room *model.MatrixRoom, server *model.MatrixServer, reason string) error {
+	if m.cfg.Get().Email.Moderation == "" {
+		return nil
+	}
+	text := m.getReportText(room.ID, reason, room, server)
+	return m.mail.SendModReport(text, m.cfg.Get().Email.Moderation)
+}
+
+// Report a room
+func (m *Moderation) Report(roomID, reason string) error {
+	if m.data.IsReported(roomID) {
+		return nil
+	}
+
+	room, err := m.data.GetRoom(roomID)
+	if err != nil {
+		return err
+	}
+	if room == nil {
+		return fmt.Errorf("room not found")
+	}
+	server, err := m.data.GetServerInfo(room.Server)
+	if err != nil {
+		return err
+	}
+	if server == nil {
+		return fmt.Errorf("server not found")
+	}
+
+	if err := m.sendWebhook(room, server, reason); err != nil {
+		utils.Logger.Error().Err(err).Msg("cannot send moderation webhook")
+	}
+
+	if err := m.sendEmail(room, server, reason); err != nil {
+		utils.Logger.Error().Err(err).Msg("cannot send moderation email")
 	}
 
 	return m.data.ReportRoom(roomID, reason)

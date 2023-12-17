@@ -77,6 +77,15 @@ func (e *Email) SendReport(room *model.MatrixRoom, server *model.MatrixServer, r
 	return err
 }
 
+// SendModReport sends report email to MRS instance's moderators
+func (e *Email) SendModReport(message, email string) error {
+	subject := "New report from MRS instance"
+	text, html := utils.MarkdownRender(message)
+	req := e.buildPMReqs(subject, text, html, []string{email}, &e.cfg.Get().Email.Postmark.Report)[0]
+	_, _, err := e.getClient().Send(req)
+	return err
+}
+
 // validateConfig checks if all config vars are set
 func (e *Email) validateConfig() bool {
 	cfg := e.cfg.Get().Email

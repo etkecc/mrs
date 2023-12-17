@@ -102,8 +102,9 @@ type ConfigBlocklist struct {
 
 // ConfigEmail - email related configuration
 type ConfigEmail struct {
-	Postmark  ConfigEmailPostmark  `yaml:"postmark"`
-	Templates ConfigEmailTemplates `yaml:"templates"`
+	Postmark   ConfigEmailPostmark  `yaml:"postmark"`
+	Moderation string               `yaml:"moderation"`
+	Templates  ConfigEmailTemplates `yaml:"templates"`
 }
 
 // ConfigEmailPostmark is Postmark config
