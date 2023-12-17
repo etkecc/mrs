@@ -92,11 +92,11 @@ func (m *Moderation) getReportText(roomID, reason string, room *model.MatrixRoom
 
 	text.WriteString("[ban and erase](")
 	text.WriteString(apiURL.JoinPath("/mod/ban", roomID).String() + queryParams)
-	text.WriteString(") || [unban](")
+	text.WriteString(") | [unban](")
 	text.WriteString(apiURL.JoinPath("/mod/unban", roomID).String() + queryParams)
-	text.WriteString(") || [list banned (all)](")
+	text.WriteString(") | [list banned (all)](")
 	text.WriteString(apiURL.JoinPath("/mod/list").String() + queryParams)
-	text.WriteString(") || [list banned (" + room.Server + ")](")
+	text.WriteString(") | [list banned (" + room.Server + ")](")
 	text.WriteString(apiURL.JoinPath("/mod/list/"+room.Server).String() + queryParams)
 	text.WriteString(")")
 
