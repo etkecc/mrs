@@ -9,6 +9,10 @@ postmark-go is a [Go](http://golang.org) client library for accessing the Postma
 This is an unofficial library that is not affiliated with [Postmark](http://postmarkapp.com). Official libraries are available
 [here](http://developer.postmarkapp.com/developer-official-libs.html).
 
+v1.0 Breaking Changes
+---------------------
+The signature of `NewClient` has changed. It now accepts options, one of which can be a custom HTTP client. Please pin to an older version if required.
+
 Installation
 -----------------
 
@@ -20,13 +24,14 @@ Setup
 You'll need to pass an `SERVER_API_TOKEN` when initializing the client. This token can be
 found under the 'Credentials' tab of your Postmark server. More info [here](http://developer.postmarkapp.com/developer-api-overview.html#authentication).
 
-Authentication
--------------
+Client + Authentication
+-----------------------
 ```go
-auth := &http.Client{
-  Transport: &postmark.AuthTransport{Token: "SERVER_API_TOKEN"},
-}
-client := postmark.NewClient(auth)
+client := postmark.NewClient(
+    postmark.WithClient(&http.Client{
+        Transport: &postmark.AuthTransport{Token: "SERVER_API_TOKEN"},
+    }),
+)
 ```
 
 Example usage (with Template)

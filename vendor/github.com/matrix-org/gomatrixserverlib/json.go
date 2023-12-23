@@ -131,6 +131,14 @@ func verifyEnforcedCanonicalJSON(input []byte) error {
 			valid = false
 			return false
 		}
+		if value.Num != 0 && strings.ContainsRune(value.Raw, 'e') {
+			valid = false
+			return false
+		}
+		if value.Num == 0 && value.Raw == "-0" {
+			valid = false
+			return false
+		}
 		return true
 	}
 	res.ForEach(iter)
@@ -265,6 +273,10 @@ func CompactJSON(input, output []byte) []byte {
 			// Skip over whitespace.
 			continue
 		}
+		if c == '-' && input[i] == '0' {
+			// Negative 0 is changed to '0', skip the '-'.
+			continue
+		}
 		// Add the non-whitespace character to the output.
 		output = append(output, c)
 		if c == '"' {
@@ -309,7 +321,7 @@ func compactUnicodeEscape(input, output []byte, index int) ([]byte, int) {
 	}
 	const (
 		ESCAPES = "uuuuuuuubtnufruuuuuuuuuuuuuuuuuu"
-		HEX     = "0123456789ABCDEF"
+		HEX     = "0123456789abcdef"
 	)
 	// If there aren't enough bytes to decode the hex escape then return.
 	if len(input)-index < 4 {
@@ -329,7 +341,7 @@ func compactUnicodeEscape(input, output []byte, index int) ([]byte, int) {
 		// Otherwise the character only needs escaping if it is a QUOTE '"' or BACKSLASH '\\'.
 		output = append(output, '\\', byte(c))
 	} else if utf16.IsSurrogate(c) {
-		if input[index] != '\\' && input[index+1] != 'u' {
+		if input[index] != '\\' || input[index+1] != 'u' {
 			return output, index
 		}
 		index += 2 // skip the \u"

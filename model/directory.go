@@ -27,22 +27,24 @@ type RoomDirectoryResponse struct {
 type RoomDirectoryRoom struct {
 	Avatar        string `json:"avatar_url"`
 	Alias         string `json:"canonical_alias"`
-	Guest         bool   `json:"guest_can_join"`
 	Name          string `json:"name"`
 	Members       int    `json:"num_joined_members"`
 	ID            string `json:"room_id"`
 	Topic         string `json:"topic"`
+	GuestJoinable bool   `json:"guest_can_join"`
 	WorldReadable bool   `json:"world_readable"`
 }
 
 // Convert room directory's room to matrix room
 func (r *RoomDirectoryRoom) Convert() *MatrixRoom {
 	return &MatrixRoom{
-		ID:      r.ID,
-		Alias:   r.Alias,
-		Name:    r.Name,
-		Topic:   r.Topic,
-		Avatar:  r.Avatar,
-		Members: r.Members,
+		ID:            r.ID,
+		Alias:         r.Alias,
+		Name:          r.Name,
+		Topic:         r.Topic,
+		Avatar:        r.Avatar,
+		Members:       r.Members,
+		GuestJoinable: r.GuestJoinable,
+		WorldReadable: r.WorldReadable,
 	}
 }

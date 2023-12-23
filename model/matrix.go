@@ -55,12 +55,14 @@ func (c MatrixServerContacts) IsEmpty() bool {
 
 // MatrixRoom from matrix client-server API
 type MatrixRoom struct {
-	ID      string `json:"room_id"`
-	Alias   string `json:"canonical_alias"`
-	Name    string `json:"name"`
-	Topic   string `json:"topic"`
-	Avatar  string `json:"avatar_url"`
-	Members int    `json:"num_joined_members"`
+	ID            string `json:"room_id"`
+	Name          string `json:"name"`
+	Topic         string `json:"topic"`
+	Alias         string `json:"canonical_alias"`
+	Avatar        string `json:"avatar_url"`
+	Members       int    `json:"num_joined_members"`
+	GuestJoinable bool   `json:"guest_can_join"`
+	WorldReadable bool   `json:"world_readable"`
 
 	// Parsed (custom) fields
 	Server    string    `json:"server"`
@@ -89,13 +91,13 @@ func (r *MatrixRoom) Entry() *Entry {
 func (r *MatrixRoom) DirectoryEntry() *RoomDirectoryRoom {
 	return &RoomDirectoryRoom{
 		ID:            r.ID,
-		Guest:         false,
 		Name:          r.Name,
 		Alias:         r.Alias,
 		Topic:         r.Topic,
 		Avatar:        r.Avatar,
 		Members:       r.Members,
-		WorldReadable: true,
+		GuestJoinable: r.GuestJoinable,
+		WorldReadable: r.WorldReadable,
 	}
 }
 

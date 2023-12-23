@@ -10,18 +10,17 @@ import (
 )
 
 const (
-	packageVersion = "0.1.6"
+	packageVersion = "1.0.0"
 	backendURL     = "https://api.postmarkapp.com"
 	userAgent      = "postmark-go/" + packageVersion
 )
 
 // Client holds a connection to the Postmark API.
 type Client struct {
-	client         *http.Client
-	Token          string
-	ConnectionType string
-	UserAgent      string
-	BackendURL     *url.URL
+	client     *http.Client
+	Token      string
+	UserAgent  string
+	BackendURL *url.URL
 
 	// Services used for communicating with the API.
 	Email    *EmailService
@@ -54,22 +53,21 @@ func (r *ErrorResponse) Error() string {
 
 // NewClient creates a new Client with the appropriate connection details and
 // services used for communicating with the API.
-func NewClient(httpClient *http.Client) *Client {
-	if httpClient == nil {
-		httpClient = http.DefaultClient
-	}
-
-	baseURL, _ := url.Parse(backendURL)
-
-	c := &Client{
-		client:     httpClient,
-		BackendURL: baseURL,
-		UserAgent:  userAgent,
-	}
+func NewClient(opts ...Option) *Client {
+	var (
+		options    = NewOptions(opts...)
+		baseURL, _ = url.Parse(options.BackendURL)
+		c          = &Client{
+			client:     options.Client,
+			UserAgent:  options.UserAgent,
+			BackendURL: baseURL,
+		}
+	)
 
 	c.Email = &EmailService{client: c}
 	c.Bounce = &BounceService{client: c}
 	c.Template = &TemplateService{client: c}
+
 	return c
 }
 
@@ -80,7 +78,6 @@ func (c *Client) NewRequest(method, urlPath string, body interface{}) (*http.Req
 	if err != nil {
 		return nil, err
 	}
-
 	u := c.BackendURL.ResolveReference(rel)
 
 	buf := new(bytes.Buffer)

@@ -31,11 +31,11 @@ func (e *Email) getClient() *postmark.EmailService {
 	if !e.validateConfig() {
 		return nil
 	}
-	return postmark.NewClient(&http.Client{
+	return postmark.NewClient(postmark.WithClient(&http.Client{
 		Transport: &postmark.AuthTransport{
 			Token: e.cfg.Get().Email.Postmark.Token,
 		},
-	}).Email
+	})).Email
 }
 
 // SendReport sends report email
