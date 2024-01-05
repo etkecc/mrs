@@ -7,7 +7,9 @@ so you can use it in your matrix client apps directly.
 
 ### Element Web/Desktop
 
-**Temporary** (just for your current session)
+> including forks, like [SchildiChat](https://schildi.chat/)
+
+**Just you** (just for your account)
 
 1. Click on `Search` (Ctrl+K) in the top-left corner
 2. Modal window will be opened, scroll down
@@ -16,7 +18,7 @@ so you can use it in your matrix client apps directly.
 5. In the opened modal window enter the server name from the config.yml (`matrix.server_name` value).
 6. Click on `Add`
 
-**Persistent** (for users of the Element Web/Desktop app)
+**All app users** (for all users of the Element Web/Desktop app instance)
 
 Add the following to the Element's `config.json`:
 
@@ -31,6 +33,18 @@ If you use [etke.cc/ansible](https://gitlab.com/etke.cc/ansible) or [mdad](https
 ```yaml
 matrix_client_element_room_directory_servers: ['matrixrooms.info']
 ```
+
+### Element Android
+
+> including forks, like [SchildiChat](https://schildi.chat/)
+
+1. Tap on the Search icon (top right corner)
+2. Scroll down and click on the `View the room directory`
+3. Tap on the 3-dot menu (top right corner)
+4. Tap on the `Change network` in the dropdown menu
+5. Tap on the `Add a new server` at the bottom of the screen
+6. Enter `matrixrooms.info` in the server name input and click `OK`
+7. Select the newly added server in the list
 
 ## [SearXNG](https://docs.searxng.org)
 
