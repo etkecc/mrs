@@ -29,16 +29,20 @@ func parseSearchResults(result []*search.DocumentMatch) []*model.Entry {
 	entries := make([]*model.Entry, 0, len(result))
 	for _, hit := range result {
 		entries = append(entries, &model.Entry{
-			ID:        hit.ID,
-			Type:      parseHitField[string](hit, "type"),
-			Alias:     parseHitField[string](hit, "alias"),
-			Name:      parseHitField[string](hit, "name"),
-			Topic:     parseHitField[string](hit, "topic"),
-			Avatar:    parseHitField[string](hit, "avatar"),
-			AvatarURL: parseHitField[string](hit, "avatar_url"),
-			Server:    parseHitField[string](hit, "server"),
-			Language:  parseHitField[string](hit, "language"),
-			Members:   int(parseHitField[float64](hit, "members")),
+			ID:            hit.ID,
+			Type:          parseHitField[string](hit, "type"),
+			Alias:         parseHitField[string](hit, "alias"),
+			Name:          parseHitField[string](hit, "name"),
+			Topic:         parseHitField[string](hit, "topic"),
+			Avatar:        parseHitField[string](hit, "avatar"),
+			Server:        parseHitField[string](hit, "server"),
+			Members:       int(parseHitField[float64](hit, "members")),
+			Language:      parseHitField[string](hit, "language"),
+			AvatarURL:     parseHitField[string](hit, "avatar_url"),
+			RoomType:      parseHitField[string](hit, "room_type"),
+			JoinRule:      parseHitField[string](hit, "join_rule"),
+			GuestJoinable: parseHitField[bool](hit, "guest_can_join"),
+			WorldReadable: parseHitField[bool](hit, "world_readable"),
 		})
 	}
 

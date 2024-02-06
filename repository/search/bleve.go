@@ -101,6 +101,8 @@ func getIndexMapping() mapping.IndexMapping {
 	r.AddFieldMappingsAt("server", bleve.NewKeywordFieldMapping())
 	r.AddFieldMappingsAt("members", numericFM)
 	r.AddFieldMappingsAt("language", bleve.NewKeywordFieldMapping())
+	r.AddFieldMappingsAt("room_type", noindexFM)
+	r.AddFieldMappingsAt("join_rule", noindexFM)
 	r.AddFieldMappingsAt("guest_can_join", noindexFM)
 	r.AddFieldMappingsAt("world_readable", noindexFM)
 	m.AddDocumentMapping("room", r)

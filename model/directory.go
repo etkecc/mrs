@@ -25,13 +25,15 @@ type RoomDirectoryResponse struct {
 
 // RoomDirectoryRoom is MatrixRoom, but without any computed fields
 type RoomDirectoryRoom struct {
-	Avatar        string `json:"avatar_url"`
-	Alias         string `json:"canonical_alias"`
-	Name          string `json:"name"`
+	Avatar        string `json:"avatar_url,omitempty"`
+	Alias         string `json:"canonical_alias,omitempty"`
+	GuestJoinable bool   `json:"guest_can_join"`
+	JoinRule      string `json:"join_rule,omitempty"`
+	Name          string `json:"name,omitempty"`
 	Members       int    `json:"num_joined_members"`
 	ID            string `json:"room_id"`
-	Topic         string `json:"topic"`
-	GuestJoinable bool   `json:"guest_can_join"`
+	RoomType      string `json:"room_type,omitempty"`
+	Topic         string `json:"topic,omitempty"`
 	WorldReadable bool   `json:"world_readable"`
 }
 
@@ -44,6 +46,8 @@ func (r *RoomDirectoryRoom) Convert() *MatrixRoom {
 		Topic:         r.Topic,
 		Avatar:        r.Avatar,
 		Members:       r.Members,
+		RoomType:      r.RoomType,
+		JoinRule:      r.JoinRule,
 		GuestJoinable: r.GuestJoinable,
 		WorldReadable: r.WorldReadable,
 	}

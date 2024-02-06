@@ -61,6 +61,8 @@ type MatrixRoom struct {
 	Alias         string `json:"canonical_alias"`
 	Avatar        string `json:"avatar_url"`
 	Members       int    `json:"num_joined_members"`
+	RoomType      string `json:"room_type"`
+	JoinRule      string `json:"join_rule"`
 	GuestJoinable bool   `json:"guest_can_join"`
 	WorldReadable bool   `json:"world_readable"`
 
@@ -74,16 +76,20 @@ type MatrixRoom struct {
 // Entry converts matrix room to search entry
 func (r *MatrixRoom) Entry() *Entry {
 	return &Entry{
-		ID:        r.ID,
-		Type:      "room",
-		Alias:     r.Alias,
-		Name:      r.Name,
-		Topic:     r.Topic,
-		Avatar:    r.Avatar,
-		Server:    r.Server,
-		Members:   r.Members,
-		Language:  r.Language,
-		AvatarURL: r.AvatarURL,
+		ID:            r.ID,
+		Type:          "room",
+		Alias:         r.Alias,
+		Name:          r.Name,
+		Topic:         r.Topic,
+		Avatar:        r.Avatar,
+		Server:        r.Server,
+		Members:       r.Members,
+		Language:      r.Language,
+		AvatarURL:     r.AvatarURL,
+		RoomType:      r.RoomType,
+		JoinRule:      r.JoinRule,
+		GuestJoinable: r.GuestJoinable,
+		WorldReadable: r.WorldReadable,
 	}
 }
 
@@ -96,6 +102,8 @@ func (r *MatrixRoom) DirectoryEntry() *RoomDirectoryRoom {
 		Topic:         r.Topic,
 		Avatar:        r.Avatar,
 		Members:       r.Members,
+		RoomType:      r.RoomType,
+		JoinRule:      r.JoinRule,
 		GuestJoinable: r.GuestJoinable,
 		WorldReadable: r.WorldReadable,
 	}
