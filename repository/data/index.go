@@ -1,6 +1,8 @@
 package data
 
 import (
+	"bytes"
+	"encoding/json"
 	"strconv"
 	"time"
 
@@ -8,6 +10,70 @@ import (
 
 	"gitlab.com/etke.cc/mrs/api/model"
 )
+
+// SetIndexStatsTL sets index stats for the given time
+func (d *Data) SetIndexStatsTL(calculatedAt time.Time, stats *model.IndexStats) error {
+	id := []byte(calculatedAt.UTC().Format(time.RFC3339))
+	statsb, err := json.Marshal(stats)
+	if err != nil {
+		return err
+	}
+
+	return d.db.Update(func(tx *bbolt.Tx) error {
+		return tx.Bucket(indexTLBucket).Put(id, statsb)
+	})
+}
+
+func (d *Data) getIndexStatsFullTL() (map[time.Time]*model.IndexStats, error) {
+	statsTL := make(map[time.Time]*model.IndexStats)
+	err := d.db.View(func(tx *bbolt.Tx) error {
+		return tx.Bucket(indexTLBucket).ForEach(func(k, v []byte) error {
+			if v == nil {
+				return nil
+			}
+			var stats *model.IndexStats
+			if err := json.Unmarshal(v, &stats); err != nil {
+				return err
+			}
+			t, err := time.Parse(time.RFC3339, string(k))
+			if err != nil {
+				return err
+			}
+			statsTL[t] = stats
+			return nil
+		})
+	})
+	return statsTL, err
+}
+
+// GetIndexStatsTL returns index stats for the given time prefix in RFC3339 format
+func (d *Data) GetIndexStatsTL(prefix string) (map[time.Time]*model.IndexStats, error) {
+	if prefix == "" {
+		return d.getIndexStatsFullTL()
+	}
+	statsTL := make(map[time.Time]*model.IndexStats)
+	seek := []byte(prefix)
+	err := d.db.View(func(tx *bbolt.Tx) error {
+		c := tx.Bucket(indexTLBucket).Cursor()
+		for k, v := c.Seek(seek); k != nil && bytes.HasPrefix(k, seek); k, v = c.Next() {
+			if v == nil {
+				continue
+			}
+			var stats *model.IndexStats
+			if err := json.Unmarshal(v, &stats); err != nil {
+				return err
+			}
+			t, err := time.Parse(time.RFC3339, string(k))
+			if err != nil {
+				return err
+			}
+			statsTL[t] = stats
+		}
+		return nil
+	})
+
+	return statsTL, err
+}
 
 // GetIndexStats returns index stats
 //

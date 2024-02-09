@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"time"
 
 	sentryecho "github.com/getsentry/sentry-go/echo"
 	"github.com/labstack/echo/v4"
@@ -21,6 +22,7 @@ type configService interface {
 
 type statsService interface {
 	Get() *model.IndexStats
+	GetTL() map[time.Time]*model.IndexStats
 }
 
 type cacheService interface {

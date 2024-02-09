@@ -21,7 +21,7 @@ func SetupLogger(level, sentryDSN string) *zerolog.Logger {
 	zerolog.SetGlobalLevel(loglevel)
 	var w io.Writer
 	consoleWriter := zerolog.ConsoleWriter{Out: os.Stdout, PartsExclude: []string{zerolog.TimestampFieldName}}
-	sentryWriter, err := zlogsentry.New(sentryDSN)
+	sentryWriter, err := zlogsentry.New(sentryDSN, zlogsentry.WithBreadcrumbs())
 	if err == nil {
 		w = io.MultiWriter(sentryWriter, consoleWriter)
 	} else {

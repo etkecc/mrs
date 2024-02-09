@@ -18,6 +18,8 @@ import (
 
 type StatsRepository interface {
 	DataRepository
+	GetIndexStatsTL(prefix string) (map[time.Time]*model.IndexStats, error)
+	SetIndexStatsTL(calculatedAt time.Time, stats *model.IndexStats) error
 	GetIndexStats() *model.IndexStats
 	SetIndexOnlineServers(servers int) error
 	SetIndexIndexableServers(servers int) error
@@ -69,6 +71,15 @@ func (s *Stats) reload() {
 // Get stats
 func (s *Stats) Get() *model.IndexStats {
 	return s.stats
+}
+
+// GetTL stats timeline
+func (s *Stats) GetTL() map[time.Time]*model.IndexStats {
+	tl, err := s.data.GetIndexStatsTL("")
+	if err != nil {
+		utils.Logger.Error().Err(err).Msg("cannot get stats timeline")
+	}
+	return tl
 }
 
 // SetStartedAt of the process
@@ -155,6 +166,9 @@ func (s *Stats) Collect() {
 	}
 
 	s.reload()
+	if err := s.data.SetIndexStatsTL(time.Now().UTC(), s.stats); err != nil {
+		utils.Logger.Error().Err(err).Msg("cannot set stats timeline")
+	}
 	s.sendWebhook()
 }
 

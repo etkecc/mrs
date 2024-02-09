@@ -12,7 +12,7 @@ Servers-related stats
 
 ### Online
 
-* `servers` on `/stats`
+* `servers` and `details.servers.online` on `/stats`
 * `servers.online` on `/-/status`
 * `mrs_servers_online` on `/metrics`
 
@@ -20,7 +20,7 @@ The total amount of online and federatable matrix servers discovered. Updated du
 
 ### Indexable
 
-* not presented on `/stats`
+* `details.servers.indexable` on `/stats`
 * `servers.indexable` on `/-/status`
 * `mrs_servers_indexable` on `/metrics`
 
@@ -38,7 +38,7 @@ The amount of servers in the config (config.yml `blocklist.servers`)
 
 ### Indexed
 
-* `rooms` on `/stats`
+* `rooms` and `details.rooms.indexed` on `/stats`
 * `rooms.indexed` on `/-/status`
 * `mrs_rooms_indexed` on `/metrics`
 
@@ -46,7 +46,7 @@ The total amount of indexed (searchable) rooms
 
 ### Parsed
 
-* not presented on `/stats`
+* `details.rooms.parsed` on `/stats`
 * `rooms.parsed` on `/-/status`
 * `mrs_rooms_indexed` on `/metrics`
 

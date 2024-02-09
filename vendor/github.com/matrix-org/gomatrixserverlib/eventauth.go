@@ -112,6 +112,9 @@ type membershipContent struct {
 	// The user that authorised the join, in the case that the restricted join
 	// rule is in effect.
 	AuthorizedVia string `json:"join_authorised_via_users_server,omitempty"`
+
+	// The MXIDMapping used in pseudo ID rooms
+	MXIDMapping *MXIDMapping `json:"mxid_mapping,omitempty"`
 }
 
 // StateNeededForProtoEvent returns the event types and state_keys needed to authenticate the
@@ -983,7 +986,7 @@ func (m *membershipAllower) membershipAllowed(event PDU) error { // nolint: gocy
 	var sender *spec.UserID
 	var err error
 	if event.Type() == spec.MRoomMember {
-		mapping := MemberContent{}
+		mapping := membershipContent{}
 		if err := json.Unmarshal(event.Content(), &mapping); err != nil {
 			return err
 		}
@@ -1143,31 +1146,27 @@ func (m *membershipAllower) membershipAllowedSelf() error { // nolint: gocyclo
 		return nil
 	}
 
+	// If the sender is banned, reject, as they can not change their own ban status.
+	if m.oldMember.Membership == spec.Ban {
+		return m.membershipFailed(
+			"sender cannot set their own membership to %q", m.newMember.Membership,
+		)
+	}
+
 	switch m.newMember.Membership {
 	case spec.Knock:
-		if m.joinRule.JoinRule != spec.Knock && m.joinRule.JoinRule != spec.KnockRestricted {
-			return m.membershipFailed(
-				"join rule %q does not allow knocking", m.joinRule.JoinRule,
-			)
-		}
-		// A user that is not in the room is allowed to knock if the join
-		// rules are "knock" and they are not already joined to, invited to
-		// or banned from the room.
-		// Spec: https://spec.matrix.org/unstable/rooms/v7/
-		// MSC3787 extends this: the behaviour above is also permitted if the
-		// join rules are "knock_restricted"
-		// Spec: https://github.com/matrix-org/matrix-spec-proposals/pull/3787
+		// Check if the given roomVersionImpl allows knocking.
 		return m.roomVersionImpl.CheckKnockingAllowed(m)
 	case spec.Join:
-		if m.oldMember.Membership == spec.Leave && (m.joinRule.JoinRule == spec.Restricted || m.joinRule.JoinRule == spec.KnockRestricted) {
+		if m.joinRule.JoinRule == spec.Restricted || m.joinRule.JoinRule == spec.KnockRestricted {
 			if err := m.membershipAllowedSelfForRestrictedJoin(); err != nil {
 				return err
 			}
-		}
-		// A user that is not in the room is allowed to join if the room
-		// join rules are "public".
-		if m.oldMember.Membership == spec.Leave && m.joinRule.JoinRule == spec.Public {
-			return nil
+			// If, after validating restricted joins, the room is now "public", allow.
+			// This means that transitions from knock|invite|leave to join are allowed.
+			if m.joinRule.JoinRule == spec.Public {
+				return nil
+			}
 		}
 		// An invited user is always allowed to join, regardless of the join rule
 		if m.oldMember.Membership == spec.Invite {
@@ -1177,6 +1176,13 @@ func (m *membershipAllower) membershipAllowedSelf() error { // nolint: gocyclo
 		if m.oldMember.Membership == spec.Join {
 			return nil
 		}
+
+		// A user that is not in the room is allowed to join if the room
+		// join rules are "public".
+		if m.oldMember.Membership == spec.Leave && m.joinRule.JoinRule == spec.Public {
+			return nil
+		}
+
 		return m.membershipFailed(
 			"join rule %q forbids it", m.joinRule.JoinRule,
 		)
@@ -1227,8 +1233,16 @@ func disallowKnocking(m *membershipAllower) error {
 	)
 }
 
+// A user that is not in the room is allowed to knock if the join
+// rules are "knock" and they are not already joined to
+// or banned from the room.
+// Spec: https://spec.matrix.org/unstable/rooms/v7/
+// MSC3787 extends this: the behaviour above is also permitted if the
+// join rules are "knock_restricted"
+// Spec: https://github.com/matrix-org/matrix-spec-proposals/pull/3787
 func checkKnocking(m *membershipAllower) error {
-	supported := m.joinRule.JoinRule == spec.Restricted || m.joinRule.JoinRule == spec.KnockRestricted
+	// If the join_rule is anything other than knock or knock_restricted, reject.
+	supported := m.joinRule.JoinRule == spec.Knock || m.joinRule.JoinRule == spec.KnockRestricted
 	if !supported {
 		return m.membershipFailed(
 			"room version %q does not support knocking on rooms with join rule %q",

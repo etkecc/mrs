@@ -67,8 +67,10 @@ func (w *Writer) Write(data []byte) (n int, err error) {
 	}
 
 	event, ok := w.parseLogEvent(data)
-	event.Level = levelsMapping[lvl]
-
+	if !ok {
+		return
+	}
+	event.Level, ok = levelsMapping[lvl]
 	if !ok {
 		return
 	}
@@ -91,19 +93,26 @@ func (w *Writer) Write(data []byte) (n int, err error) {
 // implements zerolog.LevelWriter
 func (w *Writer) WriteLevel(level zerolog.Level, p []byte) (n int, err error) {
 	n = len(p)
-	if _, enabled := w.levels[level]; !enabled {
+
+	event, ok := w.parseLogEvent(p)
+	if !ok {
+		return
+	}
+	event.Level, ok = levelsMapping[level]
+	if !ok {
 		return
 	}
 
-	event, ok := w.parseLogEvent(p)
-	event.Level = levelsMapping[level]
+	if _, enabled := w.levels[level]; !enabled {
+		// if the level is not enabled, add event as a breadcrumb
+		w.addBreadcrumb(event)
+		return
+	}
 
-	if ok {
-		w.hub.CaptureEvent(event)
-		// should flush before os.Exit
-		if event.Level == sentry.LevelFatal {
-			w.hub.Flush(w.flushTimeout)
-		}
+	w.hub.CaptureEvent(event)
+	// should flush before os.Exit
+	if event.Level == sentry.LevelFatal {
+		w.hub.Flush(w.flushTimeout)
 	}
 	return
 }

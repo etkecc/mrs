@@ -590,16 +590,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  servers:
-                    type: integer
-                    description: Count of all discovered online servers
-                    example: 3230
-                  rooms:
-                    type: integer
-                    description: Count of parsed rooms
-                    example: 3230
+                $ref: '#/components/schemas/Stats'
   /discover/bulk:
     post:
       tags:
@@ -1068,6 +1059,77 @@ components:
           type: string
           description: 'ISO6391 language code (e.g. en, de, fr) OR `-` if there is not enough text in room name and topic to determine language'
           example: en
+    Stats:
+      type: object
+      properties:
+        servers:
+          type: integer
+          description: Count of all discovered online servers
+          example: 3230
+        rooms:
+          type: integer
+          description: Count of parsed rooms
+          example: 3230
+        details:
+          type: object
+          properties:
+            servers:
+              type: object
+              properties:
+                online:
+                  type: integer
+                  description: amount of discovered online & federatable matrix servers
+                  example: 23
+                indexable:
+                  type: integer
+                  description: amount of discovered online & federatable matrix servers that public public rooms directory over federation
+                  example: 23
+            rooms:
+              type: object
+              properties:
+                parsed:
+                  type: integer
+                  description: amount of all parsed rooms from online servers
+                  example: 123
+                indexed:
+                  type: integer
+                  description: amount of all indexed (searchable) rooms from online servers
+                  example: 123
+        timeline:
+          type: array
+          description: stats timeline
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                description: YYYY-MM-DD
+                example: 2006-01-02
+              details:
+                type: object
+                properties:
+                  servers:
+                    type: object
+                    properties:
+                      online:
+                        type: integer
+                        description: amount of discovered online & federatable matrix servers
+                        example: 23
+                      indexable:
+                        type: integer
+                        description: amount of discovered online & federatable matrix servers that public public rooms directory over federation
+                        example: 23
+                  rooms:
+                    type: object
+                    properties:
+                      parsed:
+                        type: integer
+                        description: amount of all parsed rooms from online servers
+                        example: 123
+                      indexed:
+                        type: integer
+                        description: amount of all indexed (searchable) rooms from online servers
+                        example: 123
     Status:
       type: object
       properties:
