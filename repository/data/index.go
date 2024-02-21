@@ -7,15 +7,15 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/getsentry/sentry-go"
 	"go.etcd.io/bbolt"
 
 	"gitlab.com/etke.cc/mrs/api/model"
+	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
 // SetIndexStatsTL sets index stats for the given time
 func (d *Data) SetIndexStatsTL(ctx context.Context, calculatedAt time.Time, stats *model.IndexStats) error {
-	span := sentry.StartSpan(ctx, "data.SetIndexStatsTL")
+	span := utils.StartSpan(ctx, "data.SetIndexStatsTL")
 	defer span.Finish()
 
 	id := []byte(calculatedAt.UTC().Format(time.RFC3339))
@@ -30,7 +30,7 @@ func (d *Data) SetIndexStatsTL(ctx context.Context, calculatedAt time.Time, stat
 }
 
 func (d *Data) getIndexStatsFullTL(ctx context.Context) (map[time.Time]*model.IndexStats, error) {
-	span := sentry.StartSpan(ctx, "data.getIndexStatsFullTL")
+	span := utils.StartSpan(ctx, "data.getIndexStatsFullTL")
 	defer span.Finish()
 
 	statsTL := make(map[time.Time]*model.IndexStats)
@@ -56,7 +56,7 @@ func (d *Data) getIndexStatsFullTL(ctx context.Context) (map[time.Time]*model.In
 
 // GetIndexStatsTL returns index stats for the given time prefix in RFC3339 format
 func (d *Data) GetIndexStatsTL(ctx context.Context, prefix string) (map[time.Time]*model.IndexStats, error) {
-	span := sentry.StartSpan(ctx, "data.getIndexStatsTL")
+	span := utils.StartSpan(ctx, "data.getIndexStatsTL")
 	defer span.Finish()
 	if prefix == "" {
 		return d.getIndexStatsFullTL(span.Context())
@@ -89,7 +89,7 @@ func (d *Data) GetIndexStatsTL(ctx context.Context, prefix string) (map[time.Tim
 //
 //nolint:errcheck
 func (d *Data) GetIndexStats(ctx context.Context) *model.IndexStats {
-	span := sentry.StartSpan(ctx, "data.GetIndexStats")
+	span := utils.StartSpan(ctx, "data.GetIndexStats")
 	defer span.Finish()
 
 	stats := &model.IndexStats{
@@ -140,7 +140,7 @@ func (d *Data) GetIndexStats(ctx context.Context) *model.IndexStats {
 
 // SetIndexOnlineServers sets count of discovered online servers
 func (d *Data) SetIndexOnlineServers(ctx context.Context, servers int) error {
-	span := sentry.StartSpan(ctx, "data.SetIndexOnlineServers")
+	span := utils.StartSpan(ctx, "data.SetIndexOnlineServers")
 	defer span.Finish()
 
 	return d.db.Update(func(tx *bbolt.Tx) error {
@@ -151,7 +151,7 @@ func (d *Data) SetIndexOnlineServers(ctx context.Context, servers int) error {
 
 // SetIndexIndexableServers sets count of discovered indexable servers
 func (d *Data) SetIndexIndexableServers(ctx context.Context, servers int) error {
-	span := sentry.StartSpan(ctx, "data.SetIndexIndexableServers")
+	span := utils.StartSpan(ctx, "data.SetIndexIndexableServers")
 	defer span.Finish()
 
 	return d.db.Update(func(tx *bbolt.Tx) error {
@@ -162,7 +162,7 @@ func (d *Data) SetIndexIndexableServers(ctx context.Context, servers int) error 
 
 // SetIndexBlockedServers sets count of discovered online servers
 func (d *Data) SetIndexBlockedServers(ctx context.Context, servers int) error {
-	span := sentry.StartSpan(ctx, "data.SetIndexBlockedServers")
+	span := utils.StartSpan(ctx, "data.SetIndexBlockedServers")
 	defer span.Finish()
 
 	return d.db.Update(func(tx *bbolt.Tx) error {
@@ -173,7 +173,7 @@ func (d *Data) SetIndexBlockedServers(ctx context.Context, servers int) error {
 
 // SetIndexIndexedRooms sets count of indexed rooms
 func (d *Data) SetIndexIndexedRooms(ctx context.Context, rooms int) error {
-	span := sentry.StartSpan(ctx, "data.SetIndexIndexedRooms")
+	span := utils.StartSpan(ctx, "data.SetIndexIndexedRooms")
 	defer span.Finish()
 
 	return d.db.Update(func(tx *bbolt.Tx) error {
@@ -184,7 +184,7 @@ func (d *Data) SetIndexIndexedRooms(ctx context.Context, rooms int) error {
 
 // SetIndexParsedRooms sets count of parsed rooms
 func (d *Data) SetIndexParsedRooms(ctx context.Context, rooms int) error {
-	span := sentry.StartSpan(ctx, "data.SetIndexParsedRooms")
+	span := utils.StartSpan(ctx, "data.SetIndexParsedRooms")
 	defer span.Finish()
 
 	return d.db.Update(func(tx *bbolt.Tx) error {
@@ -195,7 +195,7 @@ func (d *Data) SetIndexParsedRooms(ctx context.Context, rooms int) error {
 
 // SetIndexBannedRooms sets count of banned rooms
 func (d *Data) SetIndexBannedRooms(ctx context.Context, rooms int) error {
-	span := sentry.StartSpan(ctx, "data.SetIndexBannedRooms")
+	span := utils.StartSpan(ctx, "data.SetIndexBannedRooms")
 	defer span.Finish()
 
 	return d.db.Update(func(tx *bbolt.Tx) error {
@@ -206,7 +206,7 @@ func (d *Data) SetIndexBannedRooms(ctx context.Context, rooms int) error {
 
 // SetIndexReportedRooms sets count of banned rooms
 func (d *Data) SetIndexReportedRooms(ctx context.Context, rooms int) error {
-	span := sentry.StartSpan(ctx, "data.SetIndexReportedRooms")
+	span := utils.StartSpan(ctx, "data.SetIndexReportedRooms")
 	defer span.Finish()
 
 	return d.db.Update(func(tx *bbolt.Tx) error {
@@ -217,7 +217,7 @@ func (d *Data) SetIndexReportedRooms(ctx context.Context, rooms int) error {
 
 // SetStartedAt sets start time of the new process
 func (d *Data) SetStartedAt(ctx context.Context, process string, startedAt time.Time) error {
-	span := sentry.StartSpan(ctx, "data.SetStartedAt")
+	span := utils.StartSpan(ctx, "data.SetStartedAt")
 	defer span.Finish()
 
 	return d.db.Update(func(tx *bbolt.Tx) error {
@@ -228,7 +228,7 @@ func (d *Data) SetStartedAt(ctx context.Context, process string, startedAt time.
 
 // SetFinishedAt sets end time of the finished process
 func (d *Data) SetFinishedAt(ctx context.Context, process string, finishedAt time.Time) error {
-	span := sentry.StartSpan(ctx, "data.SetFinishedAt")
+	span := utils.StartSpan(ctx, "data.SetFinishedAt")
 	defer span.Finish()
 
 	return d.db.Update(func(tx *bbolt.Tx) error {

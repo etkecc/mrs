@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/rs/zerolog"
 
 	"gitlab.com/etke.cc/mrs/api/model"
@@ -122,7 +121,7 @@ func (df *DataFacade) Ingest(ctx context.Context) {
 
 // Full data pipeline (discovery, parsing, indexing)
 func (df *DataFacade) Full(ctx context.Context, discoveryWorkers, parsingWorkers int) {
-	span := sentry.StartSpan(ctx, "dataFacade.Full")
+	span := utils.StartSpan(ctx, "dataFacade.Full")
 	defer span.Finish()
 
 	log := zerolog.Ctx(span.Context())

@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/goccy/go-json"
 	"github.com/rs/zerolog"
 
@@ -134,7 +133,7 @@ func (s *Stats) CollectServers(ctx context.Context, reload bool) {
 
 // Collect all stats from repository
 func (s *Stats) Collect(ctx context.Context) {
-	span := sentry.StartSpan(ctx, "stats.Collect")
+	span := utils.StartSpan(ctx, "stats.Collect")
 	defer span.Finish()
 
 	log := zerolog.Ctx(ctx)
@@ -186,7 +185,7 @@ func (s *Stats) sendWebhook(ctx context.Context) {
 	if s.cfg.Get().Webhooks.Stats == "" {
 		return
 	}
-	span := sentry.StartSpan(ctx, "stats.sendWebhook")
+	span := utils.StartSpan(ctx, "stats.sendWebhook")
 	defer span.Finish()
 	log := zerolog.Ctx(ctx)
 

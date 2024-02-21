@@ -6,7 +6,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/pemistahl/lingua-go"
 	"github.com/rs/zerolog"
 	"github.com/xxjwxc/gowp/workpool"
@@ -97,7 +96,7 @@ func (m *Crawler) DiscoverServers(ctx context.Context, workers int, overrideList
 		log.Info().Msg("servers discovery already in progress, ignoring request")
 		return
 	}
-	span := sentry.StartSpan(ctx, "crawler.DiscoverServers")
+	span := utils.StartSpan(ctx, "crawler.DiscoverServers")
 	defer span.Finish()
 
 	m.discovering = true
@@ -118,7 +117,7 @@ func (m *Crawler) DiscoverServers(ctx context.Context, workers int, overrideList
 
 // AddServers by name in bulk, intended for HTTP API
 func (m *Crawler) AddServers(ctx context.Context, names []string, workers int) {
-	span := sentry.StartSpan(ctx, "crawler.AddServers")
+	span := utils.StartSpan(ctx, "crawler.AddServers")
 	servers := utils.NewListFromSlice(names)
 	// exclude already known servers first
 	for _, server := range servers.Slice() {
@@ -133,7 +132,7 @@ func (m *Crawler) AddServers(ctx context.Context, names []string, workers int) {
 // AddServer by name, intended for HTTP API
 // returns http status code to send to the reporter
 func (m *Crawler) AddServer(ctx context.Context, name string) int {
-	span := sentry.StartSpan(ctx, "crawler.AddServer")
+	span := utils.StartSpan(ctx, "crawler.AddServer")
 	if m.data.HasServer(span.Context(), name) {
 		return http.StatusAlreadyReported
 	}
@@ -154,7 +153,7 @@ func (m *Crawler) ParseRooms(ctx context.Context, workers int) {
 		return
 	}
 
-	span := sentry.StartSpan(ctx, "crawler.ParseRooms")
+	span := utils.StartSpan(ctx, "crawler.ParseRooms")
 	defer span.Finish()
 
 	m.parsing = true
@@ -235,7 +234,7 @@ func (m *Crawler) IndexableServers(ctx context.Context) []string {
 }
 
 func (m *Crawler) loadServers(ctx context.Context) *utils.List[string, string] {
-	span := sentry.StartSpan(ctx, "crawler.loadServers")
+	span := utils.StartSpan(ctx, "crawler.loadServers")
 	defer span.Finish()
 
 	log := zerolog.Ctx(span.Context())
@@ -253,7 +252,7 @@ func (m *Crawler) loadServers(ctx context.Context) *utils.List[string, string] {
 
 // discoverServer parses server information
 func (m *Crawler) discoverServer(ctx context.Context, name string) *model.MatrixServer {
-	span := sentry.StartSpan(ctx, "crawler.discoverServer")
+	span := utils.StartSpan(ctx, "crawler.discoverServer")
 	defer span.Finish()
 
 	name, ok := m.v.IsOnline(span.Context(), name)
@@ -332,7 +331,7 @@ func (m *Crawler) afterRoomParsing(ctx context.Context) {
 		members int
 	}
 
-	span := sentry.StartSpan(ctx, "crawler.afterRoomParsing")
+	span := utils.StartSpan(ctx, "crawler.afterRoomParsing")
 	defer span.Finish()
 
 	log := zerolog.Ctx(span.Context())
@@ -371,7 +370,7 @@ func (m *Crawler) afterRoomParsing(ctx context.Context) {
 
 // getServerContacts as per MSC1929
 func (m *Crawler) getServerContacts(ctx context.Context, name string) model.MatrixServerContacts {
-	span := sentry.StartSpan(ctx, "crawler.getServerContacts")
+	span := utils.StartSpan(ctx, "crawler.getServerContacts")
 	defer span.Finish()
 
 	var contacts model.MatrixServerContacts
@@ -397,7 +396,7 @@ func (m *Crawler) getPublicRooms(ctx context.Context, name string) *utils.List[s
 	limit := "10000"
 	servers := utils.NewList[string, string]()
 	withFakeAliases := m.cfg.Get().Experiments.FakeAliases
-	span := sentry.StartSpan(ctx, "crawler.getPublicRooms")
+	span := utils.StartSpan(ctx, "crawler.getPublicRooms")
 	defer span.Finish()
 	log := zerolog.Ctx(span.Context())
 

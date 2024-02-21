@@ -6,7 +6,6 @@ import (
 
 	"github.com/blevesearch/bleve/v2"
 	"github.com/blevesearch/bleve/v2/search/query"
-	"github.com/getsentry/sentry-go"
 	"github.com/rs/zerolog"
 	"golang.org/x/exp/slices"
 
@@ -60,7 +59,7 @@ func NewSearch(cfg ConfigService, data searchDataRepository, repo SearchReposito
 // Search things
 // ref: https://blevesearch.com/docs/Query-String-Query/
 func (s *Search) Search(ctx context.Context, q, sortBy string, limit, offset int) ([]*model.Entry, int, error) {
-	span := sentry.StartSpan(ctx, "searchSvc.Search")
+	span := utils.StartSpan(ctx, "searchSvc.Search")
 	defer span.Finish()
 	log := zerolog.Ctx(span.Context())
 	log.Info().

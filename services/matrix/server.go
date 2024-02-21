@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/rs/zerolog"
 
 	"gitlab.com/etke.cc/mrs/api/metrics"
@@ -26,7 +25,7 @@ func (s *Server) GetServerVersion() []byte {
 
 // GetKeyServer returns jsonblob-eligible response for /_matrix/key/v2/server
 func (s *Server) GetKeyServer(ctx context.Context) []byte {
-	span := sentry.StartSpan(ctx, "matrix.GetKeyServer")
+	span := utils.StartSpan(ctx, "matrix.GetKeyServer")
 	defer span.Finish()
 
 	log := zerolog.Ctx(span.Context())
@@ -42,7 +41,7 @@ func (s *Server) GetKeyServer(ctx context.Context) []byte {
 
 // PublicRooms returns /_matrix/federation/v1/publicRooms response
 func (s *Server) PublicRooms(ctx context.Context, req *http.Request, rdReq *model.RoomDirectoryRequest) (int, []byte) {
-	span := sentry.StartSpan(ctx, "matrix.PublicRooms")
+	span := utils.StartSpan(ctx, "matrix.PublicRooms")
 	defer span.Finish()
 	log := zerolog.Ctx(span.Context())
 

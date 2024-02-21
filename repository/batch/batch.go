@@ -5,8 +5,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/rs/zerolog"
+
+	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
 // Batch struct
@@ -42,7 +43,7 @@ func (b *Batch[T]) Flush(ctx context.Context) {
 	b.Lock()
 	defer b.Unlock()
 
-	span := sentry.StartSpan(ctx, "batch.Flush")
+	span := utils.StartSpan(ctx, "batch.Flush")
 	defer span.Finish()
 	log := zerolog.Ctx(span.Context())
 

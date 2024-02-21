@@ -3,17 +3,17 @@ package data
 import (
 	"context"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/goccy/go-json"
 	"github.com/rs/zerolog"
 	"go.etcd.io/bbolt"
 
 	"gitlab.com/etke.cc/mrs/api/model"
+	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
 // AddServer info
 func (d *Data) AddServer(ctx context.Context, server *model.MatrixServer) error {
-	span := sentry.StartSpan(ctx, "data.AddServer")
+	span := utils.StartSpan(ctx, "data.AddServer")
 	defer span.Finish()
 	log := zerolog.Ctx(ctx)
 
@@ -29,7 +29,7 @@ func (d *Data) AddServer(ctx context.Context, server *model.MatrixServer) error 
 
 // BatchServers adds a batch of servers at once
 func (d *Data) BatchServers(ctx context.Context, servers []string) error {
-	span := sentry.StartSpan(ctx, "data.BatchServers")
+	span := utils.StartSpan(ctx, "data.BatchServers")
 	defer span.Finish()
 	log := zerolog.Ctx(ctx)
 
@@ -53,7 +53,7 @@ func (d *Data) BatchServers(ctx context.Context, servers []string) error {
 
 // HasServer checks if server is already exists
 func (d *Data) HasServer(ctx context.Context, name string) bool {
-	span := sentry.StartSpan(ctx, "data.HasServer")
+	span := utils.StartSpan(ctx, "data.HasServer")
 	defer span.Finish()
 
 	var has bool
@@ -67,7 +67,7 @@ func (d *Data) HasServer(ctx context.Context, name string) bool {
 
 // GetServerInfo
 func (d *Data) GetServerInfo(ctx context.Context, name string) (*model.MatrixServer, error) {
-	span := sentry.StartSpan(ctx, "data.GetServerInfo")
+	span := utils.StartSpan(ctx, "data.GetServerInfo")
 	defer span.Finish()
 
 	var server *model.MatrixServer
@@ -88,7 +88,7 @@ func (d *Data) GetServerInfo(ctx context.Context, name string) (*model.MatrixSer
 
 // RemoveServer info
 func (d *Data) RemoveServer(ctx context.Context, name string) error {
-	span := sentry.StartSpan(ctx, "data.RemoveServer")
+	span := utils.StartSpan(ctx, "data.RemoveServer")
 	defer span.Finish()
 
 	nameb := []byte(name)
@@ -107,7 +107,7 @@ func (d *Data) RemoveServers(ctx context.Context, keys []string) {
 		return
 	}
 
-	span := sentry.StartSpan(ctx, "data.RemoveServers")
+	span := utils.StartSpan(ctx, "data.RemoveServers")
 	defer span.Finish()
 
 	d.db.Update(func(tx *bbolt.Tx) error { //nolint:errcheck
@@ -154,7 +154,7 @@ func (d *Data) MarkServersOffline(ctx context.Context, keys []string) {
 		return
 	}
 
-	span := sentry.StartSpan(ctx, "data.MarkServersOffline")
+	span := utils.StartSpan(ctx, "data.MarkServersOffline")
 	defer span.Finish()
 
 	d.db.Batch(func(tx *bbolt.Tx) error { //nolint:errcheck
@@ -167,7 +167,7 @@ func (d *Data) MarkServersOffline(ctx context.Context, keys []string) {
 }
 
 func (d *Data) FilterServers(ctx context.Context, filter func(server *model.MatrixServer) bool) map[string]*model.MatrixServer {
-	span := sentry.StartSpan(ctx, "data.FilterServers")
+	span := utils.StartSpan(ctx, "data.FilterServers")
 	defer span.Finish()
 	log := zerolog.Ctx(ctx)
 

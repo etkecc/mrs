@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/rs/zerolog"
 
 	"gitlab.com/etke.cc/mrs/api/model"
@@ -35,7 +34,7 @@ func (s *Server) GetClientVersion() []byte {
 
 // GetClientDirectory is /_matrix/client/v3/directory/room/{roomAlias}
 func (s *Server) GetClientDirectory(ctx context.Context, alias string) (int, []byte) {
-	span := sentry.StartSpan(ctx, "matrix.GetClientDirectory")
+	span := utils.StartSpan(ctx, "matrix.GetClientDirectory")
 	defer span.Finish()
 	log := zerolog.Ctx(span.Context())
 
@@ -78,7 +77,7 @@ func (s *Server) GetClientDirectory(ctx context.Context, alias string) (int, []b
 
 // GetClientRoomSummary is /_matrix/client/unstable/is.nheko.summary/summary/{roomIdOrAlias}
 func (s *Server) GetClientRoomSummary(ctx context.Context, aliasOrID string) (int, []byte) {
-	span := sentry.StartSpan(ctx, "matrix.GetClientRoomSummary")
+	span := utils.StartSpan(ctx, "matrix.GetClientRoomSummary")
 	defer span.Finish()
 	log := zerolog.Ctx(span.Context())
 
@@ -116,7 +115,7 @@ func (s *Server) GetClientRoomSummary(ctx context.Context, aliasOrID string) (in
 
 // GetClientRoomVisibility is /_matrix/client/v3/directory/list/room/{roomID}
 func (s *Server) GetClientRoomVisibility(ctx context.Context, id string) (int, []byte) {
-	span := sentry.StartSpan(ctx, "matrix.GetClientRoomVisibility")
+	span := utils.StartSpan(ctx, "matrix.GetClientRoomVisibility")
 	defer span.Finish()
 	log := zerolog.Ctx(span.Context())
 
@@ -146,7 +145,7 @@ func (s *Server) GetClientRoomVisibility(ctx context.Context, id string) (int, [
 
 // GetClientMediaThumbnail is /_matrix/media/v3/thumbnail/{serverName}/{mediaID}
 func (s *Server) GetClientMediaThumbnail(ctx context.Context, serverName, mediaID string, params url.Values) (io.Reader, string) {
-	span := sentry.StartSpan(ctx, "matrix.GetClientMediaThumbnail")
+	span := utils.StartSpan(ctx, "matrix.GetClientMediaThumbnail")
 	defer span.Finish()
 
 	query := utils.ValuesOrDefault(params, defaultThumbnailParams)
@@ -159,7 +158,7 @@ func (s *Server) GetClientMediaThumbnail(ctx context.Context, serverName, mediaI
 		urls = append(urls, serverURL+"/_matrix/media/v3/thumbnail/"+serverName+"/"+mediaID+"?"+query)
 	}
 	for _, avatarURL := range urls {
-		resp, err := http.Get(avatarURL)
+		resp, err := utils.Get(span.Context(), avatarURL)
 		if err != nil {
 			continue
 		}
@@ -167,7 +166,6 @@ func (s *Server) GetClientMediaThumbnail(ctx context.Context, serverName, mediaI
 			resp.Body.Close()
 			continue
 		}
-		defer resp.Body.Close()
 		return resp.Body, resp.Header.Get("Content-Type")
 	}
 

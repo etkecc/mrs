@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/goccy/go-json"
 	"github.com/matrix-org/gomatrixserverlib"
 	"github.com/rs/zerolog"
@@ -19,7 +18,7 @@ import (
 
 // ValidateAuth validates matrix auth
 func (s *Server) ValidateAuth(ctx context.Context, r *http.Request) (serverName string, err error) {
-	span := sentry.StartSpan(ctx, "matrix.ValidateAuth")
+	span := utils.StartSpan(ctx, "matrix.ValidateAuth")
 	defer span.Finish()
 	log := zerolog.Ctx(span.Context())
 
