@@ -5,7 +5,7 @@ go 1.21.0
 toolchain go1.21.3
 
 require (
-	github.com/VictoriaMetrics/metrics v1.31.0
+	github.com/VictoriaMetrics/metrics v1.32.0
 	github.com/archdx/zerolog-sentry v1.8.2
 	github.com/benjaminestes/robots/v2 v2.0.5
 	github.com/blevesearch/bleve/v2 v2.3.10
@@ -24,11 +24,11 @@ require (
 	github.com/theovassiliou/base64url v0.0.0-20211006203958-1e011490eaaf
 	github.com/xxjwxc/gowp v0.0.0-20230612082025-23a9b62c1da6
 	github.com/ziflex/lecho/v3 v3.5.0
-	gitlab.com/etke.cc/go/echo-basic-auth v1.0.0
+	gitlab.com/etke.cc/go/echo-basic-auth v1.1.0
 	gitlab.com/etke.cc/go/fswatcher v1.0.0
 	gitlab.com/etke.cc/go/msc1929 v0.0.0-20231103161506-0223f5f91511
 	go.etcd.io/bbolt v1.3.8
-	golang.org/x/exp v0.0.0-20240205201215-2c58cdc269a3
+	golang.org/x/exp v0.0.0-20240213143201-ec583247a57a
 	golang.org/x/time v0.5.0
 	gopkg.in/yaml.v3 v3.0.1
 	maunium.net/go/mautrix v0.17.0
@@ -71,7 +71,7 @@ require (
 	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
-	github.com/tidwall/gjson v1.17.0 // indirect
+	github.com/tidwall/gjson v1.17.1 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect
@@ -81,7 +81,7 @@ require (
 	github.com/valyala/histogram v1.2.0 // indirect
 	github.com/xxjwxc/public v0.0.0-20240202084818-49b8bdbdbfa0 // indirect
 	github.com/yuin/goldmark v1.7.0 // indirect
-	go.mau.fi/util v0.3.0 // indirect
+	go.mau.fi/util v0.4.0 // indirect
 	golang.org/x/crypto v0.19.0 // indirect
 	golang.org/x/net v0.21.0 // indirect
 	golang.org/x/sys v0.17.0 // indirect

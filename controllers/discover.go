@@ -10,7 +10,7 @@ import (
 
 func addServer(dataSvc dataService) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		code := dataSvc.AddServer(c.Param("name"))
+		code := dataSvc.AddServer(c.Request().Context(), c.Param("name"))
 		return c.NoContent(code)
 	}
 }
@@ -28,7 +28,7 @@ func addServers(dataSvc dataService, cfg configService) echo.HandlerFunc {
 			return err
 		}
 
-		go dataSvc.AddServers(servers, cfg.Get().Workers.Discovery)
+		go dataSvc.AddServers(c.Request().Context(), servers, cfg.Get().Workers.Discovery)
 		return c.NoContent(http.StatusAccepted)
 	}
 }

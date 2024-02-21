@@ -2,6 +2,7 @@ package services
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -10,13 +11,14 @@ import (
 
 	"github.com/goccy/go-json"
 	"github.com/raja/argon2pw"
+	"github.com/rs/zerolog"
 
 	"gitlab.com/etke.cc/mrs/api/model"
 	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
 type EmailService interface {
-	SendReport(room *model.MatrixRoom, server *model.MatrixServer, reason string, emails []string) error
+	SendReport(ctx context.Context, room *model.MatrixRoom, server *model.MatrixServer, reason string, emails []string) error
 	SendModReport(text, email string) error
 }
 
@@ -45,7 +47,8 @@ func NewModeration(cfg ConfigService, data DataRepository, index IndexRepository
 	}
 }
 
-func (m *Moderation) getReportText(roomID, reason string, room *model.MatrixRoom, server *model.MatrixServer) string {
+func (m *Moderation) getReportText(ctx context.Context, roomID, reason string, room *model.MatrixRoom, server *model.MatrixServer) string {
+	log := zerolog.Ctx(ctx)
 	var roomtxt string
 	roomb, err := json.MarshalIndent(room, "", "    ")
 	if err == nil {
@@ -79,14 +82,14 @@ func (m *Moderation) getReportText(roomID, reason string, room *model.MatrixRoom
 	var queryParams string
 	hash, err := argon2pw.GenerateSaltedHash(m.cfg.Get().Auth.Moderation.Login + m.cfg.Get().Auth.Moderation.Password)
 	if err != nil {
-		utils.Logger.Error().Err(err).Msg("cannot generate auth hash")
+		log.Error().Err(err).Msg("cannot generate auth hash")
 	} else {
 		queryParams = "?auth=" + utils.URLSafeEncode(hash)
 	}
 
 	apiURL, err := url.Parse(m.cfg.Get().Public.API)
 	if err != nil {
-		utils.Logger.Error().Err(err).Msg("cannot parse public api url")
+		log.Error().Err(err).Msg("cannot parse public api url")
 		return text.String()
 	}
 
@@ -129,21 +132,22 @@ func (m *Moderation) getServerContactsText(contacts model.MatrixServerContacts) 
 }
 
 // sendWebhook sends a report to the configured webhook
-func (m *Moderation) sendWebhook(room *model.MatrixRoom, server *model.MatrixServer, reason string) error {
+func (m *Moderation) sendWebhook(ctx context.Context, room *model.MatrixRoom, server *model.MatrixServer, reason string) error {
 	if m.cfg.Get().Webhooks.Moderation == "" {
 		return nil
 	}
 
+	log := zerolog.Ctx(ctx)
 	payload, err := json.Marshal(webhookPayload{
 		Username: m.cfg.Get().Matrix.ServerName,
-		Markdown: m.getReportText(room.ID, reason, room, server),
+		Markdown: m.getReportText(ctx, room.ID, reason, room, server),
 	})
 	if err != nil {
 		return err
 	}
 
-	if merr := m.mail.SendReport(room, server, reason, server.Contacts.Emails); merr != nil {
-		utils.Logger.Warn().Err(merr).Msg("email sending failed")
+	if merr := m.mail.SendReport(ctx, room, server, reason, server.Contacts.Emails); merr != nil {
+		log.Warn().Err(merr).Msg("email sending failed")
 	}
 
 	req, err := http.NewRequest("POST", m.cfg.Get().Webhooks.Moderation, bytes.NewReader(payload))
@@ -164,28 +168,29 @@ func (m *Moderation) sendWebhook(room *model.MatrixRoom, server *model.MatrixSer
 }
 
 // sendEmail sends a report to the configured moderators' email
-func (m *Moderation) sendEmail(room *model.MatrixRoom, server *model.MatrixServer, reason string) error {
+func (m *Moderation) sendEmail(ctx context.Context, room *model.MatrixRoom, server *model.MatrixServer, reason string) error {
 	if m.cfg.Get().Email.Moderation == "" {
 		return nil
 	}
-	text := m.getReportText(room.ID, reason, room, server)
+	text := m.getReportText(ctx, room.ID, reason, room, server)
 	return m.mail.SendModReport(text, m.cfg.Get().Email.Moderation)
 }
 
 // Report a room
-func (m *Moderation) Report(roomID, reason string) error {
-	if m.data.IsReported(roomID) {
+func (m *Moderation) Report(ctx context.Context, roomID, reason string) error {
+	if m.data.IsReported(ctx, roomID) {
 		return nil
 	}
 
-	room, err := m.data.GetRoom(roomID)
+	log := zerolog.Ctx(ctx)
+	room, err := m.data.GetRoom(ctx, roomID)
 	if err != nil {
 		return err
 	}
 	if room == nil {
 		return fmt.Errorf("room not found")
 	}
-	server, err := m.data.GetServerInfo(room.Server)
+	server, err := m.data.GetServerInfo(ctx, room.Server)
 	if err != nil {
 		return err
 	}
@@ -193,31 +198,31 @@ func (m *Moderation) Report(roomID, reason string) error {
 		return fmt.Errorf("server not found")
 	}
 
-	if err := m.sendWebhook(room, server, reason); err != nil {
-		utils.Logger.Error().Err(err).Msg("cannot send moderation webhook")
+	if err := m.sendWebhook(ctx, room, server, reason); err != nil {
+		log.Error().Err(err).Msg("cannot send moderation webhook")
 	}
 
-	if err := m.sendEmail(room, server, reason); err != nil {
-		utils.Logger.Error().Err(err).Msg("cannot send moderation email")
+	if err := m.sendEmail(ctx, room, server, reason); err != nil {
+		log.Error().Err(err).Msg("cannot send moderation email")
 	}
 
-	return m.data.ReportRoom(roomID, reason)
+	return m.data.ReportRoom(ctx, roomID, reason)
 }
 
 // List returns full list of the banned rooms (optionally from specific server)
-func (m *Moderation) List(serverName ...string) ([]string, error) {
-	return m.data.GetBannedRooms(serverName...)
+func (m *Moderation) List(ctx context.Context, serverName ...string) ([]string, error) {
+	return m.data.GetBannedRooms(ctx, serverName...)
 }
 
 // Ban a room
-func (m *Moderation) Ban(roomID string) error {
-	if err := m.data.BanRoom(roomID); err != nil {
+func (m *Moderation) Ban(ctx context.Context, roomID string) error {
+	if err := m.data.BanRoom(ctx, roomID); err != nil {
 		return err
 	}
 	return m.index.Delete(roomID)
 }
 
 // Unban a room
-func (m *Moderation) Unban(roomID string) error {
-	return m.data.UnbanRoom(roomID)
+func (m *Moderation) Unban(ctx context.Context, roomID string) error {
+	return m.data.UnbanRoom(ctx, roomID)
 }

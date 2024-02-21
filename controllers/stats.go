@@ -19,7 +19,7 @@ func stats(stats statsService) echo.HandlerFunc {
 		}
 		resp["details"] = statsDetails(info)
 
-		tl := stats.GetTL()
+		tl := stats.GetTL(c.Request().Context())
 		keys := utils.MapKeys(tl)
 		sort.Slice(keys, func(i, j int) bool {
 			return keys[i].Before(keys[j])

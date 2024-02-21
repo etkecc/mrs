@@ -1,19 +1,19 @@
 package controllers
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
 	"github.com/labstack/echo/v4"
-
-	"gitlab.com/etke.cc/mrs/api/utils"
+	"github.com/rs/zerolog"
 )
 
 type moderationService interface {
-	Report(string, string) error
-	List(...string) ([]string, error)
-	Ban(string) error
-	Unban(string) error
+	Report(context.Context, string, string) error
+	List(context.Context, ...string) ([]string, error)
+	Ban(context.Context, string) error
+	Unban(context.Context, string) error
 }
 
 type reportSubmission struct {
@@ -23,14 +23,15 @@ type reportSubmission struct {
 
 func report(svc moderationService) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		log := zerolog.Ctx(c.Request().Context())
 		var report reportSubmission
 		if err := c.Bind(&report); err != nil {
-			utils.Logger.Error().Err(err).Msg("cannot bind report")
+			log.Error().Err(err).Msg("cannot bind report")
 			return err
 		}
 
-		if err := svc.Report(report.RoomID, report.Reason); err != nil {
-			utils.Logger.Error().Err(err).Msg("cannot report room")
+		if err := svc.Report(c.Request().Context(), report.RoomID, report.Reason); err != nil {
+			log.Error().Err(err).Msg("cannot report room")
 			return err
 		}
 
@@ -48,9 +49,9 @@ func listBanned(svc moderationService) echo.HandlerFunc {
 		var list []string
 		var err error
 		if serverName != "" {
-			list, err = svc.List(serverName)
+			list, err = svc.List(c.Request().Context(), serverName)
 		} else {
-			list, err = svc.List()
+			list, err = svc.List(c.Request().Context())
 		}
 		if err != nil {
 			return err
@@ -70,7 +71,7 @@ func ban(svc moderationService) echo.HandlerFunc {
 		}
 
 		roomID := c.Param("room_id")
-		if err := svc.Ban(roomID); err != nil {
+		if err := svc.Ban(c.Request().Context(), roomID); err != nil {
 			return err
 		}
 
@@ -85,7 +86,7 @@ func unban(svc moderationService) echo.HandlerFunc {
 		}
 
 		roomID := c.Param("room_id")
-		if err := svc.Unban(roomID); err != nil {
+		if err := svc.Unban(c.Request().Context(), roomID); err != nil {
 			return err
 		}
 

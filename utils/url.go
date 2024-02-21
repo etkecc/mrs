@@ -35,7 +35,6 @@ func ParseURL(uri string) *url.URL {
 	}
 	u, err := url.Parse(uri)
 	if err != nil {
-		Logger.Warn().Err(err).Str("url", uri).Msg("Could not parse URL")
 		return nil
 	}
 	return u

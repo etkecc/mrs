@@ -1,22 +1,24 @@
 package batch
 
 import (
+	"context"
 	"sync"
 	"time"
 
-	"gitlab.com/etke.cc/mrs/api/utils"
+	"github.com/getsentry/sentry-go"
+	"github.com/rs/zerolog"
 )
 
 // Batch struct
 type Batch[T any] struct {
 	sync.Mutex
-	flushfunc func(items []T)
+	flushfunc func(ctx context.Context, items []T)
 	data      []T
 	size      int
 }
 
 // New creates new batch object
-func New[T any](size int, flushfunc func(items []T)) *Batch[T] {
+func New[T any](size int, flushfunc func(ctx context.Context, items []T)) *Batch[T] {
 	return &Batch[T]{
 		data:      make([]T, 0, size),
 		flushfunc: flushfunc,
@@ -25,23 +27,28 @@ func New[T any](size int, flushfunc func(items []T)) *Batch[T] {
 }
 
 // Add items from channel to batch and automatically flush them
-func (b *Batch[T]) Add(item T) {
+func (b *Batch[T]) Add(ctx context.Context, item T) {
 	b.Lock()
 	b.data = append(b.data, item)
 	b.Unlock()
 
 	if len(b.data) >= b.size {
-		b.Flush()
+		b.Flush(ctx)
 	}
 }
 
 // Flush / store batch
-func (b *Batch[T]) Flush() {
+func (b *Batch[T]) Flush(ctx context.Context) {
 	b.Lock()
+	defer b.Unlock()
+
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("batch.Flush"))
+	defer span.Finish()
+	log := zerolog.Ctx(span.Context())
+
 	started := time.Now().UTC()
-	utils.Logger.Info().Int("len", len(b.data)).Msg("storing data batch")
-	b.flushfunc(b.data)
-	utils.Logger.Info().Int("len", len(b.data)).Str("took", time.Since(started).String()).Msg("stored data batch")
+	log.Info().Int("len", len(b.data)).Msg("storing data batch")
+	b.flushfunc(span.Context(), b.data)
+	log.Info().Int("len", len(b.data)).Str("took", time.Since(started).String()).Msg("stored data batch")
 	b.data = make([]T, 0, b.size)
-	b.Unlock()
 }

@@ -1,9 +1,13 @@
 package matrix
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/url"
+
+	"github.com/getsentry/sentry-go"
+	"github.com/rs/zerolog"
 
 	"gitlab.com/etke.cc/mrs/api/model"
 	"gitlab.com/etke.cc/mrs/api/utils"
@@ -30,7 +34,11 @@ func (s *Server) GetClientVersion() []byte {
 }
 
 // GetClientDirectory is /_matrix/client/v3/directory/room/{roomAlias}
-func (s *Server) GetClientDirectory(alias string) (int, []byte) {
+func (s *Server) GetClientDirectory(ctx context.Context, alias string) (int, []byte) {
+	span := sentry.StartSpan(ctx, "function", sentry.WithDescription("GetClientDirectory"))
+	defer span.Finish()
+	log := zerolog.Ctx(span.Context())
+
 	var unescapedAlias string
 	var unescapeErr error
 	unescapedAlias, unescapeErr = url.PathUnescape(alias)
@@ -38,13 +46,13 @@ func (s *Server) GetClientDirectory(alias string) (int, []byte) {
 		alias = unescapedAlias
 	}
 
-	utils.Logger.Info().Str("alias", alias).Str("origin", "client").Msg("querying directory")
+	log.Info().Str("alias", alias).Str("origin", "client").Msg("querying directory")
 	if alias == "" {
-		return http.StatusBadRequest, s.getErrorResp("M_INVALID_PARAM", "Room alias invalid")
+		return http.StatusBadRequest, s.getErrorResp(span.Context(), "M_INVALID_PARAM", "Room alias invalid")
 	}
 
 	var room *model.MatrixRoom
-	s.data.EachRoom(func(_ string, data *model.MatrixRoom) bool {
+	s.data.EachRoom(span.Context(), func(_ string, data *model.MatrixRoom) bool {
 		if data.Alias == alias {
 			room = data
 			return true
@@ -52,7 +60,7 @@ func (s *Server) GetClientDirectory(alias string) (int, []byte) {
 		return false
 	})
 	if room == nil {
-		return http.StatusNotFound, s.getErrorResp("M_NOT_FOUND", "room not found")
+		return http.StatusNotFound, s.getErrorResp(span.Context(), "M_NOT_FOUND", "room not found")
 	}
 
 	resp := &queryDirectoryResp{
@@ -61,7 +69,7 @@ func (s *Server) GetClientDirectory(alias string) (int, []byte) {
 	}
 	respb, err := utils.JSON(resp)
 	if err != nil {
-		utils.Logger.Error().Err(err).Msg("cannot marshal query directory resp")
+		log.Error().Err(err).Msg("cannot marshal query directory resp")
 		return http.StatusInternalServerError, nil
 	}
 
@@ -69,7 +77,11 @@ func (s *Server) GetClientDirectory(alias string) (int, []byte) {
 }
 
 // GetClientRoomSummary is /_matrix/client/unstable/is.nheko.summary/summary/{roomIdOrAlias}
-func (s *Server) GetClientRoomSummary(aliasOrID string) (int, []byte) {
+func (s *Server) GetClientRoomSummary(ctx context.Context, aliasOrID string) (int, []byte) {
+	span := sentry.StartSpan(ctx, "function", sentry.WithDescription("matrix.GetClientRoomSummary"))
+	defer span.Finish()
+	log := zerolog.Ctx(span.Context())
+
 	var unescapedAliasOrID string
 	var unescapeErr error
 	unescapedAliasOrID, unescapeErr = url.PathUnescape(aliasOrID)
@@ -77,13 +89,13 @@ func (s *Server) GetClientRoomSummary(aliasOrID string) (int, []byte) {
 		aliasOrID = unescapedAliasOrID
 	}
 
-	utils.Logger.Info().Str("aliasOrID", aliasOrID).Str("origin", "client").Msg("getting room summary")
+	log.Info().Str("aliasOrID", aliasOrID).Str("origin", "client").Msg("getting room summary")
 	if aliasOrID == "" {
-		return http.StatusBadRequest, s.getErrorResp("M_INVALID_PARAM", "Room alias or id is invalid")
+		return http.StatusBadRequest, s.getErrorResp(span.Context(), "M_INVALID_PARAM", "Room alias or id is invalid")
 	}
 
 	var room *model.MatrixRoom
-	s.data.EachRoom(func(_ string, data *model.MatrixRoom) bool {
+	s.data.EachRoom(span.Context(), func(_ string, data *model.MatrixRoom) bool {
 		if data.Alias == aliasOrID || data.ID == aliasOrID {
 			room = data
 			return true
@@ -91,11 +103,11 @@ func (s *Server) GetClientRoomSummary(aliasOrID string) (int, []byte) {
 		return false
 	})
 	if room == nil {
-		return http.StatusNotFound, s.getErrorResp("M_NOT_FOUND", "room not found")
+		return http.StatusNotFound, s.getErrorResp(span.Context(), "M_NOT_FOUND", "room not found")
 	}
 	respb, err := utils.JSON(room.DirectoryEntry())
 	if err != nil {
-		utils.Logger.Error().Err(err).Msg("cannot marshal room into room directory entry")
+		log.Error().Err(err).Msg("cannot marshal room into room directory entry")
 		return http.StatusInternalServerError, nil
 	}
 
@@ -103,7 +115,11 @@ func (s *Server) GetClientRoomSummary(aliasOrID string) (int, []byte) {
 }
 
 // GetClientRoomVisibility is /_matrix/client/v3/directory/list/room/{roomID}
-func (s *Server) GetClientRoomVisibility(id string) (int, []byte) {
+func (s *Server) GetClientRoomVisibility(ctx context.Context, id string) (int, []byte) {
+	span := sentry.StartSpan(ctx, "function", sentry.WithDescription("matrix.GetClientRoomVisibility"))
+	defer span.Finish()
+	log := zerolog.Ctx(span.Context())
+
 	var unescapedID string
 	var unescapeErr error
 	unescapedID, unescapeErr = url.PathUnescape(id)
@@ -111,67 +127,49 @@ func (s *Server) GetClientRoomVisibility(id string) (int, []byte) {
 		id = unescapedID
 	}
 
-	room, err := s.data.GetRoom(id)
+	room, err := s.data.GetRoom(ctx, id)
 	if err != nil {
-		utils.Logger.Error().Err(err).Str("room", id).Msg("cannot get room")
-		return http.StatusInternalServerError, s.getErrorResp("M_INTERNAL_ERROR", "internal error")
+		log.Error().Err(err).Str("room", id).Msg("cannot get room")
+		return http.StatusInternalServerError, s.getErrorResp(span.Context(), "M_INTERNAL_ERROR", "internal error")
 	}
 	if room == nil {
-		return http.StatusNotFound, s.getErrorResp("M_NOT_FOUND", "room not found")
+		return http.StatusNotFound, s.getErrorResp(span.Context(), "M_NOT_FOUND", "room not found")
 	}
 
 	resp, err := utils.JSON(map[string]string{"visibility": "public"}) // MRS doesn't have any other
 	if err != nil {
-		utils.Logger.Error().Err(err).Str("room", id).Msg("cannot marshal room visibility")
-		return http.StatusInternalServerError, s.getErrorResp("M_INTERNAL_ERROR", "internal error")
+		log.Error().Err(err).Str("room", id).Msg("cannot marshal room visibility")
+		return http.StatusInternalServerError, s.getErrorResp(span.Context(), "M_INTERNAL_ERROR", "internal error")
 	}
 	return http.StatusOK, resp
 }
 
 // GetClientMediaThumbnail is /_matrix/media/v3/thumbnail/{serverName}/{mediaID}
-func (s *Server) GetClientMediaThumbnail(serverName, mediaID string, params url.Values) (io.Reader, string) {
+func (s *Server) GetClientMediaThumbnail(ctx context.Context, serverName, mediaID string, params url.Values) (io.Reader, string) {
+	span := sentry.StartSpan(ctx, "function", sentry.WithDescription("matrix.GetClientMediaThumbnail"))
+	defer span.Finish()
+
 	query := utils.ValuesOrDefault(params, defaultThumbnailParams)
 	urls := make([]string, 0, len(mediaFallbacks)+1)
-	for _, serverURL := range mediaFallbacks {
-		urls = append(urls, serverURL+"/_matrix/media/v3/thumbnail/"+serverName+"/"+mediaID+"?"+query)
-	}
-	serverURL := s.QueryCSURL(serverName)
+	serverURL := s.QueryCSURL(span.Context(), serverName)
 	if serverURL != "" {
 		urls = append(urls, serverURL+"/_matrix/media/v3/thumbnail/"+serverName+"/"+mediaID+"?"+query)
 	}
-	datachan := make(chan map[string]io.ReadCloser, 1)
-	for _, avatarURL := range urls {
-		go downloadThumbnail(datachan, avatarURL)
+	for _, serverURL := range mediaFallbacks {
+		urls = append(urls, serverURL+"/_matrix/media/v3/thumbnail/"+serverName+"/"+mediaID+"?"+query)
 	}
-
-	for contentType, avatar := range <-datachan {
-		close(datachan)
-		return avatar, contentType
+	for _, avatarURL := range urls {
+		resp, err := http.Get(avatarURL)
+		if err != nil {
+			continue
+		}
+		if resp.StatusCode != http.StatusOK {
+			resp.Body.Close()
+			continue
+		}
+		defer resp.Body.Close()
+		return resp.Body, resp.Header.Get("Content-Type")
 	}
 
 	return nil, ""
-}
-
-func downloadThumbnail(datachan chan map[string]io.ReadCloser, avatarURL string) {
-	defer func() {
-		if r := recover(); r != nil {
-			utils.Logger.Warn().Interface("panic", r).Msg("panic in downloadThumbnail")
-		}
-	}()
-
-	select {
-	case <-datachan:
-		return
-	default:
-		resp, err := http.Get(avatarURL)
-		if err != nil {
-			return
-		}
-		if resp.StatusCode != http.StatusOK {
-			return
-		}
-		datachan <- map[string]io.ReadCloser{
-			resp.Header.Get("Content-Type"): resp.Body,
-		}
-	}
 }

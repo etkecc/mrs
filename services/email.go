@@ -1,9 +1,11 @@
 package services
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/mattevans/postmark-go"
+	"github.com/rs/zerolog"
 
 	"gitlab.com/etke.cc/mrs/api/model"
 	"gitlab.com/etke.cc/mrs/api/utils"
@@ -39,14 +41,15 @@ func (e *Email) getClient() *postmark.EmailService {
 }
 
 // SendReport sends report email
-func (e *Email) SendReport(room *model.MatrixRoom, server *model.MatrixServer, reason string, emails []string) error {
+func (e *Email) SendReport(ctx context.Context, room *model.MatrixRoom, server *model.MatrixServer, reason string, emails []string) error {
+	log := zerolog.Ctx(ctx)
 	if len(emails) == 0 {
-		utils.Logger.Info().Str("reason", "no recipients").Msg("email sending canceled")
+		log.Info().Str("reason", "no recipients").Msg("email sending canceled")
 		return nil
 	}
 	client := e.getClient()
 	if client == nil {
-		utils.Logger.Info().Str("reason", "no sender").Msg("email sending canceled")
+		log.Info().Str("reason", "no sender").Msg("email sending canceled")
 		return nil
 	}
 
@@ -68,9 +71,9 @@ func (e *Email) SendReport(room *model.MatrixRoom, server *model.MatrixServer, r
 	}
 	text, html := utils.MarkdownRender(body)
 	for _, req := range e.buildPMReqs(subject, text, html, emails, &e.cfg.Get().Email.Postmark.Report) {
-		utils.Logger.Info().Str("to", req.To).Msg("sending email")
+		log.Info().Str("to", req.To).Msg("sending email")
 		if _, _, err = client.Send(req); err != nil {
-			utils.Logger.Warn().Err(err).Str("to", req.To).Msg("sending email failed")
+			log.Warn().Err(err).Str("to", req.To).Msg("sending email failed")
 		}
 	}
 

@@ -1,10 +1,13 @@
 package services
 
 import (
+	"context"
 	"strings"
 
 	"github.com/blevesearch/bleve/v2"
 	"github.com/blevesearch/bleve/v2/search/query"
+	"github.com/getsentry/sentry-go"
+	"github.com/rs/zerolog"
 	"golang.org/x/exp/slices"
 
 	"gitlab.com/etke.cc/mrs/api/model"
@@ -21,12 +24,12 @@ type Search struct {
 }
 
 type searchDataRepository interface {
-	GetBiggestRooms(limit, offset int) []*model.MatrixRoom
+	GetBiggestRooms(ctx context.Context, limit, offset int) []*model.MatrixRoom
 }
 
 // SearchRepository interface
 type SearchRepository interface {
-	Search(searchQuery query.Query, limit, offset int, sortBy []string) ([]*model.Entry, int, error)
+	Search(ctx context.Context, searchQuery query.Query, limit, offset int, sortBy []string) ([]*model.Entry, int, error)
 }
 
 type StatsService interface {
@@ -56,8 +59,11 @@ func NewSearch(cfg ConfigService, data searchDataRepository, repo SearchReposito
 
 // Search things
 // ref: https://blevesearch.com/docs/Query-String-Query/
-func (s *Search) Search(q, sortBy string, limit, offset int) ([]*model.Entry, int, error) {
-	utils.Logger.Info().
+func (s *Search) Search(ctx context.Context, q, sortBy string, limit, offset int) ([]*model.Entry, int, error) {
+	span := sentry.StartSpan(ctx, "function", sentry.WithDescription("search.Search"))
+	defer span.Finish()
+	log := zerolog.Ctx(span.Context())
+	log.Info().
 		Str("query", q).
 		Int("limit", limit).
 		Int("offset", offset).
@@ -71,14 +77,14 @@ func (s *Search) Search(q, sortBy string, limit, offset int) ([]*model.Entry, in
 
 	var builtQuery query.Query
 	if q == "" {
-		return s.getEmptyQueryResults(limit, offset)
+		return s.getEmptyQueryResults(span.Context(), limit, offset)
 	} else {
 		builtQuery = s.getSearchQuery(s.matchFields(q))
 	}
 	if builtQuery == nil {
 		return []*model.Entry{}, 0, nil
 	}
-	results, total, err := s.repo.Search(builtQuery, limit, offset, utils.StringToSlice(sortBy, s.cfg.Get().Search.Defaults.SortBy))
+	results, total, err := s.repo.Search(span.Context(), builtQuery, limit, offset, utils.StringToSlice(sortBy, s.cfg.Get().Search.Defaults.SortBy))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -86,8 +92,8 @@ func (s *Search) Search(q, sortBy string, limit, offset int) ([]*model.Entry, in
 	return s.removeBlocked(results), total, nil
 }
 
-func (s *Search) getEmptyQueryResults(limit, offset int) ([]*model.Entry, int, error) {
-	rooms := s.data.GetBiggestRooms(limit, offset)
+func (s *Search) getEmptyQueryResults(ctx context.Context, limit, offset int) ([]*model.Entry, int, error) {
+	rooms := s.data.GetBiggestRooms(ctx, limit, offset)
 	entries := make([]*model.Entry, 0, len(rooms))
 	for _, room := range rooms {
 		entries = append(entries, room.Entry())

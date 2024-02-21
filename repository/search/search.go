@@ -1,15 +1,21 @@
 package search
 
 import (
+	"context"
+
 	"github.com/blevesearch/bleve/v2"
 	"github.com/blevesearch/bleve/v2/search"
 	"github.com/blevesearch/bleve/v2/search/query"
+	"github.com/getsentry/sentry-go"
 
 	"gitlab.com/etke.cc/mrs/api/model"
 )
 
 // Search something!
-func (i *Index) Search(searchQuery query.Query, limit, offset int, sortBy []string) (results []*model.Entry, total int, err error) {
+func (i *Index) Search(ctx context.Context, searchQuery query.Query, limit, offset int, sortBy []string) (results []*model.Entry, total int, err error) {
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("search.Search"))
+	defer span.Finish()
+
 	req := bleve.NewSearchRequestOptions(searchQuery, limit, offset, false)
 	req.Fields = []string{"*"}
 	req.SortBy(sortBy)

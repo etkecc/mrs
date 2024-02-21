@@ -16,6 +16,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/mileusna/crontab"
 	"github.com/pemistahl/lingua-go"
+	"github.com/rs/zerolog"
 	"github.com/ziflex/lecho/v3"
 
 	"gitlab.com/etke.cc/mrs/api/controllers"
@@ -35,6 +36,7 @@ var (
 	dataRepo   *data.Data
 	index      *search.Index
 	cron       *crontab.Crontab
+	log        *zerolog.Logger
 	e          *echo.Echo
 )
 
@@ -43,29 +45,35 @@ func main() {
 	flag.StringVar(&configPath, "c", "config.yml", "Path to the config file")
 	flag.BoolVar(&runGenKey, "genkey", false, "Generate matrix signing key")
 	flag.Parse()
+
+	utils.SetName("MRS")
+	utils.SetLogLevel("info")
+	log = zerolog.Ctx(utils.NewContext())
+
 	if runGenKey {
 		if _, err := generateKey(); err != nil {
-			utils.Logger.Fatal().Err(err).Msg("cannot generate key")
+			log.Fatal().Err(err).Msg("cannot generate key")
 		}
 		return
 	}
 
 	cfg, err := services.NewConfig(configPath)
 	if err != nil {
-		utils.Logger.Fatal().Err(err).Msg("cannot read config")
+		log.Fatal().Err(err).Msg("cannot read config")
 	}
-	experiments := cfg.Get().Experiments
-	utils.Logger = utils.SetupLogger("info", cfg.Get().SentryDSN)
+	utils.SetSentryDSN(cfg.Get().SentryDSN)
+	log = zerolog.Ctx(utils.NewContext())
 
+	experiments := cfg.Get().Experiments
 	dataRepo, err = data.New(cfg.Get().Path.Data)
 	if err != nil {
-		utils.Logger.Fatal().Err(err).Msg("cannot open data repo")
+		log.Fatal().Err(err).Msg("cannot open data repo")
 	}
 
 	detector := getLanguageDetector(cfg.Get().Languages)
 	index, err = search.NewIndex(cfg.Get().Path.Index, detector, "en", experiments.InMemoryIndex)
 	if err != nil {
-		utils.Logger.Fatal().Err(err).Msg("cannot open index repo")
+		log.Fatal().Err(err).Msg("cannot open index repo")
 	}
 	robotsSvc := services.NewRobots()
 	blockSvc := services.NewBlocklist(cfg)
@@ -74,7 +82,7 @@ func main() {
 	searchSvc := services.NewSearch(cfg, dataRepo, index, blockSvc, statsSvc)
 	matrixSvc, err := matrix.NewServer(cfg, dataRepo, searchSvc)
 	if err != nil {
-		utils.Logger.Fatal().Err(err).Msg("cannot start matrix service")
+		log.Fatal().Err(err).Msg("cannot start matrix service")
 	}
 	validatorSvc := services.NewValidator(cfg, blockSvc, matrixSvc, robotsSvc)
 	crawlerSvc := services.NewCrawler(cfg, matrixSvc, validatorSvc, blockSvc, dataRepo, detector)
@@ -82,21 +90,21 @@ func main() {
 	cacheSvc := services.NewCache(cfg, statsSvc)
 	dataSvc := services.NewDataFacade(crawlerSvc, indexSvc, statsSvc, cacheSvc)
 	if experiments.InMemoryIndex {
-		utils.Logger.Info().Msg("in-memory index is enabled, ingesting data...")
-		dataSvc.Ingest()
+		log.Info().Msg("in-memory index is enabled, ingesting data...")
+		dataSvc.Ingest(utils.NewContext())
 	}
 	mailSvc := services.NewEmail(cfg)
 	modSvc := services.NewModeration(cfg, dataRepo, index, mailSvc)
 
 	e = echo.New()
-	e.Logger = lecho.From(*utils.Logger)
+	e.Logger = lecho.From(*log)
 	controllers.ConfigureRouter(e, cfg, matrixSvc, dataSvc, cacheSvc, searchSvc, crawlerSvc, statsSvc, modSvc)
 
 	initCron(cfg, dataSvc)
 	initShutdown(quit)
 
 	if err := e.Start(":" + cfg.Get().Port); err != nil && err != http.ErrServerClosed {
-		utils.Logger.Fatal().Err(err).Msg("http server failed")
+		log.Fatal().Err(err).Msg("http server failed")
 	}
 
 	<-quit
@@ -108,7 +116,7 @@ func generateKey() (string, error) {
 		return "", err
 	}
 	key := fmt.Sprintf("ed25519 %s %s", base64.RawURLEncoding.EncodeToString(pub[:4]), base64.RawStdEncoding.EncodeToString(priv.Seed()))
-	utils.Logger.Warn().Str("key", key).Msg("ATTENTION! A new key has been generated")
+	log.Warn().Str("key", key).Msg("ATTENTION! A new key has been generated")
 
 	return key, nil
 }
@@ -151,30 +159,31 @@ func initShutdown(quit chan struct{}) {
 }
 
 func initCron(cfg *services.Config, dataSvc *services.DataFacade) {
+	ctx := utils.NewContext()
 	cron = crontab.New()
 	if schedule := cfg.Get().Cron.Discovery; schedule != "" {
-		utils.Logger.Info().Str("job", "discovery").Msg("cron job enabled")
-		cron.MustAddJob(schedule, dataSvc.DiscoverServers, cfg.Get().Workers.Discovery)
+		log.Info().Str("job", "discovery").Msg("cron job enabled")
+		cron.MustAddJob(schedule, dataSvc.DiscoverServers, ctx, cfg.Get().Workers.Discovery)
 	}
 	if schedule := cfg.Get().Cron.Parsing; schedule != "" {
-		utils.Logger.Info().Str("job", "parsing").Msg("cron job enabled")
-		cron.MustAddJob(schedule, dataSvc.ParseRooms, cfg.Get().Workers.Parsing)
+		log.Info().Str("job", "parsing").Msg("cron job enabled")
+		cron.MustAddJob(schedule, dataSvc.ParseRooms, ctx, cfg.Get().Workers.Parsing)
 	}
 	if schedule := cfg.Get().Cron.Indexing; schedule != "" {
-		utils.Logger.Info().Str("job", "indexing").Msg("cron job enabled")
-		cron.MustAddJob(schedule, dataSvc.Ingest)
+		log.Info().Str("job", "indexing").Msg("cron job enabled")
+		cron.MustAddJob(schedule, dataSvc.Ingest, ctx)
 	}
 	if schedule := cfg.Get().Cron.Full; schedule != "" {
-		utils.Logger.Info().Str("job", "full").Msg("cron job enabled")
-		cron.MustAddJob(schedule, dataSvc.Full, cfg.Get().Workers.Discovery, cfg.Get().Workers.Parsing)
+		log.Info().Str("job", "full").Msg("cron job enabled")
+		cron.MustAddJob(schedule, dataSvc.Full, ctx, cfg.Get().Workers.Discovery, cfg.Get().Workers.Parsing)
 	}
 }
 
 func shutdown() {
-	utils.Logger.Info().Msg("shutting down...")
+	log.Info().Msg("shutting down...")
 	cron.Shutdown()
 	if err := index.Close(); err != nil {
-		utils.Logger.Error().Err(err).Msg("cannot close the index")
+		log.Error().Err(err).Msg("cannot close the index")
 	}
 	dataRepo.Close()
 	// api was not started yet
@@ -184,6 +193,6 @@ func shutdown() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := e.Shutdown(ctx); err != nil {
-		utils.Logger.Fatal().Err(err).Msg("http server shutdown failed")
+		log.Fatal().Err(err).Msg("http server shutdown failed") //nolint:gocritic // we are shutting down
 	}
 }

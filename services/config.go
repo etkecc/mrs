@@ -1,10 +1,12 @@
 package services
 
 import (
+	"context"
 	"os"
 	"sync"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/rs/zerolog"
 	"gitlab.com/etke.cc/go/fswatcher"
 	"gopkg.in/yaml.v3"
 
@@ -26,24 +28,19 @@ type ConfigService interface {
 
 // NewConfig creates new config service and loads the config
 func NewConfig(path string) (*Config, error) {
+	ctx := utils.NewContext()
 	c := &Config{
 		mu:   &sync.Mutex{},
 		path: path,
 	}
-	if err := c.Read(); err != nil {
-		return nil, err
-	}
+	c.Read(ctx)
 
 	var err error
 	c.fsw, err = fswatcher.New([]string{path}, 0)
 	if err != nil {
 		return nil, err
 	}
-	go c.fsw.Start(func(_ fsnotify.Event) {
-		if err := c.Read(); err != nil {
-			utils.Logger.Error().Err(err).Msg("cannot reload config")
-		}
-	})
+	go c.fsw.Start(func(_ fsnotify.Event) { c.Read(ctx) })
 
 	return c, nil
 }
@@ -54,23 +51,25 @@ func (c *Config) Get() *model.Config {
 }
 
 // Read config
-func (c *Config) Read() error {
+func (c *Config) Read(ctx context.Context) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	log := zerolog.Ctx(ctx)
 
-	utils.Logger.Info().Msg("reading config")
+	log.Info().Msg("reading config")
 	configb, err := os.ReadFile(c.path)
 	if err != nil {
-		return err
+		log.Error().Err(err).Msg("cannot read config")
+		return
 	}
 	var config *model.Config
 	err = yaml.Unmarshal(configb, &config)
 	if err != nil {
-		return err
+		log.Error().Err(err).Msg("cannot unmarshal config")
+		return
 	}
 
 	c.cfg = config
-	return nil
 }
 
 // Write config

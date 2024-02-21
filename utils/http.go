@@ -15,12 +15,12 @@ const DefaultTimeout = 120 * time.Second
 var HTTPClient = &http.Client{Timeout: DefaultTimeout}
 
 // Get performs HTTP GET request with timeout and User-Agent set
-func Get(uri string, optionalTimeout ...time.Duration) (*http.Response, error) {
+func Get(ctx context.Context, uri string, optionalTimeout ...time.Duration) (*http.Response, error) {
 	timeout := DefaultTimeout
 	if len(optionalTimeout) > 0 {
 		timeout = optionalTimeout[0]
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri, nil)
 	if err != nil {

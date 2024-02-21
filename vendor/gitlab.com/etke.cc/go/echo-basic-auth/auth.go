@@ -15,26 +15,36 @@ type Auth struct {
 	IPs      []string `json:"ips" yaml:"ips"`           // Allowed IPs
 }
 
+// ContextLoginKey is the key used to store the login after successful auth in the context
+const ContextLoginKey = "echo-basic-auth.login"
+
 // NewValidator returns a new BasicAuthValidator
-func NewValidator(auth *Auth) middleware.BasicAuthValidator {
-	if auth == nil {
+func NewValidator(auths ...*Auth) middleware.BasicAuthValidator {
+	if len(auths) == 0 || auths[0] == nil {
 		return nil
 	}
 	return func(login, password string, c echo.Context) (bool, error) {
-		allowedIP := true
-		if len(auth.IPs) != 0 {
-			allowedIP = slices.Contains(auth.IPs, c.RealIP())
+		for _, auth := range auths {
+			allowedIP := true
+			if len(auth.IPs) != 0 {
+				allowedIP = slices.Contains(auth.IPs, c.RealIP())
+			}
+			match := Equals(auth.Login, login) && Equals(auth.Password, password)
+			if match && allowedIP {
+				c.Set(ContextLoginKey, login)
+				c.Logger().Infof("authorization attempt from %s to %s (allowed_ip=%t allowed_credentials=%t)", c.RealIP(), c.Request().URL.Path, allowedIP, match)
+				return true, nil
+			}
 		}
-		match := Equals(auth.Login, login) && Equals(auth.Password, password)
-		c.Logger().Infof("authorization attempt from %s to %s (allowed_ip=%t allowed_credentials=%t)", c.RealIP(), c.Request().URL.Path, allowedIP, match)
+		c.Logger().Infof("authorization attempt from %s to %s (allowed_ip=%t allowed_credentials=%t)", c.RealIP(), c.Request().URL.Path, false, false)
 
-		return match && allowedIP, nil
+		return false, nil
 	}
 }
 
 // NewMiddleware returns a new BasicAuth middleware instance
-func NewMiddleware(auth *Auth) echo.MiddlewareFunc {
-	return middleware.BasicAuth(NewValidator(auth))
+func NewMiddleware(auths ...*Auth) echo.MiddlewareFunc {
+	return middleware.BasicAuth(NewValidator(auths...))
 }
 
 // Equals performs equality check in constant time

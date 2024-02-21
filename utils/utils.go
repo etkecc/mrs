@@ -165,10 +165,7 @@ func Template(tplString string, vars any) (string, error) {
 }
 
 func MayTemplate(tplString string, vars any) string {
-	result, err := Template(tplString, vars)
-	if err != nil {
-		Logger.Error().Err(err).Msg("templating failed")
-	}
+	result, _ := Template(tplString, vars) //nolint:errcheck // that's the point
 	if result == "" {
 		return tplString
 	}

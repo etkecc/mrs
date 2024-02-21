@@ -2,9 +2,12 @@ package data
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/goccy/go-json"
+	"github.com/rs/zerolog"
 	"go.etcd.io/bbolt"
 
 	"gitlab.com/etke.cc/mrs/api/model"
@@ -14,16 +17,19 @@ import (
 // AddRoomBatch info
 //
 //nolint:errcheck
-func (d *Data) AddRoomBatch(room *model.MatrixRoom) {
-	d.rb.Add(room)
+func (d *Data) AddRoomBatch(ctx context.Context, room *model.MatrixRoom) {
+	d.rb.Add(ctx, room)
 }
 
 // FlushRoomBatch to ensure nothing is left
-func (d *Data) FlushRoomBatch() {
-	d.rb.Flush()
+func (d *Data) FlushRoomBatch(ctx context.Context) {
+	d.rb.Flush(ctx)
 }
 
-func (d *Data) SetBiggestRooms(ids []string) error {
+func (d *Data) SetBiggestRooms(ctx context.Context, ids []string) error {
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.SetBiggestRooms"))
+	defer span.Finish()
+
 	return d.db.Update(func(tx *bbolt.Tx) error {
 		if err := tx.DeleteBucket(biggestRoomsBucket); err != nil {
 			return err
@@ -50,7 +56,11 @@ func (d *Data) SetBiggestRooms(ids []string) error {
 	})
 }
 
-func (d *Data) GetBiggestRooms(limit, offset int) []*model.MatrixRoom {
+func (d *Data) GetBiggestRooms(ctx context.Context, limit, offset int) []*model.MatrixRoom {
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.GetBiggestRooms"))
+	defer span.Finish()
+	log := zerolog.Ctx(ctx)
+
 	min := []byte(fmt.Sprintf("%06d", offset))
 	max := []byte(fmt.Sprintf("%06d", limit))
 	rooms := []*model.MatrixRoom{}
@@ -61,7 +71,7 @@ func (d *Data) GetBiggestRooms(limit, offset int) []*model.MatrixRoom {
 			var room *model.MatrixRoom
 			err := json.Unmarshal(v, &room)
 			if err != nil {
-				utils.Logger.Error().Err(err).Msg("cannot unmarshal a biggest room")
+				log.Error().Err(err).Msg("cannot unmarshal a biggest room")
 				return err
 			}
 			rooms = append(rooms, room)
@@ -72,7 +82,10 @@ func (d *Data) GetBiggestRooms(limit, offset int) []*model.MatrixRoom {
 }
 
 // GetRoom info
-func (d *Data) GetRoom(roomID string) (*model.MatrixRoom, error) {
+func (d *Data) GetRoom(ctx context.Context, roomID string) (*model.MatrixRoom, error) {
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.GetRoom"))
+	defer span.Finish()
+
 	var room *model.MatrixRoom
 	err := d.db.View(func(tx *bbolt.Tx) error {
 		v := tx.Bucket(roomsBucket).Get([]byte(roomID))
@@ -85,10 +98,13 @@ func (d *Data) GetRoom(roomID string) (*model.MatrixRoom, error) {
 }
 
 // RemoveRooms from db
-func (d *Data) RemoveRooms(keys []string) {
+func (d *Data) RemoveRooms(ctx context.Context, keys []string) {
 	if len(keys) == 0 {
 		return
 	}
+
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.RemoveRooms"))
+	defer span.Finish()
 
 	d.db.Update(func(tx *bbolt.Tx) error { //nolint:errcheck
 		bucket := tx.Bucket(roomsBucket)
@@ -102,7 +118,10 @@ func (d *Data) RemoveRooms(keys []string) {
 // EachRoom allows to work with each known room
 //
 //nolint:errcheck
-func (d *Data) EachRoom(handler func(roomID string, data *model.MatrixRoom) bool) {
+func (d *Data) EachRoom(ctx context.Context, handler func(roomID string, data *model.MatrixRoom) bool) {
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.EachRoom"))
+	defer span.Finish()
+
 	var room *model.MatrixRoom
 	d.db.View(func(tx *bbolt.Tx) error {
 		return tx.Bucket(roomsBucket).ForEach(func(k, v []byte) error {
@@ -125,7 +144,10 @@ func (d *Data) EachRoom(handler func(roomID string, data *model.MatrixRoom) bool
 }
 
 // GetBannedRooms returns full list of the banned rooms
-func (d *Data) GetBannedRooms(serverName ...string) ([]string, error) {
+func (d *Data) GetBannedRooms(ctx context.Context, serverName ...string) ([]string, error) {
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.GetBannedRooms"))
+	defer span.Finish()
+
 	var server string
 	if len(serverName) > 0 {
 		server = serverName[0]
@@ -146,14 +168,20 @@ func (d *Data) GetBannedRooms(serverName ...string) ([]string, error) {
 }
 
 // BanRoom
-func (d *Data) BanRoom(roomID string) error {
+func (d *Data) BanRoom(ctx context.Context, roomID string) error {
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.BanRoom"))
+	defer span.Finish()
+
 	return d.db.Batch(func(tx *bbolt.Tx) error {
 		return tx.Bucket(roomsBanlistBucket).Put([]byte(roomID), []byte(`true`))
 	})
 }
 
 // UnbanRoom
-func (d *Data) UnbanRoom(roomID string) error {
+func (d *Data) UnbanRoom(ctx context.Context, roomID string) error {
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.UnbanRoom"))
+	defer span.Finish()
+
 	return d.db.Batch(func(tx *bbolt.Tx) error {
 		if err := tx.Bucket(roomsBanlistBucket).Delete([]byte(roomID)); err != nil {
 			return err
@@ -163,7 +191,10 @@ func (d *Data) UnbanRoom(roomID string) error {
 }
 
 // GetReportedRooms returns full list of the banned rooms with reasons
-func (d *Data) GetReportedRooms(serverName ...string) (map[string]string, error) {
+func (d *Data) GetReportedRooms(ctx context.Context, serverName ...string) (map[string]string, error) {
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.GetReportedRooms"))
+	defer span.Finish()
+
 	var server string
 	if len(serverName) > 0 {
 		server = serverName[0]
@@ -184,7 +215,10 @@ func (d *Data) GetReportedRooms(serverName ...string) (map[string]string, error)
 }
 
 // IsReported returns true if room was already reported
-func (d *Data) IsReported(roomID string) bool {
+func (d *Data) IsReported(ctx context.Context, roomID string) bool {
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.IsReported"))
+	defer span.Finish()
+
 	var reported bool
 	d.db.View(func(tx *bbolt.Tx) error { //nolint:errcheck
 		v := tx.Bucket(roomsReportsBucket).Get([]byte(roomID))
@@ -196,14 +230,20 @@ func (d *Data) IsReported(roomID string) bool {
 }
 
 // ReportRoom
-func (d *Data) ReportRoom(roomID, reason string) error {
+func (d *Data) ReportRoom(ctx context.Context, roomID, reason string) error {
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.ReportRoom"))
+	defer span.Finish()
+
 	return d.db.Batch(func(tx *bbolt.Tx) error {
 		return tx.Bucket(roomsReportsBucket).Put([]byte(roomID), []byte(reason))
 	})
 }
 
 // UnreportRoom
-func (d *Data) UnreportRoom(roomID string) error {
+func (d *Data) UnreportRoom(ctx context.Context, roomID string) error {
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.UnreportRoom"))
+	defer span.Finish()
+
 	return d.db.Batch(func(tx *bbolt.Tx) error {
 		return tx.Bucket(roomsReportsBucket).Delete([]byte(roomID))
 	})

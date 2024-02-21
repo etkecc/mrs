@@ -1,6 +1,7 @@
 package search
 
 import (
+	"context"
 	"os"
 
 	"github.com/blevesearch/bleve/v2"
@@ -11,6 +12,7 @@ import (
 	"github.com/blevesearch/bleve/v2/analysis/tokenizer/unicode"
 	"github.com/blevesearch/bleve/v2/mapping"
 	"github.com/pemistahl/lingua-go"
+	"github.com/rs/zerolog"
 
 	"gitlab.com/etke.cc/mrs/api/repository/search/multilang"
 	"gitlab.com/etke.cc/mrs/api/utils"
@@ -53,23 +55,24 @@ var (
 	}
 )
 
-func getIndexMapping() mapping.IndexMapping {
+func getIndexMapping(ctx context.Context) mapping.IndexMapping {
+	log := zerolog.Ctx(ctx)
 	m := bleve.NewIndexMapping()
 	m.TypeField = "type"
 	m.DefaultType = "room"
 	err := m.AddCustomCharFilter("matrix_chars", charfilter)
 	if err != nil {
-		utils.Logger.Error().Err(err).Msg("cannot create custom char filter")
+		log.Error().Err(err).Msg("cannot create custom char filter")
 	}
 
 	err = m.AddCustomAnalyzer("matrix_id", analyzerID)
 	if err != nil {
-		utils.Logger.Error().Err(err).Msg("cannot create matrix_id analyzer")
+		log.Error().Err(err).Msg("cannot create matrix_id analyzer")
 	}
 
 	err = m.AddCustomAnalyzer("matrix_alias", analyzerAlias)
 	if err != nil {
-		utils.Logger.Error().Err(err).Msg("cannot create matrix_alias analyzer")
+		log.Error().Err(err).Msg("cannot create matrix_alias analyzer")
 	}
 
 	textFM := bleve.NewTextFieldMapping()
@@ -117,22 +120,22 @@ func NewIndex(path string, detector lingua.LanguageDetector, defaultLang string,
 		path:     path,
 		inmemory: inMemory,
 	}
-	err := i.load()
+	err := i.load(utils.NewContext())
 
 	return i, err
 }
 
 // load index from path
-func (i *Index) load() error {
+func (i *Index) load(ctx context.Context) error {
 	var index bleve.Index
 	var err error
 	if i.inmemory {
-		index, err = bleve.NewMemOnly(getIndexMapping())
+		index, err = bleve.NewMemOnly(getIndexMapping(ctx))
 		if err != nil {
 			return err
 		}
 	} else {
-		index, err = i.loadFS()
+		index, err = i.loadFS(ctx)
 		if err != nil {
 			return err
 		}
@@ -141,10 +144,10 @@ func (i *Index) load() error {
 	return nil
 }
 
-func (i *Index) loadFS() (bleve.Index, error) {
+func (i *Index) loadFS(ctx context.Context) (bleve.Index, error) {
 	index, err := bleve.Open(i.path)
 	if err != nil {
-		index, err = bleve.New(i.path, getIndexMapping())
+		index, err = bleve.New(i.path, getIndexMapping(ctx))
 		if err != nil {
 			return nil, err
 		}
@@ -153,23 +156,24 @@ func (i *Index) loadFS() (bleve.Index, error) {
 }
 
 // Swap index
-func (i *Index) Swap() error {
+func (i *Index) Swap(ctx context.Context) error {
 	if err := i.index.Close(); err != nil {
 		return err
 	}
 
 	if i.inmemory {
-		return i.load()
+		return i.load(ctx)
 	}
 
+	log := zerolog.Ctx(ctx)
 	if err := os.RemoveAll(i.path + backupSuffix); err != nil {
-		utils.Logger.Warn().Err(err).Msg("cannot remove index backup")
+		log.Warn().Err(err).Msg("cannot remove index backup")
 	}
 
 	if err := os.Rename(i.path, i.path+backupSuffix); err != nil {
-		utils.Logger.Error().Err(err).Msg("cannot move index")
+		log.Error().Err(err).Msg("cannot move index")
 	}
-	return i.load()
+	return i.load(ctx)
 }
 
 // Len returns size of the index (number of docs)

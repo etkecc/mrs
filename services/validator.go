@@ -1,11 +1,13 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 
+	"github.com/rs/zerolog"
+
 	"gitlab.com/etke.cc/mrs/api/model"
-	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
 // based on W3C email regex, ref: https://www.w3.org/TR/2016/REC-html51-20161101/sec-forms.html#email-state-typeemail
@@ -50,20 +52,20 @@ func (v *Validator) Domain(server string) bool {
 }
 
 // IsOnline checks if matrix server is online and federatable
-func (v *Validator) IsOnline(server string) (string, bool) {
+func (v *Validator) IsOnline(ctx context.Context, server string) (string, bool) {
 	// check if domain is valid
 	if !v.Domain(server) {
 		return "", false
 	}
 
 	// check if online
-	name, err := v.matrix.QueryServerName(server)
+	name, err := v.matrix.QueryServerName(ctx, server)
 	if name == "" || err != nil {
 		return "", false
 	}
 
 	// check if federatable
-	if _, _, err := v.matrix.QueryVersion(server); err != nil {
+	if _, _, err := v.matrix.QueryVersion(ctx, server); err != nil {
 		return name, false
 	}
 
@@ -71,8 +73,8 @@ func (v *Validator) IsOnline(server string) (string, bool) {
 }
 
 // IsIndexable check if server is indexable
-func (v *Validator) IsIndexable(server string) bool {
-	log := utils.Logger.With().Str("server", server).Logger()
+func (v *Validator) IsIndexable(ctx context.Context, server string) bool {
+	log := zerolog.Ctx(ctx).With().Str("server", server).Logger()
 	if !v.Domain(server) {
 		log.Info().Str("reason", "domain").Msg("not indexable")
 		return false
@@ -81,11 +83,11 @@ func (v *Validator) IsIndexable(server string) bool {
 		log.Info().Str("reason", "blocklist").Msg("not indexable")
 		return false
 	}
-	if !v.robots.Allowed(server, RobotsTxtPublicRooms) {
+	if !v.robots.Allowed(ctx, server, RobotsTxtPublicRooms) {
 		log.Info().Str("reason", "robots.txt").Msg("not indexable")
 		return false
 	}
-	if _, err := v.matrix.QueryPublicRooms(server, "1", ""); err != nil {
+	if _, err := v.matrix.QueryPublicRooms(ctx, server, "1", ""); err != nil {
 		log.Info().Err(err).Str("reason", "publicRooms").Msg("not indexable")
 		return false
 	}
@@ -94,7 +96,7 @@ func (v *Validator) IsIndexable(server string) bool {
 }
 
 // IsRoomAllowed checks if room is allowed
-func (v *Validator) IsRoomAllowed(server string, room *model.MatrixRoom) bool {
+func (v *Validator) IsRoomAllowed(ctx context.Context, server string, room *model.MatrixRoom) bool {
 	if room.ID == "" {
 		return false
 	}
@@ -111,5 +113,5 @@ func (v *Validator) IsRoomAllowed(server string, room *model.MatrixRoom) bool {
 		return false
 	}
 
-	return v.robots.Allowed(server, fmt.Sprintf(RobotsTxtPublicRoom, room.ID))
+	return v.robots.Allowed(ctx, server, fmt.Sprintf(RobotsTxtPublicRoom, room.ID))
 }

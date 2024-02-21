@@ -1,19 +1,26 @@
 package data
 
 import (
+	"context"
+
+	"github.com/getsentry/sentry-go"
 	"github.com/goccy/go-json"
+	"github.com/rs/zerolog"
 	"go.etcd.io/bbolt"
 
 	"gitlab.com/etke.cc/mrs/api/model"
-	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
 // AddServer info
-func (d *Data) AddServer(server *model.MatrixServer) error {
+func (d *Data) AddServer(ctx context.Context, server *model.MatrixServer) error {
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.AddServer"))
+	defer span.Finish()
+	log := zerolog.Ctx(ctx)
+
 	return d.db.Batch(func(tx *bbolt.Tx) error {
 		serverb, merr := json.Marshal(server)
 		if merr != nil {
-			utils.Logger.Error().Err(merr).Str("server", server.Name).Msg("cannot marshal server")
+			log.Error().Err(merr).Str("server", server.Name).Msg("cannot marshal server")
 			return merr
 		}
 		return tx.Bucket(serversInfoBucket).Put([]byte(server.Name), serverb)
@@ -21,18 +28,22 @@ func (d *Data) AddServer(server *model.MatrixServer) error {
 }
 
 // BatchServers adds a batch of servers at once
-func (d *Data) BatchServers(servers []string) error {
+func (d *Data) BatchServers(ctx context.Context, servers []string) error {
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.BatchServers"))
+	defer span.Finish()
+	log := zerolog.Ctx(ctx)
+
 	return d.db.Batch(func(tx *bbolt.Tx) error {
 		bucket := tx.Bucket(serversInfoBucket)
 		for _, server := range servers {
 			if v := bucket.Get([]byte(server)); v == nil {
 				v, merr := json.Marshal(&model.MatrixServer{Name: server})
 				if merr != nil {
-					utils.Logger.Error().Err(merr).Msg("cannot marshal server")
+					log.Error().Err(merr).Msg("cannot marshal server")
 					continue
 				}
 				if err := bucket.Put([]byte(server), v); err != nil {
-					utils.Logger.Error().Err(err).Msg("cannot store server")
+					log.Error().Err(err).Msg("cannot store server")
 				}
 			}
 		}
@@ -41,7 +52,10 @@ func (d *Data) BatchServers(servers []string) error {
 }
 
 // HasServer checks if server is already exists
-func (d *Data) HasServer(name string) bool {
+func (d *Data) HasServer(ctx context.Context, name string) bool {
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.HasServer"))
+	defer span.Finish()
+
 	var has bool
 	d.db.View(func(tx *bbolt.Tx) error { //nolint:errcheck // that's ok
 		v := tx.Bucket(serversInfoBucket).Get([]byte(name))
@@ -52,7 +66,10 @@ func (d *Data) HasServer(name string) bool {
 }
 
 // GetServerInfo
-func (d *Data) GetServerInfo(name string) (*model.MatrixServer, error) {
+func (d *Data) GetServerInfo(ctx context.Context, name string) (*model.MatrixServer, error) {
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.GetServerInfo"))
+	defer span.Finish()
+
 	var server *model.MatrixServer
 	err := d.db.View(func(tx *bbolt.Tx) error {
 		v := tx.Bucket(serversInfoBucket).Get([]byte(name))
@@ -70,7 +87,10 @@ func (d *Data) GetServerInfo(name string) (*model.MatrixServer, error) {
 }
 
 // RemoveServer info
-func (d *Data) RemoveServer(name string) error {
+func (d *Data) RemoveServer(ctx context.Context, name string) error {
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.RemoveServer"))
+	defer span.Finish()
+
 	nameb := []byte(name)
 	return d.db.Batch(func(tx *bbolt.Tx) error {
 		err := tx.Bucket(serversBucket).Delete(nameb)
@@ -82,10 +102,13 @@ func (d *Data) RemoveServer(name string) error {
 }
 
 // RemoveServers from db
-func (d *Data) RemoveServers(keys []string) {
+func (d *Data) RemoveServers(ctx context.Context, keys []string) {
 	if len(keys) == 0 {
 		return
 	}
+
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.RemoveServers"))
+	defer span.Finish()
 
 	d.db.Update(func(tx *bbolt.Tx) error { //nolint:errcheck
 		sbucket := tx.Bucket(serversBucket)
@@ -98,12 +121,13 @@ func (d *Data) RemoveServers(keys []string) {
 	})
 }
 
-func (d *Data) markServerOffline(bucket *bbolt.Bucket, name string) {
+func (d *Data) markServerOffline(ctx context.Context, bucket *bbolt.Bucket, name string) {
+	log := zerolog.Ctx(ctx)
 	var server *model.MatrixServer
 	key := []byte(name)
 	if v := bucket.Get(key); v != nil {
 		if merr := json.Unmarshal(v, &server); merr != nil {
-			utils.Logger.Error().Err(merr).Msg("cannot unmarshal server")
+			log.Error().Err(merr).Msg("cannot unmarshal server")
 		}
 	}
 	if server == nil {
@@ -115,31 +139,38 @@ func (d *Data) markServerOffline(bucket *bbolt.Bucket, name string) {
 
 	datab, merr := json.Marshal(server)
 	if merr != nil {
-		utils.Logger.Error().Err(merr).Msg("cannot marshal server")
+		log.Error().Err(merr).Msg("cannot marshal server")
 		return
 	}
 
 	if err := bucket.Put(key, datab); err != nil {
-		utils.Logger.Error().Err(err).Msg("cannot store server")
+		log.Error().Err(err).Msg("cannot store server")
 	}
 }
 
 // MarkServersOffline from db
-func (d *Data) MarkServersOffline(keys []string) {
+func (d *Data) MarkServersOffline(ctx context.Context, keys []string) {
 	if len(keys) == 0 {
 		return
 	}
 
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.MarkServersOffline"))
+	defer span.Finish()
+
 	d.db.Batch(func(tx *bbolt.Tx) error { //nolint:errcheck
 		bucket := tx.Bucket(serversInfoBucket)
 		for _, k := range keys {
-			d.markServerOffline(bucket, k)
+			d.markServerOffline(ctx, bucket, k)
 		}
 		return nil
 	})
 }
 
-func (d *Data) FilterServers(filter func(server *model.MatrixServer) bool) map[string]*model.MatrixServer {
+func (d *Data) FilterServers(ctx context.Context, filter func(server *model.MatrixServer) bool) map[string]*model.MatrixServer {
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.FilterServers"))
+	defer span.Finish()
+	log := zerolog.Ctx(ctx)
+
 	servers := make(map[string]*model.MatrixServer)
 	err := d.db.View(func(tx *bbolt.Tx) error {
 		return tx.Bucket(serversInfoBucket).ForEach(func(k, v []byte) error {
@@ -148,7 +179,7 @@ func (d *Data) FilterServers(filter func(server *model.MatrixServer) bool) map[s
 			}
 			var server *model.MatrixServer
 			if err := json.Unmarshal(v, &server); err != nil {
-				utils.Logger.Error().Err(err).Str("server", string(k)).Msg("cannot unmarshal server")
+				log.Error().Err(err).Str("server", string(k)).Msg("cannot unmarshal server")
 			}
 			if filter(server) {
 				servers[string(k)] = server
@@ -158,7 +189,7 @@ func (d *Data) FilterServers(filter func(server *model.MatrixServer) bool) map[s
 		})
 	})
 	if err != nil {
-		utils.Logger.Error().Err(err).Msg("cannot filter servers")
+		log.Error().Err(err).Msg("cannot filter servers")
 	}
 
 	return servers

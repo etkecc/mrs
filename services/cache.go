@@ -2,12 +2,14 @@ package services
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"net/http"
 	"strconv"
 
 	"github.com/goccy/go-json"
 	"github.com/labstack/echo/v4"
+	"github.com/rs/zerolog"
 
 	"gitlab.com/etke.cc/mrs/api/model"
 	"gitlab.com/etke.cc/mrs/api/utils"
@@ -44,42 +46,44 @@ func NewCache(cfg ConfigService, stats cacheStats) *Cache {
 		bunnyIPs: make(map[string]struct{}),
 		stats:    stats,
 	}
-	cache.initBunnyIPs()
+	cache.initBunnyIPs(utils.NewContext())
 	return cache
 }
 
-func (cache *Cache) pullBunnyIPs(uri string) []string {
-	resp, err := utils.Get(uri)
+func (cache *Cache) pullBunnyIPs(ctx context.Context, uri string) []string {
+	log := zerolog.Ctx(ctx)
+	resp, err := utils.Get(ctx, uri)
 	if err != nil {
-		utils.Logger.Error().Err(err).Msg("cannot get bunny ips")
+		log.Error().Err(err).Msg("cannot get bunny ips")
 		return nil
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		utils.Logger.Error().Int("status_code", resp.StatusCode).Msg("cannot get bunny ips")
+		log.Error().Int("status_code", resp.StatusCode).Msg("cannot get bunny ips")
 		return nil
 	}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		utils.Logger.Error().Err(err).Msg("cannot read bunny ips")
+		log.Error().Err(err).Msg("cannot read bunny ips")
 		return nil
 	}
 	var ips []string
 	if err := json.Unmarshal(body, &ips); err != nil {
-		utils.Logger.Error().Err(err).Msg("cannot unmarshal bunny ips")
+		log.Error().Err(err).Msg("cannot unmarshal bunny ips")
 		return nil
 	}
 	return ips
 }
 
-func (cache *Cache) initBunnyIPs() {
+func (cache *Cache) initBunnyIPs(ctx context.Context) {
 	if cache.cfg.Get().Cache.Bunny.Key == "" {
 		return
 	}
-	for _, ip := range append(cache.pullBunnyIPs(bunnyIPv4List), cache.pullBunnyIPs(bunnyIPv6List)...) {
+	log := zerolog.Ctx(ctx)
+	for _, ip := range append(cache.pullBunnyIPs(ctx, bunnyIPv4List), cache.pullBunnyIPs(ctx, bunnyIPv6List)...) {
 		cache.bunnyIPs[ip] = struct{}{}
 	}
-	utils.Logger.Info().Int("count", len(cache.bunnyIPs)).Msg("bunny ips loaded")
+	log.Info().Int("count", len(cache.bunnyIPs)).Msg("bunny ips loaded")
 }
 
 // IsBunny returns true if the IP is a BunnyCDN IP
@@ -178,20 +182,21 @@ func (cache *Cache) MiddlewareImmutable() echo.MiddlewareFunc {
 }
 
 // Purge cache. At this moment works with BunnyCDN only
-func (cache *Cache) Purge() {
-	cache.purgeBunnyCDN()
+func (cache *Cache) Purge(ctx context.Context) {
+	cache.purgeBunnyCDN(ctx)
 }
 
 // purgeBunnyCDN cache
 // ref: https://docs.bunny.net/reference/pullzonepublic_purgecachepostbytag
-func (cache *Cache) purgeBunnyCDN() {
+func (cache *Cache) purgeBunnyCDN(ctx context.Context) {
 	bunny := cache.cfg.Get().Cache.Bunny
 	if bunny.Key == "" || bunny.URL == "" {
 		return
 	}
+	log := zerolog.Ctx(ctx)
 	req, err := http.NewRequest("POST", bunny.URL, bytes.NewBuffer([]byte(`{"CacheTag":"mutable"}}`)))
 	if err != nil {
-		utils.Logger.Error().Err(err).Msg("cannot purge bunny cache")
+		log.Error().Err(err).Msg("cannot purge bunny cache")
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
@@ -199,11 +204,11 @@ func (cache *Cache) purgeBunnyCDN() {
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		utils.Logger.Error().Err(err).Msg("cannot purge bunny cache")
+		log.Error().Err(err).Msg("cannot purge bunny cache")
 		return
 	}
 	resp.Body.Close() // no need
 	if resp.StatusCode != http.StatusNoContent {
-		utils.Logger.Error().Err(err).Int("status_code", resp.StatusCode).Msg("cannot purge bunny cache")
+		log.Error().Err(err).Int("status_code", resp.StatusCode).Msg("cannot purge bunny cache")
 	}
 }

@@ -14,7 +14,7 @@ func avatar(svc matrixService) echo.HandlerFunc {
 			return c.NoContent(http.StatusNoContent)
 		}
 
-		avatar, contentType := svc.GetClientMediaThumbnail(name, id, c.QueryParams())
+		avatar, contentType := svc.GetClientMediaThumbnail(c.Request().Context(), name, id, c.QueryParams())
 		if contentType == "" {
 			return c.NoContent(http.StatusNoContent)
 		}

@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/raja/argon2pw"
+	"github.com/rs/zerolog"
 	echobasicauth "gitlab.com/etke.cc/go/echo-basic-auth"
 
 	"gitlab.com/etke.cc/mrs/api/metrics"
@@ -22,7 +24,7 @@ type configService interface {
 
 type statsService interface {
 	Get() *model.IndexStats
-	GetTL() map[time.Time]*model.IndexStats
+	GetTL(context.Context) map[time.Time]*model.IndexStats
 }
 
 type cacheService interface {
@@ -81,7 +83,8 @@ func ConfigureRouter(
 
 func configureRouter(e *echo.Echo, cacheSvc cacheService) {
 	e.Use(middleware.Recover())
-	e.Use(sentryecho.New(sentryecho.Options{Repanic: true}))
+	e.Use(sentryecho.New(sentryecho.Options{}))
+	e.Use(SentryTransaction())
 	e.Use(cacheSvc.Middleware())
 	e.Use(middleware.Secure())
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -127,7 +130,7 @@ func hashAuth(c echo.Context, authPassword string) *bool {
 
 	var ok bool
 	defer func() {
-		utils.Logger.
+		zerolog.Ctx(c.Request().Context()).
 			Info().
 			Any("error", recover()).
 			Str("section", "hash").

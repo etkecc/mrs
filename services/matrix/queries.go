@@ -7,7 +7,9 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/goccy/go-json"
+	"github.com/rs/zerolog"
 
 	"gitlab.com/etke.cc/mrs/api/model"
 	"gitlab.com/etke.cc/mrs/api/utils"
@@ -15,29 +17,37 @@ import (
 )
 
 // QueryServerName finds server name on the /_matrix/key/v2/server page
-func (s *Server) QueryServerName(serverName string) (string, error) {
+func (s *Server) QueryServerName(ctx context.Context, serverName string) (string, error) {
+	span := sentry.StartSpan(ctx, "function", sentry.WithDescription("matrix.QueryServerName"))
+	defer span.Finish()
+	log := zerolog.Ctx(span.Context())
+
 	cached, ok := s.namesCache.Get(serverName)
 	if ok {
 		return cached, nil
 	}
 	discovered := ""
-	resp, err := s.lookupKeys(serverName, false)
+	resp, err := s.lookupKeys(span.Context(), serverName, false)
 	if err == nil && resp != nil {
 		discovered = resp.ServerName
 		s.namesCache.Add(serverName, discovered)
 	} else {
-		utils.Logger.Warn().Err(err).Str("server", serverName).Msg("cannot query server name")
+		log.Warn().Err(err).Str("server", serverName).Msg("cannot query server name")
 	}
 
 	return discovered, err
 }
 
 // QueryDirectory is /_matrix/federation/v1/query/directory?room_alias={roomAlias}
-func (s *Server) QueryDirectory(req *http.Request, alias string) (int, []byte) {
-	origin, err := s.ValidateAuth(req)
+func (s *Server) QueryDirectory(ctx context.Context, req *http.Request, alias string) (int, []byte) {
+	span := sentry.StartSpan(ctx, "function", sentry.WithDescription("matrix.QueryDirectory"))
+	defer span.Finish()
+	log := zerolog.Ctx(span.Context())
+
+	origin, err := s.ValidateAuth(span.Context(), req)
 	if err != nil {
-		utils.Logger.Warn().Err(err).Msg("matrix auth failed")
-		return http.StatusUnauthorized, s.getErrorResp("M_UNAUTHORIZED", "authorization failed")
+		log.Warn().Err(err).Msg("matrix auth failed")
+		return http.StatusUnauthorized, s.getErrorResp(span.Context(), "M_UNAUTHORIZED", "authorization failed")
 	}
 
 	var unescapedAlias string
@@ -46,13 +56,13 @@ func (s *Server) QueryDirectory(req *http.Request, alias string) (int, []byte) {
 	if unescapeErr == nil {
 		alias = unescapedAlias
 	}
-	utils.Logger.Info().Str("alias", alias).Str("origin", origin).Msg("querying directory")
+	log.Info().Str("alias", alias).Str("origin", origin).Msg("querying directory")
 	if alias == "" {
-		return http.StatusNotFound, s.getErrorResp("M_NOT_FOUND", "room not found")
+		return http.StatusNotFound, s.getErrorResp(span.Context(), "M_NOT_FOUND", "room not found")
 	}
 
 	var room *model.MatrixRoom
-	s.data.EachRoom(func(_ string, data *model.MatrixRoom) bool {
+	s.data.EachRoom(span.Context(), func(_ string, data *model.MatrixRoom) bool {
 		if data.Alias == alias {
 			room = data
 			return true
@@ -60,7 +70,7 @@ func (s *Server) QueryDirectory(req *http.Request, alias string) (int, []byte) {
 		return false
 	})
 	if room == nil {
-		return http.StatusNotFound, s.getErrorResp("M_NOT_FOUND", "room not found")
+		return http.StatusNotFound, s.getErrorResp(span.Context(), "M_NOT_FOUND", "room not found")
 	}
 
 	resp := &queryDirectoryResp{
@@ -69,7 +79,7 @@ func (s *Server) QueryDirectory(req *http.Request, alias string) (int, []byte) {
 	}
 	respb, err := utils.JSON(resp)
 	if err != nil {
-		utils.Logger.Error().Err(err).Msg("cannot marshal query directory resp")
+		log.Error().Err(err).Msg("cannot marshal query directory resp")
 		return http.StatusInternalServerError, nil
 	}
 
@@ -77,8 +87,11 @@ func (s *Server) QueryDirectory(req *http.Request, alias string) (int, []byte) {
 }
 
 // QueryVersion from /_matrix/federation/v1/version
-func (s *Server) QueryVersion(serverName string) (server, version string, err error) {
-	resp, err := utils.Get(s.getURL(serverName, false) + "/_matrix/federation/v1/version")
+func (s *Server) QueryVersion(ctx context.Context, serverName string) (server, version string, err error) {
+	span := sentry.StartSpan(ctx, "function", sentry.WithDescription("matrix.QueryVersion"))
+	defer span.Finish()
+
+	resp, err := utils.Get(span.Context(), s.getURL(span.Context(), serverName, false)+"/_matrix/federation/v1/version")
 	if err != nil {
 		return "", "", err
 	}
@@ -106,8 +119,11 @@ func (s *Server) QueryVersion(serverName string) (server, version string, err er
 }
 
 // QueryPublicRooms over federation
-func (s *Server) QueryPublicRooms(serverName, limit, since string) (*model.RoomDirectoryResponse, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), utils.DefaultTimeout)
+func (s *Server) QueryPublicRooms(ctx context.Context, serverName, limit, since string) (*model.RoomDirectoryResponse, error) {
+	span := sentry.StartSpan(ctx, "function", sentry.WithDescription("matrix.QueryPublicRooms"))
+	defer span.Finish()
+
+	ctx, cancel := context.WithTimeout(span.Context(), utils.DefaultTimeout)
 	defer cancel()
 	req, err := s.buildPublicRoomsReq(ctx, serverName, limit, since)
 	if err != nil {
@@ -142,14 +158,17 @@ func (s *Server) QueryPublicRooms(serverName, limit, since string) (*model.RoomD
 }
 
 // QueryCSURL returns URL of Matrix CS API server
-func (s *Server) QueryCSURL(serverName string) string {
+func (s *Server) QueryCSURL(ctx context.Context, serverName string) string {
 	cached, ok := s.curlsCache.Get(serverName)
 	if ok {
 		return cached
 	}
 
+	span := sentry.StartSpan(ctx, "function", sentry.WithDescription("matrix.QueryCSURL"))
+	defer span.Finish()
+
 	csurl := "https://" + serverName
-	fromWellKnown, err := s.parseClientWellKnown(serverName)
+	fromWellKnown, err := s.parseClientWellKnown(ctx, serverName)
 	if err == nil {
 		csurl = fromWellKnown
 	}
@@ -159,7 +178,7 @@ func (s *Server) QueryCSURL(serverName string) string {
 }
 
 func (s *Server) buildPublicRoomsReq(ctx context.Context, serverName, limit, since string) (*http.Request, error) {
-	apiURLStr := s.getURL(serverName, false)
+	apiURLStr := s.getURL(ctx, serverName, false)
 	apiURL, err := url.Parse(apiURLStr)
 	if err != nil {
 		return nil, err

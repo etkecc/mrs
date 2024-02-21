@@ -2,17 +2,22 @@ package data
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"strconv"
 	"time"
 
+	"github.com/getsentry/sentry-go"
 	"go.etcd.io/bbolt"
 
 	"gitlab.com/etke.cc/mrs/api/model"
 )
 
 // SetIndexStatsTL sets index stats for the given time
-func (d *Data) SetIndexStatsTL(calculatedAt time.Time, stats *model.IndexStats) error {
+func (d *Data) SetIndexStatsTL(ctx context.Context, calculatedAt time.Time, stats *model.IndexStats) error {
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.SetIndexStatsTL"))
+	defer span.Finish()
+
 	id := []byte(calculatedAt.UTC().Format(time.RFC3339))
 	statsb, err := json.Marshal(stats)
 	if err != nil {
@@ -24,7 +29,10 @@ func (d *Data) SetIndexStatsTL(calculatedAt time.Time, stats *model.IndexStats) 
 	})
 }
 
-func (d *Data) getIndexStatsFullTL() (map[time.Time]*model.IndexStats, error) {
+func (d *Data) getIndexStatsFullTL(ctx context.Context) (map[time.Time]*model.IndexStats, error) {
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.getIndexStatsFullTL"))
+	defer span.Finish()
+
 	statsTL := make(map[time.Time]*model.IndexStats)
 	err := d.db.View(func(tx *bbolt.Tx) error {
 		return tx.Bucket(indexTLBucket).ForEach(func(k, v []byte) error {
@@ -47,9 +55,11 @@ func (d *Data) getIndexStatsFullTL() (map[time.Time]*model.IndexStats, error) {
 }
 
 // GetIndexStatsTL returns index stats for the given time prefix in RFC3339 format
-func (d *Data) GetIndexStatsTL(prefix string) (map[time.Time]*model.IndexStats, error) {
+func (d *Data) GetIndexStatsTL(ctx context.Context, prefix string) (map[time.Time]*model.IndexStats, error) {
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.getIndexStatsTL"))
+	defer span.Finish()
 	if prefix == "" {
-		return d.getIndexStatsFullTL()
+		return d.getIndexStatsFullTL(span.Context())
 	}
 	statsTL := make(map[time.Time]*model.IndexStats)
 	seek := []byte(prefix)
@@ -78,7 +88,10 @@ func (d *Data) GetIndexStatsTL(prefix string) (map[time.Time]*model.IndexStats, 
 // GetIndexStats returns index stats
 //
 //nolint:errcheck
-func (d *Data) GetIndexStats() *model.IndexStats {
+func (d *Data) GetIndexStats(ctx context.Context) *model.IndexStats {
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.GetIndexStats"))
+	defer span.Finish()
+
 	stats := &model.IndexStats{
 		Servers:   model.IndexStatsServers{},
 		Rooms:     model.IndexStatsRooms{},
@@ -126,7 +139,10 @@ func (d *Data) GetIndexStats() *model.IndexStats {
 }
 
 // SetIndexOnlineServers sets count of discovered online servers
-func (d *Data) SetIndexOnlineServers(servers int) error {
+func (d *Data) SetIndexOnlineServers(ctx context.Context, servers int) error {
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.SetIndexOnlineServers"))
+	defer span.Finish()
+
 	return d.db.Update(func(tx *bbolt.Tx) error {
 		value := []byte(strconv.Itoa(servers))
 		return tx.Bucket(indexBucket).Put([]byte("servers_online"), value)
@@ -134,7 +150,10 @@ func (d *Data) SetIndexOnlineServers(servers int) error {
 }
 
 // SetIndexIndexableServers sets count of discovered indexable servers
-func (d *Data) SetIndexIndexableServers(servers int) error {
+func (d *Data) SetIndexIndexableServers(ctx context.Context, servers int) error {
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.SetIndexIndexableServers"))
+	defer span.Finish()
+
 	return d.db.Update(func(tx *bbolt.Tx) error {
 		value := []byte(strconv.Itoa(servers))
 		return tx.Bucket(indexBucket).Put([]byte("servers_indexable"), value)
@@ -142,7 +161,10 @@ func (d *Data) SetIndexIndexableServers(servers int) error {
 }
 
 // SetIndexBlockedServers sets count of discovered online servers
-func (d *Data) SetIndexBlockedServers(servers int) error {
+func (d *Data) SetIndexBlockedServers(ctx context.Context, servers int) error {
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.SetIndexBlockedServers"))
+	defer span.Finish()
+
 	return d.db.Update(func(tx *bbolt.Tx) error {
 		value := []byte(strconv.Itoa(servers))
 		return tx.Bucket(indexBucket).Put([]byte("servers_blocked"), value)
@@ -150,7 +172,10 @@ func (d *Data) SetIndexBlockedServers(servers int) error {
 }
 
 // SetIndexIndexedRooms sets count of indexed rooms
-func (d *Data) SetIndexIndexedRooms(rooms int) error {
+func (d *Data) SetIndexIndexedRooms(ctx context.Context, rooms int) error {
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.SetIndexIndexedRooms"))
+	defer span.Finish()
+
 	return d.db.Update(func(tx *bbolt.Tx) error {
 		value := []byte(strconv.Itoa(rooms))
 		return tx.Bucket(indexBucket).Put([]byte("rooms"), value)
@@ -158,7 +183,10 @@ func (d *Data) SetIndexIndexedRooms(rooms int) error {
 }
 
 // SetIndexParsedRooms sets count of parsed rooms
-func (d *Data) SetIndexParsedRooms(rooms int) error {
+func (d *Data) SetIndexParsedRooms(ctx context.Context, rooms int) error {
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.SetIndexParsedRooms"))
+	defer span.Finish()
+
 	return d.db.Update(func(tx *bbolt.Tx) error {
 		value := []byte(strconv.Itoa(rooms))
 		return tx.Bucket(indexBucket).Put([]byte("rooms_parsed"), value)
@@ -166,7 +194,10 @@ func (d *Data) SetIndexParsedRooms(rooms int) error {
 }
 
 // SetIndexBannedRooms sets count of banned rooms
-func (d *Data) SetIndexBannedRooms(rooms int) error {
+func (d *Data) SetIndexBannedRooms(ctx context.Context, rooms int) error {
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.SetIndexBannedRooms"))
+	defer span.Finish()
+
 	return d.db.Update(func(tx *bbolt.Tx) error {
 		value := []byte(strconv.Itoa(rooms))
 		return tx.Bucket(indexBucket).Put([]byte("rooms_banned"), value)
@@ -174,7 +205,10 @@ func (d *Data) SetIndexBannedRooms(rooms int) error {
 }
 
 // SetIndexReportedRooms sets count of banned rooms
-func (d *Data) SetIndexReportedRooms(rooms int) error {
+func (d *Data) SetIndexReportedRooms(ctx context.Context, rooms int) error {
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.SetIndexReportedRooms"))
+	defer span.Finish()
+
 	return d.db.Update(func(tx *bbolt.Tx) error {
 		value := []byte(strconv.Itoa(rooms))
 		return tx.Bucket(indexBucket).Put([]byte("rooms_reported"), value)
@@ -182,7 +216,10 @@ func (d *Data) SetIndexReportedRooms(rooms int) error {
 }
 
 // SetStartedAt sets start time of the new process
-func (d *Data) SetStartedAt(process string, startedAt time.Time) error {
+func (d *Data) SetStartedAt(ctx context.Context, process string, startedAt time.Time) error {
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.SetStartedAt"))
+	defer span.Finish()
+
 	return d.db.Update(func(tx *bbolt.Tx) error {
 		value := []byte(startedAt.Format(time.RFC3339))
 		return tx.Bucket(indexBucket).Put([]byte(process+"_started_at"), value)
@@ -190,7 +227,10 @@ func (d *Data) SetStartedAt(process string, startedAt time.Time) error {
 }
 
 // SetFinishedAt sets end time of the finished process
-func (d *Data) SetFinishedAt(process string, finishedAt time.Time) error {
+func (d *Data) SetFinishedAt(ctx context.Context, process string, finishedAt time.Time) error {
+	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.SetFinishedAt"))
+	defer span.Finish()
+
 	return d.db.Update(func(tx *bbolt.Tx) error {
 		value := []byte(finishedAt.Format(time.RFC3339))
 		return tx.Bucket(indexBucket).Put([]byte(process+"_finished_at"), value)

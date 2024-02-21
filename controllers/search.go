@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"net/http"
 	"net/url"
 
@@ -12,7 +13,7 @@ import (
 )
 
 type searchService interface {
-	Search(query, sortBy string, limit, offset int) ([]*model.Entry, int, error)
+	Search(ctx context.Context, query, sortBy string, limit, offset int) ([]*model.Entry, int, error)
 }
 
 func search(svc searchService, cfg configService, path bool) echo.HandlerFunc {
@@ -31,7 +32,7 @@ func search(svc searchService, cfg configService, path bool) echo.HandlerFunc {
 		limit := utils.StringToInt(paramfunc("l"))
 		offset := utils.StringToInt(paramfunc("o"))
 		sortBy := paramfunc("s")
-		entries, _, err := svc.Search(query, sortBy, limit, offset)
+		entries, _, err := svc.Search(c.Request().Context(), query, sortBy, limit, offset)
 		if err != nil {
 			return err
 		}

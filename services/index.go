@@ -1,13 +1,14 @@
 package services
 
 import (
+	"context"
 	"sync"
 	"time"
 
 	"github.com/blevesearch/bleve/v2"
+	"github.com/rs/zerolog"
 
 	"gitlab.com/etke.cc/mrs/api/model"
-	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
 type Index struct {
@@ -21,7 +22,7 @@ type Index struct {
 type IndexRepository interface {
 	Index(roomID string, data *model.Entry) error
 	Delete(roomID string) error
-	Swap() error
+	Swap(ctx context.Context) error
 	IndexBatch(*bleve.Batch) error
 	NewBatch() *bleve.Batch
 }
@@ -37,29 +38,30 @@ func NewIndex(cfg ConfigService, index IndexRepository) *Index {
 }
 
 // EmptyIndex creates new empty index
-func (i *Index) EmptyIndex() error {
-	return i.index.Swap()
+func (i *Index) EmptyIndex(ctx context.Context) error {
+	return i.index.Swap(ctx)
 }
 
 // RoomsBatch indexes rooms in batches
-func (i *Index) RoomsBatch(roomID string, data *model.Entry) error {
+func (i *Index) RoomsBatch(ctx context.Context, roomID string, data *model.Entry) error {
 	i.Lock()
 	defer i.Unlock()
 
 	if i.batch.Size() >= i.cfg.Get().Batch.Rooms {
-		return i.IndexBatch()
+		return i.IndexBatch(ctx)
 	}
 
 	return i.batch.Index(roomID, data)
 }
 
 // IndexBatch performs indexing of the current batch
-func (i *Index) IndexBatch() error {
+func (i *Index) IndexBatch(ctx context.Context) error {
+	log := zerolog.Ctx(ctx)
 	size := i.batch.Size()
 	started := time.Now()
-	utils.Logger.Info().Int("len", size).Msg("indexing batch...")
+	log.Info().Int("len", size).Msg("indexing batch...")
 	err := i.index.IndexBatch(i.batch)
 	i.batch.Reset()
-	utils.Logger.Info().Int("len", size).Str("took", time.Since(started).String()).Msg("indexed batch")
+	log.Info().Int("len", size).Str("took", time.Since(started).String()).Msg("indexed batch")
 	return err
 }

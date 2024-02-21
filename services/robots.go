@@ -2,6 +2,7 @@ package services
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"net/http"
 	"sync"
@@ -37,8 +38,8 @@ func NewRobots() *Robots {
 }
 
 // Allowed checks if endpoint is allowed by robots.txt of the serverName
-func (r *Robots) Allowed(serverName, endpoint string) bool {
-	parsed := r.get(serverName)
+func (r *Robots) Allowed(ctx context.Context, serverName, endpoint string) bool {
+	parsed := r.get(ctx, serverName)
 	if parsed == nil {
 		return true
 	}
@@ -65,7 +66,7 @@ func (r *Robots) isEligible(resp *http.Response) bool {
 }
 
 // parse robots.txt by server name
-func (r *Robots) parse(serverName string) {
+func (r *Robots) parse(ctx context.Context, serverName string) {
 	defer func() {
 		if err := recover(); err != nil {
 			r.set(serverName, nil)
@@ -78,7 +79,7 @@ func (r *Robots) parse(serverName string) {
 		return
 	}
 
-	resp, err := utils.Get(robotsURL, 5*time.Second)
+	resp, err := utils.Get(ctx, robotsURL, 5*time.Second)
 	if err != nil {
 		r.set(serverName, nil)
 		return
@@ -106,13 +107,13 @@ func (r *Robots) set(serverName string, parsed *robots.Robots) {
 }
 
 // get parsed robots.txt
-func (r *Robots) get(serverName string) *robots.Robots {
+func (r *Robots) get(ctx context.Context, serverName string) *robots.Robots {
 	r.mu.Lock()
 	_, ok := r.data[serverName]
 	r.mu.Unlock()
 
 	if !ok {
-		r.parse(serverName)
+		r.parse(ctx, serverName)
 	}
 
 	r.mu.Lock()

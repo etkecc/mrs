@@ -1,6 +1,7 @@
 package matrix
 
 import (
+	"context"
 	"crypto/ed25519"
 	"encoding/base64"
 	"fmt"
@@ -8,17 +9,23 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/goccy/go-json"
 	"github.com/matrix-org/gomatrixserverlib"
+	"github.com/rs/zerolog"
 
 	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
 // ValidateAuth validates matrix auth
-func (s *Server) ValidateAuth(r *http.Request) (serverName string, err error) {
+func (s *Server) ValidateAuth(ctx context.Context, r *http.Request) (serverName string, err error) {
+	span := sentry.StartSpan(ctx, "function", sentry.WithDescription("matrix.ValidateAuth"))
+	defer span.Finish()
+	log := zerolog.Ctx(span.Context())
+
 	defer r.Body.Close()
 	if s.cfg.Get().Matrix.ServerName == devhost {
-		utils.Logger.Warn().Msg("ignoring auth validation on dev host")
+		log.Warn().Msg("ignoring auth validation on dev host")
 		return "ignored", nil
 	}
 	body, err := io.ReadAll(r.Body)
@@ -32,7 +39,7 @@ func (s *Server) ValidateAuth(r *http.Request) (serverName string, err error) {
 		}
 	}
 
-	auths := s.parseAuths(r)
+	auths := s.parseAuths(span.Context(), r)
 	if len(auths) == 0 {
 		return "", fmt.Errorf("no auth provided")
 	}
@@ -49,13 +56,13 @@ func (s *Server) ValidateAuth(r *http.Request) (serverName string, err error) {
 	if err != nil {
 		return "", err
 	}
-	keys := s.queryKeys(auths[0].Origin)
+	keys := s.queryKeys(span.Context(), auths[0].Origin)
 	if len(keys) == 0 {
 		return "", fmt.Errorf("no server keys available")
 	}
 	for _, auth := range auths {
 		if err := s.validateAuth(obj, canonical, auth, keys); err != nil {
-			utils.Logger.
+			log.
 				Warn().
 				Err(err).
 				Str("canonical", string(canonical)).
@@ -110,7 +117,8 @@ func (s *Server) Authorize(serverName, method, uri string, body any) ([]string, 
 	return headers, nil
 }
 
-func (s *Server) parseAuth(authorization string) *matrixAuth {
+func (s *Server) parseAuth(ctx context.Context, authorization string) *matrixAuth {
+	log := zerolog.Ctx(ctx)
 	auth := &matrixAuth{}
 	paramsStr := strings.ReplaceAll(authorization, "X-Matrix ", "")
 	paramsSlice := strings.Split(paramsStr, ",")
@@ -130,7 +138,7 @@ func (s *Server) parseAuth(authorization string) *matrixAuth {
 		case "sig":
 			sig, err := base64.RawStdEncoding.DecodeString(value)
 			if err != nil {
-				utils.Logger.Warn().Err(err).Msg("cannot decode signature")
+				log.Warn().Err(err).Msg("cannot decode signature")
 				return nil
 			}
 			auth.Signature = sig
@@ -166,14 +174,14 @@ func (s *Server) validateAuth(obj map[string]any, canonical []byte, auth *matrix
 
 // parseAuths parses Authorization headers,
 // copied from https://github.com/turt2live/matrix-media-repo/blob/4da32e5739a8924e0cfcdde2daf4af4a90c2ff85/util/http.go#L52
-func (s *Server) parseAuths(r *http.Request) []*matrixAuth {
+func (s *Server) parseAuths(ctx context.Context, r *http.Request) []*matrixAuth {
 	headers := r.Header.Values("Authorization")
 	auths := make([]*matrixAuth, 0)
 	for _, h := range headers {
 		if !strings.HasPrefix(h, "X-Matrix ") {
 			continue
 		}
-		auth := s.parseAuth(h)
+		auth := s.parseAuth(ctx, h)
 		if auth != nil {
 			auths = append(auths, auth)
 		}

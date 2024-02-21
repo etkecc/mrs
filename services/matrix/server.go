@@ -1,9 +1,13 @@
 package matrix
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/getsentry/sentry-go"
+	"github.com/rs/zerolog"
 
 	"gitlab.com/etke.cc/mrs/api/metrics"
 	"gitlab.com/etke.cc/mrs/api/model"
@@ -21,21 +25,30 @@ func (s *Server) GetServerVersion() []byte {
 }
 
 // GetKeyServer returns jsonblob-eligible response for /_matrix/key/v2/server
-func (s *Server) GetKeyServer() []byte {
+func (s *Server) GetKeyServer(ctx context.Context) []byte {
+	span := sentry.StartSpan(ctx, "function", sentry.WithDescription("matrix.GetKeyServer"))
+	defer span.Finish()
+
+	log := zerolog.Ctx(span.Context())
+
 	resp := s.keyServer
 	resp.ValidUntilTS = time.Now().UTC().Add(24 * 7 * time.Hour).UnixMilli()
 	payload, err := s.signJSON(resp)
 	if err != nil {
-		utils.Logger.Error().Err(err).Msg("cannot sign payload")
+		log.Error().Err(err).Msg("cannot sign payload")
 	}
 	return payload
 }
 
 // PublicRooms returns /_matrix/federation/v1/publicRooms response
-func (s *Server) PublicRooms(req *http.Request, rdReq *model.RoomDirectoryRequest) (int, []byte) {
-	origin, err := s.ValidateAuth(req)
+func (s *Server) PublicRooms(ctx context.Context, req *http.Request, rdReq *model.RoomDirectoryRequest) (int, []byte) {
+	span := sentry.StartSpan(ctx, "function", sentry.WithDescription("matrix.PublicRooms"))
+	defer span.Finish()
+	log := zerolog.Ctx(span.Context())
+
+	origin, err := s.ValidateAuth(span.Context(), req)
 	if err != nil {
-		utils.Logger.Warn().Err(err).Msg("matrix auth failed")
+		log.Warn().Err(err).Msg("matrix auth failed")
 		return http.StatusUnauthorized, nil
 	}
 
@@ -49,9 +62,9 @@ func (s *Server) PublicRooms(req *http.Request, rdReq *model.RoomDirectoryReques
 		limit = s.cfg.Get().Search.Defaults.Limit
 	}
 	offset := utils.StringToInt(rdReq.Since)
-	entries, total, err := s.search.Search(rdReq.Filter.GenericSearchTerm, "", limit, offset)
+	entries, total, err := s.search.Search(span.Context(), rdReq.Filter.GenericSearchTerm, "", limit, offset)
 	if err != nil {
-		utils.Logger.Error().Err(err).Msg("search from matrix failed")
+		log.Error().Err(err).Msg("search from matrix failed")
 		return http.StatusInternalServerError, nil
 	}
 	chunk := make([]*model.RoomDirectoryRoom, 0, len(entries))
@@ -85,7 +98,7 @@ func (s *Server) PublicRooms(req *http.Request, rdReq *model.RoomDirectoryReques
 		Total:     total,
 	})
 	if err != nil {
-		utils.Logger.Error().Err(err).Msg("cannot marshal room directory json")
+		log.Error().Err(err).Msg("cannot marshal room directory json")
 		return http.StatusInternalServerError, nil
 	}
 	return http.StatusOK, value

@@ -1,6 +1,7 @@
 package matrix
 
 import (
+	"context"
 	"crypto/ed25519"
 	"encoding/base64"
 	"fmt"
@@ -12,20 +13,22 @@ import (
 	"strings"
 	"time"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/goccy/go-json"
+	"github.com/rs/zerolog"
 
 	"gitlab.com/etke.cc/mrs/api/model"
 	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
 // getErrorResp returns canonical json of matrix error
-func (s *Server) getErrorResp(code, message string) []byte {
+func (s *Server) getErrorResp(ctx context.Context, code, message string) []byte {
 	respb, err := utils.JSON(model.MatrixError{
 		Code:    code,
 		Message: message,
 	})
 	if err != nil {
-		utils.Logger.Error().Err(err).Msg("cannot marshal canonical json")
+		zerolog.Ctx(ctx).Error().Err(err).Msg("cannot marshal canonical json")
 	}
 	return respb
 }
@@ -47,8 +50,11 @@ func (s *Server) parseErrorResp(status string, body []byte) *model.MatrixError {
 }
 
 // parseClientWellKnown returns URL of the Matrix CS API server
-func (s *Server) parseClientWellKnown(serverName string) (string, error) {
-	resp, err := utils.Get("https://" + serverName + "/.well-known/matrix/client")
+func (s *Server) parseClientWellKnown(ctx context.Context, serverName string) (string, error) {
+	span := sentry.StartSpan(ctx, "function", sentry.WithDescription("matrix.parseClientWellKnown"))
+	defer span.Finish()
+
+	resp, err := utils.Get(ctx, "https://"+serverName+"/.well-known/matrix/client")
 	if err != nil {
 		return "", err
 	}
@@ -72,8 +78,11 @@ func (s *Server) parseClientWellKnown(serverName string) (string, error) {
 }
 
 // parseServerWellKnown returns Federation API host:port
-func (s *Server) parseServerWellKnown(serverName string) (string, error) {
-	resp, err := utils.Get("https://" + serverName + "/.well-known/matrix/server")
+func (s *Server) parseServerWellKnown(ctx context.Context, serverName string) (string, error) {
+	span := sentry.StartSpan(ctx, "function", sentry.WithDescription("matrix.parseServerWellKnown"))
+	defer span.Finish()
+
+	resp, err := utils.Get(ctx, "https://"+serverName+"/.well-known/matrix/server")
 	if err != nil {
 		return "", err
 	}
@@ -106,7 +115,10 @@ func (s *Server) parseServerWellKnown(serverName string) (string, error) {
 }
 
 // parseSRV returns Federation API host:port
-func (s *Server) parseSRV(service, serverName string) (string, error) {
+func (s *Server) parseSRV(ctx context.Context, service, serverName string) (string, error) {
+	span := sentry.StartSpan(ctx, "function", sentry.WithDescription("matrix.parseSRV"))
+	defer span.Finish()
+
 	_, addrs, err := net.LookupSRV(service, "tcp", serverName)
 	if err != nil {
 		return "", err
@@ -118,46 +130,52 @@ func (s *Server) parseSRV(service, serverName string) (string, error) {
 }
 
 // dcrURL stands for discover-cache-and-return URL, shortcut for s.getURL
-func (s *Server) dcrURL(serverName, url string, discover bool) string {
+func (s *Server) dcrURL(ctx context.Context, serverName, url string, discover bool) string {
 	s.surlsCache.Add(serverName, url)
 
 	if s.discoverFunc != nil && discover {
-		go s.discoverFunc(serverName)
+		go s.discoverFunc(ctx, serverName)
 	}
 
 	return url
 }
 
 // getURL returns Federation API URL
-func (s *Server) getURL(serverName string, discover bool) string {
+func (s *Server) getURL(ctx context.Context, serverName string, discover bool) string {
+	span := sentry.StartSpan(ctx, "function", sentry.WithDescription("matrix.getURL"))
+	defer span.Finish()
+
 	cached, ok := s.surlsCache.Get(serverName)
 	if ok {
 		return cached
 	}
 
-	fromWellKnown, err := s.parseServerWellKnown(serverName)
+	fromWellKnown, err := s.parseServerWellKnown(span.Context(), serverName)
 	if err == nil {
-		return s.dcrURL(serverName, "https://"+fromWellKnown, discover)
+		return s.dcrURL(span.Context(), serverName, "https://"+fromWellKnown, discover)
 	}
-	fromSRV, err := s.parseSRV("matrix-fed", serverName)
+	fromSRV, err := s.parseSRV(span.Context(), "matrix-fed", serverName)
 	if err == nil {
-		return s.dcrURL(serverName, "https://"+fromSRV, discover)
+		return s.dcrURL(span.Context(), serverName, "https://"+fromSRV, discover)
 	}
-	fromSRV, err = s.parseSRV("matrix", serverName)
+	fromSRV, err = s.parseSRV(span.Context(), "matrix", serverName)
 	if err == nil {
-		return s.dcrURL(serverName, "https://"+fromSRV, discover)
+		return s.dcrURL(span.Context(), serverName, "https://"+fromSRV, discover)
 	}
 
-	return s.dcrURL(serverName, "https://"+serverName, discover)
+	return s.dcrURL(span.Context(), serverName, "https://"+serverName+":8448", discover)
 }
 
 // lookupKeys requests /_matrix/key/v2/server by serverName
-func (s *Server) lookupKeys(serverName string, discover bool) (*matrixKeyResp, error) {
-	keysURL, err := url.Parse(s.getURL(serverName, discover) + "/_matrix/key/v2/server")
+func (s *Server) lookupKeys(ctx context.Context, serverName string, discover bool) (*matrixKeyResp, error) {
+	span := sentry.StartSpan(ctx, "function", sentry.WithDescription("matrix.lookupKeys"))
+	defer span.Finish()
+
+	keysURL, err := url.Parse(s.getURL(span.Context(), serverName, discover) + "/_matrix/key/v2/server")
 	if err != nil {
 		return nil, err
 	}
-	resp, err := utils.Get(keysURL.String())
+	resp, err := utils.Get(span.Context(), keysURL.String())
 	if err != nil {
 		return nil, err
 	}
@@ -178,28 +196,29 @@ func (s *Server) lookupKeys(serverName string, discover bool) (*matrixKeyResp, e
 }
 
 // queryKeys returns serverName's keys
-func (s *Server) queryKeys(serverName string) map[string]ed25519.PublicKey {
+func (s *Server) queryKeys(ctx context.Context, serverName string) map[string]ed25519.PublicKey {
 	cached, ok := s.keysCache.Get(serverName)
 	if ok {
 		return cached
 	}
-	resp, err := s.lookupKeys(serverName, true)
+	log := zerolog.Ctx(ctx)
+	resp, err := s.lookupKeys(ctx, serverName, true)
 	if err != nil {
-		utils.Logger.Warn().Err(err).Msg("keys query failed")
+		log.Warn().Err(err).Msg("keys query failed")
 		return nil
 	}
 	if resp.ServerName != serverName {
-		utils.Logger.Warn().Msg("server name doesn't match")
+		log.Warn().Msg("server name doesn't match")
 		return nil
 	}
 	if resp.ValidUntilTS <= time.Now().UnixMilli() {
-		utils.Logger.Warn().Msg("server keys are expired")
+		log.Warn().Msg("server keys are expired")
 	}
 	keys := map[string]ed25519.PublicKey{}
 	for id, data := range resp.VerifyKeys {
 		pub, err := base64.RawStdEncoding.DecodeString(data["key"])
 		if err != nil {
-			utils.Logger.Warn().Err(err).Msg("failed to decode server key")
+			log.Warn().Err(err).Msg("failed to decode server key")
 			continue
 		}
 		keys[id] = pub
