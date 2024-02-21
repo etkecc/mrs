@@ -42,7 +42,7 @@ func (b *Batch[T]) Flush(ctx context.Context) {
 	b.Lock()
 	defer b.Unlock()
 
-	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("batch.Flush"))
+	span := sentry.StartSpan(ctx, "batch.Flush")
 	defer span.Finish()
 	log := zerolog.Ctx(span.Context())
 

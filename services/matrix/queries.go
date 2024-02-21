@@ -18,7 +18,7 @@ import (
 
 // QueryServerName finds server name on the /_matrix/key/v2/server page
 func (s *Server) QueryServerName(ctx context.Context, serverName string) (string, error) {
-	span := sentry.StartSpan(ctx, "function", sentry.WithDescription("matrix.QueryServerName"))
+	span := sentry.StartSpan(ctx, "matrix.QueryServerName")
 	defer span.Finish()
 	log := zerolog.Ctx(span.Context())
 
@@ -40,7 +40,7 @@ func (s *Server) QueryServerName(ctx context.Context, serverName string) (string
 
 // QueryDirectory is /_matrix/federation/v1/query/directory?room_alias={roomAlias}
 func (s *Server) QueryDirectory(ctx context.Context, req *http.Request, alias string) (int, []byte) {
-	span := sentry.StartSpan(ctx, "function", sentry.WithDescription("matrix.QueryDirectory"))
+	span := sentry.StartSpan(ctx, "matrix.QueryDirectory")
 	defer span.Finish()
 	log := zerolog.Ctx(span.Context())
 
@@ -88,7 +88,7 @@ func (s *Server) QueryDirectory(ctx context.Context, req *http.Request, alias st
 
 // QueryVersion from /_matrix/federation/v1/version
 func (s *Server) QueryVersion(ctx context.Context, serverName string) (server, version string, err error) {
-	span := sentry.StartSpan(ctx, "function", sentry.WithDescription("matrix.QueryVersion"))
+	span := sentry.StartSpan(ctx, "matrix.QueryVersion")
 	defer span.Finish()
 
 	resp, err := utils.Get(span.Context(), s.getURL(span.Context(), serverName, false)+"/_matrix/federation/v1/version")
@@ -120,7 +120,7 @@ func (s *Server) QueryVersion(ctx context.Context, serverName string) (server, v
 
 // QueryPublicRooms over federation
 func (s *Server) QueryPublicRooms(ctx context.Context, serverName, limit, since string) (*model.RoomDirectoryResponse, error) {
-	span := sentry.StartSpan(ctx, "function", sentry.WithDescription("matrix.QueryPublicRooms"))
+	span := sentry.StartSpan(ctx, "matrix.QueryPublicRooms")
 	defer span.Finish()
 
 	ctx, cancel := context.WithTimeout(span.Context(), utils.DefaultTimeout)
@@ -164,7 +164,7 @@ func (s *Server) QueryCSURL(ctx context.Context, serverName string) string {
 		return cached
 	}
 
-	span := sentry.StartSpan(ctx, "function", sentry.WithDescription("matrix.QueryCSURL"))
+	span := sentry.StartSpan(ctx, "matrix.QueryCSURL")
 	defer span.Finish()
 
 	csurl := "https://" + serverName

@@ -13,7 +13,7 @@ import (
 
 // Search something!
 func (i *Index) Search(ctx context.Context, searchQuery query.Query, limit, offset int, sortBy []string) (results []*model.Entry, total int, err error) {
-	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("search.Search"))
+	span := sentry.StartSpan(ctx, "search.Search")
 	defer span.Finish()
 
 	req := bleve.NewSearchRequestOptions(searchQuery, limit, offset, false)

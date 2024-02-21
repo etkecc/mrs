@@ -122,7 +122,7 @@ func (df *DataFacade) Ingest(ctx context.Context) {
 
 // Full data pipeline (discovery, parsing, indexing)
 func (df *DataFacade) Full(ctx context.Context, discoveryWorkers, parsingWorkers int) {
-	span := sentry.StartSpan(ctx, "function", sentry.WithDescription("dataFacade.Full"))
+	span := sentry.StartSpan(ctx, "dataFacade.Full")
 	defer span.Finish()
 
 	log := zerolog.Ctx(span.Context())

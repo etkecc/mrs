@@ -134,7 +134,7 @@ func (s *Stats) CollectServers(ctx context.Context, reload bool) {
 
 // Collect all stats from repository
 func (s *Stats) Collect(ctx context.Context) {
-	span := sentry.StartSpan(ctx, "function", sentry.WithDescription("stats.Collect"))
+	span := sentry.StartSpan(ctx, "stats.Collect")
 	defer span.Finish()
 
 	log := zerolog.Ctx(ctx)
@@ -186,7 +186,7 @@ func (s *Stats) sendWebhook(ctx context.Context) {
 	if s.cfg.Get().Webhooks.Stats == "" {
 		return
 	}
-	span := sentry.StartSpan(ctx, "function", sentry.WithDescription("stats.sendWebhook"))
+	span := sentry.StartSpan(ctx, "stats.sendWebhook")
 	defer span.Finish()
 	log := zerolog.Ctx(ctx)
 

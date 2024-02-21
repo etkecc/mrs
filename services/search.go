@@ -60,7 +60,7 @@ func NewSearch(cfg ConfigService, data searchDataRepository, repo SearchReposito
 // Search things
 // ref: https://blevesearch.com/docs/Query-String-Query/
 func (s *Search) Search(ctx context.Context, q, sortBy string, limit, offset int) ([]*model.Entry, int, error) {
-	span := sentry.StartSpan(ctx, "function", sentry.WithDescription("search.Search"))
+	span := sentry.StartSpan(ctx, "searchSvc.Search")
 	defer span.Finish()
 	log := zerolog.Ctx(span.Context())
 	log.Info().

@@ -27,7 +27,7 @@ func (d *Data) FlushRoomBatch(ctx context.Context) {
 }
 
 func (d *Data) SetBiggestRooms(ctx context.Context, ids []string) error {
-	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.SetBiggestRooms"))
+	span := sentry.StartSpan(ctx, "data.SetBiggestRooms")
 	defer span.Finish()
 
 	return d.db.Update(func(tx *bbolt.Tx) error {
@@ -57,7 +57,7 @@ func (d *Data) SetBiggestRooms(ctx context.Context, ids []string) error {
 }
 
 func (d *Data) GetBiggestRooms(ctx context.Context, limit, offset int) []*model.MatrixRoom {
-	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.GetBiggestRooms"))
+	span := sentry.StartSpan(ctx, "data.GetBiggestRooms")
 	defer span.Finish()
 	log := zerolog.Ctx(ctx)
 
@@ -83,7 +83,7 @@ func (d *Data) GetBiggestRooms(ctx context.Context, limit, offset int) []*model.
 
 // GetRoom info
 func (d *Data) GetRoom(ctx context.Context, roomID string) (*model.MatrixRoom, error) {
-	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.GetRoom"))
+	span := sentry.StartSpan(ctx, "data.GetRoom")
 	defer span.Finish()
 
 	var room *model.MatrixRoom
@@ -103,7 +103,7 @@ func (d *Data) RemoveRooms(ctx context.Context, keys []string) {
 		return
 	}
 
-	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.RemoveRooms"))
+	span := sentry.StartSpan(ctx, "data.RemoveRooms")
 	defer span.Finish()
 
 	d.db.Update(func(tx *bbolt.Tx) error { //nolint:errcheck
@@ -119,7 +119,7 @@ func (d *Data) RemoveRooms(ctx context.Context, keys []string) {
 //
 //nolint:errcheck
 func (d *Data) EachRoom(ctx context.Context, handler func(roomID string, data *model.MatrixRoom) bool) {
-	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.EachRoom"))
+	span := sentry.StartSpan(ctx, "data.EachRoom")
 	defer span.Finish()
 
 	var room *model.MatrixRoom
@@ -145,7 +145,7 @@ func (d *Data) EachRoom(ctx context.Context, handler func(roomID string, data *m
 
 // GetBannedRooms returns full list of the banned rooms
 func (d *Data) GetBannedRooms(ctx context.Context, serverName ...string) ([]string, error) {
-	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.GetBannedRooms"))
+	span := sentry.StartSpan(ctx, "data.GetBannedRooms")
 	defer span.Finish()
 
 	var server string
@@ -169,7 +169,7 @@ func (d *Data) GetBannedRooms(ctx context.Context, serverName ...string) ([]stri
 
 // BanRoom
 func (d *Data) BanRoom(ctx context.Context, roomID string) error {
-	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.BanRoom"))
+	span := sentry.StartSpan(ctx, "data.BanRoom")
 	defer span.Finish()
 
 	return d.db.Batch(func(tx *bbolt.Tx) error {
@@ -179,7 +179,7 @@ func (d *Data) BanRoom(ctx context.Context, roomID string) error {
 
 // UnbanRoom
 func (d *Data) UnbanRoom(ctx context.Context, roomID string) error {
-	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.UnbanRoom"))
+	span := sentry.StartSpan(ctx, "data.UnbanRoom")
 	defer span.Finish()
 
 	return d.db.Batch(func(tx *bbolt.Tx) error {
@@ -192,7 +192,7 @@ func (d *Data) UnbanRoom(ctx context.Context, roomID string) error {
 
 // GetReportedRooms returns full list of the banned rooms with reasons
 func (d *Data) GetReportedRooms(ctx context.Context, serverName ...string) (map[string]string, error) {
-	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.GetReportedRooms"))
+	span := sentry.StartSpan(ctx, "data.GetReportedRooms")
 	defer span.Finish()
 
 	var server string
@@ -216,7 +216,7 @@ func (d *Data) GetReportedRooms(ctx context.Context, serverName ...string) (map[
 
 // IsReported returns true if room was already reported
 func (d *Data) IsReported(ctx context.Context, roomID string) bool {
-	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.IsReported"))
+	span := sentry.StartSpan(ctx, "data.IsReported")
 	defer span.Finish()
 
 	var reported bool
@@ -231,7 +231,7 @@ func (d *Data) IsReported(ctx context.Context, roomID string) bool {
 
 // ReportRoom
 func (d *Data) ReportRoom(ctx context.Context, roomID, reason string) error {
-	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.ReportRoom"))
+	span := sentry.StartSpan(ctx, "data.ReportRoom")
 	defer span.Finish()
 
 	return d.db.Batch(func(tx *bbolt.Tx) error {
@@ -241,7 +241,7 @@ func (d *Data) ReportRoom(ctx context.Context, roomID, reason string) error {
 
 // UnreportRoom
 func (d *Data) UnreportRoom(ctx context.Context, roomID string) error {
-	span := sentry.StartSpan(ctx, "db.query", sentry.WithDescription("data.UnreportRoom"))
+	span := sentry.StartSpan(ctx, "data.UnreportRoom")
 	defer span.Finish()
 
 	return d.db.Batch(func(tx *bbolt.Tx) error {

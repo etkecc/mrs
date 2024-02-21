@@ -19,7 +19,7 @@ import (
 
 // ValidateAuth validates matrix auth
 func (s *Server) ValidateAuth(ctx context.Context, r *http.Request) (serverName string, err error) {
-	span := sentry.StartSpan(ctx, "function", sentry.WithDescription("matrix.ValidateAuth"))
+	span := sentry.StartSpan(ctx, "matrix.ValidateAuth")
 	defer span.Finish()
 	log := zerolog.Ctx(span.Context())
 

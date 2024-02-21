@@ -51,7 +51,7 @@ func (s *Server) parseErrorResp(status string, body []byte) *model.MatrixError {
 
 // parseClientWellKnown returns URL of the Matrix CS API server
 func (s *Server) parseClientWellKnown(ctx context.Context, serverName string) (string, error) {
-	span := sentry.StartSpan(ctx, "function", sentry.WithDescription("matrix.parseClientWellKnown"))
+	span := sentry.StartSpan(ctx, "matrix.parseClientWellKnown")
 	defer span.Finish()
 
 	resp, err := utils.Get(ctx, "https://"+serverName+"/.well-known/matrix/client")
@@ -79,7 +79,7 @@ func (s *Server) parseClientWellKnown(ctx context.Context, serverName string) (s
 
 // parseServerWellKnown returns Federation API host:port
 func (s *Server) parseServerWellKnown(ctx context.Context, serverName string) (string, error) {
-	span := sentry.StartSpan(ctx, "function", sentry.WithDescription("matrix.parseServerWellKnown"))
+	span := sentry.StartSpan(ctx, "matrix.parseServerWellKnown")
 	defer span.Finish()
 
 	resp, err := utils.Get(ctx, "https://"+serverName+"/.well-known/matrix/server")
@@ -116,7 +116,7 @@ func (s *Server) parseServerWellKnown(ctx context.Context, serverName string) (s
 
 // parseSRV returns Federation API host:port
 func (s *Server) parseSRV(ctx context.Context, service, serverName string) (string, error) {
-	span := sentry.StartSpan(ctx, "function", sentry.WithDescription("matrix.parseSRV"))
+	span := sentry.StartSpan(ctx, "matrix.parseSRV")
 	defer span.Finish()
 
 	_, addrs, err := net.LookupSRV(service, "tcp", serverName)
@@ -142,7 +142,7 @@ func (s *Server) dcrURL(ctx context.Context, serverName, url string, discover bo
 
 // getURL returns Federation API URL
 func (s *Server) getURL(ctx context.Context, serverName string, discover bool) string {
-	span := sentry.StartSpan(ctx, "function", sentry.WithDescription("matrix.getURL"))
+	span := sentry.StartSpan(ctx, "matrix.getURL")
 	defer span.Finish()
 
 	cached, ok := s.surlsCache.Get(serverName)
@@ -168,7 +168,7 @@ func (s *Server) getURL(ctx context.Context, serverName string, discover bool) s
 
 // lookupKeys requests /_matrix/key/v2/server by serverName
 func (s *Server) lookupKeys(ctx context.Context, serverName string, discover bool) (*matrixKeyResp, error) {
-	span := sentry.StartSpan(ctx, "function", sentry.WithDescription("matrix.lookupKeys"))
+	span := sentry.StartSpan(ctx, "matrix.lookupKeys")
 	defer span.Finish()
 
 	keysURL, err := url.Parse(s.getURL(span.Context(), serverName, discover) + "/_matrix/key/v2/server")
