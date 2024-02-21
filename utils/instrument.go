@@ -2,6 +2,7 @@ package utils
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"runtime/debug"
@@ -55,7 +56,7 @@ func NewContext(parent ...context.Context) context.Context {
 	}
 
 	hub := sentry.GetHubFromContext(ctx)
-	if hub == nil {
+	if hub == nil && sentryDSN != "" {
 		hub = sentry.CurrentHub().Clone()
 		ctx = sentry.SetHubOnContext(ctx, hub)
 	}
@@ -63,6 +64,10 @@ func NewContext(parent ...context.Context) context.Context {
 }
 
 func newSentryWriter(ctx context.Context) (io.Writer, error) {
+	if sentryDSN == "" {
+		return nil, fmt.Errorf("sentry DSN not set")
+	}
+
 	if hub := sentry.GetHubFromContext(ctx); hub != nil && hub.Scope() != nil && hub.Client() != nil {
 		return zlogsentry.NewWithHub(hub, getSentryOptions()...)
 	}
