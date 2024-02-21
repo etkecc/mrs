@@ -13,6 +13,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/labstack/echo/v4"
 	"github.com/mileusna/crontab"
 	"github.com/pemistahl/lingua-go"
@@ -181,6 +182,7 @@ func initCron(cfg *services.Config, dataSvc *services.DataFacade) {
 
 func shutdown() {
 	log.Info().Msg("shutting down...")
+	defer sentry.Flush(2 * time.Second)
 	cron.Shutdown()
 	if err := index.Close(); err != nil {
 		log.Error().Err(err).Msg("cannot close the index")

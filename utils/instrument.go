@@ -63,7 +63,7 @@ func NewContext(parent ...context.Context) context.Context {
 }
 
 func newSentryWriter(ctx context.Context) (io.Writer, error) {
-	if hub := sentry.GetHubFromContext(ctx); hub != nil {
+	if hub := sentry.GetHubFromContext(ctx); hub != nil && hub.Scope() != nil && hub.Client() != nil {
 		return zlogsentry.NewWithHub(hub, getSentryOptions()...)
 	}
 	return zlogsentry.New(sentryDSN, getSentryOptions()...)
