@@ -129,7 +129,7 @@ func (s *Server) QueryPublicRooms(ctx context.Context, serverName, limit, since 
 		return nil, err
 	}
 
-	resp, err := utils.HTTPClient.Do(req)
+	resp, err := utils.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +139,11 @@ func (s *Server) QueryPublicRooms(ctx context.Context, serverName, limit, since 
 		body, _ := io.ReadAll(resp.Body) //nolint:errcheck // intended
 		merr := s.parseErrorResp(resp.Status, body)
 		if merr == nil {
-			return nil, fmt.Errorf("cannot get public rooms: %s", resp.Status)
+			bodyhint := ""
+			if len(body) > 0 {
+				bodyhint = fmt.Sprintf("; body: %s", utils.Truncate(string(body), 400))
+			}
+			return nil, fmt.Errorf("cannot get public rooms: %s%s", resp.Status, bodyhint)
 		}
 		return nil, merr
 	}

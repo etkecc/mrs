@@ -157,6 +157,14 @@ func (i *Index) loadFS(ctx context.Context) (bleve.Index, error) {
 
 // Swap index
 func (i *Index) Swap(ctx context.Context) error {
+	defer func() {
+		// bleve's scorch has data race that may cause panic
+		if r := recover(); r != nil {
+			log := zerolog.Ctx(ctx)
+			log.Error().Interface("recover", r).Msg("panic in index swap")
+		}
+	}()
+
 	if err := i.index.Close(); err != nil {
 		return err
 	}

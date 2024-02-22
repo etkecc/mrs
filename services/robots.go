@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 	"sync"
-	"time"
 
 	"github.com/benjaminestes/robots/v2"
 
@@ -79,7 +78,7 @@ func (r *Robots) parse(ctx context.Context, serverName string) {
 		return
 	}
 
-	resp, err := utils.Get(ctx, robotsURL, 5*time.Second)
+	resp, err := utils.Get(ctx, robotsURL)
 	if err != nil {
 		r.set(serverName, nil)
 		return
