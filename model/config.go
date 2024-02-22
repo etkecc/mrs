@@ -1,6 +1,9 @@
 package model
 
-import echobasicauth "gitlab.com/etke.cc/go/echo-basic-auth"
+import (
+	echobasicauth "gitlab.com/etke.cc/go/echo-basic-auth"
+	"gitlab.com/etke.cc/go/msc1929"
+)
 
 // Config is MRS configuration model
 type Config struct {
@@ -132,9 +135,10 @@ type ConfigEmailTemplate struct {
 
 // ConfigMatrix - matrix server config
 type ConfigMatrix struct {
-	ServerName string   `yaml:"server_name"`
-	Keys       []string `yaml:"keys"`
-	OldKeys    []string `yaml:"old_keys"`
+	ServerName string            `yaml:"server_name"`
+	Support    *msc1929.Response `yaml:"support"`
+	Keys       []string          `yaml:"keys"`
+	OldKeys    []string          `yaml:"old_keys"`
 }
 
 // ConfigExperiments - experimental features

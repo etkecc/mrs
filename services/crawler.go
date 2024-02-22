@@ -374,7 +374,7 @@ func (m *Crawler) getServerContacts(ctx context.Context, name string) model.Matr
 	defer span.Finish()
 
 	var contacts model.MatrixServerContacts
-	resp, err := msc1929.Get(name)
+	resp, err := msc1929.GetWithContext(span.Context(), name)
 	if err != nil {
 		return contacts
 	}
@@ -382,8 +382,17 @@ func (m *Crawler) getServerContacts(ctx context.Context, name string) model.Matr
 		return contacts
 	}
 
-	contacts.Emails = utils.Uniq(resp.Emails())
-	contacts.MXIDs = utils.Uniq(resp.MatrixIDs())
+	if emails := resp.AdminEmails(); len(emails) > 0 {
+		contacts.Emails = utils.Uniq(emails)
+	} else {
+		contacts.Emails = utils.Uniq(resp.AllEmails())
+	}
+
+	if mxids := resp.AdminMatrixIDs(); len(mxids) > 0 {
+		contacts.MXIDs = utils.Uniq(mxids)
+	} else {
+		contacts.MXIDs = utils.Uniq(resp.AllMatrixIDs())
+	}
 	contacts.URL = resp.SupportPage
 	return contacts
 }

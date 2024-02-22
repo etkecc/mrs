@@ -55,6 +55,42 @@ paths:
                         type: string
                         description: The server URL to use with clients
                         example: 'https://example.com'
+  /.well-known/matrix/support:
+    get:
+      tags:
+        - Matrix CS API
+      summary: Matrix support details
+      description: Homeserver Admin Contact and Support page
+      operationId: matrix_support
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  support_page:
+                    type: string
+                    description: The support page URL
+                    example: 'https://example.com/contact'
+                  contacts:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        matrix_id:
+                          type: string
+                          description: Matrix ID of the contact
+                          example: '@admin:example.com'
+                        email_address:
+                          type: string
+                          description: Email address of the contact
+                          example: 'admin@example.com'
+                        role:
+                          type: string
+                          description: Role of the contact
+                          example: 'm.role.admin'
   /_matrix/client/versions:
     get:
       tags:

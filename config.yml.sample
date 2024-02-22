@@ -6,6 +6,12 @@ public: # public-facing information
   api: https://localhost:8080 # public API URL
 matrix: # matrix server information
   server_name: localhost # server name (!), not api url
+  support: # MSC1929 support file
+    contacts:
+      - matrix_id: '@admin:example.com' # matrix ID
+        email_address: 'admin@example.com' # email
+        role: 'm.role.admin' # role
+    support_page: "https://example.com" # (optional) support page URL
   keys: [] # keys, will be generated automatically on first run
 search: # search config
   defaults: # default options, if not provided by request

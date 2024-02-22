@@ -27,6 +27,11 @@ func (s *Server) GetClientWellKnown() []byte {
 	return s.wellknownClient
 }
 
+// GetSupportWellKnown returns json-eligible response for /.well-known/matrix/support
+func (s *Server) GetSupportWellKnown() []byte {
+	return s.wellknownSupport
+}
+
 // GetClientVersion returns json-eligible response for /_matrix/client/versions
 func (s *Server) GetClientVersion() []byte {
 	return s.versionClient

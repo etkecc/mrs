@@ -16,6 +16,7 @@ import (
 type matrixService interface {
 	GetServerWellKnown() []byte
 	GetClientWellKnown() []byte
+	GetSupportWellKnown() []byte
 	GetServerVersion() []byte
 	GetClientVersion() []byte
 	GetKeyServer(context.Context) []byte
@@ -48,6 +49,9 @@ func configureMatrixCSEndpoints(e *echo.Echo, matrixSvc matrixService, cacheSvc 
 	rl := getRL(30, cacheSvc)
 	e.GET("/.well-known/matrix/client", func(c echo.Context) error {
 		return c.JSONBlob(http.StatusOK, matrixSvc.GetClientWellKnown())
+	}, cacheSvc.MiddlewareImmutable())
+	e.GET("/.well-known/matrix/support", func(c echo.Context) error {
+		return c.JSONBlob(http.StatusOK, matrixSvc.GetSupportWellKnown())
 	}, cacheSvc.MiddlewareImmutable())
 	e.GET("/_matrix/client/versions", func(c echo.Context) error {
 		return c.JSONBlob(http.StatusOK, matrixSvc.GetClientVersion())

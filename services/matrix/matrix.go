@@ -16,20 +16,21 @@ const (
 
 // Server server
 type Server struct {
-	cfg             configService
-	keys            []*model.Key
-	data            dataRepository
-	search          searchService
-	wellknownServer []byte        // /.well-known/matrix/server contents
-	wellknownClient []byte        // /.well-known/matrix/client contents
-	versionServer   []byte        // /_matrix/federation/v1/version contents
-	versionClient   []byte        // /_matrix/client/versions contents
-	keyServer       matrixKeyResp // /_matrix/key/v2/server template
-	discoverFunc    func(context.Context, string) int
-	surlsCache      *lru.Cache[string, string]
-	curlsCache      *lru.Cache[string, string]
-	keysCache       *lru.Cache[string, map[string]ed25519.PublicKey]
-	namesCache      *lru.Cache[string, string]
+	cfg              configService
+	keys             []*model.Key
+	data             dataRepository
+	search           searchService
+	wellknownServer  []byte        // /.well-known/matrix/server contents
+	wellknownClient  []byte        // /.well-known/matrix/client contents
+	wellknownSupport []byte        // /.well-known/matrix/support contents
+	versionServer    []byte        // /_matrix/federation/v1/version contents
+	versionClient    []byte        // /_matrix/client/versions contents
+	keyServer        matrixKeyResp // /_matrix/key/v2/server template
+	discoverFunc     func(context.Context, string) int
+	surlsCache       *lru.Cache[string, string]
+	curlsCache       *lru.Cache[string, string]
+	keysCache        *lru.Cache[string, map[string]ed25519.PublicKey]
+	namesCache       *lru.Cache[string, string]
 }
 
 // NewServer creates new matrix server

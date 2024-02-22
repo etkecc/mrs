@@ -52,6 +52,12 @@ func (s *Server) initWellKnown(apiURL string) error {
 		return err
 	}
 	s.wellknownClient = clientValue
+
+	supportValue, err := utils.JSON(s.cfg.Get().Matrix.Support)
+	if err != nil {
+		return err
+	}
+	s.wellknownSupport = supportValue
 	return nil
 }
 

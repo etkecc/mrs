@@ -26,7 +26,7 @@ require (
 	github.com/ziflex/lecho/v3 v3.5.0
 	gitlab.com/etke.cc/go/echo-basic-auth v1.1.0
 	gitlab.com/etke.cc/go/fswatcher v1.0.0
-	gitlab.com/etke.cc/go/msc1929 v0.0.0-20231103161506-0223f5f91511
+	gitlab.com/etke.cc/go/msc1929 v1.0.1
 	go.etcd.io/bbolt v1.3.8
 	golang.org/x/exp v0.0.0-20240213143201-ec583247a57a
 	golang.org/x/time v0.5.0
