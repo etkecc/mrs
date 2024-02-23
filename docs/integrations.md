@@ -38,8 +38,8 @@ matrix_client_element_room_directory_servers: ['matrixrooms.info']
 
 > including forks, like [SchildiChat](https://schildi.chat/)
 
-1. Tap on the Search icon (top right corner)
-2. Scroll down and click on the `View the room directory`
+1. From the room list, click on the floating action button at the bottom right (left for RTL) of the screen
+2. Select "Explore Rooms"
 3. Tap on the 3-dot menu (top right corner)
 4. Tap on the `Change network` in the dropdown menu
 5. Tap on the `Add a new server` at the bottom of the screen
