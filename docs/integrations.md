@@ -15,7 +15,7 @@ so you can use it in your matrix client apps directly.
 2. Modal window will be opened, scroll down
 3. Click on `Public rooms`
 4. Under the search input, click on server selection (`Show: <your server name>`) and click on the `Add new server...`
-5. In the opened modal window enter the server name from the config.yml (`matrix.server_name` value).
+5. In the opened modal window enter the server name from the config.yml (`matrix.server_name` value). In case of the demo instance, it's `matrixrooms.info`
 6. Click on `Add`
 
 **All app users** (for all users of the Element Web/Desktop app instance)
