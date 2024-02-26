@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog"
@@ -84,7 +85,6 @@ func configureMatrixCSEndpoints(e *echo.Echo, matrixSvc matrixService, cacheSvc 
 func matrixRoomDirectory(matrixSvc matrixService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		log := zerolog.Ctx(c.Request().Context())
-		req := &model.RoomDirectoryRequest{}
 		r := c.Request()
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
@@ -93,8 +93,20 @@ func matrixRoomDirectory(matrixSvc matrixService) echo.HandlerFunc {
 		r.Body = io.NopCloser(bytes.NewBuffer(body))
 		c.SetRequest(r)
 
-		if err := c.Bind(req); err != nil {
-			log.Error().Err(err).Msg("directory request binding failed")
+		req := &model.RoomDirectoryRequest{}
+		if c.Request().Method == http.MethodGet {
+			queryReq := &model.RoomDirectoryRequestQuery{}
+			if err := c.Bind(queryReq); err != nil {
+				log.Error().Err(err).Msg("GET directory request binding failed")
+			}
+			req.IncludeAllNetworks = queryReq.IncludeAllNetworks == "true"
+			req.Limit, _ = strconv.Atoi(queryReq.Limit) //nolint:errcheck // that's ok
+			req.Since = queryReq.Since
+			req.ThirdPartyInstanceID = queryReq.ThirdPartyInstanceID
+		} else {
+			if err := c.Bind(req); err != nil {
+				log.Error().Err(err).Msg("POST directory request binding failed")
+			}
 		}
 		r.Body = io.NopCloser(bytes.NewBuffer(body))
 		c.SetRequest(r)

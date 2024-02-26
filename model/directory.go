@@ -1,12 +1,20 @@
 package model
 
-// RoomDirectoryRequest sent when calling /_matrix/federation/v1/publicRooms
+// RoomDirectoryRequestQuery sent when calling GET /_matrix/federation/v1/publicRooms
+type RoomDirectoryRequestQuery struct {
+	IncludeAllNetworks   string `query:"include_all_networks"`
+	Limit                string `query:"limit" json:"limit"`
+	Since                string `query:"since"`
+	ThirdPartyInstanceID string `query:"third_party_instance_id"`
+}
+
+// RoomDirectoryRequest sent when calling POST /_matrix/federation/v1/publicRooms
 type RoomDirectoryRequest struct {
 	Filter               RoomDirectoryFilter `json:"filter"`
-	IncludeAllNetworks   bool                `query:"include_all_networks" json:"include_all_networks"`
-	Limit                int                 `query:"limit" json:"limit"`
-	Since                string              `query:"since" json:"since"`
-	ThirdPartyInstanceID string              `query:"third_party_instance_id" json:"third_party_instance_id"`
+	IncludeAllNetworks   bool                `json:"include_all_networks"`
+	Limit                int                 `json:"limit"`
+	Since                string              `json:"since"`
+	ThirdPartyInstanceID string              `json:"third_party_instance_id"`
 }
 
 // RoomDirectoryFilter for the RoomDirectoryRequest
