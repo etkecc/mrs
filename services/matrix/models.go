@@ -37,7 +37,7 @@ type queryDirectoryResp struct {
 
 type matrixAuth struct {
 	Origin      string
-	Destination string
+	Destination *string
 	KeyID       string
 	Signature   []byte
 }

@@ -43,10 +43,12 @@ func (s *Server) ValidateAuth(ctx context.Context, r *http.Request) (serverName 
 		return "", fmt.Errorf("no auth provided")
 	}
 	obj := map[string]any{
-		"method":      r.Method,
-		"uri":         r.RequestURI,
-		"origin":      auths[0].Origin,
-		"destination": auths[0].Destination,
+		"method": r.Method,
+		"uri":    r.RequestURI,
+		"origin": auths[0].Origin,
+	}
+	if auths[0].Destination != nil {
+		obj["destination"] = *auths[0].Destination
 	}
 	if len(content) > 0 {
 		obj["content"] = content
@@ -131,7 +133,8 @@ func (s *Server) parseAuth(ctx context.Context, authorization string) *matrixAut
 		case "origin":
 			auth.Origin = value
 		case "destination":
-			auth.Destination = value
+			destination := value
+			auth.Destination = &destination
 		case "key":
 			auth.KeyID = value
 		case "sig":
@@ -153,11 +156,14 @@ func (s *Server) validateAuth(obj map[string]any, canonical []byte, auth *matrix
 	if auth.Origin != obj["origin"] {
 		return fmt.Errorf("auth is from multiple servers")
 	}
-	if auth.Destination != obj["destination"] {
-		return fmt.Errorf("auth is for multiple servers")
-	}
-	if auth.Destination != "" && auth.Destination != s.cfg.Get().Matrix.ServerName {
-		return fmt.Errorf("unknown destination")
+	if auth.Destination != nil {
+		if *auth.Destination != obj["destination"] {
+			return fmt.Errorf("auth is for multiple servers")
+		}
+
+		if *auth.Destination != s.cfg.Get().Matrix.ServerName {
+			return fmt.Errorf("unknown destination")
+		}
 	}
 
 	key, ok := keys[auth.KeyID]
