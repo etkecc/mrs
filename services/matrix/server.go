@@ -47,7 +47,7 @@ func (s *Server) PublicRooms(ctx context.Context, req *http.Request, rdReq *mode
 
 	origin, err := s.ValidateAuth(span.Context(), req)
 	if err != nil {
-		log.Warn().Err(err).Msg("matrix auth failed")
+		log.Warn().Err(err).Str("header", req.Header.Get("Authorization")).Msg("matrix auth failed")
 		return http.StatusUnauthorized, nil
 	}
 

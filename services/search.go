@@ -62,11 +62,6 @@ func (s *Search) Search(ctx context.Context, q, sortBy string, limit, offset int
 	span := utils.StartSpan(ctx, "searchSvc.Search")
 	defer span.Finish()
 	log := zerolog.Ctx(span.Context())
-	log.Info().
-		Str("query", q).
-		Int("limit", limit).
-		Int("offset", offset).
-		Msg("search request")
 	if limit == 0 {
 		limit = s.cfg.Get().Search.Defaults.Limit
 	}
@@ -84,11 +79,20 @@ func (s *Search) Search(ctx context.Context, q, sortBy string, limit, offset int
 		return []*model.Entry{}, 0, nil
 	}
 	results, total, err := s.repo.Search(span.Context(), builtQuery, limit, offset, utils.StringToSlice(sortBy, s.cfg.Get().Search.Defaults.SortBy))
+	results = s.removeBlocked(results)
+	log.Info().
+		Err(err).
+		Str("query", q).
+		Int("limit", limit).
+		Int("offset", offset).
+		Int("results", len(results)).
+		Int("total", total).
+		Msg("search request")
 	if err != nil {
 		return nil, 0, err
 	}
 
-	return s.removeBlocked(results), total, nil
+	return results, total, nil
 }
 
 func (s *Search) getEmptyQueryResults(ctx context.Context, limit, offset int) ([]*model.Entry, int, error) {
@@ -103,6 +107,10 @@ func (s *Search) getEmptyQueryResults(ctx context.Context, limit, offset int) ([
 
 // removeBlocked removes results from blocked servers from the search results
 func (s *Search) removeBlocked(results []*model.Entry) []*model.Entry {
+	if len(results) == 0 {
+		return results
+	}
+
 	allowed := []*model.Entry{}
 	for _, entry := range results {
 		if entry.IsBlocked(s.block) {

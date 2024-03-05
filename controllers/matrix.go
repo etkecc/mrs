@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"strconv"
 
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog"
@@ -93,24 +92,13 @@ func matrixRoomDirectory(matrixSvc matrixService) echo.HandlerFunc {
 		r.Body = io.NopCloser(bytes.NewBuffer(body))
 		c.SetRequest(r)
 
-		req := &model.RoomDirectoryRequest{}
-		if c.Request().Method == http.MethodGet {
-			queryReq := &model.RoomDirectoryRequestQuery{}
-			if err := c.Bind(queryReq); err != nil {
-				log.Error().Err(err).Msg("GET directory request binding failed")
-			}
-			req.IncludeAllNetworks = queryReq.IncludeAllNetworks == "true"
-			req.Limit, _ = strconv.Atoi(queryReq.Limit) //nolint:errcheck // that's ok
-			req.Since = queryReq.Since
-			req.ThirdPartyInstanceID = queryReq.ThirdPartyInstanceID
-		} else {
-			if err := c.Bind(req); err != nil {
-				log.Error().Err(err).Msg("POST directory request binding failed")
-			}
+		var req model.RoomDirectoryRequest
+		if err := c.Bind(&req); err != nil {
+			log.Error().Err(err).Msg("POST directory request binding failed")
 		}
 		r.Body = io.NopCloser(bytes.NewBuffer(body))
 		c.SetRequest(r)
 
-		return c.JSONBlob(matrixSvc.PublicRooms(c.Request().Context(), c.Request(), req))
+		return c.JSONBlob(matrixSvc.PublicRooms(c.Request().Context(), c.Request(), &req))
 	}
 }

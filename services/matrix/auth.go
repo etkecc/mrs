@@ -43,12 +43,10 @@ func (s *Server) ValidateAuth(ctx context.Context, r *http.Request) (serverName 
 		return "", fmt.Errorf("no auth provided")
 	}
 	obj := map[string]any{
-		"method": r.Method,
-		"uri":    r.RequestURI,
-		"origin": auths[0].Origin,
-	}
-	if auths[0].Destination != nil {
-		obj["destination"] = *auths[0].Destination
+		"method":      r.Method,
+		"uri":         r.RequestURI,
+		"origin":      auths[0].Origin,
+		"destination": s.cfg.Get().Matrix.ServerName,
 	}
 	if len(content) > 0 {
 		obj["content"] = content

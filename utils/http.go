@@ -24,16 +24,16 @@ const (
 var httpClient = &http.Client{Timeout: DefaultTimeout}
 
 // Get performs HTTP GET request with timeout, User-Agent, and retrier
-func Get(ctx context.Context, uri string) (*http.Response, error) {
+func Get(ctx context.Context, uri string, maxRetries ...int) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri, nil)
 	if err != nil {
 		return nil, err
 	}
-	return Do(req)
+	return Do(req, maxRetries...)
 }
 
 // Do performs HTTP request with timeout, User-Agent, and retrier
-func Do(req *http.Request) (*http.Response, error) {
+func Do(req *http.Request, maxRetries ...int) (*http.Response, error) {
 	// creating a custom http.client transaction if not already present to avoid unlabeled transactions
 	name := req.Method + " " + req.URL.String()
 	transaction := sentry.TransactionFromContext(req.Context())
@@ -70,13 +70,23 @@ func Do(req *http.Request) (*http.Response, error) {
 	req = req.WithContext(ctx)
 	req.Header.Set("User-Agent", version.UserAgent)
 	// no direct return, to use response and error in defer
-	resp, err = httpRetry(ctx, req)
+	var retries int
+	if len(maxRetries) > 0 {
+		retries = maxRetries[0]
+	} else {
+		retries = MaxRetries
+	}
+	resp, err = httpRetry(ctx, req, retries)
 	return resp, err
 }
 
 // httpRetry is a simple retry mechanism for http requests with exponential backoff
 // that retries only on 5xx status codes
-func httpRetry(ctx context.Context, req *http.Request, currentRetry ...int) (*http.Response, error) {
+func httpRetry(ctx context.Context, req *http.Request, retries int, currentRetry ...int) (*http.Response, error) {
+	if retries == 0 {
+		return httpClient.Do(req)
+	}
+
 	retry := 1
 	if len(currentRetry) > 0 {
 		retry = currentRetry[0]
@@ -88,16 +98,16 @@ func httpRetry(ctx context.Context, req *http.Request, currentRetry ...int) (*ht
 	if resp != nil && resp.StatusCode >= 500 && resp.StatusCode <= 599 {
 		log := zerolog.Ctx(ctx).With().
 			Int("try", retry).
-			Int("of", MaxRetries).
+			Int("of", retries).
 			Str("reason", resp.Status).
 			Str("req", req.Method+" "+req.URL.String()).
 			Logger()
-		if retry <= MaxRetries {
+		if retry <= retries {
 			delay := time.Duration(retry) * RetryDelay
 			log.Warn().Str("in", delay.String()).Msg("retrying")
 			time.Sleep(delay)
 			retry++
-			return httpRetry(ctx, req, retry)
+			return httpRetry(ctx, req, retries, retry)
 		}
 		log.Warn().Msg("max retries reached")
 	}

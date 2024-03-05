@@ -53,6 +53,9 @@ type DataRepository interface {
 	GetRoom(context.Context, string) (*model.MatrixRoom, error)
 	EachRoom(context.Context, func(string, *model.MatrixRoom) bool)
 	SetBiggestRooms(context.Context, []string) error
+	SetServersRoomsCount(ctx context.Context, data map[string]int) error
+	SaveServersRooms(ctx context.Context, data map[string][]string) error
+	GetServersRoomsCount(ctx context.Context) map[string]int
 	GetBannedRooms(context.Context, ...string) ([]string, error)
 	RemoveRooms(context.Context, []string)
 	BanRoom(context.Context, string) error
@@ -233,6 +236,10 @@ func (m *Crawler) IndexableServers(ctx context.Context) []string {
 	}))
 }
 
+func (m *Crawler) GetServersRoomsCount(ctx context.Context) map[string]int {
+	return m.data.GetServersRoomsCount(ctx)
+}
+
 func (m *Crawler) loadServers(ctx context.Context) *utils.List[string, string] {
 	span := utils.StartSpan(ctx, "crawler.loadServers")
 	defer span.Finish()
@@ -330,6 +337,8 @@ func (m *Crawler) afterRoomParsing(ctx context.Context) {
 		id      string
 		members int
 	}
+	serversRoomsCount := map[string]int{}
+	// serversRooms := map[string][]string{}
 
 	span := utils.StartSpan(ctx, "crawler.afterRoomParsing")
 	defer span.Finish()
@@ -345,6 +354,11 @@ func (m *Crawler) afterRoomParsing(ctx context.Context) {
 			return false
 		}
 
+		serversRoomsCount[data.Server]++
+		// if _, ok := serversRooms[data.Server]; !ok {
+		// 	serversRooms[data.Server] = []string{}
+		// }
+		// serversRooms[data.Server] = append(serversRooms[data.Server], data.ID)
 		counts = append(counts, roomCount{data.ID, data.Members})
 		return false
 	})
@@ -361,6 +375,15 @@ func (m *Crawler) afterRoomParsing(ctx context.Context) {
 		log.Error().Err(err).Msg("cannot set biggest rooms")
 	}
 	log.Info().Str("took", time.Since(started).String()).Msg("biggest rooms have been calculated and stored")
+
+	if err := m.data.SetServersRoomsCount(span.Context(), serversRoomsCount); err != nil {
+		log.Error().Err(err).Msg("cannot set servers rooms count")
+	}
+
+	// TODO
+	// if err := m.data.SaveServersRooms(span.Context(), serversRooms); err != nil {
+	// 	log.Error().Err(err).Msg("cannot save servers rooms")
+	// }
 
 	if len(toRemove) > 0 {
 		log.Info().Int("rooms", len(toRemove)).Msg("removing rooms last updated more than a week ago...")

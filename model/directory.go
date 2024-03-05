@@ -1,20 +1,14 @@
 package model
 
-// RoomDirectoryRequestQuery sent when calling GET /_matrix/federation/v1/publicRooms
-type RoomDirectoryRequestQuery struct {
-	IncludeAllNetworks   string `query:"include_all_networks"`
-	Limit                string `query:"limit" json:"limit"`
-	Since                string `query:"since"`
-	ThirdPartyInstanceID string `query:"third_party_instance_id"`
-}
-
 // RoomDirectoryRequest sent when calling POST /_matrix/federation/v1/publicRooms
 type RoomDirectoryRequest struct {
-	Filter               RoomDirectoryFilter `json:"filter"`
-	IncludeAllNetworks   bool                `json:"include_all_networks"`
-	Limit                int                 `json:"limit"`
-	Since                string              `json:"since"`
-	ThirdPartyInstanceID string              `json:"third_party_instance_id"`
+	Filter RoomDirectoryFilter `json:"filter"`
+	Limit  int                 `json:"limit" query:"limit"`
+	Since  string              `json:"since" query:"since"`
+	// there should be more fields:
+	// `include_all_networks` (json and query)
+	// `third_party_instance_id` (json and query)
+	// but they aren't used in MRS, so not implemented
 }
 
 // RoomDirectoryFilter for the RoomDirectoryRequest

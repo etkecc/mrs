@@ -627,6 +627,25 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Stats'
+  /catalog/servers:
+    get:
+      tags:
+        - public
+      summary: Get servers catalog
+      description: Returns a list of all servers with rooms counts
+      operationId: catalog_servers
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  server_name:
+                    type: integer
+                    description: rooms count
+                    example: 100
   /discover/bulk:
     post:
       tags:
