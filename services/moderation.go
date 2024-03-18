@@ -137,17 +137,12 @@ func (m *Moderation) sendWebhook(ctx context.Context, room *model.MatrixRoom, se
 		return nil
 	}
 
-	log := zerolog.Ctx(ctx)
 	payload, err := json.Marshal(webhookPayload{
 		Username: m.cfg.Get().Matrix.ServerName,
 		Markdown: m.getReportText(ctx, room.ID, reason, room, server),
 	})
 	if err != nil {
 		return err
-	}
-
-	if merr := m.mail.SendReport(ctx, room, server, reason, server.Contacts.Emails); merr != nil {
-		log.Warn().Err(merr).Msg("email sending failed")
 	}
 
 	req, err := http.NewRequest("POST", m.cfg.Get().Webhooks.Moderation, bytes.NewReader(payload))
@@ -200,6 +195,10 @@ func (m *Moderation) Report(ctx context.Context, roomID, reason string) error {
 
 	if err := m.sendWebhook(ctx, room, server, reason); err != nil {
 		log.Error().Err(err).Msg("cannot send moderation webhook")
+	}
+
+	if merr := m.mail.SendReport(ctx, room, server, reason, server.Contacts.Emails); merr != nil {
+		log.Warn().Err(merr).Msg("cannot send report to the server's owner")
 	}
 
 	if err := m.sendEmail(ctx, room, server, reason); err != nil {
