@@ -4,11 +4,9 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
-	"github.com/cespare/xxhash/v2"
 	"github.com/pemistahl/lingua-go"
 
 	"gitlab.com/etke.cc/mrs/api/utils"
@@ -135,15 +133,6 @@ func (r *MatrixRoom) Parse(detector lingua.LanguageDetector, mrsPublicURL string
 	}
 
 	r.parseLanguage(detector)
-}
-
-// ParseAlias assigns a fake alias to a room if it doesn't have one
-func (r *MatrixRoom) ParseAlias(mrsServerName string) {
-	if r.Alias != "" {
-		return
-	}
-
-	r.Alias = "#" + strconv.Itoa(int(xxhash.Sum64String(r.ID))) + ":" + mrsServerName
 }
 
 // Servers returns all servers from the room object, except own server

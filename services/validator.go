@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/rs/zerolog"
 
@@ -95,6 +96,24 @@ func (v *Validator) IsIndexable(ctx context.Context, server string) bool {
 	return true
 }
 
+// isBlockedByTopic checks if room's topic contains "<matrix.server_name from MRS config>: noindex" string
+func (v *Validator) isBlockedByTopic(topic string) bool {
+	mrsServerName := v.cfg.Get().Matrix.ServerName
+	tokens := []string{
+		strings.ToLower(mrsServerName + ":noindex"),
+		strings.ToLower(mrsServerName + " : noindex"),
+		strings.ToLower(mrsServerName + ": noindex"),
+	}
+	lcTopic := strings.ToLower(topic)
+
+	for _, token := range tokens {
+		if strings.Contains(lcTopic, token) {
+			return true
+		}
+	}
+	return false
+}
+
 // IsRoomAllowed checks if room is allowed
 func (v *Validator) IsRoomAllowed(ctx context.Context, server string, room *model.MatrixRoom) bool {
 	if room.ID == "" {
@@ -110,6 +129,9 @@ func (v *Validator) IsRoomAllowed(ctx context.Context, server string, room *mode
 		return false
 	}
 	if v.block.ByServer(server) {
+		return false
+	}
+	if v.isBlockedByTopic(room.Topic) {
 		return false
 	}
 

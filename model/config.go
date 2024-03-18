@@ -7,23 +7,22 @@ import (
 
 // Config is MRS configuration model
 type Config struct {
-	Port        string            `yaml:"port"`
-	SentryDSN   string            `yaml:"sentry_dsn"`
-	Public      *ConfigPublic     `yaml:"public"`
-	Matrix      *ConfigMatrix     `yaml:"matrix"`
-	Search      *ConfigSearch     `yaml:"search"`
-	Path        *ConfigPaths      `yaml:"path"`
-	Batch       *ConfigBatch      `yaml:"batch"`
-	Auth        *ConfigAuth       `yaml:"auth"`
-	Cron        *ConfigCron       `yaml:"cron"`
-	Cache       *ConfigCache      `yaml:"cache"`
-	Workers     *ConfigWorkers    `yaml:"workers"`
-	Webhooks    *ConfigWebhooks   `yaml:"webhooks"`
-	Email       *ConfigEmail      `yaml:"email"`
-	Languages   []string          `yaml:"languages"`
-	Servers     []string          `yaml:"servers"`
-	Blocklist   *ConfigBlocklist  `yaml:"blocklist"`
-	Experiments ConfigExperiments `yaml:"experiments"`
+	Port      string           `yaml:"port"`
+	SentryDSN string           `yaml:"sentry_dsn"`
+	Public    *ConfigPublic    `yaml:"public"`
+	Matrix    *ConfigMatrix    `yaml:"matrix"`
+	Search    *ConfigSearch    `yaml:"search"`
+	Path      *ConfigPaths     `yaml:"path"`
+	Batch     *ConfigBatch     `yaml:"batch"`
+	Auth      *ConfigAuth      `yaml:"auth"`
+	Cron      *ConfigCron      `yaml:"cron"`
+	Cache     *ConfigCache     `yaml:"cache"`
+	Workers   *ConfigWorkers   `yaml:"workers"`
+	Webhooks  *ConfigWebhooks  `yaml:"webhooks"`
+	Email     *ConfigEmail     `yaml:"email"`
+	Languages []string         `yaml:"languages"`
+	Servers   []string         `yaml:"servers"`
+	Blocklist *ConfigBlocklist `yaml:"blocklist"`
 }
 
 // ConfigPublic - instance public information
@@ -139,10 +138,4 @@ type ConfigMatrix struct {
 	Support    *msc1929.Response `yaml:"support"`
 	Keys       []string          `yaml:"keys"`
 	OldKeys    []string          `yaml:"old_keys"`
-}
-
-// ConfigExperiments - experimental features
-type ConfigExperiments struct {
-	InMemoryIndex bool `yaml:"in_memory_index"`
-	FakeAliases   bool `yaml:"fake_aliases"`
 }

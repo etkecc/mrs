@@ -36,6 +36,7 @@ type BlocklistService interface {
 }
 
 type RobotsService interface {
+	// Deprecated: use ValidatorService instead
 	Allowed(ctx context.Context, serverName, endpoint string) bool
 }
 
@@ -427,7 +428,6 @@ func (m *Crawler) getPublicRooms(ctx context.Context, name string) *utils.List[s
 	var added int
 	limit := "10000"
 	servers := utils.NewList[string, string]()
-	withFakeAliases := m.cfg.Get().Experiments.FakeAliases
 	span := utils.StartSpan(ctx, "crawler.getPublicRooms")
 	defer span.Finish()
 	log := zerolog.Ctx(span.Context())
@@ -453,9 +453,6 @@ func (m *Crawler) getPublicRooms(ctx context.Context, name string) *utils.List[s
 			}
 
 			room.Parse(m.detector, m.cfg.Get().Public.API)
-			if withFakeAliases {
-				room.ParseAlias(m.cfg.Get().Matrix.ServerName)
-			}
 			servers.AddSlice(room.Servers(m.cfg.Get().Matrix.ServerName))
 
 			m.data.AddRoomBatch(span.Context(), room)

@@ -65,14 +65,13 @@ func main() {
 	utils.SetSentryDSN(cfg.Get().SentryDSN)
 	log = zerolog.Ctx(utils.NewContext())
 
-	experiments := cfg.Get().Experiments
 	dataRepo, err = data.New(cfg.Get().Path.Data)
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot open data repo")
 	}
 
 	detector := getLanguageDetector(cfg.Get().Languages)
-	index, err = search.NewIndex(cfg.Get().Path.Index, detector, "en", experiments.InMemoryIndex)
+	index, err = search.NewIndex(cfg.Get().Path.Index, detector, "en")
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot open index repo")
 	}
@@ -90,10 +89,6 @@ func main() {
 	matrixSvc.SetDiscover(crawlerSvc.AddServer)
 	cacheSvc := services.NewCache(cfg, statsSvc)
 	dataSvc := services.NewDataFacade(crawlerSvc, indexSvc, statsSvc, cacheSvc)
-	if experiments.InMemoryIndex {
-		log.Info().Msg("in-memory index is enabled, ingesting data...")
-		dataSvc.Ingest(utils.NewContext())
-	}
 	mailSvc := services.NewEmail(cfg)
 	modSvc := services.NewModeration(cfg, dataRepo, index, mailSvc)
 

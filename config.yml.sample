@@ -99,9 +99,4 @@ blocklist:
   servers: [] # list of servers to ignore completely
   queries: [] # list of words, if at least one of them is present in a search query, empty results will be returned
 
-# experimental features config. DO NOT ENABLE WITHOUT KNOWING WHAT EXACTLY YOU'RE DOING!
-experiments:
-  in_memory_index: false
-  fake_aliases: false
-
 # vi: ft=yaml

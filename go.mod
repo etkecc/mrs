@@ -9,7 +9,6 @@ require (
 	github.com/archdx/zerolog-sentry v1.8.2
 	github.com/benjaminestes/robots/v2 v2.0.5
 	github.com/blevesearch/bleve/v2 v2.3.10
-	github.com/cespare/xxhash/v2 v2.2.0
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/getsentry/sentry-go v0.27.0
 	github.com/goccy/go-json v0.10.2
@@ -28,10 +27,10 @@ require (
 	gitlab.com/etke.cc/go/fswatcher v1.0.0
 	gitlab.com/etke.cc/go/msc1929 v1.0.1
 	go.etcd.io/bbolt v1.3.9
-	golang.org/x/exp v0.0.0-20240222234643-814bf88cf225
+	golang.org/x/exp v0.0.0-20240318143956-a85f2c67cd81
 	golang.org/x/time v0.5.0
 	gopkg.in/yaml.v3 v3.0.1
-	maunium.net/go/mautrix v0.17.0
+	maunium.net/go/mautrix v0.18.0
 	mvdan.cc/xurls/v2 v2.5.0
 )
 
@@ -44,7 +43,7 @@ require (
 	github.com/blevesearch/go-porterstemmer v1.0.3 // indirect
 	github.com/blevesearch/gtreap v0.1.1 // indirect
 	github.com/blevesearch/mmap-go v1.0.4 // indirect
-	github.com/blevesearch/scorch_segment_api/v2 v2.2.8 // indirect
+	github.com/blevesearch/scorch_segment_api/v2 v2.2.9 // indirect
 	github.com/blevesearch/segment v0.9.1 // indirect
 	github.com/blevesearch/snowballstem v0.9.0 // indirect
 	github.com/blevesearch/stempel v0.2.0 // indirect
@@ -58,7 +57,7 @@ require (
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang/geo v0.0.0-20230421003525-6adc56603217 // indirect
-	github.com/golang/protobuf v1.5.3 // indirect
+	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
@@ -79,13 +78,13 @@ require (
 	github.com/valyala/fastrand v1.1.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/valyala/histogram v1.2.0 // indirect
-	github.com/xxjwxc/public v0.0.0-20240301092059-6114116d0170 // indirect
+	github.com/xxjwxc/public v0.0.0-20240318025311-2a383cf97473 // indirect
 	github.com/yuin/goldmark v1.7.0 // indirect
-	go.mau.fi/util v0.4.0 // indirect
+	go.mau.fi/util v0.4.1 // indirect
 	golang.org/x/crypto v0.21.0 // indirect
 	golang.org/x/net v0.22.0 // indirect
 	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
-	google.golang.org/protobuf v1.32.0 // indirect
+	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/eapache/queue.v1 v1.1.0 // indirect
 )

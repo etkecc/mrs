@@ -39,7 +39,21 @@ matrix_synapse_allow_public_rooms_over_federation: false
 However, if you think that "publishing over federation, but not for that particular member of the federation" segregation is a good thing
 for Matrix protocol, MRS has several options to unlist/unpublish/block/remove your server and its rooms from indexing.
 
-## robots.txt
+## (specific room) using room topic
+
+As a room administrator/moderator, you could add special string to the room topic to prevent indexing:
+
+```
+<matrix.server_name from MRS config.yml>: noindex
+```
+
+Example:
+
+```
+example.com: noindex
+```
+
+## (deprecated) robots.txt
 
 While robots.txt is not part of the Matrix protocol, that's the easiest and convenient way to prevent your server from indexing.
 MRS supports several made-up endpoints to prevent indexing your server.

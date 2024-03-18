@@ -23,6 +23,7 @@ const (
 var robotsTxtBot = []byte(version.Bot)
 
 // Robots - robots.txt parsing
+// Deprecated: This service is deprecated and will be removed in future versions
 type Robots struct {
 	mu   *sync.Mutex
 	data map[string]*robots.Robots
@@ -37,6 +38,7 @@ func NewRobots() *Robots {
 }
 
 // Allowed checks if endpoint is allowed by robots.txt of the serverName
+// Deprecated: This service is deprecated and will be removed in future versions
 func (r *Robots) Allowed(ctx context.Context, serverName, endpoint string) bool {
 	parsed := r.get(ctx, serverName)
 	if parsed == nil {

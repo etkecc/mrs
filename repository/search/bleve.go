@@ -21,9 +21,8 @@ import (
 const backupSuffix = ".bak"
 
 type Index struct {
-	index    bleve.Index
-	inmemory bool
-	path     string
+	index bleve.Index
+	path  string
 }
 
 var (
@@ -114,11 +113,10 @@ func getIndexMapping(ctx context.Context) mapping.IndexMapping {
 }
 
 // NewIndex creates or opens an index
-func NewIndex(path string, detector lingua.LanguageDetector, defaultLang string, inMemory bool) (*Index, error) {
+func NewIndex(path string, detector lingua.LanguageDetector, defaultLang string) (*Index, error) {
 	multilang.Register(detector, defaultLang)
 	i := &Index{
-		path:     path,
-		inmemory: inMemory,
+		path: path,
 	}
 	err := i.load(utils.NewContext())
 
@@ -129,16 +127,9 @@ func NewIndex(path string, detector lingua.LanguageDetector, defaultLang string,
 func (i *Index) load(ctx context.Context) error {
 	var index bleve.Index
 	var err error
-	if i.inmemory {
-		index, err = bleve.NewMemOnly(getIndexMapping(ctx))
-		if err != nil {
-			return err
-		}
-	} else {
-		index, err = i.loadFS(ctx)
-		if err != nil {
-			return err
-		}
+	index, err = i.loadFS(ctx)
+	if err != nil {
+		return err
 	}
 	i.index = index
 	return nil
@@ -167,10 +158,6 @@ func (i *Index) Swap(ctx context.Context) error {
 
 	if err := i.index.Close(); err != nil {
 		return err
-	}
-
-	if i.inmemory {
-		return i.load(ctx)
 	}
 
 	log := zerolog.Ctx(ctx)
