@@ -2,8 +2,8 @@ cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMT
 github.com/BurntSushi/toml v0.3.0/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
-github.com/RoaringBitmap/roaring v1.9.0 h1:lwKhr90/j0jVXJyh5X+vQN1VVn77rQFfYnh6RDRGCcE=
-github.com/RoaringBitmap/roaring v1.9.0/go.mod h1:6AXUsoIEzDTFFQCe1RbGA6uFONMhvejWj5rqITANK90=
+github.com/RoaringBitmap/roaring v1.9.1 h1:LXcSqGGGMKm+KAzUyWn7ZeREqoOkoMX+KwLOK1thc4I=
+github.com/RoaringBitmap/roaring v1.9.1/go.mod h1:6AXUsoIEzDTFFQCe1RbGA6uFONMhvejWj5rqITANK90=
 github.com/VictoriaMetrics/metrics v1.33.0 h1:EnkDEaGiL2u95t+W76GfecC/LMYpy+tFrexYzBWQIAc=
 github.com/VictoriaMetrics/metrics v1.33.0/go.mod h1:r7hveu6xMdUACXvB8TYdAj8WEsKzWB0EkpJN+RDtOf8=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
@@ -24,12 +24,14 @@ github.com/bitly/go-simplejson v0.5.0/go.mod h1:cXHtHw4XUPsvGaxgjIAn8PhEWG9NfngE
 github.com/bits-and-blooms/bitset v1.12.0/go.mod h1:7hO7Gc7Pp1vODcmWvKMRA9BNmbv6a/7QIWpPxHddWR8=
 github.com/bits-and-blooms/bitset v1.13.0 h1:bAQ9OPNFYbGHV6Nez0tmNI0RiEu7/hxlYJRUA0wFAVE=
 github.com/bits-and-blooms/bitset v1.13.0/go.mod h1:7hO7Gc7Pp1vODcmWvKMRA9BNmbv6a/7QIWpPxHddWR8=
-github.com/blevesearch/bleve/v2 v2.3.10 h1:z8V0wwGoL4rp7nG/O3qVVLYxUqCbEwskMt4iRJsPLgg=
-github.com/blevesearch/bleve/v2 v2.3.10/go.mod h1:RJzeoeHC+vNHsoLR54+crS1HmOWpnH87fL70HAUCzIA=
+github.com/blevesearch/bleve/v2 v2.4.0 h1:2xyg+Wv60CFHYccXc+moGxbL+8QKT/dZK09AewHgKsg=
+github.com/blevesearch/bleve/v2 v2.4.0/go.mod h1:IhQHoFAbHgWKYavb9rQgQEJJVMuY99cKdQ0wPpst2aY=
 github.com/blevesearch/bleve_index_api v1.1.6 h1:orkqDFCBuNU2oHW9hN2YEJmet+TE9orml3FCGbl1cKk=
 github.com/blevesearch/bleve_index_api v1.1.6/go.mod h1:PbcwjIcRmjhGbkS/lJCpfgVSMROV6TRubGGAODaK1W8=
 github.com/blevesearch/geo v0.1.20 h1:paaSpu2Ewh/tn5DKn/FB5SzvH0EWupxHEIwbCk/QPqM=
 github.com/blevesearch/geo v0.1.20/go.mod h1:DVG2QjwHNMFmjo+ZgzrIq2sfCh6rIHzy9d9d0B59I6w=
+github.com/blevesearch/go-faiss v1.0.13 h1:zfFs7ZYD0NqXVSY37j0JZjZT1BhE9AE4peJfcx/NB4A=
+github.com/blevesearch/go-faiss v1.0.13/go.mod h1:jrxHrbl42X/RnDPI+wBoZU8joxxuRwedrxqswQ3xfU8=
 github.com/blevesearch/go-porterstemmer v1.0.3 h1:GtmsqID0aZdCSNiY8SkuPJ12pD4jI+DdXTAn4YRcHCo=
 github.com/blevesearch/go-porterstemmer v1.0.3/go.mod h1:angGc5Ht+k2xhJdZi511LtmxuEf0OVpvUUNrwmM1P7M=
 github.com/blevesearch/gtreap v0.1.1 h1:2JWigFrzDMR+42WGIN/V2p0cUvn4UP3C4Q5nmaZGW8Y=
@@ -58,6 +60,8 @@ github.com/blevesearch/zapx/v14 v14.3.10 h1:SG6xlsL+W6YjhX5N3aEiL/2tcWh3DO75Bnz7
 github.com/blevesearch/zapx/v14 v14.3.10/go.mod h1:qqyuR0u230jN1yMmE4FIAuCxmahRQEOehF78m6oTgns=
 github.com/blevesearch/zapx/v15 v15.3.13 h1:6EkfaZiPlAxqXz0neniq35my6S48QI94W/wyhnpDHHQ=
 github.com/blevesearch/zapx/v15 v15.3.13/go.mod h1:Turk/TNRKj9es7ZpKK95PS7f6D44Y7fAFy8F4LXQtGg=
+github.com/blevesearch/zapx/v16 v16.0.12 h1:Uccxvjmn+hQ6ywQP+wIiTpdq9LnAviGoryJOmGwAo/I=
+github.com/blevesearch/zapx/v16 v16.0.12/go.mod h1:MYnOshRfSm4C4drxx1LGRI+MVFByykJ2anDY1fxdk9Q=
 github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869/go.mod h1:Ekp36dRnpXw/yCqJaO+ZrUyxD+3VXMFFr56k5XYrpB4=
 github.com/btcsuite/winsvc v1.0.0/go.mod h1:jsenWakMcC0zFBFurPLEAyrnc/teJEM1O46fmI40EZs=
 github.com/buger/jsonparser v1.1.1 h1:2PnMjfWD7wBILjqQbt530v576A/cAbQvEW9gGIpYMUs=
@@ -322,8 +326,8 @@ gitlab.com/etke.cc/go/echo-basic-auth v1.1.0 h1:U3c9aZEq4QRytdTdYYZMGsIppKumTTCF
 gitlab.com/etke.cc/go/echo-basic-auth v1.1.0/go.mod h1:QbmR+SXjMTNt1CF5A0d3kUjZ15Wwuzh04aRVaiDGMX8=
 gitlab.com/etke.cc/go/fswatcher v1.0.0 h1:uyiVn+1NVCjOLZrXSZouIDBDZBMwVipS4oYuvAFpPzo=
 gitlab.com/etke.cc/go/fswatcher v1.0.0/go.mod h1:MqTOxyhXfvaVZQUL9/Ksbl2ow1PTBVu3eqIldvMq0RE=
-gitlab.com/etke.cc/go/msc1929 v1.0.1 h1:JoAwii9UoMHk9Tw8xfJhDsZj2uaZmKDt2i6beCfxnxM=
-gitlab.com/etke.cc/go/msc1929 v1.0.1/go.mod h1:aUvEDisWulhS/u9R7BIiTfooe8gghmEOn8gFu0X6yD4=
+gitlab.com/etke.cc/go/msc1929 v1.1.0 h1:1NzoZAWFLNTmGgEq5h8wbUiu55WLObw0l56TQRpYgZA=
+gitlab.com/etke.cc/go/msc1929 v1.1.0/go.mod h1:aUvEDisWulhS/u9R7BIiTfooe8gghmEOn8gFu0X6yD4=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
 go.etcd.io/bbolt v1.3.9 h1:8x7aARPEXiXbHmtUwAIv7eV2fQFHrLLavdiJ3uzJXoI=
 go.etcd.io/bbolt v1.3.9/go.mod h1:zaO32+Ti0PK1ivdPtgMESzuzL2VPoIG1PCQNvOdo/dE=

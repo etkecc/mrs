@@ -406,13 +406,17 @@ func (m *Crawler) getServerContacts(ctx context.Context, name string) model.Matr
 		return contacts
 	}
 
-	if emails := resp.AdminEmails(); len(emails) > 0 {
+	if emails := resp.ModeratorEmails(); len(emails) > 0 {
+		contacts.Emails = utils.Uniq(emails)
+	} else if emails := resp.AdminEmails(); len(emails) > 0 {
 		contacts.Emails = utils.Uniq(emails)
 	} else {
 		contacts.Emails = utils.Uniq(resp.AllEmails())
 	}
 
-	if mxids := resp.AdminMatrixIDs(); len(mxids) > 0 {
+	if mxids := resp.ModeratorMatrixIDs(); len(mxids) > 0 {
+		contacts.MXIDs = utils.Uniq(mxids)
+	} else if mxids := resp.AdminMatrixIDs(); len(mxids) > 0 {
 		contacts.MXIDs = utils.Uniq(mxids)
 	} else {
 		contacts.MXIDs = utils.Uniq(resp.AllMatrixIDs())

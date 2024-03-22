@@ -9,6 +9,12 @@ import (
 const (
 	// RoleAdmin is catch-all user for any queries
 	RoleAdmin = "m.role.admin"
+	// RoleModerator is intended for moderation requests
+	// TODO: currently unused, as MSC4121 mandates the use of RoleModeratorUnstable until it is merged into the spec,
+	// ref: https://github.com/FSG-Cat/matrix-spec-proposals/blob/FSG-Cat-Moderation-Role-well-known-support-record/proposals/4121-m.role.moderator.md#unstable-prefix
+	RoleModerator = "m.role.moderator"
+	// RoleModeratorUnstable is intended for moderation requests, used until MSC4121 is merged into the spec
+	RoleModeratorUnstable = "support.feline.msc4121.role.moderator"
 	// RoleSecurity is intended for sensitive requests
 	RoleSecurity = "m.role.security"
 )
@@ -31,6 +37,12 @@ func (c *Contact) IsEmpty() bool {
 // IsAdmin checks if contact has admin role
 func (c *Contact) IsAdmin() bool {
 	return c.Role == RoleAdmin
+}
+
+// IsModerator checks if contact has moderator role
+// TODO: currently uses RoleModeratorUnstable, as MSC4121 mandates the use of RoleModeratorUnstable until it is merged into the spec,
+func (c *Contact) IsModerator() bool {
+	return c.Role == RoleModeratorUnstable
 }
 
 // IsSecurity checks if contact has security role
@@ -129,6 +141,28 @@ func (r *Response) AdminMatrixIDs() []string {
 	var mxids []string
 	for _, contact := range r.Contacts {
 		if contact.IsAdmin() && contact.MatrixID != "" {
+			mxids = append(mxids, contact.MatrixID)
+		}
+	}
+	return mxids
+}
+
+// ModeratorEmails returns a list of moderator emails
+func (r *Response) ModeratorEmails() []string {
+	var emails []string
+	for _, contact := range r.Contacts {
+		if contact.IsModerator() && contact.Email != "" {
+			emails = append(emails, contact.Email)
+		}
+	}
+	return emails
+}
+
+// ModeratorMatrixIDs returns a list of moderator matrix IDs
+func (r *Response) ModeratorMatrixIDs() []string {
+	var mxids []string
+	for _, contact := range r.Contacts {
+		if contact.IsModerator() && contact.MatrixID != "" {
 			mxids = append(mxids, contact.MatrixID)
 		}
 	}

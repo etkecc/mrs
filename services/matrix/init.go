@@ -91,10 +91,11 @@ func (s *Server) initVersion() error {
 			"v1.7",
 			"v1.8",
 			"v1.9",
-			"v2.0",
+			"v1.10",
 		},
 		UnstableFeatures: map[string]bool{
 			"uk.half-shot.msc1929":     true, // the name is made-up as well, because the MSC itself doesn't contain any name
+			"support.feline.msc4121":   true,
 			"is.nheko.summary.msc3266": true,
 		},
 	})

@@ -8,7 +8,7 @@ require (
 	github.com/VictoriaMetrics/metrics v1.33.0
 	github.com/archdx/zerolog-sentry v1.8.2
 	github.com/benjaminestes/robots/v2 v2.0.5
-	github.com/blevesearch/bleve/v2 v2.3.10
+	github.com/blevesearch/bleve/v2 v2.4.0
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/getsentry/sentry-go v0.27.0
 	github.com/goccy/go-json v0.10.2
@@ -25,7 +25,7 @@ require (
 	github.com/ziflex/lecho/v3 v3.5.0
 	gitlab.com/etke.cc/go/echo-basic-auth v1.1.0
 	gitlab.com/etke.cc/go/fswatcher v1.0.0
-	gitlab.com/etke.cc/go/msc1929 v1.0.1
+	gitlab.com/etke.cc/go/msc1929 v1.1.0
 	go.etcd.io/bbolt v1.3.9
 	golang.org/x/exp v0.0.0-20240318143956-a85f2c67cd81
 	golang.org/x/time v0.5.0
@@ -35,11 +35,12 @@ require (
 )
 
 require (
-	github.com/RoaringBitmap/roaring v1.9.0 // indirect
+	github.com/RoaringBitmap/roaring v1.9.1 // indirect
 	github.com/benjaminestes/robots v1.0.0 // indirect
 	github.com/bits-and-blooms/bitset v1.13.0 // indirect
 	github.com/blevesearch/bleve_index_api v1.1.6 // indirect
 	github.com/blevesearch/geo v0.1.20 // indirect
+	github.com/blevesearch/go-faiss v1.0.13 // indirect
 	github.com/blevesearch/go-porterstemmer v1.0.3 // indirect
 	github.com/blevesearch/gtreap v0.1.1 // indirect
 	github.com/blevesearch/mmap-go v1.0.4 // indirect
@@ -54,6 +55,7 @@ require (
 	github.com/blevesearch/zapx/v13 v13.3.10 // indirect
 	github.com/blevesearch/zapx/v14 v14.3.10 // indirect
 	github.com/blevesearch/zapx/v15 v15.3.13 // indirect
+	github.com/blevesearch/zapx/v16 v16.0.12 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang/geo v0.0.0-20230421003525-6adc56603217 // indirect
