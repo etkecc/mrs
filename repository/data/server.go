@@ -110,12 +110,12 @@ func (d *Data) RemoveServers(ctx context.Context, keys []string) {
 	span := utils.StartSpan(ctx, "data.RemoveServers")
 	defer span.Finish()
 
-	d.db.Update(func(tx *bbolt.Tx) error { //nolint:errcheck
+	d.db.Update(func(tx *bbolt.Tx) error { //nolint:errcheck // that's ok
 		sbucket := tx.Bucket(serversBucket)
 		sibucket := tx.Bucket(serversInfoBucket)
 		for _, k := range keys {
-			sbucket.Delete([]byte(k))  //nolint:errcheck
-			sibucket.Delete([]byte(k)) //nolint:errcheck
+			sbucket.Delete([]byte(k))  //nolint:errcheck // that's ok
+			sibucket.Delete([]byte(k)) //nolint:errcheck // that's ok
 		}
 		return nil
 	})
@@ -157,7 +157,7 @@ func (d *Data) MarkServersOffline(ctx context.Context, keys []string) {
 	span := utils.StartSpan(ctx, "data.MarkServersOffline")
 	defer span.Finish()
 
-	d.db.Batch(func(tx *bbolt.Tx) error { //nolint:errcheck
+	d.db.Batch(func(tx *bbolt.Tx) error { //nolint:errcheck // that's ok
 		bucket := tx.Bucket(serversInfoBucket)
 		for _, k := range keys {
 			d.markServerOffline(ctx, bucket, k)

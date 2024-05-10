@@ -194,7 +194,7 @@ func (cache *Cache) purgeBunnyCDN(ctx context.Context) {
 		return
 	}
 	log := zerolog.Ctx(ctx)
-	req, err := http.NewRequest("POST", bunny.URL, bytes.NewBuffer([]byte(`{"CacheTag":"mutable"}}`)))
+	req, err := http.NewRequest(http.MethodPost, bunny.URL, bytes.NewBufferString(`{"CacheTag":"mutable"}}`))
 	if err != nil {
 		log.Error().Err(err).Msg("cannot purge bunny cache")
 		return

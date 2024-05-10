@@ -25,7 +25,7 @@ var httpClient = &http.Client{Timeout: DefaultTimeout}
 
 // Get performs HTTP GET request with timeout, User-Agent, and retrier
 func Get(ctx context.Context, uri string, maxRetries ...int) (*http.Response, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri, http.NoBody)
 	if err != nil {
 		return nil, err
 	}

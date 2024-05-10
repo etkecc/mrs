@@ -1,5 +1,6 @@
 package multilang
 
+//nolint:revive // blank imports are used to register language-specific analyzers
 import (
 	"bytes"
 

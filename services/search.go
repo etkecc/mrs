@@ -72,9 +72,8 @@ func (s *Search) Search(ctx context.Context, q, sortBy string, limit, offset int
 	var builtQuery query.Query
 	if q == "" {
 		return s.getEmptyQueryResults(span.Context(), limit, offset)
-	} else {
-		builtQuery = s.getSearchQuery(s.matchFields(q))
 	}
+	builtQuery = s.getSearchQuery(s.matchFields(q))
 	if builtQuery == nil {
 		return []*model.Entry{}, 0, nil
 	}
@@ -123,12 +122,12 @@ func (s *Search) removeBlocked(results []*model.Entry) []*model.Entry {
 	return allowed
 }
 
-func (s *Search) matchFields(query string) (string, map[string]string) {
-	if !strings.Contains(query, ":") { // if no key:value pair(-s) - nothing is here
-		return query, nil
+func (s *Search) matchFields(queryStr string) (sanitizedQuery string, fields map[string]string) {
+	if !strings.Contains(queryStr, ":") { // if no key:value pair(-s) - nothing is here
+		return queryStr, nil
 	}
-	fields := map[string]string{}
-	parts := strings.Split(query, " ") // e.g. "language:EN foss"
+	fields = map[string]string{}
+	parts := strings.Split(queryStr, " ") // e.g. "language:EN foss"
 	toRemove := []string{}
 	for _, part := range parts {
 		if !strings.Contains(part, ":") { // no key:value pair
@@ -144,11 +143,11 @@ func (s *Search) matchFields(query string) (string, map[string]string) {
 	}
 
 	for _, remove := range toRemove {
-		query = strings.ReplaceAll(query, remove, "")
+		queryStr = strings.ReplaceAll(queryStr, remove, "")
 	}
-	query = strings.TrimSpace(query)
+	queryStr = strings.TrimSpace(queryStr)
 
-	return query, fields
+	return queryStr, fields
 }
 
 type bleveQuery interface {

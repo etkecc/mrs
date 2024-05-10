@@ -40,7 +40,7 @@ func (s *Server) GetKeyServer(ctx context.Context) []byte {
 }
 
 // PublicRooms returns /_matrix/federation/v1/publicRooms response
-func (s *Server) PublicRooms(ctx context.Context, req *http.Request, rdReq *model.RoomDirectoryRequest) (int, []byte) {
+func (s *Server) PublicRooms(ctx context.Context, req *http.Request, rdReq *model.RoomDirectoryRequest) (statusCode int, resp []byte) {
 	span := utils.StartSpan(ctx, "matrix.PublicRooms")
 	defer span.Finish()
 	log := zerolog.Ctx(span.Context())

@@ -112,7 +112,7 @@ func discoveryProtection(rl echo.MiddlewareFunc, cfg configService) echo.Middlew
 	auth := echobasicauth.NewMiddleware(&cfg.Get().Auth.Discovery)
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			if len(c.Request().Header.Get(echo.HeaderAuthorization)) > 0 {
+			if c.Request().Header.Get(echo.HeaderAuthorization) != "" {
 				return auth(next)(c)
 			}
 			return rl(next)(c)
@@ -141,7 +141,7 @@ func hashAuth(c echo.Context, authPassword string) *bool {
 			Bool("allowed_credentials", ok).
 			Msg("authorization attempt")
 	}()
-	ok, _ = argon2pw.CompareHashWithPassword(hash, authPassword) //nolint:errcheck
+	ok, _ = argon2pw.CompareHashWithPassword(hash, authPassword) //nolint:errcheck // we don't care about the error here
 
 	return &ok
 }

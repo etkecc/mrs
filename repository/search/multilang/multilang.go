@@ -26,10 +26,10 @@ func Register(detector lingua.LanguageDetector, defaultLang string) {
 		}
 	}()
 
-	registry.RegisterCharFilter(Name, func(config map[string]interface{}, cache *registry.Cache) (analysis.CharFilter, error) {
+	registry.RegisterCharFilter(Name, func(_ map[string]any, _ *registry.Cache) (analysis.CharFilter, error) {
 		return &CharFilter{detector: detector, fallback: defaultLang}, nil
 	})
-	registry.RegisterTokenizer(Name, func(config map[string]interface{}, cache *registry.Cache) (analysis.Tokenizer, error) {
+	registry.RegisterTokenizer(Name, func(_ map[string]any, cache *registry.Cache) (analysis.Tokenizer, error) {
 		analyzer, err := cache.AnalyzerNamed(defaultLang)
 		if err != nil {
 			log.Error().Err(err).Str("tokenizer", Name).Str("analyzer", defaultLang).Msg("cannot find analyzer by name")
@@ -37,7 +37,7 @@ func Register(detector lingua.LanguageDetector, defaultLang string) {
 		}
 		return &Tokenizer{cache: cache, fallback: analyzer}, nil
 	})
-	registry.RegisterAnalyzer(Name, func(config map[string]interface{}, cache *registry.Cache) (analysis.Analyzer, error) {
+	registry.RegisterAnalyzer(Name, func(_ map[string]any, cache *registry.Cache) (analysis.Analyzer, error) {
 		charfilter, err := cache.CharFilterNamed(Name)
 		if err != nil {
 			log.Error().Err(err).Str("analyzer", Name).Msg("cannot find multilang char filter")

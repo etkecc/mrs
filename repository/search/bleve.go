@@ -26,28 +26,28 @@ type Index struct {
 }
 
 var (
-	charfilter = map[string]interface{}{
+	charfilter = map[string]any{
 		"regexp":  `(#|!|:)`,
 		"replace": ` `,
 		"type":    regexp_char_filter.Name,
 	}
-	analyzerID = map[string]interface{}{
+	analyzerID = map[string]any{
 		"type": custom.Name,
-		"char_filters": []interface{}{
+		"char_filters": []any{
 			`matrix_chars`,
 		},
 		"tokenizer": letter.Name,
-		"token_filters": []interface{}{
+		"token_filters": []any{
 			`to_lower`,
 		},
 	}
-	analyzerAlias = map[string]interface{}{
+	analyzerAlias = map[string]any{
 		"type": custom.Name,
-		"char_filters": []interface{}{
+		"char_filters": []any{
 			`matrix_chars`,
 		},
 		"tokenizer": unicode.Name,
-		"token_filters": []interface{}{
+		"token_filters": []any{
 			`to_lower`,
 			en.StopName,
 		},

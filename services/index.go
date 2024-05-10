@@ -12,8 +12,7 @@ import (
 )
 
 type Index struct {
-	sync.Mutex
-
+	mu    sync.Mutex
 	cfg   ConfigService
 	index IndexRepository
 	batch *bleve.Batch
@@ -44,8 +43,8 @@ func (i *Index) EmptyIndex(ctx context.Context) error {
 
 // RoomsBatch indexes rooms in batches
 func (i *Index) RoomsBatch(ctx context.Context, roomID string, data *model.Entry) error {
-	i.Lock()
-	defer i.Unlock()
+	i.mu.Lock()
+	defer i.mu.Unlock()
 
 	if i.batch.Size() >= i.cfg.Get().Batch.Rooms {
 		return i.IndexBatch(ctx)

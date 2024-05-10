@@ -10,7 +10,7 @@ default:
 
 # update go deps
 update *flags:
-    go get {{ flags }} ./cmd/mrs
+    go get {{ flags }} ./cmd
     go mod tidy
     go mod vendor
 
@@ -31,18 +31,18 @@ profile type:
     go tool pprof -http 127.0.0.1:8000 .pprof/{{ type }}.prof
 
 # run unit tests
-test:
-    @go test -cover -coverprofile=cover.out -coverpkg=./... -covermode=set ./...
+test packages="./...":
+    @go test -cover -coverprofile=cover.out -coverpkg={{ packages }} -covermode=set {{ packages }}
     @go tool cover -func=cover.out
     -@rm -f cover.out
 
 # run app
 run:
-    @go run ./cmd/mrs
+    @go run ./cmd
 
 # build app
 build:
-    CGO_ENABLED=0 go build -ldflags '-extldflags "-static"' -tags timetzdata -v -o {{ project }} ./cmd/mrs
+    CGO_ENABLED=0 go build -ldflags '-extldflags "-static"' -tags timetzdata,goolm -v -o {{ project }} ./cmd
 
 # docker login
 login:
@@ -52,3 +52,4 @@ login:
 docker:
     docker buildx create --use
     docker buildx build --pull --provenance=false --platform {{ platforms }} --push -t {{ gitlab_image }} .
+    docker buildx rm

@@ -12,7 +12,7 @@ import (
 
 // Batch struct
 type Batch[T any] struct {
-	sync.Mutex
+	mu        sync.Mutex
 	flushfunc func(ctx context.Context, items []T)
 	data      []T
 	size      int
@@ -29,9 +29,9 @@ func New[T any](size int, flushfunc func(ctx context.Context, items []T)) *Batch
 
 // Add items from channel to batch and automatically flush them
 func (b *Batch[T]) Add(ctx context.Context, item T) {
-	b.Lock()
+	b.mu.Lock()
 	b.data = append(b.data, item)
-	b.Unlock()
+	b.mu.Unlock()
 
 	if len(b.data) >= b.size {
 		b.Flush(ctx)
@@ -40,8 +40,8 @@ func (b *Batch[T]) Add(ctx context.Context, item T) {
 
 // Flush / store batch
 func (b *Batch[T]) Flush(ctx context.Context) {
-	b.Lock()
-	defer b.Unlock()
+	b.mu.Lock()
+	defer b.mu.Unlock()
 
 	span := utils.StartSpan(ctx, "batch.Flush")
 	defer span.Finish()

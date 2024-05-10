@@ -36,7 +36,7 @@ func MergeSlices[K comparable](slices ...[]K) []K {
 }
 
 // RemoveFromSlice removes elements of toRemove from base slice
-func RemoveFromSlice[K comparable](base []K, toRemove []K) []K {
+func RemoveFromSlice[K comparable](base, toRemove []K) []K {
 	include := map[K]bool{}
 	for _, remove := range toRemove {
 		include[remove] = false
@@ -59,7 +59,7 @@ func RemoveFromSlice[K comparable](base []K, toRemove []K) []K {
 
 // Truncate string
 func Truncate(s string, length int) string {
-	if len(s) == 0 {
+	if s == "" {
 		return s
 	}
 

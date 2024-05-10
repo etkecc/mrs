@@ -87,7 +87,7 @@ func (d *Data) GetIndexStatsTL(ctx context.Context, prefix string) (map[time.Tim
 
 // GetIndexStats returns index stats
 //
-//nolint:errcheck
+//nolint:errcheck // that's ok
 func (d *Data) GetIndexStats(ctx context.Context) *model.IndexStats {
 	span := utils.StartSpan(ctx, "data.GetIndexStats")
 	defer span.Finish()

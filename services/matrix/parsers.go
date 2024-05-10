@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ed25519"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -130,20 +131,20 @@ func (s *Server) parseSRV(ctx context.Context, service, serverName string) (stri
 		return "", err
 	}
 	if len(addrs) == 0 {
-		return "", fmt.Errorf("no " + service + " SRV records")
+		return "", errors.New("no " + service + " SRV records")
 	}
 	return strings.Trim(addrs[0].Target, ".") + ":" + strconv.Itoa(int(addrs[0].Port)), nil
 }
 
 // dcrURL stands for discover-cache-and-return URL, shortcut for s.getURL
-func (s *Server) dcrURL(ctx context.Context, serverName, url string, discover bool) string {
-	s.surlsCache.Add(serverName, url)
+func (s *Server) dcrURL(ctx context.Context, serverName, serverURL string, discover bool) string {
+	s.surlsCache.Add(serverName, serverURL)
 
 	if s.discoverFunc != nil && discover {
 		go s.discoverFunc(ctx, serverName)
 	}
 
-	return url
+	return serverURL
 }
 
 // getURL returns Federation API URL

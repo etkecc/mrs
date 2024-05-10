@@ -204,7 +204,7 @@ func (s *Stats) sendWebhook(ctx context.Context) {
 		return
 	}
 
-	req, err := http.NewRequest("POST", s.cfg.Get().Webhooks.Stats, bytes.NewReader(payload))
+	req, err := http.NewRequest(http.MethodPost, s.cfg.Get().Webhooks.Stats, bytes.NewReader(payload))
 	if err != nil {
 		log.Error().Err(err).Msg("webhook request failed")
 		return

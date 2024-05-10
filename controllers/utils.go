@@ -69,8 +69,8 @@ func getOrigin(cfg configService, r *http.Request) string {
 	return origin
 }
 
-func getRL(rate rate.Limit, cacheSvc cacheService) echo.MiddlewareFunc {
-	rl, ok := rls[rate]
+func getRL(limit rate.Limit, cacheSvc cacheService) echo.MiddlewareFunc {
+	rl, ok := rls[limit]
 	if ok {
 		return rl
 	}
@@ -82,10 +82,10 @@ func getRL(rate rate.Limit, cacheSvc cacheService) echo.MiddlewareFunc {
 		return cacheSvc.IsBunny(c.RealIP())
 	}
 	cfg.Store = middleware.NewRateLimiterMemoryStoreWithConfig(middleware.RateLimiterMemoryStoreConfig{
-		Rate:      rate,
-		Burst:     int(rate),
+		Rate:      limit,
+		Burst:     int(limit),
 		ExpiresIn: 5 * time.Minute,
 	})
-	rls[rate] = middleware.RateLimiterWithConfig(cfg)
-	return rls[rate]
+	rls[limit] = middleware.RateLimiterWithConfig(cfg)
+	return rls[limit]
 }

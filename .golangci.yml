@@ -1,88 +1,130 @@
 run:
   concurrency: 4
-  timeout: 5m
+  timeout: 30m
   issues-exit-code: 1
   tests: true
   build-tags: []
-  skip-dirs: []
   skip-dirs-use-default: true
   skip-files: []
   modules-download-mode: readonly
-  allow-parallel-runners: false
 
 output:
-  format: colored-line-number
+  formats:
+    - format: colored-line-number
   print-issued-lines: true
   print-linter-name: true
-  uniq-by-line: true
-  path-prefix: ""
   sort-results: true
 
 linters-settings:
+  decorder:
+    dec-order:
+      - const
+      - var
+      - type
+      - func
+  dogsled:
+    max-blank-identifiers: 3
   errcheck:
+    check-type-assertions: true
     check-blank: true
+  errchkjson:
+    report-no-exported: true
+  exhaustive:
+    check:
+      - switch
+      - map
+    default-signifies-exhaustive: true
   gocognit:
     min-complexity: 15
   nestif:
-    min-complexity: 4
+    min-complexity: 5
   gocritic:
     enabled-tags:
+      - diagnostic
+      - style
       - performance
+  gofmt:
+    simplify: true
+    rewrite-rules:
+      - pattern: 'interface{}'
+        replacement: 'any'
+      - pattern: 'a[b:len(a)]'
+        replacement: 'a[b:]'
   gofumpt:
-    lang-version: "1.18"
-  gosimple:
-    go: "1.18"
-    checks: [ "all" ]
-  govet:
-    check-shadowing: true
-    enable:
-      - atomicalign
-      - shadow
+    extra-rules: true
+  grouper:
+    const-require-single-const: true
+    import-require-single-import: true
+    var-require-single-var: true
   misspell:
     locale: US
-  staticcheck:
-    go: "1.18"
-    checks: [ "all" ]
-  stylecheck:
-    go: "1.18"
+  usestdlibvars:
+    time-month: true
+    time-layout: true
+    crypto-hash: true
+    default-rpc-path: true
+    sql-isolation-level: true
+    tls-signature-scheme: true
+    constant-kind: true
   unparam:
     check-exported: true
-  unused:
-    go: "1.18"
-  gci:
-    sections:
-      - standard
-      - default
-      - prefix(gitlab.com/etke.cc/mrs/api)
-    section-separators:
-      - newLine
 linters:
   disable-all: false
   enable:
-    - megacheck
-    - govet
+    - asasalint
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - containedctx
+    - decorder
+    - dogsled
+    - dupl
+    - dupword
+    - durationcheck
     - errcheck
-    - gci
+    - errchkjson
+    - errname
+    - errorlint
+    - exhaustive
+    - exportloopref
+    - forcetypeassert
     - gocognit
-    - nestif
     - gocritic
+    - gocyclo
+    - gofmt
     - gofumpt
     - goimports
+    - gosec
     - gosimple
+    - gosmopolitan
     - govet
+    - ineffassign
+    - makezero
+    - mirror
     - misspell
+    - nestif
+    - nolintlint
+    - prealloc
+    - predeclared
+    - revive
+    - sqlclosecheck
     - staticcheck
-    - stylecheck
+    - unconvert
     - unparam
     - unused
+    - usestdlibvars
+    - wastedassign
   fast: false
 
 
 issues:
+  exclude-dirs:
+    - mocks
   exclude-rules:
     - path: _test\.go
       linters:
         - gocyclo
+        - gocognit
         - errcheck
         - dupl
         - gosec
@@ -92,6 +134,9 @@ issues:
     - linters:
         - lll
       source: "^//go:generate "
+    - linters:
+        - revive
+      text: "returns unexported type"
   max-issues-per-linter: 0
   max-same-issues: 0
   new: false

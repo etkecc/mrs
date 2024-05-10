@@ -38,7 +38,7 @@ func (s *Server) GetClientVersion() []byte {
 }
 
 // GetClientDirectory is /_matrix/client/v3/directory/room/{roomAlias}
-func (s *Server) GetClientDirectory(ctx context.Context, alias string) (int, []byte) {
+func (s *Server) GetClientDirectory(ctx context.Context, alias string) (statusCode int, respb []byte) {
 	span := utils.StartSpan(ctx, "matrix.GetClientDirectory")
 	defer span.Finish()
 	log := zerolog.Ctx(span.Context())
@@ -81,7 +81,7 @@ func (s *Server) GetClientDirectory(ctx context.Context, alias string) (int, []b
 }
 
 // GetClientRoomSummary is /_matrix/client/unstable/is.nheko.summary/summary/{roomIdOrAlias}
-func (s *Server) GetClientRoomSummary(ctx context.Context, aliasOrID string) (int, []byte) {
+func (s *Server) GetClientRoomSummary(ctx context.Context, aliasOrID string) (statusCode int, resp []byte) {
 	span := utils.StartSpan(ctx, "matrix.GetClientRoomSummary")
 	defer span.Finish()
 	log := zerolog.Ctx(span.Context())
@@ -119,7 +119,7 @@ func (s *Server) GetClientRoomSummary(ctx context.Context, aliasOrID string) (in
 }
 
 // GetClientRoomVisibility is /_matrix/client/v3/directory/list/room/{roomID}
-func (s *Server) GetClientRoomVisibility(ctx context.Context, id string) (int, []byte) {
+func (s *Server) GetClientRoomVisibility(ctx context.Context, id string) (statusCode int, resp []byte) {
 	span := utils.StartSpan(ctx, "matrix.GetClientRoomVisibility")
 	defer span.Finish()
 	log := zerolog.Ctx(span.Context())
@@ -140,7 +140,7 @@ func (s *Server) GetClientRoomVisibility(ctx context.Context, id string) (int, [
 		return http.StatusNotFound, s.getErrorResp(span.Context(), "M_NOT_FOUND", "room not found")
 	}
 
-	resp, err := utils.JSON(map[string]string{"visibility": "public"}) // MRS doesn't have any other
+	resp, err = utils.JSON(map[string]string{"visibility": "public"}) // MRS doesn't have any other
 	if err != nil {
 		log.Error().Err(err).Str("room", id).Msg("cannot marshal room visibility")
 		return http.StatusInternalServerError, s.getErrorResp(span.Context(), "M_INTERNAL_ERROR", "internal error")
@@ -149,7 +149,7 @@ func (s *Server) GetClientRoomVisibility(ctx context.Context, id string) (int, [
 }
 
 // GetClientMediaThumbnail is /_matrix/media/v3/thumbnail/{serverName}/{mediaID}
-func (s *Server) GetClientMediaThumbnail(ctx context.Context, serverName, mediaID string, params url.Values) (io.Reader, string) {
+func (s *Server) GetClientMediaThumbnail(ctx context.Context, serverName, mediaID string, params url.Values) (content io.Reader, contentType string) {
 	span := utils.StartSpan(ctx, "matrix.GetClientMediaThumbnail")
 	defer span.Finish()
 

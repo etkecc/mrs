@@ -145,7 +145,7 @@ func (m *Moderation) sendWebhook(ctx context.Context, room *model.MatrixRoom, se
 		return err
 	}
 
-	req, err := http.NewRequest("POST", m.cfg.Get().Webhooks.Moderation, bytes.NewReader(payload))
+	req, err := http.NewRequest(http.MethodPost, m.cfg.Get().Webhooks.Moderation, bytes.NewReader(payload))
 	if err != nil {
 		return err
 	}
@@ -157,7 +157,7 @@ func (m *Moderation) sendWebhook(ctx context.Context, room *model.MatrixRoom, se
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusAccepted && resp.StatusCode != http.StatusOK {
 		body, err := io.ReadAll(resp.Body)
-		return fmt.Errorf("backend returned HTTP %d: %s %v", resp.StatusCode, string(body), err)
+		return fmt.Errorf("backend returned HTTP %d: %s %w", resp.StatusCode, string(body), err)
 	}
 	return nil
 }

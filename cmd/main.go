@@ -5,6 +5,7 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"flag"
 	"fmt"
 	"net/http"
@@ -99,7 +100,7 @@ func main() {
 	initCron(cfg, dataSvc)
 	initShutdown(quit)
 
-	if err := e.Start(":" + cfg.Get().Port); err != nil && err != http.ErrServerClosed {
+	if err := e.Start(":" + cfg.Get().Port); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatal().Err(err).Msg("http server failed")
 	}
 

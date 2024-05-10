@@ -38,7 +38,7 @@ func (s *Server) QueryServerName(ctx context.Context, serverName string) (string
 }
 
 // QueryDirectory is /_matrix/federation/v1/query/directory?room_alias={roomAlias}
-func (s *Server) QueryDirectory(ctx context.Context, req *http.Request, alias string) (int, []byte) {
+func (s *Server) QueryDirectory(ctx context.Context, req *http.Request, alias string) (statusCode int, respb []byte) {
 	span := utils.StartSpan(ctx, "matrix.QueryDirectory")
 	defer span.Finish()
 	log := zerolog.Ctx(span.Context())
@@ -76,7 +76,7 @@ func (s *Server) QueryDirectory(ctx context.Context, req *http.Request, alias st
 		RoomID:  room.ID,
 		Servers: room.Servers(s.cfg.Get().Matrix.ServerName),
 	}
-	respb, err := utils.JSON(resp)
+	respb, err = utils.JSON(resp)
 	if err != nil {
 		log.Error().Err(err).Msg("cannot marshal query directory resp")
 		return http.StatusInternalServerError, nil
@@ -86,7 +86,7 @@ func (s *Server) QueryDirectory(ctx context.Context, req *http.Request, alias st
 }
 
 // QueryVersion from /_matrix/federation/v1/version
-func (s *Server) QueryVersion(ctx context.Context, serverName string) (server, version string, err error) {
+func (s *Server) QueryVersion(ctx context.Context, serverName string) (server, serverVersion string, err error) {
 	span := utils.StartSpan(ctx, "matrix.QueryVersion")
 	defer span.Finish()
 
@@ -204,7 +204,7 @@ func (s *Server) buildPublicRoomsReq(ctx context.Context, serverName, limit, sin
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiURL.String(), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiURL.String(), http.NoBody)
 	if err != nil {
 		return nil, err
 	}

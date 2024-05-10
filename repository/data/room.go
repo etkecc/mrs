@@ -15,7 +15,7 @@ import (
 
 // AddRoomBatch info
 //
-//nolint:errcheck
+
 func (d *Data) AddRoomBatch(ctx context.Context, room *model.MatrixRoom) {
 	d.rb.Add(ctx, room)
 }
@@ -60,13 +60,13 @@ func (d *Data) GetBiggestRooms(ctx context.Context, limit, offset int) []*model.
 	defer span.Finish()
 	log := zerolog.Ctx(ctx)
 
-	min := []byte(fmt.Sprintf("%06d", offset))
-	max := []byte(fmt.Sprintf("%06d", limit))
+	start := []byte(fmt.Sprintf("%06d", offset))
+	end := []byte(fmt.Sprintf("%06d", limit))
 	rooms := []*model.MatrixRoom{}
 
-	d.db.View(func(tx *bbolt.Tx) error { //nolint:errcheck
+	d.db.View(func(tx *bbolt.Tx) error { //nolint:errcheck // that's ok
 		c := tx.Bucket(biggestRoomsBucket).Cursor()
-		for k, v := c.Seek(min); k != nil && bytes.Compare(k, max) <= 0; k, v = c.Next() {
+		for k, v := c.Seek(start); k != nil && bytes.Compare(k, end) <= 0; k, v = c.Next() {
 			var room *model.MatrixRoom
 			err := json.Unmarshal(v, &room)
 			if err != nil {
@@ -105,10 +105,10 @@ func (d *Data) RemoveRooms(ctx context.Context, keys []string) {
 	span := utils.StartSpan(ctx, "data.RemoveRooms")
 	defer span.Finish()
 
-	d.db.Update(func(tx *bbolt.Tx) error { //nolint:errcheck
+	d.db.Update(func(tx *bbolt.Tx) error { //nolint:errcheck // that's ok
 		bucket := tx.Bucket(roomsBucket)
 		for _, k := range keys {
-			bucket.Delete([]byte(k)) //nolint:errcheck
+			bucket.Delete([]byte(k)) //nolint:errcheck // that's ok
 		}
 		return nil
 	})
@@ -116,7 +116,7 @@ func (d *Data) RemoveRooms(ctx context.Context, keys []string) {
 
 // EachRoom allows to work with each known room
 //
-//nolint:errcheck
+//nolint:errcheck // that's ok
 func (d *Data) EachRoom(ctx context.Context, handler func(roomID string, data *model.MatrixRoom) bool) {
 	span := utils.StartSpan(ctx, "data.EachRoom")
 	defer span.Finish()
@@ -153,7 +153,7 @@ func (d *Data) GetBannedRooms(ctx context.Context, serverName ...string) ([]stri
 	}
 	list := []string{}
 	err := d.db.View(func(tx *bbolt.Tx) error {
-		return tx.Bucket(roomsBanlistBucket).ForEach(func(k, v []byte) error {
+		return tx.Bucket(roomsBanlistBucket).ForEach(func(k, _ []byte) error {
 			roomID := string(k)
 			if server != "" && utils.ServerFrom(roomID) != server {
 				return nil
@@ -219,7 +219,7 @@ func (d *Data) IsReported(ctx context.Context, roomID string) bool {
 	defer span.Finish()
 
 	var reported bool
-	d.db.View(func(tx *bbolt.Tx) error { //nolint:errcheck
+	d.db.View(func(tx *bbolt.Tx) error { //nolint:errcheck // that's ok
 		v := tx.Bucket(roomsReportsBucket).Get([]byte(roomID))
 		reported = v != nil
 		return nil

@@ -187,7 +187,7 @@ func (m *Crawler) ParseRooms(ctx context.Context, workers int) {
 	go utils.PoolProgress(wp, func() {
 		log.Info().Int("of", servers.Len()).Msg("parsing rooms in progress")
 	})
-	wp.Wait() //nolint:errcheck
+	wp.Wait() //nolint:errcheck // we don't care about errors here
 	m.data.FlushRoomBatch(span.Context())
 	discoveredServers.RemoveSlice(servers.Slice())
 	log.
@@ -322,7 +322,7 @@ func (m *Crawler) discoverServers(ctx context.Context, servers *utils.List[strin
 			Int("of", servers.Len()).
 			Msg("servers discovery in progress")
 	})
-	wp.Wait() //nolint:errcheck
+	wp.Wait() //nolint:errcheck // we don't care about errors here
 
 	log.Info().
 		Int("online", online.Len()).
@@ -339,7 +339,7 @@ func (m *Crawler) afterRoomParsing(ctx context.Context) {
 		members int
 	}
 	serversRoomsCount := map[string]int{}
-	// serversRooms := map[string][]string{}
+	// serversRooms := map[string][]string{} //nolint:gocritic // TODO: implement
 
 	span := utils.StartSpan(ctx, "crawler.afterRoomParsing")
 	defer span.Finish()
@@ -356,6 +356,7 @@ func (m *Crawler) afterRoomParsing(ctx context.Context) {
 		}
 
 		serversRoomsCount[data.Server]++
+		//nolint:gocritic // TODO: implement
 		// if _, ok := serversRooms[data.Server]; !ok {
 		// 	serversRooms[data.Server] = []string{}
 		// }
@@ -381,7 +382,7 @@ func (m *Crawler) afterRoomParsing(ctx context.Context) {
 		log.Error().Err(err).Msg("cannot set servers rooms count")
 	}
 
-	// TODO
+	// TODO: implement
 	// if err := m.data.SaveServersRooms(span.Context(), serversRooms); err != nil {
 	// 	log.Error().Err(err).Msg("cannot save servers rooms")
 	// }

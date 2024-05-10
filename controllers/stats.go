@@ -3,6 +3,7 @@ package controllers
 import (
 	"net/http"
 	"sort"
+	"time"
 
 	"github.com/labstack/echo/v4"
 
@@ -27,7 +28,7 @@ func stats(stats statsService) echo.HandlerFunc {
 		timeline := []map[string]any{}
 		for _, k := range keys {
 			timeline = append(timeline, map[string]any{
-				"date":    k.Format("2006-01-02"),
+				"date":    k.Format(time.DateOnly),
 				"details": statsDetails(tl[k]),
 			})
 		}

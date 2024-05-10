@@ -109,7 +109,7 @@ func (s *Server) Authorize(serverName, method, uri string, body any) ([]string, 
 	headers := make([]string, 0, len(signatures))
 	for keyID, sig := range signatures {
 		headers = append(headers, fmt.Sprintf(
-			`X-Matrix origin="%s",destination="%s",key="%s",sig="%s"`,
+			`X-Matrix origin=%q,destination=%q,key=%q,sig=%q`,
 			s.cfg.Get().Matrix.ServerName, serverName, keyID, sig,
 		))
 	}

@@ -78,5 +78,5 @@ func (c *Config) Write(cfg *model.Config) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(c.path, datab, 0o666)
+	return os.WriteFile(c.path, datab, 0o600)
 }
