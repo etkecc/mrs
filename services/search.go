@@ -71,7 +71,8 @@ func (s *Search) Search(ctx context.Context, q, sortBy string, limit, offset int
 
 	var builtQuery query.Query
 	if q == "" {
-		return s.getEmptyQueryResults(span.Context(), limit, offset)
+		entries, length := s.getEmptyQueryResults(span.Context(), limit, offset)
+		return entries, length, nil
 	}
 	builtQuery = s.getSearchQuery(s.matchFields(q))
 	if builtQuery == nil {
@@ -94,14 +95,14 @@ func (s *Search) Search(ctx context.Context, q, sortBy string, limit, offset int
 	return results, total, nil
 }
 
-func (s *Search) getEmptyQueryResults(ctx context.Context, limit, offset int) ([]*model.Entry, int, error) {
+func (s *Search) getEmptyQueryResults(ctx context.Context, limit, offset int) (entries []*model.Entry, length int) {
 	rooms := s.data.GetBiggestRooms(ctx, limit, offset)
-	entries := make([]*model.Entry, 0, len(rooms))
+	entries = make([]*model.Entry, 0, len(rooms))
 	for _, room := range rooms {
 		entries = append(entries, room.Entry())
 	}
 
-	return entries, len(entries), nil
+	return entries, len(entries)
 }
 
 // removeBlocked removes results from blocked servers from the search results
