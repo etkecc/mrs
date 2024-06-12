@@ -92,10 +92,11 @@ func main() {
 	dataSvc := services.NewDataFacade(crawlerSvc, indexSvc, statsSvc, cacheSvc)
 	mailSvc := services.NewEmail(cfg)
 	modSvc := services.NewModeration(cfg, dataRepo, index, mailSvc)
+	plausibleSvc := services.NewPlausible(cfg)
 
 	e = echo.New()
 	e.Logger = lecho.From(*log)
-	controllers.ConfigureRouter(e, cfg, matrixSvc, dataSvc, cacheSvc, searchSvc, crawlerSvc, statsSvc, modSvc)
+	controllers.ConfigureRouter(e, cfg, matrixSvc, dataSvc, cacheSvc, searchSvc, crawlerSvc, statsSvc, modSvc, plausibleSvc)
 
 	initCron(cfg, dataSvc)
 	initShutdown(quit)

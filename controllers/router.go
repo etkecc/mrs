@@ -34,6 +34,10 @@ type cacheService interface {
 	MiddlewareImmutable() echo.MiddlewareFunc
 }
 
+type plausibleService interface {
+	TrackSearch(ctx context.Context, incomingReq *http.Request, ip, query string)
+}
+
 // ConfigureRouter configures echo router
 func ConfigureRouter(
 	e *echo.Echo,
@@ -45,9 +49,10 @@ func ConfigureRouter(
 	crawlerSvc crawlerService,
 	statsSvc statsService,
 	modSvc moderationService,
+	plausibleSvc plausibleService,
 ) {
 	configureRouter(e, cacheSvc)
-	configureMatrixS2SEndpoints(e, matrixSvc, cacheSvc)
+	configureMatrixS2SEndpoints(e, matrixSvc, cacheSvc, plausibleSvc)
 	configureMatrixCSEndpoints(e, matrixSvc, cacheSvc)
 	rl := getRL(1, cacheSvc)
 	e.GET("/metrics", echo.WrapHandler(&metrics.Handler{}), echobasicauth.NewMiddleware(&cfg.Get().Auth.Metrics))
@@ -55,11 +60,11 @@ func ConfigureRouter(
 	e.GET("/avatar/:name/:id", avatar(matrixSvc), getRL(30, cacheSvc))
 
 	searchCache := cacheSvc.MiddlewareSearch()
-	e.GET("/search", search(searchSvc, cfg, false), searchCache, rl)
-	e.GET("/search/:q", search(searchSvc, cfg, true), searchCache, rl)
-	e.GET("/search/:q/:l", search(searchSvc, cfg, true), searchCache, rl)
-	e.GET("/search/:q/:l/:o", search(searchSvc, cfg, true), searchCache, rl)
-	e.GET("/search/:q/:l/:o/:s", search(searchSvc, cfg, true), searchCache, rl)
+	e.GET("/search", search(searchSvc, plausibleSvc, cfg, false), searchCache, rl)
+	e.GET("/search/:q", search(searchSvc, plausibleSvc, cfg, true), searchCache, rl)
+	e.GET("/search/:q/:l", search(searchSvc, plausibleSvc, cfg, true), searchCache, rl)
+	e.GET("/search/:q/:l/:o", search(searchSvc, plausibleSvc, cfg, true), searchCache, rl)
+	e.GET("/search/:q/:l/:o/:s", search(searchSvc, plausibleSvc, cfg, true), searchCache, rl)
 
 	e.GET("/catalog/servers", catalogServers(dataSvc), cacheSvc.Middleware(), rl)
 

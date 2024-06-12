@@ -20,6 +20,7 @@ type Config struct {
 	Workers   *ConfigWorkers   `yaml:"workers"`
 	Webhooks  *ConfigWebhooks  `yaml:"webhooks"`
 	Email     *ConfigEmail     `yaml:"email"`
+	Plausible *ConfigPlausible `yaml:"plausible"`
 	Languages []string         `yaml:"languages"`
 	Servers   []string         `yaml:"servers"`
 	Blocklist *ConfigBlocklist `yaml:"blocklist"`
@@ -42,6 +43,12 @@ type ConfigSearchDefaults struct {
 	Limit  int    `yaml:"limit"`
 	Offset int    `yaml:"offset"`
 	SortBy string `yaml:"sort_by"`
+}
+
+// ConfigPlausible - plausible analytics configuration
+type ConfigPlausible struct {
+	Host   string `yaml:"host"`
+	Domain string `yaml:"domain"`
 }
 
 // ConfigCache - cache-related configuration

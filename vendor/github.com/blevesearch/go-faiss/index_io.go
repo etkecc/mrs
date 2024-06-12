@@ -8,7 +8,6 @@ package faiss
 */
 import "C"
 import (
-	"runtime"
 	"unsafe"
 )
 
@@ -23,9 +22,6 @@ func WriteIndex(idx Index, filename string) error {
 }
 
 func WriteIndexIntoBuffer(idx Index) ([]byte, error) {
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
-
 	// the values to be returned by the faiss APIs
 	tempBuf := (*C.uchar)(C.malloc(C.size_t(0)))
 	bufSize := C.size_t(0)
@@ -82,9 +78,6 @@ func WriteIndexIntoBuffer(idx Index) ([]byte, error) {
 }
 
 func ReadIndexFromBuffer(buf []byte, ioflags int) (*IndexImpl, error) {
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
-
 	ptr := (*C.uchar)(unsafe.Pointer(&buf[0]))
 	size := C.size_t(len(buf))
 
@@ -107,8 +100,10 @@ func ReadIndexFromBuffer(buf []byte, ioflags int) (*IndexImpl, error) {
 }
 
 const (
-	IOFlagMmap     = C.FAISS_IO_FLAG_MMAP
-	IOFlagReadOnly = C.FAISS_IO_FLAG_READ_ONLY
+	IOFlagMmap         = C.FAISS_IO_FLAG_MMAP
+	IOFlagReadOnly     = C.FAISS_IO_FLAG_READ_ONLY
+	IOFlagReadMmap     = C.FAISS_IO_FLAG_READ_MMAP | C.FAISS_IO_FLAG_ONDISK_IVF
+	IOFlagSkipPrefetch = C.FAISS_IO_FLAG_SKIP_PREFETCH
 )
 
 // ReadIndex reads an index from a file.

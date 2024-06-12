@@ -10,12 +10,9 @@ package faiss
 import "C"
 import (
 	"fmt"
-	"runtime"
 )
 
 func (idx *IndexImpl) SetDirectMap(mapType int) (err error) {
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 
 	ivfPtr := C.faiss_IndexIVF_cast(idx.cPtr())
 	if ivfPtr == nil {
@@ -31,8 +28,6 @@ func (idx *IndexImpl) SetDirectMap(mapType int) (err error) {
 }
 
 func (idx *IndexImpl) GetSubIndex() (*IndexImpl, error) {
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 
 	ptr := C.faiss_IndexIDMap2_cast(idx.cPtr())
 	if ptr == nil {

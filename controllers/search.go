@@ -16,7 +16,7 @@ type searchService interface {
 	Search(ctx context.Context, query, sortBy string, limit, offset int) ([]*model.Entry, int, error)
 }
 
-func search(svc searchService, cfg configService, path bool) echo.HandlerFunc {
+func search(svc searchService, plausible plausibleService, cfg configService, path bool) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		defer metrics.IncSearchQueries("rest", getOrigin(cfg, c.Request()))
 
@@ -29,6 +29,8 @@ func search(svc searchService, cfg configService, path bool) echo.HandlerFunc {
 		if err != nil {
 			return err
 		}
+		go plausible.TrackSearch(c.Request().Context(), c.Request(), c.RealIP(), query)
+
 		limit := utils.StringToInt(paramfunc("l"))
 		offset := utils.StringToInt(paramfunc("o"))
 		sortBy := paramfunc("s")
