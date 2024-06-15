@@ -31,6 +31,14 @@ func (p *Plausible) TrackSearch(ctx context.Context, incomingReq *http.Request, 
 		return
 	}
 
+	if query == "" {
+		return
+	}
+
+	if incomingReq.URL.Path == "/_matrix/federation/v1/publicRooms" {
+		incomingReq.Header.Set("Referer", "matrix")
+	}
+
 	uri := url.URL{
 		Scheme: "https",
 		Host:   p.cfg.Get().Plausible.Host,
