@@ -18,6 +18,9 @@ func (d *Data) SetServersRoomsCount(ctx context.Context, data map[string]int) er
 	return d.db.Batch(func(tx *bbolt.Tx) error {
 		bucket := tx.Bucket(serversRoomsCountBucket)
 		for server, count := range data {
+			if count < 100 { // we don't want to expose servers with less than 100 rooms
+				continue
+			}
 			err := bucket.Put([]byte(server), []byte(strconv.Itoa(count)))
 			if err != nil {
 				return err
