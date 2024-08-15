@@ -322,13 +322,29 @@ func (s *SegmentBase) loadFieldsNew() error {
 		return s.loadFields()
 	}
 
+	seek := pos + binary.MaxVarintLen64
+	if seek > uint64(len(s.mem)) {
+		// handling a buffer overflow case.
+		// a rare case where the backing buffer is not large enough to be read directly via
+		// a pos+binary.MaxVarinLen64 seek. For eg, this can happen when there is only
+		// one field to be indexed in the entire batch of data and while writing out
+		// these fields metadata, you write 1 + 8 bytes whereas the MaxVarintLen64 = 10.
+		seek = uint64(len(s.mem))
+	}
+
 	// read the number of fields
-	numFields, sz := binary.Uvarint(s.mem[pos : pos+binary.MaxVarintLen64])
+	numFields, sz := binary.Uvarint(s.mem[pos:seek])
+	// here, the pos is incremented by the valid number bytes read from the buffer
+	// so in the edge case pointed out above the numFields = 1, the sz = 1 as well.
 	pos += uint64(sz)
 	s.incrementBytesRead(uint64(sz))
 
+	// the following loop will be executed only once in the edge case pointed out above
+	// since there is only field's offset store which occupies 8 bytes.
+	// the pointer then seeks to a position preceding the sectionsIndexOffset, at
+	// which point the responbility of handling the out-of-bounds cases shifts to
+	// the specific section's parsing logic.
 	var fieldID uint64
-
 	for fieldID < numFields {
 		addr := binary.BigEndian.Uint64(s.mem[pos : pos+8])
 		s.incrementBytesRead(8)

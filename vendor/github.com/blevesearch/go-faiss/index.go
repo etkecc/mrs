@@ -12,6 +12,7 @@ package faiss
 */
 import "C"
 import (
+	"encoding/json"
 	"fmt"
 	"unsafe"
 )
@@ -48,7 +49,7 @@ type Index interface {
 	// corresponding distances.
 	Search(x []float32, k int64) (distances []float32, labels []int64, err error)
 
-	SearchWithoutIDs(x []float32, k int64, exclude []int64) (distances []float32,
+	SearchWithoutIDs(x []float32, k int64, exclude []int64, params json.RawMessage) (distances []float32,
 		labels []int64, err error)
 
 	Reconstruct(key int64) ([]float32, error)
@@ -156,42 +157,31 @@ func (idx *faissIndex) Search(x []float32, k int64) (
 	return
 }
 
-func (idx *faissIndex) SearchWithoutIDs(x []float32, k int64, exclude []int64) (
+func (idx *faissIndex) SearchWithoutIDs(x []float32, k int64, exclude []int64, params json.RawMessage) (
 	distances []float32, labels []int64, err error,
 ) {
-	if len(exclude) <= 0 {
+	if params == nil && len(exclude) == 0 {
 		return idx.Search(x, k)
 	}
 
-	excludeSelector, err := NewIDSelectorNot(exclude)
+	var selector *C.FaissIDSelector
+	if len(exclude) > 0 {
+		excludeSelector, err := NewIDSelectorNot(exclude)
+		if err != nil {
+			return nil, nil, err
+		}
+		selector = excludeSelector.sel
+		defer excludeSelector.Delete()
+	}
+
+	searchParams, err := NewSearchParams(idx, params, selector)
+	defer searchParams.Delete()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	var sp *C.FaissSearchParameters
-	C.faiss_SearchParameters_new(&sp, (*C.FaissIDSelector)(excludeSelector.sel))
-	ivfPtr := C.faiss_IndexIVF_cast(idx.cPtr())
-	if ivfPtr != nil {
-		sp = C.faiss_SearchParametersIVF_cast(sp)
-		C.faiss_SearchParametersIVF_new_with_sel(&sp, (*C.FaissIDSelector)(excludeSelector.sel))
-	}
+	distances, labels, err = idx.searchWithParams(x, k, searchParams.sp)
 
-	n := len(x) / idx.D()
-	distances = make([]float32, int64(n)*k)
-	labels = make([]int64, int64(n)*k)
-
-	if c := C.faiss_Index_search_with_params(
-		idx.idx,
-		C.idx_t(n),
-		(*C.float)(&x[0]),
-		C.idx_t(k), sp,
-		(*C.float)(&distances[0]),
-		(*C.idx_t)(&labels[0]),
-	); c != 0 {
-		err = getLastError()
-	}
-	excludeSelector.Delete()
-	C.faiss_SearchParameters_free(sp)
 	return
 }
 
@@ -285,6 +275,30 @@ func (idx *faissIndex) RemoveIDs(sel *IDSelector) (int, error) {
 func (idx *faissIndex) Close() {
 	C.faiss_Index_free(idx.idx)
 }
+
+func (idx *faissIndex) searchWithParams(x []float32, k int64, searchParams *C.FaissSearchParameters) (
+	distances []float32, labels []int64, err error,
+) {
+	n := len(x) / idx.D()
+	distances = make([]float32, int64(n)*k)
+	labels = make([]int64, int64(n)*k)
+
+	if c := C.faiss_Index_search_with_params(
+		idx.idx,
+		C.idx_t(n),
+		(*C.float)(&x[0]),
+		C.idx_t(k),
+		searchParams,
+		(*C.float)(&distances[0]),
+		(*C.idx_t)(&labels[0]),
+	); c != 0 {
+		err = getLastError()
+	}
+
+	return
+}
+
+// -----------------------------------------------------------------------------
 
 // RangeSearchResult is the result of a range search.
 type RangeSearchResult struct {

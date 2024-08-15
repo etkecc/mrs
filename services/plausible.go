@@ -5,6 +5,7 @@ import (
 	"context"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/goccy/go-json"
 	"github.com/rs/zerolog"
@@ -50,7 +51,7 @@ func (p *Plausible) TrackSearch(ctx context.Context, incomingReq *http.Request, 
 		"domain":   p.cfg.Get().Plausible.Domain,
 		"referrer": incomingReq.Referer(),
 		"props": map[string]any{
-			"query": query,
+			"query": strings.TrimSpace(strings.ToLower(query)),
 		},
 	}
 	datab, err := json.Marshal(data)

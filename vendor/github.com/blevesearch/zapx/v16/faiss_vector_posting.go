@@ -19,6 +19,7 @@ package zap
 
 import (
 	"encoding/binary"
+	"encoding/json"
 	"math"
 	"reflect"
 
@@ -266,14 +267,14 @@ func (vpl *VecPostingsIterator) BytesWritten() uint64 {
 
 // vectorIndexWrapper conforms to scorch_segment_api's VectorIndex interface
 type vectorIndexWrapper struct {
-	search func(qVector []float32, k int64) (segment.VecPostingsList, error)
+	search func(qVector []float32, k int64, params json.RawMessage) (segment.VecPostingsList, error)
 	close  func()
 	size   func() uint64
 }
 
-func (i *vectorIndexWrapper) Search(qVector []float32, k int64) (
+func (i *vectorIndexWrapper) Search(qVector []float32, k int64, params json.RawMessage) (
 	segment.VecPostingsList, error) {
-	return i.search(qVector, k)
+	return i.search(qVector, k, params)
 }
 
 func (i *vectorIndexWrapper) Close() {
@@ -300,7 +301,7 @@ func (sb *SegmentBase) InterpretVectorIndex(field string, except *roaring.Bitmap
 
 	var (
 		wrapVecIndex = &vectorIndexWrapper{
-			search: func(qVector []float32, k int64) (segment.VecPostingsList, error) {
+			search: func(qVector []float32, k int64, params json.RawMessage) (segment.VecPostingsList, error) {
 				// 1. returned postings list (of type PostingsList) has two types of information - docNum and its score.
 				// 2. both the values can be represented using roaring bitmaps.
 				// 3. the Iterator (of type PostingsIterator) returned would operate in terms of VecPostings.
@@ -317,7 +318,7 @@ func (sb *SegmentBase) InterpretVectorIndex(field string, except *roaring.Bitmap
 					return rv, nil
 				}
 
-				scores, ids, err := vecIndex.SearchWithoutIDs(qVector, k, vectorIDsToExclude)
+				scores, ids, err := vecIndex.SearchWithoutIDs(qVector, k, vectorIDsToExclude, params)
 				if err != nil {
 					return nil, err
 				}
