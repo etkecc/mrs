@@ -1,5 +1,18 @@
 # Integrations
 
+<!-- vim-markdown-toc GitLab -->
+
+* [Matrix Federation API](#matrix-federation-api)
+    * [Element Web/Desktop](#element-webdesktop)
+    * [Element Android](#element-android)
+    * [FluffyChat](#fluffychat)
+* [SearXNG](#searxng)
+* [MSCs](#mscs)
+    * [MSC1929](#msc1929)
+    * [MSC3266](#msc3266)
+
+<!-- vim-markdown-toc -->
+
 ## Matrix Federation API
 
 MRS implements the mandatory subset of Matrix Federation API to provide the Public Rooms Directory over federation,
@@ -45,6 +58,12 @@ matrix_client_element_room_directory_servers: ['matrixrooms.info']
 5. Tap on the `Add a new server` at the bottom of the screen
 6. Enter `matrixrooms.info` in the server name input and click `OK`
 7. Select the newly added server in the list
+
+### FluffyChat
+
+1. Click on the search bar on the top of the screen and enter anything
+2. In the search field a pencil icon and your homeserver domain will appear
+3. Click on the pencil icon and enter `https://matrixrooms.info` in the input field
 
 ## [SearXNG](https://docs.searxng.org)
 
