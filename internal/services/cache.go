@@ -11,8 +11,8 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog"
 
-	"gitlab.com/etke.cc/mrs/api/model"
-	"gitlab.com/etke.cc/mrs/api/utils"
+	"github.com/etkecc/mrs/internal/model"
+	"github.com/etkecc/mrs/internal/utils"
 )
 
 const (

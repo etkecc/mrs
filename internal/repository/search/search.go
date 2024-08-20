@@ -7,8 +7,8 @@ import (
 	"github.com/blevesearch/bleve/v2/search"
 	"github.com/blevesearch/bleve/v2/search/query"
 
-	"gitlab.com/etke.cc/mrs/api/model"
-	"gitlab.com/etke.cc/mrs/api/utils"
+	"github.com/etkecc/mrs/internal/model"
+	"github.com/etkecc/mrs/internal/utils"
 )
 
 // Search something!

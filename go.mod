@@ -1,14 +1,17 @@
 module github.com/etkecc/mrs
 
-go 1.21.0
+go 1.22
 
-toolchain go1.21.3
+toolchain go1.23.0
 
 require (
 	github.com/VictoriaMetrics/metrics v1.35.1
 	github.com/archdx/zerolog-sentry v1.8.4
 	github.com/benjaminestes/robots/v2 v2.0.5
 	github.com/blevesearch/bleve/v2 v2.4.2
+	github.com/etkecc/go-echo-basic-auth v1.1.1
+	github.com/etkecc/go-fswatcher v1.0.1
+	github.com/etkecc/go-msc1929 v1.1.1
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/getsentry/sentry-go v0.28.1
 	github.com/goccy/go-json v0.10.3
@@ -20,21 +23,21 @@ require (
 	github.com/pemistahl/lingua-go v1.4.0
 	github.com/raja/argon2pw v1.0.1
 	github.com/rs/zerolog v1.33.0
+	github.com/swaggo/echo-swagger v1.4.1
+	github.com/swaggo/swag v1.16.3
 	github.com/theovassiliou/base64url v0.0.0-20211006203958-1e011490eaaf
 	github.com/xxjwxc/gowp v0.0.0-20230612082025-23a9b62c1da6
 	github.com/ziflex/lecho/v3 v3.7.0
-	github.com/etkecc/go-echo-basic-auth latest
-	github.com/etkecc/go-fswatcher latest
-	github.com/etkecc/go-msc1929 latest
 	go.etcd.io/bbolt v1.3.10
 	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa
 	golang.org/x/time v0.6.0
 	gopkg.in/yaml.v3 v3.0.1
-	maunium.net/go/mautrix v0.19.0
+	maunium.net/go/mautrix v0.20.0
 	mvdan.cc/xurls/v2 v2.5.0
 )
 
 require (
+	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/RoaringBitmap/roaring v1.9.4 // indirect
 	github.com/benjaminestes/robots v1.0.0 // indirect
 	github.com/bits-and-blooms/bitset v1.13.0 // indirect
@@ -57,13 +60,19 @@ require (
 	github.com/blevesearch/zapx/v15 v15.3.13 // indirect
 	github.com/blevesearch/zapx/v16 v16.1.5 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
+	github.com/ghodss/yaml v1.0.0 // indirect
+	github.com/go-openapi/jsonpointer v0.21.0 // indirect
+	github.com/go-openapi/jsonreference v0.21.0 // indirect
+	github.com/go-openapi/spec v0.21.0 // indirect
+	github.com/go-openapi/swag v0.23.0 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang/geo v0.0.0-20230421003525-6adc56603217 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
+	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kr/pretty v0.3.1 // indirect
 	github.com/labstack/gommon v0.4.2 // indirect
+	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/matrix-org/util v0.0.0-20221111132719-399730281e66 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
@@ -72,6 +81,7 @@ require (
 	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
+	github.com/swaggo/files/v2 v2.0.1 // indirect
 	github.com/tidwall/gjson v1.17.3 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
@@ -82,11 +92,13 @@ require (
 	github.com/valyala/histogram v1.2.0 // indirect
 	github.com/xxjwxc/public v0.0.0-20240705102424-9b12e8672060 // indirect
 	github.com/yuin/goldmark v1.7.4 // indirect
-	go.mau.fi/util v0.6.0 // indirect
+	go.mau.fi/util v0.7.0 // indirect
 	golang.org/x/crypto v0.26.0 // indirect
 	golang.org/x/net v0.28.0 // indirect
 	golang.org/x/sys v0.24.0 // indirect
 	golang.org/x/text v0.17.0 // indirect
+	golang.org/x/tools v0.24.0 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/eapache/queue.v1 v1.1.0 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

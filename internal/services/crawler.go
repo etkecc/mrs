@@ -6,13 +6,13 @@ import (
 	"sort"
 	"time"
 
+	"github.com/etkecc/go-msc1929"
 	"github.com/pemistahl/lingua-go"
 	"github.com/rs/zerolog"
 	"github.com/xxjwxc/gowp/workpool"
-	"gitlab.com/etke.cc/go/msc1929"
 
-	"gitlab.com/etke.cc/mrs/api/model"
-	"gitlab.com/etke.cc/mrs/api/utils"
+	"github.com/etkecc/mrs/internal/model"
+	"github.com/etkecc/mrs/internal/utils"
 )
 
 type Crawler struct {

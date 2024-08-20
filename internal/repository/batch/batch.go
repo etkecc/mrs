@@ -7,7 +7,7 @@ import (
 
 	"github.com/rs/zerolog"
 
-	"gitlab.com/etke.cc/mrs/api/utils"
+	"github.com/etkecc/mrs/internal/utils"
 )
 
 // Batch struct

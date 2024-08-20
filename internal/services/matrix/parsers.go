@@ -17,8 +17,8 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/rs/zerolog"
 
-	"gitlab.com/etke.cc/mrs/api/model"
-	"gitlab.com/etke.cc/mrs/api/utils"
+	"github.com/etkecc/mrs/internal/model"
+	"github.com/etkecc/mrs/internal/utils"
 )
 
 // getErrorResp returns canonical json of matrix error

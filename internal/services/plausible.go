@@ -7,9 +7,9 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/etkecc/mrs/internal/utils"
 	"github.com/goccy/go-json"
 	"github.com/rs/zerolog"
-	"gitlab.com/etke.cc/mrs/api/utils"
 )
 
 // Plausible - plausible analytics service

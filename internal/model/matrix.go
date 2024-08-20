@@ -9,7 +9,7 @@ import (
 
 	"github.com/pemistahl/lingua-go"
 
-	"gitlab.com/etke.cc/mrs/api/utils"
+	"github.com/etkecc/mrs/internal/utils"
 )
 
 type BlocklistService interface {

@@ -4,9 +4,9 @@ import (
 	"net/url"
 	"time"
 
-	"gitlab.com/etke.cc/mrs/api/model"
-	"gitlab.com/etke.cc/mrs/api/utils"
-	"gitlab.com/etke.cc/mrs/api/version"
+	"github.com/etkecc/mrs/internal/model"
+	"github.com/etkecc/mrs/internal/utils"
+	"github.com/etkecc/mrs/internal/version"
 )
 
 func (s *Server) initKeys(strs []string) error {

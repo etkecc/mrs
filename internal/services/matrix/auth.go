@@ -13,7 +13,7 @@ import (
 	"github.com/matrix-org/gomatrixserverlib"
 	"github.com/rs/zerolog"
 
-	"gitlab.com/etke.cc/mrs/api/utils"
+	"github.com/etkecc/mrs/internal/utils"
 )
 
 // ValidateAuth validates matrix auth

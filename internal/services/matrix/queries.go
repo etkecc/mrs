@@ -10,9 +10,9 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/rs/zerolog"
 
-	"gitlab.com/etke.cc/mrs/api/model"
-	"gitlab.com/etke.cc/mrs/api/utils"
-	"gitlab.com/etke.cc/mrs/api/version"
+	"github.com/etkecc/mrs/internal/model"
+	"github.com/etkecc/mrs/internal/utils"
+	"github.com/etkecc/mrs/internal/version"
 )
 
 // QueryServerName finds server name on the /_matrix/key/v2/server page

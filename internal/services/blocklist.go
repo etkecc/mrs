@@ -6,7 +6,7 @@ import (
 
 	"golang.org/x/exp/slices"
 
-	"gitlab.com/etke.cc/mrs/api/utils"
+	"github.com/etkecc/mrs/internal/utils"
 )
 
 // Blocklist service

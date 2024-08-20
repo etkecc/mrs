@@ -8,7 +8,7 @@ import (
 	"github.com/blevesearch/bleve/v2"
 	"github.com/rs/zerolog"
 
-	"gitlab.com/etke.cc/mrs/api/model"
+	"github.com/etkecc/mrs/internal/model"
 )
 
 type Index struct {

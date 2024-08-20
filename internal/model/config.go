@@ -1,8 +1,8 @@
 package model
 
 import (
-	echobasicauth "gitlab.com/etke.cc/go/echo-basic-auth"
-	"gitlab.com/etke.cc/go/msc1929"
+	echobasicauth "github.com/etkecc/go-echo-basic-auth"
+	"github.com/etkecc/go-msc1929"
 )
 
 // Config is MRS configuration model

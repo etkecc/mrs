@@ -8,9 +8,9 @@ import (
 
 	"github.com/rs/zerolog"
 
-	"gitlab.com/etke.cc/mrs/api/metrics"
-	"gitlab.com/etke.cc/mrs/api/model"
-	"gitlab.com/etke.cc/mrs/api/utils"
+	"github.com/etkecc/mrs/internal/metrics"
+	"github.com/etkecc/mrs/internal/model"
+	"github.com/etkecc/mrs/internal/utils"
 )
 
 // GetServerWellKnown returns json-eligible response for /.well-known/matrix/server

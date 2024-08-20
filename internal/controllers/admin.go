@@ -7,7 +7,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"gopkg.in/yaml.v3"
 
-	"gitlab.com/etke.cc/mrs/api/utils"
+	"github.com/etkecc/mrs/internal/utils"
 )
 
 type dataService interface {

@@ -21,12 +21,12 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/ziflex/lecho/v3"
 
-	"gitlab.com/etke.cc/mrs/api/controllers"
-	"gitlab.com/etke.cc/mrs/api/repository/data"
-	"gitlab.com/etke.cc/mrs/api/repository/search"
-	"gitlab.com/etke.cc/mrs/api/services"
-	"gitlab.com/etke.cc/mrs/api/services/matrix"
-	"gitlab.com/etke.cc/mrs/api/utils"
+	"github.com/etkecc/mrs/internal/controllers"
+	"github.com/etkecc/mrs/internal/repository/data"
+	"github.com/etkecc/mrs/internal/repository/search"
+	"github.com/etkecc/mrs/internal/services"
+	"github.com/etkecc/mrs/internal/services/matrix"
+	"github.com/etkecc/mrs/internal/utils"
 )
 
 // AllLanguages to load all language models at once

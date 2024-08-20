@@ -3,7 +3,7 @@ package search
 import (
 	"github.com/blevesearch/bleve/v2"
 
-	"gitlab.com/etke.cc/mrs/api/model"
+	"github.com/etkecc/mrs/internal/model"
 )
 
 // Index new data

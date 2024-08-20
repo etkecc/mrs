@@ -5,13 +5,13 @@ import (
 	"os"
 	"sync"
 
+	"github.com/etkecc/go-fswatcher"
 	"github.com/fsnotify/fsnotify"
 	"github.com/rs/zerolog"
-	"gitlab.com/etke.cc/go/fswatcher"
 	"gopkg.in/yaml.v3"
 
-	"gitlab.com/etke.cc/mrs/api/model"
-	"gitlab.com/etke.cc/mrs/api/utils"
+	"github.com/etkecc/mrs/internal/model"
+	"github.com/etkecc/mrs/internal/utils"
 )
 
 // Config service

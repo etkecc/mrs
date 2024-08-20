@@ -10,7 +10,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog"
 
-	"gitlab.com/etke.cc/mrs/api/model"
+	"github.com/etkecc/mrs/internal/model"
 )
 
 type matrixService interface {

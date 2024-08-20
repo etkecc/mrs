@@ -7,7 +7,7 @@ import (
 	"github.com/rs/zerolog"
 	"go.etcd.io/bbolt"
 
-	"gitlab.com/etke.cc/mrs/api/utils"
+	"github.com/etkecc/mrs/internal/utils"
 )
 
 // SetServersRoomsCount sets the count of rooms for each server

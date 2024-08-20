@@ -7,8 +7,8 @@ import (
 	"github.com/rs/zerolog"
 	"go.etcd.io/bbolt"
 
-	"gitlab.com/etke.cc/mrs/api/model"
-	"gitlab.com/etke.cc/mrs/api/repository/batch"
+	"github.com/etkecc/mrs/internal/model"
+	"github.com/etkecc/mrs/internal/repository/batch"
 )
 
 type Data struct {

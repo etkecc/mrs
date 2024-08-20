@@ -5,17 +5,19 @@ import (
 	"net/http"
 	"time"
 
+	echobasicauth "github.com/etkecc/go-echo-basic-auth"
+	_ "github.com/etkecc/mrs/docs" // required for swaggo
 	sentryecho "github.com/getsentry/sentry-go/echo"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/raja/argon2pw"
 	"github.com/rs/zerolog"
-	echobasicauth "gitlab.com/etke.cc/go/echo-basic-auth"
+	echoSwagger "github.com/swaggo/echo-swagger"
 
-	"gitlab.com/etke.cc/mrs/api/metrics"
-	"gitlab.com/etke.cc/mrs/api/model"
-	"gitlab.com/etke.cc/mrs/api/utils"
-	"gitlab.com/etke.cc/mrs/api/version"
+	"github.com/etkecc/mrs/internal/metrics"
+	"github.com/etkecc/mrs/internal/model"
+	"github.com/etkecc/mrs/internal/utils"
+	"github.com/etkecc/mrs/internal/version"
 )
 
 type configService interface {
@@ -110,6 +112,10 @@ func configureRouter(e *echo.Echo, cacheSvc cacheService) {
 	e.GET("/_health", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
 	})
+	e.GET("/_docs", func(c echo.Context) error {
+		return c.Redirect(http.StatusMovedPermanently, "/_docs/index.html")
+	})
+	e.GET("/_docs/*", echoSwagger.WrapHandler)
 }
 
 // discoveryProtection rate limits anonymous requests, but allows authorized with basic auth requests

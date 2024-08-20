@@ -14,8 +14,8 @@ import (
 	"github.com/pemistahl/lingua-go"
 	"github.com/rs/zerolog"
 
-	"gitlab.com/etke.cc/mrs/api/repository/search/multilang"
-	"gitlab.com/etke.cc/mrs/api/utils"
+	"github.com/etkecc/mrs/internal/repository/search/multilang"
+	"github.com/etkecc/mrs/internal/utils"
 )
 
 const backupSuffix = ".bak"

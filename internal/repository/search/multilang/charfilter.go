@@ -6,7 +6,7 @@ import (
 	"github.com/pemistahl/lingua-go"
 	"mvdan.cc/xurls/v2"
 
-	"gitlab.com/etke.cc/mrs/api/utils"
+	"github.com/etkecc/mrs/internal/utils"
 )
 
 // CharFilter detects input language and appends it to the input bytes

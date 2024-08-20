@@ -6,7 +6,7 @@ import (
 
 	lru "github.com/hashicorp/golang-lru/v2"
 
-	"gitlab.com/etke.cc/mrs/api/model"
+	"github.com/etkecc/mrs/internal/model"
 )
 
 const (

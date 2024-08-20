@@ -1,3 +1,6 @@
+# github.com/KyleBanks/depth v1.2.1
+## explicit
+github.com/KyleBanks/depth
 # github.com/RoaringBitmap/roaring v1.9.4
 ## explicit; go 1.14
 github.com/RoaringBitmap/roaring
@@ -172,6 +175,15 @@ github.com/blevesearch/zapx/v16
 # github.com/buger/jsonparser v1.1.1
 ## explicit; go 1.13
 github.com/buger/jsonparser
+# github.com/etkecc/go-echo-basic-auth v1.1.1
+## explicit; go 1.21.0
+github.com/etkecc/go-echo-basic-auth
+# github.com/etkecc/go-fswatcher v1.0.1
+## explicit; go 1.20
+github.com/etkecc/go-fswatcher
+# github.com/etkecc/go-msc1929 v1.1.1
+## explicit; go 1.18
+github.com/etkecc/go-msc1929
 # github.com/fsnotify/fsnotify v1.7.0
 ## explicit; go 1.17
 github.com/fsnotify/fsnotify
@@ -184,6 +196,22 @@ github.com/getsentry/sentry-go/internal/otel/baggage
 github.com/getsentry/sentry-go/internal/otel/baggage/internal/baggage
 github.com/getsentry/sentry-go/internal/ratelimit
 github.com/getsentry/sentry-go/internal/traceparser
+# github.com/ghodss/yaml v1.0.0
+## explicit
+github.com/ghodss/yaml
+# github.com/go-openapi/jsonpointer v0.21.0
+## explicit; go 1.20
+github.com/go-openapi/jsonpointer
+# github.com/go-openapi/jsonreference v0.21.0
+## explicit; go 1.20
+github.com/go-openapi/jsonreference
+github.com/go-openapi/jsonreference/internal
+# github.com/go-openapi/spec v0.21.0
+## explicit; go 1.20
+github.com/go-openapi/spec
+# github.com/go-openapi/swag v0.23.0
+## explicit; go 1.20
+github.com/go-openapi/swag
 # github.com/goccy/go-json v0.10.3
 ## explicit; go 1.19
 github.com/goccy/go-json
@@ -215,11 +243,12 @@ github.com/golang/snappy
 github.com/hashicorp/golang-lru/v2
 github.com/hashicorp/golang-lru/v2/internal
 github.com/hashicorp/golang-lru/v2/simplelru
+# github.com/josharian/intern v1.0.0
+## explicit; go 1.5
+github.com/josharian/intern
 # github.com/json-iterator/go v1.1.12
 ## explicit; go 1.12
 github.com/json-iterator/go
-# github.com/kr/pretty v0.3.1
-## explicit; go 1.12
 # github.com/labstack/echo/v4 v4.12.0
 ## explicit; go 1.18
 github.com/labstack/echo/v4
@@ -229,6 +258,11 @@ github.com/labstack/echo/v4/middleware
 github.com/labstack/gommon/bytes
 github.com/labstack/gommon/color
 github.com/labstack/gommon/log
+# github.com/mailru/easyjson v0.7.7
+## explicit; go 1.12
+github.com/mailru/easyjson/buffer
+github.com/mailru/easyjson/jlexer
+github.com/mailru/easyjson/jwriter
 # github.com/matrix-org/gomatrixserverlib v0.0.0-20240801173829-d531860ad2cb
 ## explicit; go 1.18
 github.com/matrix-org/gomatrixserverlib
@@ -275,6 +309,15 @@ github.com/shopspring/decimal
 # github.com/sirupsen/logrus v1.9.3
 ## explicit; go 1.13
 github.com/sirupsen/logrus
+# github.com/swaggo/echo-swagger v1.4.1
+## explicit; go 1.17
+github.com/swaggo/echo-swagger
+# github.com/swaggo/files/v2 v2.0.1
+## explicit; go 1.16
+github.com/swaggo/files/v2
+# github.com/swaggo/swag v1.16.3
+## explicit; go 1.18
+github.com/swaggo/swag
 # github.com/theovassiliou/base64url v0.0.0-20211006203958-1e011490eaaf
 ## explicit; go 1.13
 github.com/theovassiliou/base64url
@@ -322,20 +365,11 @@ github.com/yuin/goldmark/util
 # github.com/ziflex/lecho/v3 v3.7.0
 ## explicit; go 1.17
 github.com/ziflex/lecho/v3
-# gitlab.com/etke.cc/go/echo-basic-auth v1.1.0
-## explicit; go 1.21.0
-gitlab.com/etke.cc/go/echo-basic-auth
-# gitlab.com/etke.cc/go/fswatcher v1.0.0
-## explicit; go 1.20
-gitlab.com/etke.cc/go/fswatcher
-# gitlab.com/etke.cc/go/msc1929 v1.1.0
-## explicit; go 1.18
-gitlab.com/etke.cc/go/msc1929
 # go.etcd.io/bbolt v1.3.10
 ## explicit; go 1.21
 go.etcd.io/bbolt
-# go.mau.fi/util v0.6.0
-## explicit; go 1.21
+# go.mau.fi/util v0.7.0
+## explicit; go 1.22
 go.mau.fi/util/base58
 go.mau.fi/util/jsonbytes
 go.mau.fi/util/jsontime
@@ -385,6 +419,13 @@ golang.org/x/text/unicode/norm
 # golang.org/x/time v0.6.0
 ## explicit; go 1.18
 golang.org/x/time/rate
+# golang.org/x/tools v0.24.0
+## explicit; go 1.19
+golang.org/x/tools/go/ast/astutil
+golang.org/x/tools/go/buildutil
+golang.org/x/tools/go/internal/cgo
+golang.org/x/tools/go/loader
+golang.org/x/tools/internal/versions
 # google.golang.org/protobuf v1.34.2
 ## explicit; go 1.20
 google.golang.org/protobuf/encoding/prototext
@@ -420,11 +461,14 @@ google.golang.org/protobuf/types/gofeaturespb
 # gopkg.in/eapache/queue.v1 v1.1.0
 ## explicit
 gopkg.in/eapache/queue.v1
+# gopkg.in/yaml.v2 v2.4.0
+## explicit; go 1.15
+gopkg.in/yaml.v2
 # gopkg.in/yaml.v3 v3.0.1
 ## explicit
 gopkg.in/yaml.v3
-# maunium.net/go/mautrix v0.19.0
-## explicit; go 1.21
+# maunium.net/go/mautrix v0.20.0
+## explicit; go 1.22
 maunium.net/go/mautrix/crypto/attachment
 maunium.net/go/mautrix/crypto/utils
 maunium.net/go/mautrix/event

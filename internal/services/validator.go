@@ -8,7 +8,7 @@ import (
 
 	"github.com/rs/zerolog"
 
-	"gitlab.com/etke.cc/mrs/api/model"
+	"github.com/etkecc/mrs/internal/model"
 )
 
 // based on W3C email regex, ref: https://www.w3.org/TR/2016/REC-html51-20161101/sec-forms.html#email-state-typeemail

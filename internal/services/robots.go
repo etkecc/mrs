@@ -9,8 +9,8 @@ import (
 
 	"github.com/benjaminestes/robots/v2"
 
-	"gitlab.com/etke.cc/mrs/api/utils"
-	"gitlab.com/etke.cc/mrs/api/version"
+	"github.com/etkecc/mrs/internal/utils"
+	"github.com/etkecc/mrs/internal/version"
 )
 
 const (

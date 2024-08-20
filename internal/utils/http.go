@@ -8,7 +8,7 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/rs/zerolog"
 
-	"gitlab.com/etke.cc/mrs/api/version"
+	"github.com/etkecc/mrs/internal/version"
 )
 
 const (
