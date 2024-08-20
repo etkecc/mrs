@@ -1,4 +1,5 @@
 /.idea
 /testdata
 /config.yml
-/api
+/mrs
+/cover.out

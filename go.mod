@@ -1,4 +1,4 @@
-module gitlab.com/etke.cc/mrs/api
+module github.com/etkecc/mrs
 
 go 1.21.0
 
@@ -23,9 +23,9 @@ require (
 	github.com/theovassiliou/base64url v0.0.0-20211006203958-1e011490eaaf
 	github.com/xxjwxc/gowp v0.0.0-20230612082025-23a9b62c1da6
 	github.com/ziflex/lecho/v3 v3.7.0
-	gitlab.com/etke.cc/go/echo-basic-auth v1.1.0
-	gitlab.com/etke.cc/go/fswatcher v1.0.0
-	gitlab.com/etke.cc/go/msc1929 v1.1.0
+	github.com/etkecc/go-echo-basic-auth latest
+	github.com/etkecc/go-fswatcher latest
+	github.com/etkecc/go-msc1929 latest
 	go.etcd.io/bbolt v1.3.10
 	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa
 	golang.org/x/time v0.6.0
