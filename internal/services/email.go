@@ -71,6 +71,7 @@ func (e *Email) SendReport(ctx context.Context, room *model.MatrixRoom, server *
 	}
 	text, html := utils.MarkdownRender(body)
 	for _, req := range e.buildPMReqs(subject, text, html, emails, &e.cfg.Get().Email.Postmark.Report) {
+		req.Tag = "report-msc1929"
 		log.Info().Str("to", req.To).Msg("sending email")
 		if _, _, err = client.Send(req); err != nil {
 			log.Warn().Err(err).Str("to", req.To).Msg("sending email failed")
@@ -85,6 +86,7 @@ func (e *Email) SendModReport(message, email string) error {
 	subject := "New report from MRS instance"
 	text, html := utils.MarkdownRender(message)
 	req := e.buildPMReqs(subject, text, html, []string{email}, &e.cfg.Get().Email.Postmark.Report)[0]
+	req.Tag = "report-mod"
 	_, _, err := e.getClient().Send(req)
 	return err
 }

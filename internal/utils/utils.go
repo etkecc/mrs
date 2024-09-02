@@ -137,7 +137,7 @@ func SliceToString(slice []string, delimiter string, hook func(string) string) s
 func ConstantTimeEq(s1, s2 string) bool {
 	b1 := []byte(s1)
 	b2 := []byte(s2)
-	return subtle.ConstantTimeEq(int32(len(b1)), int32(len(b2))) == 1 && subtle.ConstantTimeCompare(b1, b2) == 1
+	return subtle.ConstantTimeEq(int32(len(b1)), int32(len(b2))) == 1 && subtle.ConstantTimeCompare(b1, b2) == 1 //nolint:gosec // that's ok
 }
 
 // Chunks divides slice by chunks with specified size

@@ -174,7 +174,7 @@ func (i *Index) Swap(ctx context.Context) error {
 // Len returns size of the index (number of docs)
 func (i *Index) Len() int {
 	vUint, _ := i.index.DocCount() //nolint:errcheck // that's ok
-	return int(vUint)
+	return int(vUint)              //nolint:gosec // that's ok
 }
 
 // Close index

@@ -28,7 +28,7 @@ func (i *Index) Search(ctx context.Context, searchQuery query.Query, limit, offs
 		return nil, 0, nil
 	}
 
-	return parseSearchResults(resp.Hits), int(resp.Total), nil
+	return parseSearchResults(resp.Hits), int(resp.Total), nil //nolint:gosec // that's ok
 }
 
 func parseSearchResults(result []*search.DocumentMatch) []*model.Entry {

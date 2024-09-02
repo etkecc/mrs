@@ -187,10 +187,10 @@ func (m *Moderation) Report(ctx context.Context, roomID, reason string) error {
 	}
 	server, err := m.data.GetServerInfo(ctx, room.Server)
 	if err != nil {
-		return err
+		log.Error().Err(err).Msg("cannot get server info")
 	}
 	if server == nil {
-		return fmt.Errorf("server not found")
+		server = &model.MatrixServer{Name: room.Server}
 	}
 
 	if err := m.sendWebhook(ctx, room, server, reason); err != nil {
