@@ -12,15 +12,7 @@ import (
 	"github.com/etkecc/mrs/internal/utils"
 )
 
-var (
-	mediaFallbacks         = []string{"https://matrix-client.matrix.org"}
-	defaultThumbnailParams = url.Values{
-		"width":        []string{"40"},
-		"height":       []string{"40"},
-		"method":       []string{"crop"},
-		"allow_remote": []string{"true"},
-	}.Encode()
-)
+var mediaFallbacks = []string{"https://matrix-client.matrix.org"}
 
 // GetClientWellKnown returns json-eligible response for /.well-known/matrix/client
 func (s *Server) GetClientWellKnown() []byte {
@@ -149,6 +141,7 @@ func (s *Server) GetClientRoomVisibility(ctx context.Context, id string) (status
 }
 
 // GetClientMediaThumbnail is /_matrix/media/v3/thumbnail/{serverName}/{mediaID}
+// Deprecated: use GetMediaThumbnail() instead, ref: https://spec.matrix.org/v1.11/server-server-api/#get_matrixfederationv1mediathumbnailmediaid
 func (s *Server) GetClientMediaThumbnail(ctx context.Context, serverName, mediaID string, params url.Values) (content io.Reader, contentType string) {
 	span := utils.StartSpan(ctx, "matrix.GetClientMediaThumbnail")
 	defer span.Finish()
