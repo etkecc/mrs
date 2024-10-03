@@ -170,6 +170,14 @@ func (s *Search) newMatchQuery(match, field string, phrase bool) bleveQuery {
 	return searchQuery
 }
 
+func (s *Search) newFuzzyQuery(match, field string) bleveQuery {
+	searchQuery := bleve.NewFuzzyQuery(match)
+	searchQuery.SetField(field)
+	searchQuery.SetBoost(SearchFieldsBoost[field])
+
+	return searchQuery
+}
+
 // shouldReject checks if query or fields contain words from the stoplist
 func (s *Search) shouldReject(q string, fields map[string]string) bool {
 	stopwords := s.cfg.Get().Blocklist.Queries
@@ -198,6 +206,11 @@ func (s *Search) getSearchQuery(q string, fields map[string]string) query.Query 
 
 	phrase := strings.Contains(q, " ")
 	queries := []query.Query{
+		s.newFuzzyQuery(q, "name"),
+		s.newFuzzyQuery(q, "alias"),
+		s.newFuzzyQuery(q, "topic"),
+		s.newFuzzyQuery(q, "server"),
+
 		s.newMatchQuery(q, "name", phrase),
 		s.newMatchQuery(q, "alias", phrase),
 		s.newMatchQuery(q, "topic", phrase),

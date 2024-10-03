@@ -22,6 +22,10 @@ func NewPlausible(cfg ConfigService) *Plausible {
 }
 
 func (p *Plausible) Enabled() bool {
+	if p.cfg.Get().Plausible == nil {
+		return false
+	}
+
 	return p.cfg.Get().Plausible.Host != "" && p.cfg.Get().Plausible.Domain != ""
 }
 

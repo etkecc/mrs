@@ -57,6 +57,8 @@ func NewStats(cfg ConfigService, data StatsRepository, index, blocklist Lenable)
 }
 
 // setMetrics updates /metrics endpoint with actual stats
+//
+//nolint:gosec // no integer overflow here, as the counters are too low
 func (s *Stats) setMetrics() {
 	metrics.ServersOnline.Set(uint64(s.stats.Servers.Online))
 	metrics.ServersIndexable.Set(uint64(s.stats.Servers.Indexable))
