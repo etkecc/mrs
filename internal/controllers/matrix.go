@@ -23,6 +23,7 @@ type matrixService interface {
 	GetClientDirectory(ctx context.Context, alias string) (int, []byte)
 	GetClientRoomVisibility(ctx context.Context, roomID string) (int, []byte)
 	GetClientRoomSummary(ctx context.Context, roomAliasOrID string) (int, []byte)
+	GetClientMediaThumbnail(ctx context.Context, serverName, mediaID string, params url.Values) (io.Reader, string)
 	GetMediaThumbnail(ctx context.Context, serverName, mediaID string, params url.Values) (io.Reader, string)
 	PublicRooms(context.Context, *http.Request, *model.RoomDirectoryRequest) (int, []byte)
 	QueryDirectory(ctx context.Context, req *http.Request, alias string) (int, []byte)

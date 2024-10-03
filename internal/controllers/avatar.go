@@ -14,11 +14,18 @@ func avatar(svc matrixService) echo.HandlerFunc {
 			return c.NoContent(http.StatusNoContent)
 		}
 
-		avatar, contentType := svc.GetMediaThumbnail(c.Request().Context(), name, id, c.QueryParams())
-		if contentType == "" {
-			return c.NoContent(http.StatusNoContent)
+		// attempt to get unauthenticated media thumbnail first (CS API, faster)
+		avatar, contentType := svc.GetClientMediaThumbnail(c.Request().Context(), name, id, c.QueryParams())
+		if contentType != "" {
+			return c.Stream(http.StatusOK, contentType, avatar)
 		}
 
-		return c.Stream(http.StatusOK, contentType, avatar)
+		// fallback to authenticated media thumbnail (S2S API, slower)
+		avatar, contentType = svc.GetMediaThumbnail(c.Request().Context(), name, id, c.QueryParams())
+		if contentType != "" {
+			return c.Stream(http.StatusOK, contentType, avatar)
+		}
+
+		return c.NoContent(http.StatusNoContent)
 	}
 }

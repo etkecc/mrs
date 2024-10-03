@@ -4,8 +4,11 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"mime"
+	"mime/multipart"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/goccy/go-json"
 	"github.com/rs/zerolog"
@@ -66,7 +69,7 @@ func (s *Server) GetMediaThumbnail(ctx context.Context, serverName, mediaID stri
 		resp.Body.Close()
 		log.Warn().Str("server", serverName).Str("mediaID", mediaID).Int("status", resp.StatusCode).Str("body", string(body)).Msg("cannot get media thumbnail")
 	}
-	return resp.Body, resp.Header.Get("Content-Type")
+	return s.getImageFromMultipart(span.Context(), resp)
 }
 
 // QueryServerName finds server name on the /_matrix/key/v2/server page
@@ -268,4 +271,32 @@ func (s *Server) buildPublicRoomsReq(ctx context.Context, serverName, limit, sin
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", version.UserAgent)
 	return req, nil
+}
+
+func (s *Server) getImageFromMultipart(ctx context.Context, resp *http.Response) (contentStream io.Reader, contentType string) {
+	log := zerolog.Ctx(ctx)
+	_, mediaParams, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
+	if err != nil {
+		log.Warn().Err(err).Msg("cannot parse content type")
+		return nil, ""
+	}
+	mr := multipart.NewReader(resp.Body, mediaParams["boundary"])
+	for {
+		p, err := mr.NextPart()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Warn().Err(err).Msg("cannot read multipart")
+			return nil, ""
+		}
+		if p.Header.Get("Content-Type") == "application/json" {
+			continue
+		}
+		if strings.HasPrefix(p.Header.Get("Content-Type"), "image/") {
+			return p, p.Header.Get("Content-Type")
+		}
+	}
+	log.Warn().Msg("cannot find image in multipart")
+	return nil, ""
 }
