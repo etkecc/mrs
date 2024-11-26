@@ -30,7 +30,6 @@ type statsService interface {
 }
 
 type cacheService interface {
-	IsBunny(string) bool
 	Middleware() echo.MiddlewareFunc
 	MiddlewareSearch() echo.MiddlewareFunc
 	MiddlewareImmutable() echo.MiddlewareFunc
@@ -56,10 +55,10 @@ func ConfigureRouter(
 	configureRouter(e, cacheSvc)
 	configureMatrixS2SEndpoints(e, matrixSvc, cacheSvc, plausibleSvc)
 	configureMatrixCSEndpoints(e, matrixSvc, cacheSvc)
-	rl := getRL(1, cacheSvc)
+	rl := getRL(1)
 	e.GET("/metrics", echo.WrapHandler(&metrics.Handler{}), echobasicauth.NewMiddleware(&cfg.Get().Auth.Metrics))
 	e.GET("/stats", stats(statsSvc))
-	e.GET("/avatar/:name/:id", avatar(matrixSvc), getRL(30, cacheSvc))
+	e.GET("/avatar/:name/:id", avatar(matrixSvc), getRL(30))
 
 	searchCache := cacheSvc.MiddlewareSearch()
 	e.GET("/search", search(searchSvc, plausibleSvc, cfg, false), searchCache, rl)

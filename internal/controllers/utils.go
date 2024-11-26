@@ -69,17 +69,14 @@ func getOrigin(cfg configService, r *http.Request) string {
 	return origin
 }
 
-func getRL(limit rate.Limit, cacheSvc cacheService) echo.MiddlewareFunc {
+func getRL(limit rate.Limit) echo.MiddlewareFunc {
 	rl, ok := rls[limit]
 	if ok {
 		return rl
 	}
 	cfg := middleware.DefaultRateLimiterConfig
 	cfg.Skipper = func(c echo.Context) bool {
-		if c.Request().Method == http.MethodOptions {
-			return true
-		}
-		return cacheSvc.IsBunny(c.RealIP())
+		return c.Request().Method == http.MethodOptions
 	}
 	cfg.Store = middleware.NewRateLimiterMemoryStoreWithConfig(middleware.RateLimiterMemoryStoreConfig{
 		Rate:      limit,

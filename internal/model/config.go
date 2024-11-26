@@ -53,15 +53,8 @@ type ConfigPlausible struct {
 
 // ConfigCache - cache-related configuration
 type ConfigCache struct {
-	MaxAge       int              `yaml:"max_age"`
-	MaxAgeSearch int              `yaml:"max_age_search"`
-	Bunny        ConfigCacheBunny `yaml:"bunny"`
-}
-
-// ConfigCacheBunny BunnyCDN cache purging config
-type ConfigCacheBunny struct {
-	URL string `yaml:"url"`
-	Key string `yaml:"key"`
+	MaxAge       int `yaml:"max_age"`
+	MaxAgeSearch int `yaml:"max_age_search"`
 }
 
 // ConfigAuth - auth-related configuration

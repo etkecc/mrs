@@ -33,16 +33,11 @@ type dataStatsService interface {
 	CollectServers(context.Context, bool)
 }
 
-type dataCacheService interface {
-	Purge(context.Context)
-}
-
 // DataFacade wraps all data-related services to provide reusable API across all components of the system
 type DataFacade struct {
 	crawler dataCrawlerService
 	index   dataIndexService
 	stats   dataStatsService
-	cache   dataCacheService
 }
 
 // NewDataFacade creates new data facade service
@@ -50,9 +45,8 @@ func NewDataFacade(
 	crawler dataCrawlerService,
 	index dataIndexService,
 	stats dataStatsService,
-	cache dataCacheService,
 ) *DataFacade {
-	return &DataFacade{crawler, index, stats, cache}
+	return &DataFacade{crawler, index, stats}
 }
 
 // AddServer by name, intended for HTTP API
@@ -114,10 +108,6 @@ func (df *DataFacade) Ingest(ctx context.Context) {
 	}
 	df.stats.SetFinishedAt(ctx, "indexing", time.Now().UTC())
 	log.Info().Str("took", time.Since(start).String()).Msg("matrix rooms have been indexed")
-
-	log.Info().Msg("purging cache...")
-	df.cache.Purge(ctx)
-	log.Info().Msg("cache has been purged")
 }
 
 // Full data pipeline (discovery, parsing, indexing)

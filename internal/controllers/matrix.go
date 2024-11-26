@@ -47,7 +47,7 @@ func configureMatrixS2SEndpoints(e *echo.Echo, matrixSvc matrixService, cacheSvc
 }
 
 func configureMatrixCSEndpoints(e *echo.Echo, matrixSvc matrixService, cacheSvc cacheService) {
-	rl := getRL(30, cacheSvc)
+	rl := getRL(30)
 	e.GET("/.well-known/matrix/client", func(c echo.Context) error {
 		return c.JSONBlob(http.StatusOK, matrixSvc.GetClientWellKnown())
 	}, cacheSvc.MiddlewareImmutable())
