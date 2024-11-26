@@ -6,10 +6,10 @@ import (
 	"sort"
 	"time"
 
+	"github.com/etkecc/go-kit/workpool"
 	"github.com/etkecc/go-msc1929"
 	"github.com/pemistahl/lingua-go"
 	"github.com/rs/zerolog"
-	"github.com/xxjwxc/gowp/workpool"
 
 	"github.com/etkecc/mrs/internal/model"
 	"github.com/etkecc/mrs/internal/utils"
@@ -177,17 +177,13 @@ func (m *Crawler) ParseRooms(ctx context.Context, workers int) {
 	log.Info().Int("servers", total).Int("workers", workers).Msg("parsing rooms")
 	for _, srvName := range slice {
 		name := srvName
-		wp.Do(func() error {
+		wp.Do(func() {
 			serversFromRooms := m.getPublicRooms(span.Context(), name)
 			discoveredServers.AddSlice(serversFromRooms.Slice())
-			return nil
 		})
 	}
 
-	go utils.PoolProgress(wp, func() {
-		log.Info().Int("of", servers.Len()).Msg("parsing rooms in progress")
-	})
-	wp.Wait() //nolint:errcheck // we don't care about errors here
+	wp.Run()
 	m.data.FlushRoomBatch(span.Context())
 	discoveredServers.RemoveSlice(servers.Slice())
 	log.
@@ -298,10 +294,10 @@ func (m *Crawler) discoverServers(ctx context.Context, servers *utils.List[strin
 
 	for _, server := range servers.Slice() {
 		srvName := server
-		wp.Do(func() error {
+		wp.Do(func() {
 			server := m.discoverServer(ctx, srvName)
 			if server == nil {
-				return nil
+				return
 			}
 			if server.Online {
 				online.Add(server.Name)
@@ -311,18 +307,9 @@ func (m *Crawler) discoverServers(ctx context.Context, servers *utils.List[strin
 			if server.Indexable {
 				indexable.Add(server.Name)
 			}
-			return nil
 		})
 	}
-	go utils.PoolProgress(wp, func() {
-		log.Info().
-			Int("online", online.Len()).
-			Int("offline", offline.Len()).
-			Int("indexable", indexable.Len()).
-			Int("of", servers.Len()).
-			Msg("servers discovery in progress")
-	})
-	wp.Wait() //nolint:errcheck // we don't care about errors here
+	wp.Run()
 
 	log.Info().
 		Int("online", online.Len()).

@@ -184,6 +184,7 @@ github.com/etkecc/go-fswatcher
 # github.com/etkecc/go-kit v1.4.2
 ## explicit; go 1.22
 github.com/etkecc/go-kit/format
+github.com/etkecc/go-kit/workpool
 # github.com/etkecc/go-msc1929 v1.1.1
 ## explicit; go 1.18
 github.com/etkecc/go-msc1929
@@ -349,12 +350,6 @@ github.com/valyala/fasttemplate
 # github.com/valyala/histogram v1.2.0
 ## explicit; go 1.12
 github.com/valyala/histogram
-# github.com/xxjwxc/gowp v0.0.0-20240929033016-5be68d222389
-## explicit; go 1.13
-github.com/xxjwxc/gowp/workpool
-# github.com/xxjwxc/public v0.0.0-20241118042544-92f0e4894253
-## explicit; go 1.21.0
-github.com/xxjwxc/public/myqueue
 # github.com/yuin/goldmark v1.7.8
 ## explicit; go 1.19
 github.com/yuin/goldmark
@@ -450,9 +445,6 @@ google.golang.org/protobuf/runtime/protoiface
 google.golang.org/protobuf/runtime/protoimpl
 google.golang.org/protobuf/types/descriptorpb
 google.golang.org/protobuf/types/gofeaturespb
-# gopkg.in/eapache/queue.v1 v1.1.0
-## explicit
-gopkg.in/eapache/queue.v1
 # gopkg.in/yaml.v2 v2.4.0
 ## explicit; go 1.15
 gopkg.in/yaml.v2

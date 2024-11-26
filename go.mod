@@ -27,7 +27,6 @@ require (
 	github.com/swaggo/echo-swagger v1.4.1
 	github.com/swaggo/swag v1.16.4
 	github.com/theovassiliou/base64url v0.0.0-20211006203958-1e011490eaaf
-	github.com/xxjwxc/gowp v0.0.0-20240929033016-5be68d222389
 	github.com/ziflex/lecho/v3 v3.7.0
 	go.etcd.io/bbolt v1.3.11
 	golang.org/x/exp v0.0.0-20241108190413-2d47ceb2692f
@@ -90,7 +89,6 @@ require (
 	github.com/valyala/fastrand v1.1.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/valyala/histogram v1.2.0 // indirect
-	github.com/xxjwxc/public v0.0.0-20241118042544-92f0e4894253 // indirect
 	github.com/yuin/goldmark v1.7.8 // indirect
 	golang.org/x/crypto v0.29.0 // indirect
 	golang.org/x/net v0.31.0 // indirect
@@ -98,6 +96,5 @@ require (
 	golang.org/x/text v0.20.0 // indirect
 	golang.org/x/tools v0.27.0 // indirect
 	google.golang.org/protobuf v1.35.2 // indirect
-	gopkg.in/eapache/queue.v1 v1.1.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
