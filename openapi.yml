@@ -863,6 +863,10 @@ paths:
                   type: string
                   description: Report reason
                   example: CSAM
+                no_msc1929:
+                  type: boolean
+                  description: Do not share the report with the owner of the room's homeserver, even if email is present in MSC1929 contacts
+                  example: true
       responses:
         '202':
           description: successful operation

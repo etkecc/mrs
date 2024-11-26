@@ -172,7 +172,7 @@ func (m *Moderation) sendEmail(ctx context.Context, room *model.MatrixRoom, serv
 }
 
 // Report a room
-func (m *Moderation) Report(ctx context.Context, roomID, reason string) error {
+func (m *Moderation) Report(ctx context.Context, roomID, reason string, noMSC1929 bool) error {
 	if m.data.IsReported(ctx, roomID) {
 		return nil
 	}
@@ -197,8 +197,10 @@ func (m *Moderation) Report(ctx context.Context, roomID, reason string) error {
 		log.Error().Err(err).Msg("cannot send moderation webhook")
 	}
 
-	if merr := m.mail.SendReport(ctx, room, server, reason, server.Contacts.Emails); merr != nil {
-		log.Warn().Err(merr).Msg("cannot send report to the server's owner")
+	if !noMSC1929 {
+		if merr := m.mail.SendReport(ctx, room, server, reason, server.Contacts.Emails); merr != nil {
+			log.Warn().Err(merr).Msg("cannot send report to the server's owner")
+		}
 	}
 
 	if err := m.sendEmail(ctx, room, server, reason); err != nil {

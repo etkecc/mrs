@@ -10,15 +10,16 @@ import (
 )
 
 type moderationService interface {
-	Report(context.Context, string, string) error
+	Report(context.Context, string, string, bool) error
 	List(context.Context, ...string) ([]string, error)
 	Ban(context.Context, string) error
 	Unban(context.Context, string) error
 }
 
 type reportSubmission struct {
-	RoomID string `param:"room_id"`
-	Reason string `json:"reason"`
+	RoomID    string `param:"room_id"`
+	Reason    string `json:"reason"`
+	NoMSC1929 bool   `json:"no_msc1929"`
 }
 
 func report(svc moderationService) echo.HandlerFunc {
@@ -30,7 +31,7 @@ func report(svc moderationService) echo.HandlerFunc {
 			return err
 		}
 
-		if err := svc.Report(c.Request().Context(), report.RoomID, report.Reason); err != nil {
+		if err := svc.Report(c.Request().Context(), report.RoomID, report.Reason, report.NoMSC1929); err != nil {
 			log.Error().Err(err).Msg("cannot report room")
 			return err
 		}
