@@ -1,5 +1,6 @@
-/.idea
-/testdata
-/config.yml
-/mrs
 /cover.out
+/.env
+/config.yml
+/testdata
+/.idea
+/mrs

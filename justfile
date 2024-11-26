@@ -4,7 +4,7 @@ default:
 
 # update go deps
 update *flags:
-    go get {{ flags }} ./cmd
+    go get {{ flags }} ./cmd/mrs
     go mod tidy
     go mod vendor
 
@@ -22,11 +22,11 @@ mocks:
 
 # generate swagger docks
 swagger:
-    @swag init --dir ./cmd,./
+    @swag init --parseDependency --dir ./cmd/mrs,./
 
 # automatically fix swagger issues
 swaggerfix: && swagger
-    @swag fmt --dir ./cmd,./
+    @swag fmt --dir ./cmd/mrs,./
 
 # run unit tests
 test packages="./...":
@@ -35,9 +35,12 @@ test packages="./...":
     -@rm -f cover.out
 
 # run app
-run:
-    @go run ./cmd
+run *flags:
+    @go run ./cmd/mrs {{ flags }}
+
+install:
+    @CGO_ENABLED=0 go install -ldflags '-extldflags "-static"' -tags timetzdata,goolm -v ./cmd/mrs
 
 # build app
 build:
-    CGO_ENABLED=0 go build -ldflags '-extldflags "-static"' -tags timetzdata,goolm -v -o mrs ./cmd
+    @CGO_ENABLED=0 go build -ldflags '-extldflags "-static"' -tags timetzdata,goolm -v ./cmd/mrs
