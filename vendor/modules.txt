@@ -9,7 +9,7 @@ github.com/RoaringBitmap/roaring/roaring64
 # github.com/VictoriaMetrics/metrics v1.35.1
 ## explicit; go 1.17
 github.com/VictoriaMetrics/metrics
-# github.com/archdx/zerolog-sentry v1.8.4
+# github.com/archdx/zerolog-sentry v1.8.5
 ## explicit; go 1.20
 github.com/archdx/zerolog-sentry
 # github.com/benjaminestes/robots v1.0.0
@@ -17,10 +17,10 @@ github.com/archdx/zerolog-sentry
 # github.com/benjaminestes/robots/v2 v2.0.5
 ## explicit; go 1.13
 github.com/benjaminestes/robots/v2
-# github.com/bits-and-blooms/bitset v1.13.0
+# github.com/bits-and-blooms/bitset v1.17.0
 ## explicit; go 1.16
 github.com/bits-and-blooms/bitset
-# github.com/blevesearch/bleve/v2 v2.4.2
+# github.com/blevesearch/bleve/v2 v2.4.3
 ## explicit; go 1.21
 github.com/blevesearch/bleve/v2
 github.com/blevesearch/bleve/v2/analysis
@@ -100,15 +100,15 @@ github.com/blevesearch/bleve/v2/search/scorer
 github.com/blevesearch/bleve/v2/search/searcher
 github.com/blevesearch/bleve/v2/size
 github.com/blevesearch/bleve/v2/util
-# github.com/blevesearch/bleve_index_api v1.1.11
+# github.com/blevesearch/bleve_index_api v1.1.13
 ## explicit; go 1.20
 github.com/blevesearch/bleve_index_api
 # github.com/blevesearch/geo v0.1.20
 ## explicit; go 1.18
 github.com/blevesearch/geo/geojson
 github.com/blevesearch/geo/s2
-# github.com/blevesearch/go-faiss v1.0.20
-## explicit; go 1.19
+# github.com/blevesearch/go-faiss v1.0.23
+## explicit; go 1.21
 github.com/blevesearch/go-faiss
 # github.com/blevesearch/go-porterstemmer v1.0.3
 ## explicit; go 1.13
@@ -119,8 +119,8 @@ github.com/blevesearch/gtreap
 # github.com/blevesearch/mmap-go v1.0.4
 ## explicit; go 1.13
 github.com/blevesearch/mmap-go
-# github.com/blevesearch/scorch_segment_api/v2 v2.2.15
-## explicit; go 1.20
+# github.com/blevesearch/scorch_segment_api/v2 v2.2.16
+## explicit; go 1.21
 github.com/blevesearch/scorch_segment_api/v2
 # github.com/blevesearch/segment v0.9.1
 ## explicit; go 1.18
@@ -148,8 +148,8 @@ github.com/blevesearch/stempel/javadata
 # github.com/blevesearch/upsidedown_store_api v1.0.2
 ## explicit; go 1.18
 github.com/blevesearch/upsidedown_store_api
-# github.com/blevesearch/vellum v1.0.10
-## explicit; go 1.18
+# github.com/blevesearch/vellum v1.0.11
+## explicit; go 1.21
 github.com/blevesearch/vellum
 github.com/blevesearch/vellum/levenshtein
 github.com/blevesearch/vellum/regexp
@@ -166,11 +166,11 @@ github.com/blevesearch/zapx/v13
 # github.com/blevesearch/zapx/v14 v14.3.10
 ## explicit; go 1.19
 github.com/blevesearch/zapx/v14
-# github.com/blevesearch/zapx/v15 v15.3.13
+# github.com/blevesearch/zapx/v15 v15.3.16
 ## explicit; go 1.19
 github.com/blevesearch/zapx/v15
-# github.com/blevesearch/zapx/v16 v16.1.5
-## explicit; go 1.20
+# github.com/blevesearch/zapx/v16 v16.1.8
+## explicit; go 1.21
 github.com/blevesearch/zapx/v16
 # github.com/buger/jsonparser v1.1.1
 ## explicit; go 1.13
@@ -184,10 +184,11 @@ github.com/etkecc/go-fswatcher
 # github.com/etkecc/go-msc1929 v1.1.1
 ## explicit; go 1.18
 github.com/etkecc/go-msc1929
-# github.com/fsnotify/fsnotify v1.7.0
+# github.com/fsnotify/fsnotify v1.8.0
 ## explicit; go 1.17
 github.com/fsnotify/fsnotify
-# github.com/getsentry/sentry-go v0.28.1
+github.com/fsnotify/fsnotify/internal
+# github.com/getsentry/sentry-go v0.29.1
 ## explicit; go 1.18
 github.com/getsentry/sentry-go
 github.com/getsentry/sentry-go/echo
@@ -263,7 +264,7 @@ github.com/labstack/gommon/log
 github.com/mailru/easyjson/buffer
 github.com/mailru/easyjson/jlexer
 github.com/mailru/easyjson/jwriter
-# github.com/matrix-org/gomatrixserverlib v0.0.0-20240801173829-d531860ad2cb
+# github.com/matrix-org/gomatrixserverlib v0.0.0-20241106185410-dbd5f31fefc0
 ## explicit; go 1.18
 github.com/matrix-org/gomatrixserverlib
 github.com/matrix-org/gomatrixserverlib/spec
@@ -315,13 +316,13 @@ github.com/swaggo/echo-swagger
 # github.com/swaggo/files/v2 v2.0.1
 ## explicit; go 1.16
 github.com/swaggo/files/v2
-# github.com/swaggo/swag v1.16.3
+# github.com/swaggo/swag v1.16.4
 ## explicit; go 1.18
 github.com/swaggo/swag
 # github.com/theovassiliou/base64url v0.0.0-20211006203958-1e011490eaaf
 ## explicit; go 1.13
 github.com/theovassiliou/base64url
-# github.com/tidwall/gjson v1.17.3
+# github.com/tidwall/gjson v1.18.0
 ## explicit; go 1.12
 github.com/tidwall/gjson
 # github.com/tidwall/match v1.1.1
@@ -345,13 +346,13 @@ github.com/valyala/fasttemplate
 # github.com/valyala/histogram v1.2.0
 ## explicit; go 1.12
 github.com/valyala/histogram
-# github.com/xxjwxc/gowp v0.0.0-20230612082025-23a9b62c1da6
+# github.com/xxjwxc/gowp v0.0.0-20240929033016-5be68d222389
 ## explicit; go 1.13
 github.com/xxjwxc/gowp/workpool
-# github.com/xxjwxc/public v0.0.0-20240705102424-9b12e8672060
+# github.com/xxjwxc/public v0.0.0-20241118042544-92f0e4894253
 ## explicit; go 1.21.0
 github.com/xxjwxc/public/myqueue
-# github.com/yuin/goldmark v1.7.4
+# github.com/yuin/goldmark v1.7.8
 ## explicit; go 1.19
 github.com/yuin/goldmark
 github.com/yuin/goldmark/ast
@@ -365,17 +366,17 @@ github.com/yuin/goldmark/util
 # github.com/ziflex/lecho/v3 v3.7.0
 ## explicit; go 1.17
 github.com/ziflex/lecho/v3
-# go.etcd.io/bbolt v1.3.10
-## explicit; go 1.21
-go.etcd.io/bbolt
-# go.mau.fi/util v0.7.0
+# go.etcd.io/bbolt v1.3.11
 ## explicit; go 1.22
+go.etcd.io/bbolt
+# go.mau.fi/util v0.8.2
+## explicit; go 1.22.0
 go.mau.fi/util/base58
 go.mau.fi/util/jsonbytes
 go.mau.fi/util/jsontime
 go.mau.fi/util/ptr
 go.mau.fi/util/random
-# golang.org/x/crypto v0.26.0
+# golang.org/x/crypto v0.29.0
 ## explicit; go 1.20
 golang.org/x/crypto/acme
 golang.org/x/crypto/acme/autocert
@@ -384,12 +385,12 @@ golang.org/x/crypto/blake2b
 golang.org/x/crypto/ed25519
 golang.org/x/crypto/hkdf
 golang.org/x/crypto/pbkdf2
-# golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa
-## explicit; go 1.20
+# golang.org/x/exp v0.0.0-20241108190413-2d47ceb2692f
+## explicit; go 1.22.0
 golang.org/x/exp/constraints
 golang.org/x/exp/maps
 golang.org/x/exp/slices
-# golang.org/x/net v0.28.0
+# golang.org/x/net v0.31.0
 ## explicit; go 1.18
 golang.org/x/net/html
 golang.org/x/net/html/atom
@@ -398,13 +399,13 @@ golang.org/x/net/http2
 golang.org/x/net/http2/h2c
 golang.org/x/net/http2/hpack
 golang.org/x/net/idna
-# golang.org/x/sys v0.24.0
+# golang.org/x/sys v0.27.0
 ## explicit; go 1.18
 golang.org/x/sys/cpu
 golang.org/x/sys/execabs
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/text v0.17.0
+# golang.org/x/text v0.20.0
 ## explicit; go 1.18
 golang.org/x/text/cases
 golang.org/x/text/internal
@@ -416,18 +417,17 @@ golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
-# golang.org/x/time v0.6.0
+# golang.org/x/time v0.8.0
 ## explicit; go 1.18
 golang.org/x/time/rate
-# golang.org/x/tools v0.24.0
-## explicit; go 1.19
+# golang.org/x/tools v0.27.0
+## explicit; go 1.22.0
 golang.org/x/tools/go/ast/astutil
 golang.org/x/tools/go/buildutil
 golang.org/x/tools/go/internal/cgo
 golang.org/x/tools/go/loader
-golang.org/x/tools/internal/versions
-# google.golang.org/protobuf v1.34.2
-## explicit; go 1.20
+# google.golang.org/protobuf v1.35.2
+## explicit; go 1.21
 google.golang.org/protobuf/encoding/prototext
 google.golang.org/protobuf/encoding/protowire
 google.golang.org/protobuf/internal/descfmt
@@ -467,8 +467,8 @@ gopkg.in/yaml.v2
 # gopkg.in/yaml.v3 v3.0.1
 ## explicit
 gopkg.in/yaml.v3
-# maunium.net/go/mautrix v0.20.0
-## explicit; go 1.22
+# maunium.net/go/mautrix v0.22.0
+## explicit; go 1.22.0
 maunium.net/go/mautrix/crypto/attachment
 maunium.net/go/mautrix/crypto/utils
 maunium.net/go/mautrix/event

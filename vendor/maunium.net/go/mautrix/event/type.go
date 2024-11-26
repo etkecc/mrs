@@ -126,7 +126,7 @@ func (et *Type) GuessClass() TypeClass {
 		InRoomVerificationStart.Type, InRoomVerificationReady.Type, InRoomVerificationAccept.Type,
 		InRoomVerificationKey.Type, InRoomVerificationMAC.Type, InRoomVerificationCancel.Type,
 		CallInvite.Type, CallCandidates.Type, CallAnswer.Type, CallReject.Type, CallSelectAnswer.Type,
-		CallNegotiate.Type, CallHangup.Type, BeeperMessageStatus.Type:
+		CallNegotiate.Type, CallHangup.Type, BeeperMessageStatus.Type, EventUnstablePollStart.Type, EventUnstablePollResponse.Type:
 		return MessageEventType
 	case ToDeviceRoomKey.Type, ToDeviceRoomKeyRequest.Type, ToDeviceForwardedRoomKey.Type, ToDeviceRoomKeyWithheld.Type,
 		ToDeviceBeeperRoomKeyAck.Type:
@@ -149,7 +149,7 @@ func (et *Type) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&et.Type)
 }
 
-func (et Type) UnmarshalText(data []byte) error {
+func (et *Type) UnmarshalText(data []byte) error {
 	et.Type = string(data)
 	et.Class = et.GuessClass()
 	return nil
@@ -159,11 +159,11 @@ func (et Type) MarshalText() ([]byte, error) {
 	return []byte(et.Type), nil
 }
 
-func (et *Type) String() string {
+func (et Type) String() string {
 	return et.Type
 }
 
-func (et *Type) Repr() string {
+func (et Type) Repr() string {
 	return fmt.Sprintf("%s (%s)", et.Type, et.Class.Name())
 }
 
@@ -191,6 +191,13 @@ var (
 	StateHalfShotBridge    = Type{"uk.half-shot.bridge", StateEventType}
 	StateSpaceChild        = Type{"m.space.child", StateEventType}
 	StateSpaceParent       = Type{"m.space.parent", StateEventType}
+
+	StateLegacyPolicyRoom     = Type{"m.room.rule.room", StateEventType}
+	StateLegacyPolicyServer   = Type{"m.room.rule.server", StateEventType}
+	StateLegacyPolicyUser     = Type{"m.room.rule.user", StateEventType}
+	StateUnstablePolicyRoom   = Type{"org.matrix.mjolnir.rule.room", StateEventType}
+	StateUnstablePolicyServer = Type{"org.matrix.mjolnir.rule.server", StateEventType}
+	StateUnstablePolicyUser   = Type{"org.matrix.mjolnir.rule.user", StateEventType}
 
 	// Deprecated: MSC2716 has been abandoned
 	StateInsertionMarker = Type{"org.matrix.msc2716.marker", StateEventType}
@@ -225,6 +232,9 @@ var (
 	CallHangup       = Type{"m.call.hangup", MessageEventType}
 
 	BeeperMessageStatus = Type{"com.beeper.message_send_status", MessageEventType}
+
+	EventUnstablePollStart    = Type{Type: "org.matrix.msc3381.poll.start", Class: MessageEventType}
+	EventUnstablePollResponse = Type{Type: "org.matrix.msc3381.poll.response", Class: MessageEventType}
 )
 
 // Ephemeral events

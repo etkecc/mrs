@@ -40,6 +40,13 @@ var TypeMap = map[Type]reflect.Type{
 	StateSpaceChild:        reflect.TypeOf(SpaceChildEventContent{}),
 	StateInsertionMarker:   reflect.TypeOf(InsertionMarkerContent{}),
 
+	StateLegacyPolicyRoom:     reflect.TypeOf(ModPolicyContent{}),
+	StateLegacyPolicyServer:   reflect.TypeOf(ModPolicyContent{}),
+	StateLegacyPolicyUser:     reflect.TypeOf(ModPolicyContent{}),
+	StateUnstablePolicyRoom:   reflect.TypeOf(ModPolicyContent{}),
+	StateUnstablePolicyServer: reflect.TypeOf(ModPolicyContent{}),
+	StateUnstablePolicyUser:   reflect.TypeOf(ModPolicyContent{}),
+
 	StateElementFunctionalMembers: reflect.TypeOf(ElementFunctionalMembersContent{}),
 
 	EventMessage:   reflect.TypeOf(MessageEventContent{}),
@@ -47,6 +54,9 @@ var TypeMap = map[Type]reflect.Type{
 	EventEncrypted: reflect.TypeOf(EncryptedEventContent{}),
 	EventRedaction: reflect.TypeOf(RedactionEventContent{}),
 	EventReaction:  reflect.TypeOf(ReactionEventContent{}),
+
+	EventUnstablePollStart:    reflect.TypeOf(PollStartEventContent{}),
+	EventUnstablePollResponse: reflect.TypeOf(PollResponseEventContent{}),
 
 	BeeperMessageStatus: reflect.TypeOf(BeeperMessageStatusEventContent{}),
 
@@ -177,6 +187,13 @@ func IsUnsupportedContentType(err error) bool {
 
 var ErrContentAlreadyParsed = errors.New("content is already parsed")
 var ErrUnsupportedContentType = errors.New("unsupported event type")
+
+func (content *Content) GetRaw() map[string]interface{} {
+	if content.Raw == nil {
+		content.Raw = make(map[string]interface{})
+	}
+	return content.Raw
+}
 
 func (content *Content) ParseRaw(evtType Type) error {
 	if content.Parsed != nil {
