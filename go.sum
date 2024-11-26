@@ -90,6 +90,8 @@ github.com/etkecc/go-echo-basic-auth v1.1.1 h1:UHOGTP9V92cKIL8oLaze9Kt7pRpQf8uX7
 github.com/etkecc/go-echo-basic-auth v1.1.1/go.mod h1:CDteie9ngWqpPflukr4WSMlyScEsKRcSwbosDYTzaZI=
 github.com/etkecc/go-fswatcher v1.0.1 h1:n9hqtjzTS3ETb9hcZe1EqYA1lkkhlzZlztu3hXwFDQc=
 github.com/etkecc/go-fswatcher v1.0.1/go.mod h1:O5TODJ9z6Qb7X+snqHbB+F0Pah6G497Wdg0SFE/UYpE=
+github.com/etkecc/go-kit v1.4.2 h1:X0GmL4Qz3D7b0f47OL4l9nGdvQOMuNb1/cRFOLeoBKU=
+github.com/etkecc/go-kit v1.4.2/go.mod h1:yikghi8YaYbTjRXNtx82g0LFv90YqZi2vLf5Chw0ysg=
 github.com/etkecc/go-msc1929 v1.1.1 h1:EwQ6vAvj4eqf0eb5B3gwb1Thz9TTgkeNvAZuCopF3Eo=
 github.com/etkecc/go-msc1929 v1.1.1/go.mod h1:Tf6oxDhwzd4hvP7xtALHLs6RDurPOqAM2AX+DOf6M3k=
 github.com/fortytw2/leaktest v1.3.0/go.mod h1:jDsjWgpAGjm2CA7WthBh/CdZYEPF31XHquHwclZch5g=
@@ -349,8 +351,6 @@ github.com/ziflex/lecho/v3 v3.7.0/go.mod h1:LBlLsyIwa0MFxtJ2WU5WzHfuMR/jnq26TXdd
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
 go.etcd.io/bbolt v1.3.11 h1:yGEzV1wPz2yVCLsD8ZAiGHhHVlczyC9d1rP43/VCRJ0=
 go.etcd.io/bbolt v1.3.11/go.mod h1:dksAq7YMXoljX0xu6VF5DMZGbhYYoLUalEiSySYAS4I=
-go.mau.fi/util v0.8.2 h1:zWbVHwdRKwI6U9AusmZ8bwgcLosikwbb4GGqLrNr1YE=
-go.mau.fi/util v0.8.2/go.mod h1:BHHC9R2WLMJd1bwTZfTcFxUgRFmUgUmiWcT4RbzUgiA=
 go.opentelemetry.io/otel v0.16.0/go.mod h1:e4GKElweB8W2gWUqbghw0B8t5MCTccc9212eNHnOHwA=
 go.uber.org/atomic v1.4.0/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=
 go.uber.org/multierr v1.1.0/go.mod h1:wR5kodmAFQ0UK8QlbwjlSNy0Z68gJhDJUG5sjR94q/0=
@@ -470,7 +470,5 @@ gorm.io/driver/mysql v1.0.1/go.mod h1:KtqSthtg55lFp3S5kUXqlGaelnWpKitn4k1xZTnoiP
 gorm.io/gorm v1.9.19/go.mod h1:0HFTzE/SqkGTzK6TlDPPQbAYCluiVvhzoA1+aVyzenw=
 gorm.io/gorm v1.20.2/go.mod h1:0HFTzE/SqkGTzK6TlDPPQbAYCluiVvhzoA1+aVyzenw=
 honnef.co/go/tools v0.0.0-20190102054323-c2f93a96b099/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
-maunium.net/go/mautrix v0.22.0 h1:nLrnLYiMyFV6qZPqpkNogkOPgm2dQTYiQXlu9Nc3rz8=
-maunium.net/go/mautrix v0.22.0/go.mod h1:oqwf9WYC/brqucM+heYk4gX11O59nP+ljvyxVhndFIM=
 mvdan.cc/xurls/v2 v2.5.0 h1:lyBNOm8Wo71UknhUs4QTFUNNMyxy2JEIaKKo0RWOh+8=
 mvdan.cc/xurls/v2 v2.5.0/go.mod h1:yQgaGQ1rFtJUzkmKiHYSSfuQxqfYmd//X6PxvholpeE=

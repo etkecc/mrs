@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"maunium.net/go/mautrix/format"
+	"github.com/etkecc/go-kit/format"
 )
 
 func markdownURL(label, link string) string {
@@ -33,7 +33,7 @@ func MarkdownLink(link string) string {
 
 // MarkdownRender coverts markdown text into text and html forms
 func MarkdownRender(mdtext string) (text, html string) {
-	content := format.RenderMarkdown(mdtext, true, true)
+	html = format.Render(mdtext)
 
-	return content.Body, content.FormattedBody
+	return mdtext, html
 }

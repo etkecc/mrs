@@ -11,6 +11,7 @@ require (
 	github.com/blevesearch/bleve/v2 v2.4.3
 	github.com/etkecc/go-echo-basic-auth v1.1.1
 	github.com/etkecc/go-fswatcher v1.0.1
+	github.com/etkecc/go-kit v1.4.2
 	github.com/etkecc/go-msc1929 v1.1.1
 	github.com/fsnotify/fsnotify v1.8.0
 	github.com/getsentry/sentry-go v0.29.1
@@ -32,7 +33,6 @@ require (
 	golang.org/x/exp v0.0.0-20241108190413-2d47ceb2692f
 	golang.org/x/time v0.8.0
 	gopkg.in/yaml.v3 v3.0.1
-	maunium.net/go/mautrix v0.22.0
 	mvdan.cc/xurls/v2 v2.5.0
 )
 
@@ -92,7 +92,6 @@ require (
 	github.com/valyala/histogram v1.2.0 // indirect
 	github.com/xxjwxc/public v0.0.0-20241118042544-92f0e4894253 // indirect
 	github.com/yuin/goldmark v1.7.8 // indirect
-	go.mau.fi/util v0.8.2 // indirect
 	golang.org/x/crypto v0.29.0 // indirect
 	golang.org/x/net v0.31.0 // indirect
 	golang.org/x/sys v0.27.0 // indirect

@@ -181,6 +181,9 @@ github.com/etkecc/go-echo-basic-auth
 # github.com/etkecc/go-fswatcher v1.0.1
 ## explicit; go 1.20
 github.com/etkecc/go-fswatcher
+# github.com/etkecc/go-kit v1.4.2
+## explicit; go 1.22
+github.com/etkecc/go-kit/format
 # github.com/etkecc/go-msc1929 v1.1.1
 ## explicit; go 1.18
 github.com/etkecc/go-msc1929
@@ -369,13 +372,6 @@ github.com/ziflex/lecho/v3
 # go.etcd.io/bbolt v1.3.11
 ## explicit; go 1.22
 go.etcd.io/bbolt
-# go.mau.fi/util v0.8.2
-## explicit; go 1.22.0
-go.mau.fi/util/base58
-go.mau.fi/util/jsonbytes
-go.mau.fi/util/jsontime
-go.mau.fi/util/ptr
-go.mau.fi/util/random
 # golang.org/x/crypto v0.29.0
 ## explicit; go 1.20
 golang.org/x/crypto/acme
@@ -383,8 +379,6 @@ golang.org/x/crypto/acme/autocert
 golang.org/x/crypto/argon2
 golang.org/x/crypto/blake2b
 golang.org/x/crypto/ed25519
-golang.org/x/crypto/hkdf
-golang.org/x/crypto/pbkdf2
 # golang.org/x/exp v0.0.0-20241108190413-2d47ceb2692f
 ## explicit; go 1.22.0
 golang.org/x/exp/constraints
@@ -392,8 +386,6 @@ golang.org/x/exp/maps
 golang.org/x/exp/slices
 # golang.org/x/net v0.31.0
 ## explicit; go 1.18
-golang.org/x/net/html
-golang.org/x/net/html/atom
 golang.org/x/net/http/httpguts
 golang.org/x/net/http2
 golang.org/x/net/http2/h2c
@@ -467,14 +459,6 @@ gopkg.in/yaml.v2
 # gopkg.in/yaml.v3 v3.0.1
 ## explicit
 gopkg.in/yaml.v3
-# maunium.net/go/mautrix v0.22.0
-## explicit; go 1.22.0
-maunium.net/go/mautrix/crypto/attachment
-maunium.net/go/mautrix/crypto/utils
-maunium.net/go/mautrix/event
-maunium.net/go/mautrix/format
-maunium.net/go/mautrix/format/mdext
-maunium.net/go/mautrix/id
 # mvdan.cc/xurls/v2 v2.5.0
 ## explicit; go 1.19
 mvdan.cc/xurls/v2
