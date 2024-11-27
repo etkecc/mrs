@@ -1,74 +1,91 @@
 // package workpool provides a simple work pool implementation
 package workpool
 
-import "sync"
+import (
+	"fmt"
+	"sync/atomic"
+)
 
 // Task is a function that can be added to the work pool
 type Task func()
 
 // WorkPool is a simple work pool implementation
 type WorkPool struct {
-	mu      sync.Mutex
-	queue   []Task
+	queue   chan Task
+	closed  bool
 	workers int
-	wg      sync.WaitGroup
+	running int32
 }
 
 // New creates a new work pool with the specified number of workers
-func New(workers int) *WorkPool {
+func New(workers int, optionalBufferSize ...int) *WorkPool {
 	if workers < 1 {
 		workers = 1
+	}
+	bufferSize := workers*100 + 1
+	if len(optionalBufferSize) > 0 {
+		bufferSize = optionalBufferSize[0]
 	}
 
 	wp := &WorkPool{
 		workers: workers,
-		queue:   make([]Task, 0),
+		queue:   make(chan Task, bufferSize), // Buffered channel to prevent blocking
 	}
+
+	// Initialize the workers as soon as the pool is created
+	wp.startWorkers()
+
 	return wp
 }
 
 // Do adds a task to the work pool
-//
-//nolint:unparam // that's for users convenience, not for the library
 func (wp *WorkPool) Do(task Task) *WorkPool {
-	wp.mu.Lock()
-	defer wp.mu.Unlock()
+	if wp.closed {
+		return wp
+	}
 
-	wp.queue = append(wp.queue, task)
+	atomic.AddInt32(&wp.running, 1) // Increment running tasks
+	wp.queue <- task                // Add task to the queue
 	return wp
 }
 
-// Run starts the work pool and waits for all tasks to complete
+// Run waits for all tasks to complete and shuts down the pool
 func (wp *WorkPool) Run() {
-	wp.mu.Lock()
-	if len(wp.queue) == 0 {
-		wp.mu.Unlock()
+	if wp.closed {
 		return
 	}
 
-	tasks := make(chan Task, len(wp.queue))
-	wp.wg.Add(wp.workers)
-
-	for i := 0; i < wp.workers; i++ {
-		go wp.worker(tasks)
+	//nolint:revive // wait until all tasks are processed
+	for atomic.LoadInt32(&wp.running) > 0 {
 	}
-
-	for _, task := range wp.queue {
-		tasks <- task
-	}
-	close(tasks)
-	wp.mu.Unlock()
-
-	wp.wg.Wait()
+	wp.closed = true
+	close(wp.queue)
 }
 
-func (wp *WorkPool) worker(tasks <-chan Task) {
-	defer func() {
-		_ = recover() //nolint:errcheck // ignore panic
-		wp.wg.Done()
-	}()
+// IsRunning returns true if there are any tasks in progress or in the queue
+func (wp *WorkPool) IsRunning() bool {
+	return atomic.LoadInt32(&wp.running) > 0
+}
 
-	for task := range tasks {
-		task()
+// startWorkers initializes the workers and starts processing tasks
+func (wp *WorkPool) startWorkers() {
+	for i := 0; i < wp.workers; i++ {
+		go wp.worker()
+	}
+}
+
+// worker processes tasks from the queue
+func (wp *WorkPool) worker() {
+	for task := range wp.queue {
+		func(task Task) {
+			defer func() {
+				if r := recover(); r != nil {
+					fmt.Println("WARNING: WorkPool worker recovered from panic in task:", r)
+				}
+			}()
+
+			task()
+		}(task)
+		atomic.AddInt32(&wp.running, -1) // Decrement running tasks when done
 	}
 }

@@ -11,7 +11,7 @@ require (
 	github.com/blevesearch/bleve/v2 v2.4.3
 	github.com/etkecc/go-echo-basic-auth v1.1.1
 	github.com/etkecc/go-fswatcher v1.0.1
-	github.com/etkecc/go-kit v1.4.2
+	github.com/etkecc/go-kit v1.5.0
 	github.com/etkecc/go-msc1929 v1.1.1
 	github.com/fsnotify/fsnotify v1.8.0
 	github.com/getsentry/sentry-go v0.29.1

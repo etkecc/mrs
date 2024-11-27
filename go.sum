@@ -61,8 +61,8 @@ github.com/etkecc/go-echo-basic-auth v1.1.1 h1:UHOGTP9V92cKIL8oLaze9Kt7pRpQf8uX7
 github.com/etkecc/go-echo-basic-auth v1.1.1/go.mod h1:CDteie9ngWqpPflukr4WSMlyScEsKRcSwbosDYTzaZI=
 github.com/etkecc/go-fswatcher v1.0.1 h1:n9hqtjzTS3ETb9hcZe1EqYA1lkkhlzZlztu3hXwFDQc=
 github.com/etkecc/go-fswatcher v1.0.1/go.mod h1:O5TODJ9z6Qb7X+snqHbB+F0Pah6G497Wdg0SFE/UYpE=
-github.com/etkecc/go-kit v1.4.2 h1:X0GmL4Qz3D7b0f47OL4l9nGdvQOMuNb1/cRFOLeoBKU=
-github.com/etkecc/go-kit v1.4.2/go.mod h1:yikghi8YaYbTjRXNtx82g0LFv90YqZi2vLf5Chw0ysg=
+github.com/etkecc/go-kit v1.5.0 h1:i7QxpWxgoIBEDbUW5dbaDHnwbVXDCHw3Y5B9Xm++v0k=
+github.com/etkecc/go-kit v1.5.0/go.mod h1:yikghi8YaYbTjRXNtx82g0LFv90YqZi2vLf5Chw0ysg=
 github.com/etkecc/go-msc1929 v1.1.1 h1:EwQ6vAvj4eqf0eb5B3gwb1Thz9TTgkeNvAZuCopF3Eo=
 github.com/etkecc/go-msc1929 v1.1.1/go.mod h1:Tf6oxDhwzd4hvP7xtALHLs6RDurPOqAM2AX+DOf6M3k=
 github.com/fsnotify/fsnotify v1.8.0 h1:dAwr6QBTBZIkG8roQaJjGof0pp0EeF+tNV7YBP3F/8M=
