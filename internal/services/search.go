@@ -58,20 +58,30 @@ func NewSearch(cfg ConfigService, data searchDataRepository, repo SearchReposito
 
 // Search things
 // ref: https://blevesearch.com/docs/Query-String-Query/
-func (s *Search) Search(ctx context.Context, q, sortBy string, limit, offset int) ([]*model.Entry, int, error) {
+func (s *Search) Search(ctx context.Context, originServer, q, sortBy string, limit, offset int) ([]*model.Entry, int, error) {
 	span := utils.StartSpan(ctx, "searchSvc.Search")
 	defer span.Finish()
 	log := zerolog.Ctx(span.Context())
+	highlights := s.availableHighlights(originServer)
 	if limit == 0 {
 		limit = s.cfg.Get().Search.Defaults.Limit
 	}
 	if offset == 0 {
 		offset = s.cfg.Get().Search.Defaults.Offset
 	}
+	limit -= highlights
+	if limit == 0 {
+		limit = 1
+	}
+	offset -= highlights
+	if offset < 0 {
+		offset = 0
+	}
 
 	var builtQuery query.Query
 	if q == "" {
 		entries, length := s.getEmptyQueryResults(span.Context(), limit, offset)
+		entries = s.addHighlights(originServer, entries)
 		return entries, length, nil
 	}
 	builtQuery = s.getSearchQuery(s.matchFields(q))
@@ -79,7 +89,7 @@ func (s *Search) Search(ctx context.Context, q, sortBy string, limit, offset int
 		return []*model.Entry{}, 0, nil
 	}
 	results, total, err := s.repo.Search(span.Context(), builtQuery, limit, offset, utils.StringToSlice(sortBy, s.cfg.Get().Search.Defaults.SortBy))
-	results = s.removeBlocked(results)
+	results = s.addHighlights(originServer, s.removeBlocked(results))
 	log.Info().
 		Err(err).
 		Str("query", q).
@@ -93,6 +103,43 @@ func (s *Search) Search(ctx context.Context, q, sortBy string, limit, offset int
 	}
 
 	return results, total, nil
+}
+
+func (s *Search) availableHighlights(originServer string) int {
+	highlights := s.cfg.Get().Search.Highlights
+	if len(highlights) == 0 {
+		return 0
+	}
+	count := 0
+	for _, highlight := range highlights {
+		if slices.Contains(highlight.Servers, originServer) {
+			count++
+		}
+	}
+
+	return count
+}
+
+func (s *Search) addHighlights(originServer string, entries []*model.Entry) []*model.Entry {
+	if len(entries) == 0 {
+		return entries
+	}
+
+	highlights := s.cfg.Get().Search.Highlights
+	for _, highlight := range highlights {
+		if !slices.Contains(highlight.Servers, originServer) {
+			continue
+		}
+
+		entry := highlight.Entry()
+		if highlight.Position < 0 || highlight.Position > len(entries) {
+			entries = append(entries, entry)
+			continue
+		}
+		entries = append(entries[:highlight.Position], append([]*model.Entry{entry}, entries[highlight.Position:]...)...)
+	}
+
+	return entries
 }
 
 func (s *Search) getEmptyQueryResults(ctx context.Context, limit, offset int) (entries []*model.Entry, length int) {

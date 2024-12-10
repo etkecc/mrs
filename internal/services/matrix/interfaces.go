@@ -11,7 +11,7 @@ type configService interface {
 }
 
 type searchService interface {
-	Search(ctx context.Context, query, sortBy string, limit, offset int) ([]*model.Entry, int, error)
+	Search(ctx context.Context, originServer, query, sortBy string, limit, offset int) ([]*model.Entry, int, error)
 }
 
 type dataRepository interface {

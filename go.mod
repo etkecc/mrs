@@ -14,10 +14,10 @@ require (
 	github.com/etkecc/go-kit v1.5.0
 	github.com/etkecc/go-msc1929 v1.1.1
 	github.com/fsnotify/fsnotify v1.8.0
-	github.com/getsentry/sentry-go v0.29.1
+	github.com/getsentry/sentry-go v0.30.0
 	github.com/goccy/go-json v0.10.3
 	github.com/hashicorp/golang-lru/v2 v2.0.7
-	github.com/labstack/echo/v4 v4.12.0
+	github.com/labstack/echo/v4 v4.13.0
 	github.com/matrix-org/gomatrixserverlib v0.0.0-20241106185410-dbd5f31fefc0
 	github.com/mattevans/postmark-go v1.0.0
 	github.com/mileusna/crontab v1.2.0
@@ -29,7 +29,7 @@ require (
 	github.com/theovassiliou/base64url v0.0.0-20211006203958-1e011490eaaf
 	github.com/ziflex/lecho/v3 v3.7.0
 	go.etcd.io/bbolt v1.3.11
-	golang.org/x/exp v0.0.0-20241108190413-2d47ceb2692f
+	golang.org/x/exp v0.0.0-20241204233417-43b7b7cde48d
 	golang.org/x/time v0.8.0
 	gopkg.in/yaml.v3 v3.0.1
 	mvdan.cc/xurls/v2 v2.5.0
@@ -39,7 +39,7 @@ require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/RoaringBitmap/roaring v1.9.4 // indirect
 	github.com/benjaminestes/robots v1.0.0 // indirect
-	github.com/bits-and-blooms/bitset v1.17.0 // indirect
+	github.com/bits-and-blooms/bitset v1.19.1 // indirect
 	github.com/blevesearch/bleve_index_api v1.1.13 // indirect
 	github.com/blevesearch/geo v0.1.20 // indirect
 	github.com/blevesearch/go-faiss v1.0.23 // indirect
@@ -57,14 +57,13 @@ require (
 	github.com/blevesearch/zapx/v13 v13.3.10 // indirect
 	github.com/blevesearch/zapx/v14 v14.3.10 // indirect
 	github.com/blevesearch/zapx/v15 v15.3.16 // indirect
-	github.com/blevesearch/zapx/v16 v16.1.8 // indirect
+	github.com/blevesearch/zapx/v16 v16.1.9 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect
 	github.com/go-openapi/jsonreference v0.21.0 // indirect
 	github.com/go-openapi/spec v0.21.0 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
-	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang/geo v0.0.0-20230421003525-6adc56603217 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
@@ -90,11 +89,11 @@ require (
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/valyala/histogram v1.2.0 // indirect
 	github.com/yuin/goldmark v1.7.8 // indirect
-	golang.org/x/crypto v0.29.0 // indirect
-	golang.org/x/net v0.31.0 // indirect
-	golang.org/x/sys v0.27.0 // indirect
-	golang.org/x/text v0.20.0 // indirect
-	golang.org/x/tools v0.27.0 // indirect
+	golang.org/x/crypto v0.30.0 // indirect
+	golang.org/x/net v0.32.0 // indirect
+	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/text v0.21.0 // indirect
+	golang.org/x/tools v0.28.0 // indirect
 	google.golang.org/protobuf v1.35.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

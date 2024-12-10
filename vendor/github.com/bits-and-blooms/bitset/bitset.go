@@ -44,6 +44,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/bits"
 	"strconv"
 )
 
@@ -52,6 +53,9 @@ const wordSize = uint(64)
 
 // the wordSize of a bit set in bytes
 const wordBytes = wordSize / 8
+
+// wordMask is wordSize-1, used for bit indexing in a word
+const wordMask = wordSize - 1
 
 // log2WordSize is lg(wordSize)
 const log2WordSize = uint(6)
@@ -122,7 +126,16 @@ func FromWithLength(length uint, set []uint64) *BitSet {
 // Bytes returns the bitset as array of 64-bit words, giving direct access to the internal representation.
 // It is not a copy, so changes to the returned slice will affect the bitset.
 // It is meant for advanced users.
+//
+// Deprecated: Bytes is deprecated. Use [BitSet.Words] instead.
 func (b *BitSet) Bytes() []uint64 {
+	return b.set
+}
+
+// Words returns the bitset as array of 64-bit words, giving direct access to the internal representation.
+// It is not a copy, so changes to the returned slice will affect the bitset.
+// It is meant for advanced users.
+func (b *BitSet) Words() []uint64 {
 	return b.set
 }
 
@@ -491,7 +504,7 @@ func (b *BitSet) NextSet(i uint) (uint, bool) {
 	w := b.set[x]
 	w = w >> wordsIndex(i)
 	if w != 0 {
-		return i + trailingZeroes64(w), true
+		return i + uint(bits.TrailingZeros64(w)), true
 	}
 	x++
 	// bounds check elimination in the loop
@@ -500,7 +513,7 @@ func (b *BitSet) NextSet(i uint) (uint, bool) {
 	}
 	for x < len(b.set) {
 		if b.set[x] != 0 {
-			return uint(x)*wordSize + trailingZeroes64(b.set[x]), true
+			return uint(x)*wordSize + uint(bits.TrailingZeros64(b.set[x])), true
 		}
 		x++
 
@@ -541,7 +554,7 @@ func (b *BitSet) NextSetMany(i uint, buffer []uint) (uint, []uint) {
 	myanswer = myanswer[:capacity]
 	size := int(0)
 	for word != 0 {
-		r := trailingZeroes64(word)
+		r := uint(bits.TrailingZeros64(word))
 		t := word & ((^word) + 1)
 		myanswer[size] = r + i
 		size++
@@ -553,7 +566,7 @@ func (b *BitSet) NextSetMany(i uint, buffer []uint) (uint, []uint) {
 	x++
 	for idx, word := range b.set[x:] {
 		for word != 0 {
-			r := trailingZeroes64(word)
+			r := uint(bits.TrailingZeros64(word))
 			t := word & ((^word) + 1)
 			myanswer[size] = r + (uint(x+idx) << 6)
 			size++
@@ -581,7 +594,7 @@ func (b *BitSet) NextClear(i uint) (uint, bool) {
 	w := b.set[x]
 	w = w >> wordsIndex(i)
 	wA := allBits >> wordsIndex(i)
-	index := i + trailingZeroes64(^w)
+	index := i + uint(bits.TrailingZeros64(^w))
 	if w != wA && index < b.length {
 		return index, true
 	}
@@ -592,7 +605,7 @@ func (b *BitSet) NextClear(i uint) (uint, bool) {
 	}
 	for x < len(b.set) {
 		if b.set[x] != allBits {
-			index = uint(x)*wordSize + trailingZeroes64(^b.set[x])
+			index = uint(x)*wordSize + uint(bits.TrailingZeros64(^b.set[x]))
 			if index < b.length {
 				return index, true
 			}
@@ -614,12 +627,12 @@ func (b *BitSet) PreviousSet(i uint) (uint, bool) {
 	// Clear the bits above the index
 	w = w & ((1 << (wordsIndex(i) + 1)) - 1)
 	if w != 0 {
-		return uint(x<<log2WordSize) + len64(w) - 1, true
+		return uint(x<<log2WordSize) + uint(bits.Len64(w)) - 1, true
 	}
 	for x--; x >= 0; x-- {
 		w = b.set[x]
 		if w != 0 {
-			return uint(x<<log2WordSize) + len64(w) - 1, true
+			return uint(x<<log2WordSize) + uint(bits.Len64(w)) - 1, true
 		}
 	}
 	return 0, false
@@ -639,14 +652,14 @@ func (b *BitSet) PreviousClear(i uint) (uint, bool) {
 	// Clear the bits above the index
 	w = w & ((1 << (wordsIndex(i) + 1)) - 1)
 	if w != 0 {
-		return uint(x<<log2WordSize) + len64(w) - 1, true
+		return uint(x<<log2WordSize) + uint(bits.Len64(w)) - 1, true
 	}
 
 	for x--; x >= 0; x-- {
 		w = b.set[x]
 		w = ^w
 		if w != 0 {
-			return uint(x<<log2WordSize) + len64(w) - 1, true
+			return uint(x<<log2WordSize) + uint(bits.Len64(w)) - 1, true
 		}
 	}
 	return 0, false
@@ -791,7 +804,7 @@ func (b *BitSet) Difference(compare *BitSet) (result *BitSet) {
 	return
 }
 
-// DifferenceCardinality computes the cardinality of the differnce
+// DifferenceCardinality computes the cardinality of the difference
 func (b *BitSet) DifferenceCardinality(compare *BitSet) uint {
 	panicIfNull(b)
 	panicIfNull(compare)
@@ -1277,7 +1290,7 @@ func (b *BitSet) UnmarshalJSON(data []byte) error {
 	return err
 }
 
-// Rank returns the nunber of set bits up to and including the index
+// Rank returns the number of set bits up to and including the index
 // that are set in the bitset.
 // See https://en.wikipedia.org/wiki/Ranking#Ranking_in_statistics
 func (b *BitSet) Rank(index uint) uint {
@@ -1287,7 +1300,7 @@ func (b *BitSet) Rank(index uint) uint {
 	leftover := (index + 1) & 63
 	answer := uint(popcntSlice(b.set[:(index+1)>>6]))
 	if leftover != 0 {
-		answer += uint(popcount(b.set[(index+1)>>6] << (64 - leftover)))
+		answer += uint(bits.OnesCount64(b.set[(index+1)>>6] << (64 - leftover)))
 	}
 	return answer
 }
@@ -1302,7 +1315,7 @@ func (b *BitSet) Rank(index uint) uint {
 func (b *BitSet) Select(index uint) uint {
 	leftover := index
 	for idx, word := range b.set {
-		w := uint(popcount(word))
+		w := uint(bits.OnesCount64(word))
 		if w > leftover {
 			return uint(idx)*64 + select64(word, leftover)
 		}
@@ -1324,7 +1337,7 @@ func (b *BitSet) top() (uint, bool) {
 		return 0, false
 	}
 
-	return uint(idx)*wordSize + len64(b.set[idx]) - 1, true
+	return uint(idx)*wordSize + uint(bits.Len64(b.set[idx])) - 1, true
 }
 
 // ShiftLeft shifts the bitset like << operation would do.
@@ -1427,4 +1440,210 @@ func (b *BitSet) ShiftRight(bits uint) {
 	for i := int(idx-pages) + 1; i <= int(idx); i++ {
 		b.set[i] = 0
 	}
+}
+
+// OnesBetween returns the number of set bits in the range [from, to).
+// The range is inclusive of 'from' and exclusive of 'to'.
+// Returns 0 if from >= to.
+func (b *BitSet) OnesBetween(from, to uint) uint {
+	panicIfNull(b)
+
+	if from >= to {
+		return 0
+	}
+
+	// Calculate indices and masks for the starting and ending words
+	startWord := from >> log2WordSize // Divide by wordSize
+	endWord := to >> log2WordSize
+	startOffset := from & wordMask // Mod wordSize
+	endOffset := to & wordMask
+
+	// Case 1: Bits lie within a single word
+	if startWord == endWord {
+		// Create mask for bits between from and to
+		mask := uint64((1<<endOffset)-1) &^ ((1 << startOffset) - 1)
+		return uint(bits.OnesCount64(b.set[startWord] & mask))
+	}
+
+	var count uint
+
+	// Case 2: Bits span multiple words
+	// 2a: Count bits in first word (from startOffset to end of word)
+	startMask := ^uint64((1 << startOffset) - 1) // Mask for bits >= startOffset
+	count = uint(bits.OnesCount64(b.set[startWord] & startMask))
+
+	// 2b: Count all bits in complete words between start and end
+	if endWord > startWord+1 {
+		count += uint(popcntSlice(b.set[startWord+1 : endWord]))
+	}
+
+	// 2c: Count bits in last word (from start of word to endOffset)
+	if endOffset > 0 {
+		endMask := uint64(1<<endOffset) - 1 // Mask for bits < endOffset
+		count += uint(bits.OnesCount64(b.set[endWord] & endMask))
+	}
+
+	return count
+}
+
+// Extract extracts bits according to a mask and returns the result
+// in a new BitSet. See ExtractTo for details.
+func (b *BitSet) Extract(mask *BitSet) *BitSet {
+	dst := New(mask.Count())
+	b.ExtractTo(mask, dst)
+	return dst
+}
+
+// ExtractTo copies bits from the BitSet using positions specified in mask
+// into a compacted form in dst. The number of set bits in mask determines
+// the number of bits that will be extracted.
+//
+// For example, if mask has bits set at positions 1,4,5, then ExtractTo will
+// take bits at those positions from the source BitSet and pack them into
+// consecutive positions 0,1,2 in the destination BitSet.
+func (b *BitSet) ExtractTo(mask *BitSet, dst *BitSet) {
+	panicIfNull(b)
+	panicIfNull(mask)
+	panicIfNull(dst)
+
+	if len(mask.set) == 0 || len(b.set) == 0 {
+		return
+	}
+
+	// Ensure destination has enough space for extracted bits
+	resultBits := uint(popcntSlice(mask.set))
+	if dst.length < resultBits {
+		dst.extendSet(resultBits - 1)
+	}
+
+	outPos := uint(0)
+	length := len(mask.set)
+	if len(b.set) < length {
+		length = len(b.set)
+	}
+
+	// Process each word
+	for i := 0; i < length; i++ {
+		if mask.set[i] == 0 {
+			continue // Skip words with no bits to extract
+		}
+
+		// Extract and compact bits according to mask
+		extracted := pext(b.set[i], mask.set[i])
+		bitsExtracted := uint(bits.OnesCount64(mask.set[i]))
+
+		// Calculate destination position
+		wordIdx := outPos >> log2WordSize
+		bitOffset := outPos & wordMask
+
+		// Write extracted bits, handling word boundary crossing
+		dst.set[wordIdx] |= extracted << bitOffset
+		if bitOffset+bitsExtracted > wordSize {
+			dst.set[wordIdx+1] = extracted >> (wordSize - bitOffset)
+		}
+
+		outPos += bitsExtracted
+	}
+}
+
+// Deposit creates a new BitSet and deposits bits according to a mask.
+// See DepositTo for details.
+func (b *BitSet) Deposit(mask *BitSet) *BitSet {
+	dst := New(mask.length)
+	b.DepositTo(mask, dst)
+	return dst
+}
+
+// DepositTo spreads bits from a compacted form in the BitSet into positions
+// specified by mask in dst. This is the inverse operation of Extract.
+//
+// For example, if mask has bits set at positions 1,4,5, then DepositTo will
+// take consecutive bits 0,1,2 from the source BitSet and place them into
+// positions 1,4,5 in the destination BitSet.
+func (b *BitSet) DepositTo(mask *BitSet, dst *BitSet) {
+	panicIfNull(b)
+	panicIfNull(mask)
+	panicIfNull(dst)
+
+	if len(dst.set) == 0 || len(mask.set) == 0 || len(b.set) == 0 {
+		return
+	}
+
+	inPos := uint(0)
+	length := len(mask.set)
+	if len(dst.set) < length {
+		length = len(dst.set)
+	}
+
+	// Process each word
+	for i := 0; i < length; i++ {
+		if mask.set[i] == 0 {
+			continue // Skip words with no bits to deposit
+		}
+
+		// Calculate source word index
+		wordIdx := inPos >> log2WordSize
+		if wordIdx >= uint(len(b.set)) {
+			break // No more source bits available
+		}
+
+		// Get source bits, handling word boundary crossing
+		sourceBits := b.set[wordIdx]
+		bitOffset := inPos & wordMask
+		if wordIdx+1 < uint(len(b.set)) && bitOffset != 0 {
+			// Combine bits from current and next word
+			sourceBits = (sourceBits >> bitOffset) |
+				(b.set[wordIdx+1] << (wordSize - bitOffset))
+		} else {
+			sourceBits >>= bitOffset
+		}
+
+		// Deposit bits according to mask
+		dst.set[i] = (dst.set[i] &^ mask.set[i]) | pdep(sourceBits, mask.set[i])
+		inPos += uint(bits.OnesCount64(mask.set[i]))
+	}
+}
+
+//go:generate go run cmd/pextgen/main.go -pkg=bitset
+
+func pext(w, m uint64) (result uint64) {
+	var outPos uint
+
+	// Process byte by byte
+	for i := 0; i < 8; i++ {
+		shift := i << 3 // i * 8 using bit shift
+		b := uint8(w >> shift)
+		mask := uint8(m >> shift)
+
+		extracted := pextLUT[b][mask]
+		bits := popLUT[mask]
+
+		result |= uint64(extracted) << outPos
+		outPos += uint(bits)
+	}
+
+	return result
+}
+
+func pdep(w, m uint64) (result uint64) {
+	var inPos uint
+
+	// Process byte by byte
+	for i := 0; i < 8; i++ {
+		shift := i << 3 // i * 8 using bit shift
+		mask := uint8(m >> shift)
+		bits := popLUT[mask]
+
+		// Get the bits we'll deposit from the source
+		b := uint8(w >> inPos)
+
+		// Deposit them according to the mask for this byte
+		deposited := pdepLUT[b][mask]
+
+		// Add to result
+		result |= uint64(deposited) << shift
+		inPos += uint(bits)
+	}
+
+	return result
 }

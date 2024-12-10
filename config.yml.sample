@@ -11,13 +11,30 @@ matrix: # matrix server information
       - matrix_id: '@admin:example.com' # matrix ID
         email_address: 'admin@example.com' # email
         role: 'm.role.admin' # role
-    support_page: "https://example.com" # (optional) support page URL
+    support_page: 'https://example.com' # (optional) support page URL
   keys: [] # keys, will be generated automatically on first run
 search: # search config
   defaults: # default options, if not provided by request
     limit: 10
     offset: 0
-    sort_by: "-_score" # by relevancy (desc)
+    sort_by: '-_score' # by relevancy (desc)
+  highlights: # (optional) search highlights
+    - position: 0
+      id: '!IyxAXBqViWHZfUkWjh:etke.cc'
+      servers: ['localhost']
+      type: m.room
+      alias: '#mrs:etke.cc'
+      name: Search powered by Matrix Rooms Search
+      topic: This is example highlight
+      avatar: 'mxc://etke.cc/EPswbbDKYLNEjRYgEpHpRQue'
+      avatar_url: 'https://localhost:8080/avatar/etke.cc/EPswbbDKYLNEjRYgEpHpRQue'
+      server: localhost
+      members: 9999
+      language: EN
+      join_rule: public
+      guest_can_join: true
+      world_readable: true
+
 auth: # auth configuration
   admin: # admin configuration
     login: admin

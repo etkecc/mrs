@@ -61,7 +61,7 @@ func (s *Server) PublicRooms(ctx context.Context, req *http.Request, rdReq *mode
 		limit = s.cfg.Get().Search.Defaults.Limit
 	}
 	offset := utils.StringToInt(rdReq.Since)
-	entries, total, err := s.search.Search(span.Context(), rdReq.Filter.GenericSearchTerm, "", limit, offset)
+	entries, total, err := s.search.Search(span.Context(), origin, rdReq.Filter.GenericSearchTerm, "", limit, offset)
 	if err != nil {
 		log.Error().Err(err).Msg("search from matrix failed")
 		return http.StatusInternalServerError, nil

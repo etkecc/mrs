@@ -35,7 +35,8 @@ type ConfigPublic struct {
 
 // ConfigSearch - search-related configuration
 type ConfigSearch struct {
-	Defaults ConfigSearchDefaults `yaml:"defaults"`
+	Defaults   ConfigSearchDefaults     `yaml:"defaults"`
+	Highlights []*ConfigSearchHighlight `yaml:"highlights"`
 }
 
 // ConfigSearchDefaults default params
@@ -43,6 +44,45 @@ type ConfigSearchDefaults struct {
 	Limit  int    `yaml:"limit"`
 	Offset int    `yaml:"offset"`
 	SortBy string `yaml:"sort_by"`
+}
+
+// ConfigSearchHighlight - search highlight configuration
+type ConfigSearchHighlight struct {
+	Position int      `yaml:"position"`
+	Servers  []string `yaml:"servers"`
+
+	ID            string `yaml:"id"`
+	Alias         string `yaml:"alias"`
+	Name          string `yaml:"name"`
+	Topic         string `yaml:"topic"`
+	Avatar        string `yaml:"avatar"`
+	AvatarURL     string `yaml:"avatar_url"`
+	Server        string `yaml:"server"`
+	Members       int    `yaml:"members"`
+	Language      string `yaml:"language"`
+	RoomType      string `yaml:"room_type"`
+	JoinRule      string `yaml:"join_rule"`
+	GuestJoinable bool   `yaml:"guest_can_join"`
+	WorldReadable bool   `yaml:"world_readable"`
+}
+
+// Entry converts ConfigSearchHighlight to Entry
+func (c *ConfigSearchHighlight) Entry() *Entry {
+	return &Entry{
+		ID:            c.ID,
+		Alias:         c.Alias,
+		Name:          c.Name,
+		Topic:         c.Topic,
+		Avatar:        c.Avatar,
+		AvatarURL:     c.AvatarURL,
+		Server:        c.Server,
+		Members:       c.Members,
+		Language:      c.Language,
+		RoomType:      c.RoomType,
+		JoinRule:      c.JoinRule,
+		GuestJoinable: c.GuestJoinable,
+		WorldReadable: c.WorldReadable,
+	}
 }
 
 // ConfigPlausible - plausible analytics configuration

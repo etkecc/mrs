@@ -403,6 +403,10 @@ func (sb *SegmentBase) InterpretVectorIndex(field string, requiresFiltering bool
 						vectorIDsToInclude = append(vectorIDsToInclude, docVecIDMap[uint32(id)]...)
 					}
 
+					if len(vectorIDsToInclude) == 0 {
+						return rv, nil
+					}
+
 					// Retrieve the mapping of centroid IDs to vectors within
 					// the cluster.
 					clusterAssignment, _ := vecIndex.ObtainClusterToVecIDsFromIVFIndex()

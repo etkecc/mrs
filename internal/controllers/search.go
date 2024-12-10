@@ -13,12 +13,13 @@ import (
 )
 
 type searchService interface {
-	Search(ctx context.Context, query, sortBy string, limit, offset int) ([]*model.Entry, int, error)
+	Search(ctx context.Context, originServer, query, sortBy string, limit, offset int) ([]*model.Entry, int, error)
 }
 
 func search(svc searchService, plausible plausibleService, cfg configService, path bool) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		defer metrics.IncSearchQueries("rest", getOrigin(cfg, c.Request()))
+		origin := getOrigin(cfg, c.Request())
+		defer metrics.IncSearchQueries("rest", origin)
 
 		paramfunc := c.QueryParam
 		if path {
@@ -34,7 +35,7 @@ func search(svc searchService, plausible plausibleService, cfg configService, pa
 		limit := utils.StringToInt(paramfunc("l"))
 		offset := utils.StringToInt(paramfunc("o"))
 		sortBy := paramfunc("s")
-		entries, _, err := svc.Search(c.Request().Context(), query, sortBy, limit, offset)
+		entries, _, err := svc.Search(c.Request().Context(), origin, query, sortBy, limit, offset)
 		if err != nil {
 			return err
 		}
