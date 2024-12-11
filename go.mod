@@ -17,19 +17,17 @@ require (
 	github.com/getsentry/sentry-go v0.30.0
 	github.com/goccy/go-json v0.10.3
 	github.com/hashicorp/golang-lru/v2 v2.0.7
-	github.com/labstack/echo/v4 v4.13.0
+	github.com/labstack/echo/v4 v4.13.1
 	github.com/matrix-org/gomatrixserverlib v0.0.0-20241106185410-dbd5f31fefc0
 	github.com/mattevans/postmark-go v1.0.0
 	github.com/mileusna/crontab v1.2.0
 	github.com/pemistahl/lingua-go v1.4.0
-	github.com/raja/argon2pw v1.0.1
 	github.com/rs/zerolog v1.33.0
 	github.com/swaggo/echo-swagger v1.4.1
 	github.com/swaggo/swag v1.16.4
-	github.com/theovassiliou/base64url v0.0.0-20211006203958-1e011490eaaf
 	github.com/ziflex/lecho/v3 v3.7.0
 	go.etcd.io/bbolt v1.3.11
-	golang.org/x/exp v0.0.0-20241204233417-43b7b7cde48d
+	golang.org/x/exp v0.0.0-20241210194714-1829a127f884
 	golang.org/x/time v0.8.0
 	gopkg.in/yaml.v3 v3.0.1
 	mvdan.cc/xurls/v2 v2.5.0

@@ -10,13 +10,10 @@ import (
 	sentryecho "github.com/getsentry/sentry-go/echo"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/raja/argon2pw"
-	"github.com/rs/zerolog"
 	echoSwagger "github.com/swaggo/echo-swagger"
 
 	"github.com/etkecc/mrs/internal/metrics"
 	"github.com/etkecc/mrs/internal/model"
-	"github.com/etkecc/mrs/internal/utils"
 	"github.com/etkecc/mrs/internal/version"
 )
 
@@ -73,7 +70,8 @@ func ConfigureRouter(
 	e.POST("/discover/:name", addServer(dataSvc), discoveryProtection(rl, cfg))
 
 	e.POST("/mod/report/:room_id", report(modSvc), rl) // doesn't use mod group to allow without auth
-	m := modGroup(e, cfg)
+	m := e.Group("mod")
+	m.Use(echobasicauth.NewMiddleware(&cfg.Get().Auth.Moderation))
 	m.GET("/list", listBanned(modSvc), rl)
 	m.GET("/list/:server_name", listBanned(modSvc), rl)
 	m.GET("/ban/:room_id", ban(modSvc), rl)
@@ -128,51 +126,4 @@ func discoveryProtection(rl echo.MiddlewareFunc, cfg configService) echo.Middlew
 			return rl(next)(c)
 		}
 	}
-}
-
-func hashAuth(c echo.Context, authPassword string) *bool {
-	hash := c.QueryParam("auth")
-	if hash == "" {
-		return nil
-	}
-	hashDecoded := utils.URLSafeDecode(hash)
-	if hashDecoded != "" {
-		hash = hashDecoded
-	}
-
-	var ok bool
-	defer func() {
-		zerolog.Ctx(c.Request().Context()).
-			Info().
-			Any("error", recover()).
-			Str("section", "hash").
-			Str("from", c.RealIP()).
-			Str("path", c.Request().URL.Path).
-			Bool("allowed_credentials", ok).
-			Msg("authorization attempt")
-	}()
-	ok, _ = argon2pw.CompareHashWithPassword(hash, authPassword) //nolint:errcheck // we don't care about the error here
-
-	return &ok
-}
-
-func modGroup(e *echo.Echo, cfg configService) *echo.Group {
-	mod := e.Group("mod")
-	authPassword := cfg.Get().Auth.Moderation.Login + cfg.Get().Auth.Moderation.Password
-	mod.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			ok := hashAuth(c, authPassword)
-			if ok == nil {
-				return next(c)
-			}
-			if !*ok {
-				return echo.ErrUnauthorized
-			}
-
-			c.Set("authorized", true)
-			return next(c)
-		}
-	})
-	mod.Use(echobasicauth.NewMiddleware(&cfg.Get().Auth.Moderation))
-	return mod
 }

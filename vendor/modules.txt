@@ -251,7 +251,7 @@ github.com/josharian/intern
 # github.com/json-iterator/go v1.1.12
 ## explicit; go 1.12
 github.com/json-iterator/go
-# github.com/labstack/echo/v4 v4.13.0
+# github.com/labstack/echo/v4 v4.13.1
 ## explicit; go 1.18
 github.com/labstack/echo/v4
 github.com/labstack/echo/v4/middleware
@@ -297,9 +297,6 @@ github.com/mschoch/smat
 ## explicit; go 1.18
 github.com/pemistahl/lingua-go
 github.com/pemistahl/lingua-go/serialization
-# github.com/raja/argon2pw v1.0.1
-## explicit
-github.com/raja/argon2pw
 # github.com/rs/zerolog v1.33.0
 ## explicit; go 1.15
 github.com/rs/zerolog
@@ -320,9 +317,6 @@ github.com/swaggo/files/v2
 # github.com/swaggo/swag v1.16.4
 ## explicit; go 1.18
 github.com/swaggo/swag
-# github.com/theovassiliou/base64url v0.0.0-20211006203958-1e011490eaaf
-## explicit; go 1.13
-github.com/theovassiliou/base64url
 # github.com/tidwall/gjson v1.18.0
 ## explicit; go 1.12
 github.com/tidwall/gjson
@@ -368,10 +362,8 @@ go.etcd.io/bbolt
 ## explicit; go 1.20
 golang.org/x/crypto/acme
 golang.org/x/crypto/acme/autocert
-golang.org/x/crypto/argon2
-golang.org/x/crypto/blake2b
 golang.org/x/crypto/ed25519
-# golang.org/x/exp v0.0.0-20241204233417-43b7b7cde48d
+# golang.org/x/exp v0.0.0-20241210194714-1829a127f884
 ## explicit; go 1.22.0
 golang.org/x/exp/constraints
 golang.org/x/exp/maps
@@ -385,7 +377,6 @@ golang.org/x/net/http2/hpack
 golang.org/x/net/idna
 # golang.org/x/sys v0.28.0
 ## explicit; go 1.18
-golang.org/x/sys/cpu
 golang.org/x/sys/execabs
 golang.org/x/sys/unix
 golang.org/x/sys/windows

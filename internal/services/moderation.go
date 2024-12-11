@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/goccy/go-json"
-	"github.com/raja/argon2pw"
 	"github.com/rs/zerolog"
 
 	"github.com/etkecc/mrs/internal/model"
@@ -79,14 +78,6 @@ func (m *Moderation) getReportText(ctx context.Context, roomID, reason string, r
 
 	text.WriteString(m.getServerContactsText(server.Contacts))
 
-	var queryParams string
-	hash, err := argon2pw.GenerateSaltedHash(m.cfg.Get().Auth.Moderation.Login + m.cfg.Get().Auth.Moderation.Password)
-	if err != nil {
-		log.Error().Err(err).Msg("cannot generate auth hash")
-	} else {
-		queryParams = "?auth=" + utils.URLSafeEncode(hash)
-	}
-
 	apiURL, err := url.Parse(m.cfg.Get().Public.API)
 	if err != nil {
 		log.Error().Err(err).Msg("cannot parse public api url")
@@ -94,13 +85,13 @@ func (m *Moderation) getReportText(ctx context.Context, roomID, reason string, r
 	}
 
 	text.WriteString("[ban and erase](")
-	text.WriteString(apiURL.JoinPath("/mod/ban", roomID).String() + queryParams)
+	text.WriteString(apiURL.JoinPath("/mod/ban", roomID).String())
 	text.WriteString(") | [unban](")
-	text.WriteString(apiURL.JoinPath("/mod/unban", roomID).String() + queryParams)
+	text.WriteString(apiURL.JoinPath("/mod/unban", roomID).String())
 	text.WriteString(") | [list banned (all)](")
-	text.WriteString(apiURL.JoinPath("/mod/list").String() + queryParams)
+	text.WriteString(apiURL.JoinPath("/mod/list").String())
 	text.WriteString(") | [list banned (" + room.Server + ")](")
-	text.WriteString(apiURL.JoinPath("/mod/list/"+room.Server).String() + queryParams)
+	text.WriteString(apiURL.JoinPath("/mod/list/" + room.Server).String())
 	text.WriteString(")")
 
 	return text.String()
