@@ -100,7 +100,7 @@ github.com/blevesearch/bleve/v2/search/scorer
 github.com/blevesearch/bleve/v2/search/searcher
 github.com/blevesearch/bleve/v2/size
 github.com/blevesearch/bleve/v2/util
-# github.com/blevesearch/bleve_index_api v1.1.13
+# github.com/blevesearch/bleve_index_api v1.2.0
 ## explicit; go 1.20
 github.com/blevesearch/bleve_index_api
 # github.com/blevesearch/geo v0.1.20
@@ -119,7 +119,7 @@ github.com/blevesearch/gtreap
 # github.com/blevesearch/mmap-go v1.0.4
 ## explicit; go 1.13
 github.com/blevesearch/mmap-go
-# github.com/blevesearch/scorch_segment_api/v2 v2.2.16
+# github.com/blevesearch/scorch_segment_api/v2 v2.3.0
 ## explicit; go 1.21
 github.com/blevesearch/scorch_segment_api/v2
 # github.com/blevesearch/segment v0.9.1
@@ -148,7 +148,7 @@ github.com/blevesearch/stempel/javadata
 # github.com/blevesearch/upsidedown_store_api v1.0.2
 ## explicit; go 1.18
 github.com/blevesearch/upsidedown_store_api
-# github.com/blevesearch/vellum v1.0.11
+# github.com/blevesearch/vellum v1.1.0
 ## explicit; go 1.21
 github.com/blevesearch/vellum
 github.com/blevesearch/vellum/levenshtein
@@ -166,10 +166,10 @@ github.com/blevesearch/zapx/v13
 # github.com/blevesearch/zapx/v14 v14.3.10
 ## explicit; go 1.19
 github.com/blevesearch/zapx/v14
-# github.com/blevesearch/zapx/v15 v15.3.16
+# github.com/blevesearch/zapx/v15 v15.3.17
 ## explicit; go 1.19
 github.com/blevesearch/zapx/v15
-# github.com/blevesearch/zapx/v16 v16.1.9
+# github.com/blevesearch/zapx/v16 v16.1.10
 ## explicit; go 1.21
 github.com/blevesearch/zapx/v16
 # github.com/buger/jsonparser v1.1.1
@@ -217,7 +217,7 @@ github.com/go-openapi/spec
 # github.com/go-openapi/swag v0.23.0
 ## explicit; go 1.20
 github.com/go-openapi/swag
-# github.com/goccy/go-json v0.10.3
+# github.com/goccy/go-json v0.10.4
 ## explicit; go 1.19
 github.com/goccy/go-json
 github.com/goccy/go-json/internal/decoder
@@ -251,8 +251,8 @@ github.com/josharian/intern
 # github.com/json-iterator/go v1.1.12
 ## explicit; go 1.12
 github.com/json-iterator/go
-# github.com/labstack/echo/v4 v4.13.1
-## explicit; go 1.18
+# github.com/labstack/echo/v4 v4.13.2
+## explicit; go 1.20
 github.com/labstack/echo/v4
 github.com/labstack/echo/v4/middleware
 # github.com/labstack/gommon v0.4.2
@@ -358,7 +358,7 @@ github.com/ziflex/lecho/v3
 # go.etcd.io/bbolt v1.3.11
 ## explicit; go 1.22
 go.etcd.io/bbolt
-# golang.org/x/crypto v0.30.0
+# golang.org/x/crypto v0.31.0
 ## explicit; go 1.20
 golang.org/x/crypto/acme
 golang.org/x/crypto/acme/autocert
