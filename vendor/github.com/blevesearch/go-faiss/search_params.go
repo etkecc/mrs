@@ -72,9 +72,6 @@ func NewSearchParamsIVF(idx Index, params json.RawMessage, sel *C.FaissIDSelecto
 		nprobe = int(C.faiss_IndexIVF_nprobe(ivfIdx))
 
 		nvecs := idx.Ntotal()
-		if defaultParams.Nvecs > 0 {
-			nvecs = int64(defaultParams.Nvecs)
-		}
 		if defaultParams.Nlist > 0 {
 			nlist = defaultParams.Nlist
 		}
