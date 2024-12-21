@@ -5,6 +5,7 @@
 * [Matrix Federation API](#matrix-federation-api)
     * [Element Web/Desktop](#element-webdesktop)
     * [Element Android](#element-android)
+    * [Cinny](#cinny)
     * [FluffyChat](#fluffychat)
 * [SearXNG](#searxng)
 * [MSCs](#mscs)
@@ -58,6 +59,13 @@ matrix_client_element_room_directory_servers: ['matrixrooms.info']
 5. Tap on the `Add a new server` at the bottom of the screen
 6. Enter `matrixrooms.info` in the server name input and click `OK`
 7. Select the newly added server in the list
+
+### Cinny
+
+Edit Cinnys `config.json`s "servers" section to include matrixrooms.info:
+```
+    "servers": ["matrixrooms.info"]
+```
 
 ### FluffyChat
 
