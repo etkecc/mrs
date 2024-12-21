@@ -34,7 +34,7 @@ For synapse, you need to add the following config options in the `homeserver.yam
 allow_public_rooms_over_federation: true
 ```
 
-in case of [etke.cc/ansible](https://gitlab.com/etke.cc/ansible) and [mdad](https://github.com/spantaleev/matrix-docker-ansible-deploy), add the following to your vars.yml:
+in case of [etke.cc/ansible](https://github.com/etkecc/ansible) and [matrix-docker-ansible-deploy](https://github.com/spantaleev/matrix-docker-ansible-deploy), add the following to your `vars.yml` configuration file:
 
 ```yaml
 matrix_synapse_allow_public_rooms_over_federation: true

@@ -42,7 +42,7 @@ Add the following to Element's `config.json`:
 }
 ```
 
-If you use [etke.cc/ansible](https://gitlab.com/etke.cc/ansible) or [mdad](https://github.com/spantaleev/matrix-docker-ansible-deploy), add the following to your vars.yml:
+If you use [etke.cc/ansible](https://github.com/etkecc/ansible) or [matrix-docker-ansible-deploy](https://github.com/spantaleev/matrix-docker-ansible-deploy), add the following to your `vars.yml` configuration file:
 
 ```yaml
 matrix_client_element_room_directory_servers: ['matrixrooms.info']
@@ -81,7 +81,7 @@ Add the following to Cinny's `config.json`:
 }
 ```
 
-If you use [etke.cc/ansible](https://gitlab.com/etke.cc/ansible) or [mdad](https://github.com/spantaleev/matrix-docker-ansible-deploy), add the following to your vars.yml:
+If you use [etke.cc/ansible](https://github.com/etkecc/ansible) or [matrix-docker-ansible-deploy](https://github.com/spantaleev/matrix-docker-ansible-deploy), add the following to your `vars.yml` configuration file:
 
 ```yaml
 matrix_client_cinny_config_featuredCommunities_servers: ['matrixrooms.info']
