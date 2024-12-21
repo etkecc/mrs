@@ -67,7 +67,6 @@ Edit Cinnys `config.json`s "servers" section to include matrixrooms.info:
     "servers": ["envs.net", "matrix.org", "monero.social", "mozilla.org", "matrixrooms.info"]
 ```
 
-
 ### FluffyChat
 
 1. Click on the search bar on the top of the screen and enter anything
