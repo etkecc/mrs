@@ -81,6 +81,12 @@ Add the following to Cinny's `config.json`:
 }
 ```
 
+If you use [etke.cc/ansible](https://gitlab.com/etke.cc/ansible) or [mdad](https://github.com/spantaleev/matrix-docker-ansible-deploy), add the following to your vars.yml:
+
+```yaml
+matrix_client_cinny_config_featuredCommunities_servers: ['matrixrooms.info']
+```
+
 ### FluffyChat
 
 1. Click on the search bar on the top of the screen and enter anything
