@@ -62,9 +62,14 @@ matrix_client_element_room_directory_servers: ['matrixrooms.info']
 
 ### Cinny
 
-Edit Cinnys `config.json`s "servers" section to include matrixrooms.info:
-```
-    "servers": ["matrixrooms.info"]
+Add the following to Cinny's `config.json`:
+
+```json
+{
+    "featuredCommunities": {
+        "servers": ["matrixrooms.info"]
+    }
+}
 ```
 
 ### FluffyChat
