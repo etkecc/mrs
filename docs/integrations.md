@@ -62,6 +62,15 @@ matrix_client_element_room_directory_servers: ['matrixrooms.info']
 
 ### Cinny
 
+**Just for you**
+
+1. Click on the **Explore Community** button from the left sidebar
+2. Click on the **Add Server** button
+3. In the "Server Name" input, enter `matrixrooms.info`
+4. Click the **View** button
+
+**For all app users** (for all users of the Cinny app instance)
+
 Add the following to Cinny's `config.json`:
 
 ```json
