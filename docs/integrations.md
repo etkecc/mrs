@@ -64,7 +64,7 @@ matrix_client_element_room_directory_servers: ['matrixrooms.info']
 
 Edit Cinnys `config.json`s "servers" section to include matrixrooms.info:
 ```
-    "servers": ["envs.net", "matrix.org", "monero.social", "mozilla.org", "matrixrooms.info"]
+    "servers": ["matrixrooms.info"]
 ```
 
 ### FluffyChat
