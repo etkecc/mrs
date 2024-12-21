@@ -23,7 +23,7 @@ so you can use it in your matrix client apps directly.
 
 > including forks, like [SchildiChat](https://schildi.chat/)
 
-**Just you** (just for your account)
+**Just for you** (just for your account)
 
 1. Click on `Search` (Ctrl+K) in the top-left corner
 2. Modal window will be opened, scroll down
@@ -32,9 +32,9 @@ so you can use it in your matrix client apps directly.
 5. In the opened modal window enter the server name from the config.yml (`matrix.server_name` value). In case of the demo instance, it's `matrixrooms.info`
 6. Click on `Add`
 
-**All app users** (for all users of the Element Web/Desktop app instance)
+**For all app users** (for all users of the Element Web/Desktop app instance)
 
-Add the following to the Element's `config.json`:
+Add the following to Element's `config.json`:
 
 ```json
 "room_directory": {
