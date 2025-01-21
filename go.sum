@@ -113,6 +113,8 @@ github.com/matrix-org/gomatrix v0.0.0-20210324163249-be2af5ef2e16 h1:ZtO5uywdd5d
 github.com/matrix-org/gomatrix v0.0.0-20210324163249-be2af5ef2e16/go.mod h1:/gBX06Kw0exX1HrwmoBibFA98yBk/jxKpGVeyQbff+s=
 github.com/matrix-org/gomatrixserverlib v0.0.0-20241215094829-e86ab16eabe8 h1:nC998SaawQwbZ16/V70Pil3pY3rSQwTaeLOpHWp7ZTo=
 github.com/matrix-org/gomatrixserverlib v0.0.0-20241215094829-e86ab16eabe8/go.mod h1:qil34SWn6VB6gO5312rzziCUcZtgROPjrLE+4ly/0os=
+github.com/matrix-org/gomatrixserverlib v0.0.0-20250119093516-0a1b2bafb5cf h1:NcRPAlNWXSMrYBOw9oBEX7z5uQxIKA1m/eo51DYQ7KM=
+github.com/matrix-org/gomatrixserverlib v0.0.0-20250119093516-0a1b2bafb5cf/go.mod h1:lcYW5K+XQ1MSNUhFJAWXx3oeErkl4f3BohYDboc9vJw=
 github.com/matrix-org/util v0.0.0-20221111132719-399730281e66 h1:6z4KxomXSIGWqhHcfzExgkH3Z3UkIXry4ibJS4Aqz2Y=
 github.com/matrix-org/util v0.0.0-20221111132719-399730281e66/go.mod h1:iBI1foelCqA09JJgPV0FYz4qA5dUXYOxMi57FxKBdd4=
 github.com/mattevans/postmark-go v1.0.0 h1:N2myP0JNrsLEpDB1vhEoXgRk906+QmAXg+glJnUzZIw=
