@@ -29,22 +29,34 @@ func (d *Data) SetIndexStatsTL(ctx context.Context, calculatedAt time.Time, stat
 	})
 }
 
+//nolint:gocognit // TODO: optimize the complexity
 func (d *Data) getIndexStatsFullTL(ctx context.Context) (map[time.Time]*model.IndexStats, error) {
 	span := utils.StartSpan(ctx, "data.getIndexStatsFullTL")
 	defer span.Finish()
 
+	months := map[string]struct{}{}
+	currentYear := []byte(time.Now().UTC().Format("2006"))
 	statsTL := make(map[time.Time]*model.IndexStats)
 	err := d.db.View(func(tx *bbolt.Tx) error {
 		return tx.Bucket(indexTLBucket).ForEach(func(k, v []byte) error {
 			if v == nil {
 				return nil
 			}
-			var stats *model.IndexStats
-			if err := json.Unmarshal(v, &stats); err != nil {
-				return err
-			}
 			t, err := time.Parse(time.RFC3339, string(k))
 			if err != nil {
+				return err
+			}
+			// if the result is for previous years,
+			// keep only one result per month
+			if !bytes.HasPrefix(k, currentYear) {
+				month := t.Format("2006-01")
+				if _, ok := months[month]; ok {
+					return nil
+				}
+				months[month] = struct{}{}
+			}
+			var stats *model.IndexStats
+			if err := json.Unmarshal(v, &stats); err != nil {
 				return err
 			}
 			statsTL[t] = stats
