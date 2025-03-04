@@ -17,6 +17,12 @@ const (
 	RoleModeratorUnstable = "support.feline.msc4121.role.moderator"
 	// RoleSecurity is intended for sensitive requests
 	RoleSecurity = "m.role.security"
+	// RoleDPO is intended for data protection officer contacts
+	// TODO: currently unused, as MSC4265 mandates the use of RoleDPOUnstable until it is merged into the spec,
+	// ref: bitbucket.org/helloticketscode/curator/internal/services/emailnotifier
+	RoleDPO = "m.role.dpo"
+	// RoleDPOUnstable is intended for data protection officer contacts, used until MSC4265 is merged into the spec
+	RoleDPOUnstable = "org.matrix.msc4265.role.dpo"
 )
 
 // Contact details
@@ -40,9 +46,13 @@ func (c *Contact) IsAdmin() bool {
 }
 
 // IsModerator checks if contact has moderator role
-// TODO: currently uses RoleModeratorUnstable, as MSC4121 mandates the use of RoleModeratorUnstable until it is merged into the spec,
 func (c *Contact) IsModerator() bool {
-	return c.Role == RoleModeratorUnstable
+	return c.Role == RoleModeratorUnstable || c.Role == RoleModerator
+}
+
+// IsDPO checks if contact has DPO role
+func (c *Contact) IsDPO() bool {
+	return c.Role == RoleDPOUnstable || c.Role == RoleDPO
 }
 
 // IsSecurity checks if contact has security role
@@ -163,6 +173,28 @@ func (r *Response) ModeratorMatrixIDs() []string {
 	var mxids []string
 	for _, contact := range r.Contacts {
 		if contact.IsModerator() && contact.MatrixID != "" {
+			mxids = append(mxids, contact.MatrixID)
+		}
+	}
+	return mxids
+}
+
+// DPOEmails returns a list of DPO emails
+func (r *Response) DPOEmails() []string {
+	var emails []string
+	for _, contact := range r.Contacts {
+		if contact.IsDPO() && contact.Email != "" {
+			emails = append(emails, contact.Email)
+		}
+	}
+	return emails
+}
+
+// DPOMatrixIDs returns a list of DPO matrix IDs
+func (r *Response) DPOMatrixIDs() []string {
+	var mxids []string
+	for _, contact := range r.Contacts {
+		if contact.IsDPO() && contact.MatrixID != "" {
 			mxids = append(mxids, contact.MatrixID)
 		}
 	}

@@ -185,7 +185,7 @@ github.com/etkecc/go-fswatcher
 ## explicit; go 1.22
 github.com/etkecc/go-kit/format
 github.com/etkecc/go-kit/workpool
-# github.com/etkecc/go-msc1929 v1.1.1
+# github.com/etkecc/go-msc1929 v1.2.0
 ## explicit; go 1.18
 github.com/etkecc/go-msc1929
 # github.com/fsnotify/fsnotify v1.8.0
