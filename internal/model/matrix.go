@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 	"fmt"
+	"net/mail"
 	"net/url"
 	"strings"
 	"time"
@@ -66,6 +67,7 @@ type MatrixRoom struct {
 
 	// Parsed (custom) fields
 	Server    string    `json:"server"`
+	Email     string    `json:"email"`
 	Language  string    `json:"language"`
 	AvatarURL string    `json:"avatar_url_http"`
 	ParsedAt  time.Time `json:"parsed_at"`
@@ -108,11 +110,16 @@ func (r *MatrixRoom) DirectoryEntry() *RoomDirectoryRoom {
 }
 
 // Parse matrix room info to prepare custom fields
-func (r *MatrixRoom) Parse(detector lingua.LanguageDetector, mrsPublicURL string) {
+func (r *MatrixRoom) Parse(detector lingua.LanguageDetector, mrsPublicURL, mrsServerName string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
 	defer cancel()
 
 	r.ParsedAt = time.Now().UTC()
+	if ctx.Err() != nil {
+		return
+	}
+
+	r.Email = r.parseContact(mrsServerName, "email")
 	if ctx.Err() != nil {
 		return
 	}
@@ -157,6 +164,46 @@ func (r *MatrixRoom) parseServer() {
 	if len(parts) > 1 {
 		r.Server = parts[1]
 	}
+}
+
+// parseContact tries to parse contact info from room topic
+// the contact should be in the form of "<matrix.server_name from MRS config>:<field>:<value>" string, example:
+// "example.com:email:admin@example.com"
+func (r *MatrixRoom) parseContact(mrsServerName, field string) string {
+	if r.Topic == "" {
+		return ""
+	}
+
+	token := fmt.Sprintf("%s:%s:", mrsServerName, field)
+	if !strings.Contains(r.Topic, token) {
+		return ""
+	}
+	parts := strings.Split(r.Topic, token)
+	if len(parts) < 2 || parts[1] == "" {
+		return ""
+	}
+	parts = strings.Split(parts[1], " ")
+	if len(parts) < 1 {
+		return ""
+	}
+	parts = strings.Split(parts[0], "\n")
+	if len(parts) < 1 {
+		return ""
+	}
+
+	rawContact := parts[0]
+	contact := strings.ToLower(strings.TrimSpace(parts[0]))
+
+	// TODO: currently it works for email only, because MRS itself works with emails only for reports.
+	_, err := mail.ParseAddress(contact)
+	if err != nil {
+		return ""
+	}
+
+	// cleanup the contact, as it is a purely technical workaround and not meant to be indexed and/or searched
+	r.Topic = strings.ReplaceAll(r.Topic, token+rawContact, "")
+
+	return contact
 }
 
 // parseLanguage tries to identify room language by room name and topic

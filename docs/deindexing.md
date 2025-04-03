@@ -44,13 +44,13 @@ for Matrix protocol, MRS has several options to unlist/unpublish/block/remove yo
 As a room administrator/moderator, you could add special string to the room topic to prevent indexing:
 
 ```
-<matrix.server_name from MRS config.yml>: noindex
+<matrix.server_name from MRS config.yml>:noindex
 ```
 
 Example:
 
 ```
-example.com: noindex
+example.com:noindex
 ```
 
 ## (deprecated) robots.txt

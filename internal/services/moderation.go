@@ -188,8 +188,14 @@ func (m *Moderation) Report(ctx context.Context, roomID, reason string, noMSC192
 		log.Error().Err(err).Msg("cannot send moderation webhook")
 	}
 
+	emails := server.Contacts.Emails
+	if room.Email != "" {
+		emails = append(emails, room.Email)
+		emails = utils.Uniq(emails)
+	}
+
 	if !noMSC1929 {
-		if merr := m.mail.SendReport(ctx, room, server, reason, server.Contacts.Emails); merr != nil {
+		if merr := m.mail.SendReport(ctx, room, server, reason, emails); merr != nil {
 			log.Warn().Err(merr).Msg("cannot send report to the server's owner")
 		}
 	}
