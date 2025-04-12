@@ -114,8 +114,12 @@ func StringToSlice(value string, optionalDefaultValue ...string) []string {
 	}
 
 	value = strings.TrimSpace(value)
+	if value == "" {
+		return strings.Split(defaultValue, ",")
+	}
+
 	if idx := strings.Index(value, ","); idx == -1 {
-		value = defaultValue
+		return []string{value}
 	}
 	return strings.Split(value, ",")
 }

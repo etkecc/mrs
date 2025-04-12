@@ -116,7 +116,7 @@ func (v *Validator) isBlockedByTopic(topic string) bool {
 
 // IsRoomAllowed checks if room is allowed
 func (v *Validator) IsRoomAllowed(ctx context.Context, server string, room *model.MatrixRoom) bool {
-	if room.ID == "" {
+	if room.ID == "" || room.Alias == "" {
 		return false
 	}
 	if v.block.ByID(room.ID) {
