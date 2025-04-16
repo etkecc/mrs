@@ -51,6 +51,10 @@ func (s *Server) PublicRooms(ctx context.Context, req *http.Request, rdReq *mode
 		return http.StatusUnauthorized, nil
 	}
 
+	go func(ctx context.Context, req *http.Request, origin, ip, query string) {
+		ctx = context.WithoutCancel(ctx)
+		s.trackSearch(ctx, req, origin, ip, query)
+	}(span.Context(), req, origin, rdReq.IP, rdReq.Filter.GenericSearchTerm)
 	defer metrics.IncSearchQueries("matrix", origin)
 
 	limit := rdReq.Limit

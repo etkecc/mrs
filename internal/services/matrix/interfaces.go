@@ -2,6 +2,7 @@ package matrix
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/etkecc/mrs/internal/model"
 )
@@ -17,4 +18,8 @@ type searchService interface {
 type dataRepository interface {
 	EachRoom(ctx context.Context, handler func(roomID string, data *model.MatrixRoom) bool)
 	GetRoom(ctx context.Context, roomID string) (*model.MatrixRoom, error)
+}
+
+type plausibleService interface {
+	TrackSearch(ctx context.Context, incomingReq *http.Request, ip, query string)
 }

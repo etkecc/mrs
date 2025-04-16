@@ -35,13 +35,10 @@ func (p *Plausible) TrackSearch(ctx context.Context, incomingReq *http.Request, 
 	if !p.Enabled() {
 		return
 	}
+	query = strings.TrimSpace(strings.ToLower(query))
 
 	if query == "" {
 		return
-	}
-
-	if incomingReq.URL.Path == "/_matrix/federation/v1/publicRooms" {
-		incomingReq.Header.Set("Referer", "matrix")
 	}
 
 	uri := url.URL{
@@ -55,7 +52,7 @@ func (p *Plausible) TrackSearch(ctx context.Context, incomingReq *http.Request, 
 		"domain":   p.cfg.Get().Plausible.Domain,
 		"referrer": incomingReq.Referer(),
 		"props": map[string]any{
-			"query": strings.TrimSpace(strings.ToLower(query)),
+			"query": query,
 		},
 	}
 	datab, err := json.Marshal(data)

@@ -29,7 +29,7 @@ type matrixService interface {
 	QueryDirectory(ctx context.Context, req *http.Request, alias string) (int, []byte)
 }
 
-func configureMatrixS2SEndpoints(e *echo.Echo, matrixSvc matrixService, cacheSvc cacheService, plausibleSvc plausibleService) {
+func configureMatrixS2SEndpoints(e *echo.Echo, matrixSvc matrixService, cacheSvc cacheService) {
 	e.GET("/.well-known/matrix/server", func(c echo.Context) error {
 		return c.JSONBlob(http.StatusOK, matrixSvc.GetServerWellKnown())
 	}, cacheSvc.MiddlewareImmutable())
@@ -42,8 +42,8 @@ func configureMatrixS2SEndpoints(e *echo.Echo, matrixSvc matrixService, cacheSvc
 	e.GET("/_matrix/federation/v1/query/directory", func(c echo.Context) error {
 		return c.JSONBlob(matrixSvc.QueryDirectory(c.Request().Context(), c.Request(), c.QueryParam("room_alias")))
 	})
-	e.GET("/_matrix/federation/v1/publicRooms", matrixRoomDirectory(matrixSvc, plausibleSvc), cacheSvc.MiddlewareSearch())
-	e.POST("/_matrix/federation/v1/publicRooms", matrixRoomDirectory(matrixSvc, plausibleSvc), cacheSvc.MiddlewareSearch())
+	e.GET("/_matrix/federation/v1/publicRooms", matrixRoomDirectory(matrixSvc), cacheSvc.MiddlewareSearch())
+	e.POST("/_matrix/federation/v1/publicRooms", matrixRoomDirectory(matrixSvc), cacheSvc.MiddlewareSearch())
 }
 
 func configureMatrixCSEndpoints(e *echo.Echo, matrixSvc matrixService, cacheSvc cacheService) {
@@ -82,7 +82,7 @@ func configureMatrixCSEndpoints(e *echo.Echo, matrixSvc matrixService, cacheSvc 
 }
 
 // /_matrix/federation/v1/publicRooms
-func matrixRoomDirectory(matrixSvc matrixService, plausibleSvc plausibleService) echo.HandlerFunc {
+func matrixRoomDirectory(matrixSvc matrixService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		log := zerolog.Ctx(c.Request().Context())
 		r := c.Request()
@@ -97,9 +97,9 @@ func matrixRoomDirectory(matrixSvc matrixService, plausibleSvc plausibleService)
 		if err := c.Bind(&req); err != nil {
 			log.Error().Err(err).Msg("POST directory request binding failed")
 		}
+		req.IP = c.RealIP()
 		r.Body = io.NopCloser(bytes.NewBuffer(body))
 		c.SetRequest(r)
-		go plausibleSvc.TrackSearch(c.Request().Context(), c.Request(), c.RealIP(), req.Filter.GenericSearchTerm)
 
 		return c.JSONBlob(matrixSvc.PublicRooms(c.Request().Context(), c.Request(), &req))
 	}

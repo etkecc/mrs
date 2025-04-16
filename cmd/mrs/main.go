@@ -77,11 +77,12 @@ func main() {
 		log.Fatal().Err(err).Msg("cannot open index repo")
 	}
 	robotsSvc := services.NewRobots()
+	plausibleSvc := services.NewPlausible(cfg)
 	blockSvc := services.NewBlocklist(cfg)
 	statsSvc := services.NewStats(cfg, dataRepo, index, blockSvc)
 	indexSvc := services.NewIndex(cfg, index)
 	searchSvc := services.NewSearch(cfg, dataRepo, index, blockSvc, statsSvc)
-	matrixSvc, err := matrix.NewServer(cfg, dataRepo, searchSvc)
+	matrixSvc, err := matrix.NewServer(cfg, dataRepo, searchSvc, plausibleSvc)
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot start matrix service")
 	}
@@ -92,7 +93,6 @@ func main() {
 	dataSvc := services.NewDataFacade(crawlerSvc, indexSvc, statsSvc)
 	mailSvc := services.NewEmail(cfg)
 	modSvc := services.NewModeration(cfg, dataRepo, index, mailSvc)
-	plausibleSvc := services.NewPlausible(cfg)
 
 	e = echo.New()
 	e.Logger = lecho.From(*log)

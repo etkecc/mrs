@@ -26,10 +26,14 @@ func Register(detector lingua.LanguageDetector, defaultLang string) {
 		}
 	}()
 
-	registry.RegisterCharFilter(Name, func(_ map[string]any, _ *registry.Cache) (analysis.CharFilter, error) {
+	err := registry.RegisterCharFilter(Name, func(_ map[string]any, _ *registry.Cache) (analysis.CharFilter, error) {
 		return &CharFilter{detector: detector, fallback: defaultLang}, nil
 	})
-	registry.RegisterTokenizer(Name, func(_ map[string]any, cache *registry.Cache) (analysis.Tokenizer, error) {
+	if err != nil {
+		log.Error().Err(err).Str("charfilter", Name).Msg("cannot register multilang char filter")
+	}
+
+	err = registry.RegisterTokenizer(Name, func(_ map[string]any, cache *registry.Cache) (analysis.Tokenizer, error) {
 		analyzer, err := cache.AnalyzerNamed(defaultLang)
 		if err != nil {
 			log.Error().Err(err).Str("tokenizer", Name).Str("analyzer", defaultLang).Msg("cannot find analyzer by name")
@@ -37,7 +41,11 @@ func Register(detector lingua.LanguageDetector, defaultLang string) {
 		}
 		return &Tokenizer{cache: cache, fallback: analyzer}, nil
 	})
-	registry.RegisterAnalyzer(Name, func(_ map[string]any, cache *registry.Cache) (analysis.Analyzer, error) {
+	if err != nil {
+		log.Error().Err(err).Str("tokenizer", Name).Msg("cannot register multilang tokenizer")
+	}
+
+	err = registry.RegisterAnalyzer(Name, func(_ map[string]any, cache *registry.Cache) (analysis.Analyzer, error) {
 		charfilter, err := cache.CharFilterNamed(Name)
 		if err != nil {
 			log.Error().Err(err).Str("analyzer", Name).Msg("cannot find multilang char filter")
@@ -55,4 +63,7 @@ func Register(detector lingua.LanguageDetector, defaultLang string) {
 
 		return analyzer, nil
 	})
+	if err != nil {
+		log.Error().Err(err).Str("analyzer", Name).Msg("cannot register multilang analyzer")
+	}
 }

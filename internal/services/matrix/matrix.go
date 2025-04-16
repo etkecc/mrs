@@ -20,6 +20,7 @@ type Server struct {
 	keys             []*model.Key
 	data             dataRepository
 	search           searchService
+	plausible        plausibleService
 	wellknownServer  []byte        // /.well-known/matrix/server contents
 	wellknownClient  []byte        // /.well-known/matrix/client contents
 	wellknownSupport []byte        // /.well-known/matrix/support contents
@@ -34,7 +35,7 @@ type Server struct {
 }
 
 // NewServer creates new matrix server
-func NewServer(cfg configService, data dataRepository, search searchService) (*Server, error) {
+func NewServer(cfg configService, data dataRepository, search searchService, plausible plausibleService) (*Server, error) {
 	keysCache, err := lru.New[string, map[string]ed25519.PublicKey](100000)
 	if err != nil {
 		return nil, err
@@ -56,6 +57,7 @@ func NewServer(cfg configService, data dataRepository, search searchService) (*S
 		cfg:        cfg,
 		data:       data,
 		search:     search,
+		plausible:  plausible,
 		surlsCache: surlsCache,
 		curlsCache: curlsCache,
 		keysCache:  keysCache,

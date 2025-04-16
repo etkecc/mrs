@@ -50,7 +50,7 @@ func ConfigureRouter(
 	plausibleSvc plausibleService,
 ) {
 	configureRouter(e, cacheSvc)
-	configureMatrixS2SEndpoints(e, matrixSvc, cacheSvc, plausibleSvc)
+	configureMatrixS2SEndpoints(e, matrixSvc, cacheSvc)
 	configureMatrixCSEndpoints(e, matrixSvc, cacheSvc)
 	rl := getRL(1)
 	e.GET("/metrics", echo.WrapHandler(&metrics.Handler{}), echobasicauth.NewMiddleware(&cfg.Get().Auth.Metrics))

@@ -5,6 +5,7 @@ type RoomDirectoryRequest struct {
 	Filter RoomDirectoryFilter `json:"filter"`
 	Limit  int                 `json:"limit" query:"limit"`
 	Since  string              `json:"since" query:"since"`
+	IP     string              `json:"-"` // custom field for plausible
 	// there should be more fields:
 	// `include_all_networks` (json and query)
 	// `third_party_instance_id` (json and query)
