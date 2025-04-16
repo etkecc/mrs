@@ -17,7 +17,7 @@ package segment
 import (
 	"fmt"
 
-	"github.com/RoaringBitmap/roaring"
+	"github.com/RoaringBitmap/roaring/v2"
 	index "github.com/blevesearch/bleve_index_api"
 )
 
@@ -68,6 +68,9 @@ type TermDictionary interface {
 		startKeyInclusive, endKeyExclusive []byte) DictionaryIterator
 
 	Contains(key []byte) (bool, error)
+
+	// returns total number of terms in the term dictionary
+	Cardinality() int
 }
 
 type DictionaryIterator interface {

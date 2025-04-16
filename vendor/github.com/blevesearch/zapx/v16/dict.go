@@ -17,7 +17,7 @@ package zap
 import (
 	"fmt"
 
-	"github.com/RoaringBitmap/roaring"
+	"github.com/RoaringBitmap/roaring/v2"
 	index "github.com/blevesearch/bleve_index_api"
 	segment "github.com/blevesearch/scorch_segment_api/v2"
 	"github.com/blevesearch/vellum"
@@ -37,6 +37,13 @@ type Dictionary struct {
 
 // represents an immutable, empty dictionary
 var emptyDictionary = &Dictionary{}
+
+func (d *Dictionary) Cardinality() int {
+	if d.fst != nil {
+		return d.fst.Len()
+	}
+	return 0
+}
 
 // PostingsList returns the postings list for the specified term
 func (d *Dictionary) PostingsList(term []byte, except *roaring.Bitmap,

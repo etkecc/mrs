@@ -14,7 +14,10 @@
 
 package index
 
-import "time"
+import (
+	"net"
+	"time"
+)
 
 type Document interface {
 	ID() string
@@ -29,6 +32,8 @@ type Document interface {
 	AddIDField()
 
 	StoredFieldsBytes() uint64
+
+	Indexed() bool
 }
 
 type FieldVisitor func(Field)
@@ -81,6 +86,11 @@ type GeoPointField interface {
 
 type GeoShapeField interface {
 	GeoShape() (GeoJSON, error)
+	EncodedShape() []byte
+}
+
+type IPField interface {
+	IP() (net.IP, error)
 }
 
 // TokenizableSpatialField is an optional interface for fields that

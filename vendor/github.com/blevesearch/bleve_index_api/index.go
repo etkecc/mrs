@@ -240,6 +240,7 @@ type FieldDict interface {
 	Next() (*DictEntry, error)
 	Close() error
 
+	Cardinality() int
 	BytesRead() uint64
 }
 
@@ -332,4 +333,17 @@ type ThesaurusReader interface {
 	// ThesaurusKeysPrefix returns a reader for terms in the specified thesaurus that
 	// start with the given prefix.
 	ThesaurusKeysPrefix(name string, termPrefix []byte) (ThesaurusKeys, error)
+}
+
+// EligibleDocumentSelector filters documents based on specific eligibility criteria.
+// It can be extended with additional methods for filtering and retrieval.
+type EligibleDocumentSelector interface {
+	// AddEligibleDocumentMatch marks a document as eligible for selection.
+	// id is the internal identifier of the document to be added.
+	AddEligibleDocumentMatch(id IndexInternalID) error
+
+	// SegmentEligibleDocs returns a list of eligible document IDs within a given segment.
+	// segmentID identifies the segment for which eligible documents are retrieved.
+	// This must be called after all eligible documents have been added.
+	SegmentEligibleDocs(segmentID int) []uint64
 }
