@@ -93,6 +93,7 @@ func configureRouter(e *echo.Echo, cacheSvc cacheService) {
 	e.Use(SentryTransaction())
 	e.Use(cacheSvc.Middleware())
 	e.Use(middleware.Secure())
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{MaxAge: 86400}))
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			c.Response().Header().Set(echo.HeaderReferrerPolicy, "origin")
