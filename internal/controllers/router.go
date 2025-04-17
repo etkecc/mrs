@@ -107,7 +107,7 @@ func configureRouter(e *echo.Echo, cacheSvc cacheService) {
 		echo.TrustLinkLocal(true),
 		echo.TrustPrivateNet(true),
 	)
-	e.GET("/_health", func(c echo.Context) error {
+	e.Any("/_health", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
 	})
 	e.GET("/_docs", func(c echo.Context) error {
