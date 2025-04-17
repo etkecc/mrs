@@ -7,6 +7,7 @@ Dependencies? None.
 <!-- vim-markdown-toc GitLab -->
 
 * [How it works?](#how-it-works)
+    * [Room configuration](#room-configuration)
     * [Discovery and indexing](#discovery-and-indexing)
     * [How the MSC1929 integration works](#how-the-msc1929-integration-works)
     * [API](#api)
@@ -23,6 +24,11 @@ Dependencies? None.
 3. Ingest parsed public rooms into search index
 
 Each step can be run separately or all at once using admin API
+
+### Room configuration
+
+MRS allows you to configure different room parameters by adding special configuration strings to the room topic/description.
+Check [room-configuration.md](./docs/room-configuration.md).
 
 ### Discovery and indexing
 

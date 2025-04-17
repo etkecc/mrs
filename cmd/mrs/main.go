@@ -123,7 +123,7 @@ func getLanguageDetector(inputLangs []string) lingua.LanguageDetector {
 	builder := lingua.NewLanguageDetectorBuilder()
 	if len(inputLangs) > 0 && inputLangs[0] == AllLanguages {
 		return builder.
-			FromAllLanguages().
+			FromAllSpokenLanguages().
 			Build()
 	}
 

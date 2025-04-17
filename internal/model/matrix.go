@@ -124,6 +124,11 @@ func (r *MatrixRoom) Parse(detector lingua.LanguageDetector, mrsPublicURL, mrsSe
 		return
 	}
 
+	r.parseLanguage(detector, mrsServerName)
+	if ctx.Err() != nil {
+		return
+	}
+
 	r.Topic = utils.Truncate(r.Topic, 400)
 	if ctx.Err() != nil {
 		return
@@ -135,11 +140,6 @@ func (r *MatrixRoom) Parse(detector lingua.LanguageDetector, mrsPublicURL, mrsSe
 	}
 
 	r.parseAvatar(mrsPublicURL)
-	if ctx.Err() != nil {
-		return
-	}
-
-	r.parseLanguage(detector)
 }
 
 // Servers returns all servers from the room object, except own server
@@ -207,9 +207,48 @@ func (r *MatrixRoom) parseContact(mrsServerName, field string) string {
 }
 
 // parseLanguage tries to identify room language by room name and topic
-func (r *MatrixRoom) parseLanguage(detector lingua.LanguageDetector) {
+func (r *MatrixRoom) parseLanguage(detector lingua.LanguageDetector, mrsServerName string) {
 	r.Language = utils.UnknownLang
+	if language := r.parseLanguageOption(mrsServerName); language != "" {
+		r.Language = language
+		return
+	}
+
 	r.Language, _ = utils.DetectLanguage(detector, r.Name+" "+r.Topic)
+}
+
+// parseLanguageOption tries to parse language option from room topic
+func (r *MatrixRoom) parseLanguageOption(mrsServerName string) string {
+	if r.Topic == "" {
+		return ""
+	}
+
+	token := fmt.Sprintf("%s:%s:", mrsServerName, "language")
+	if !strings.Contains(r.Topic, token) {
+		return ""
+	}
+	parts := strings.Split(r.Topic, token)
+	if len(parts) < 2 || parts[1] == "" {
+		return ""
+	}
+	parts = strings.Split(parts[1], " ")
+	if len(parts) < 1 {
+		return ""
+	}
+	parts = strings.Split(parts[0], "\n")
+	if len(parts) < 1 {
+		return ""
+	}
+
+	// cleanup the language, as it is a purely technical workaround and not meant to be indexed and/or searched
+	r.Topic = strings.ReplaceAll(r.Topic, token+parts[0], "")
+	language := strings.ToUpper(strings.TrimSpace(parts[0]))
+
+	// if the language is unknown/invalid, return empty string
+	if code := lingua.GetIsoCode639_1FromValue(language); code == lingua.UnknownIsoCode639_1 {
+		return ""
+	}
+	return language
 }
 
 // parseAvatar builds HTTP URL to access room avatar
