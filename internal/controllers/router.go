@@ -34,6 +34,7 @@ type cacheService interface {
 
 type plausibleService interface {
 	TrackSearch(ctx context.Context, incomingReq *http.Request, ip, query string)
+	TrackOpen(ctx context.Context, incomingReq *http.Request, ip, roomAlias string)
 }
 
 // ConfigureRouter configures echo router
@@ -56,6 +57,7 @@ func ConfigureRouter(
 	e.GET("/metrics", echo.WrapHandler(&metrics.Handler{}), echobasicauth.NewMiddleware(&cfg.Get().Auth.Metrics))
 	e.GET("/stats", stats(statsSvc))
 	e.GET("/avatar/:name/:id", avatar(matrixSvc), getRL(100))
+	e.GET("/to/:room_alias", openRoom(plausibleSvc), getRL(1))
 
 	rl := getRL(3)
 	searchCache := cacheSvc.MiddlewareSearch()

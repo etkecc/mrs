@@ -1,11 +1,23 @@
 package utils
 
 import (
+	"regexp"
 	"strings"
 
 	"github.com/goccy/go-json"
 	"github.com/matrix-org/gomatrixserverlib"
 )
+
+var aliasRegex = regexp.MustCompile(`^#[a-zA-Z0-9_.-]+:[a-zA-Z0-9_.-]+$`)
+
+// IsValidRoomAlias checks if the given alias is a valid matrix room alias
+func IsValidAlias(alias string) bool {
+	if alias == "" {
+		return false
+	}
+
+	return aliasRegex.MatchString(alias)
+}
 
 // Server returns server name from the matrix ID (room id/alias, user ID, etc)
 func ServerFrom(matrixID string) string {

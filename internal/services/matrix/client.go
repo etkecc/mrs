@@ -34,13 +34,7 @@ func (s *Server) GetClientDirectory(ctx context.Context, alias string) (statusCo
 	span := utils.StartSpan(ctx, "matrix.GetClientDirectory")
 	defer span.Finish()
 	log := zerolog.Ctx(span.Context())
-
-	var unescapedAlias string
-	var unescapeErr error
-	unescapedAlias, unescapeErr = url.PathUnescape(alias)
-	if unescapeErr == nil {
-		alias = unescapedAlias
-	}
+	alias = utils.Unescape(alias)
 
 	log.Info().Str("alias", alias).Str("origin", "client").Msg("querying directory")
 	if alias == "" {
@@ -77,13 +71,7 @@ func (s *Server) GetClientRoomSummary(ctx context.Context, aliasOrID string) (st
 	span := utils.StartSpan(ctx, "matrix.GetClientRoomSummary")
 	defer span.Finish()
 	log := zerolog.Ctx(span.Context())
-
-	var unescapedAliasOrID string
-	var unescapeErr error
-	unescapedAliasOrID, unescapeErr = url.PathUnescape(aliasOrID)
-	if unescapeErr == nil {
-		aliasOrID = unescapedAliasOrID
-	}
+	aliasOrID = utils.Unescape(aliasOrID)
 
 	log.Info().Str("aliasOrID", aliasOrID).Str("origin", "client").Msg("getting room summary")
 	if aliasOrID == "" {
@@ -115,13 +103,7 @@ func (s *Server) GetClientRoomVisibility(ctx context.Context, id string) (status
 	span := utils.StartSpan(ctx, "matrix.GetClientRoomVisibility")
 	defer span.Finish()
 	log := zerolog.Ctx(span.Context())
-
-	var unescapedID string
-	var unescapeErr error
-	unescapedID, unescapeErr = url.PathUnescape(id)
-	if unescapeErr == nil {
-		id = unescapedID
-	}
+	id = utils.Unescape(id)
 
 	room, err := s.data.GetRoom(ctx, id)
 	if err != nil {

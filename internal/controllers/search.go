@@ -3,7 +3,6 @@ package controllers
 import (
 	"context"
 	"net/http"
-	"net/url"
 
 	"github.com/labstack/echo/v4"
 
@@ -26,11 +25,11 @@ func search(svc searchService, plausible plausibleService, cfg configService, pa
 			paramfunc = c.Param
 		}
 
-		query, err := url.QueryUnescape(paramfunc("q"))
-		if err != nil {
-			return err
-		}
-		go plausible.TrackSearch(c.Request().Context(), c.Request(), c.RealIP(), query)
+		query := utils.Unescape(paramfunc("query"))
+		go func(req *http.Request, ip, query string) {
+			ctx := context.WithoutCancel(req.Context())
+			plausible.TrackSearch(ctx, req, ip, query)
+		}(c.Request(), c.RealIP(), query)
 
 		limit := utils.StringToInt(paramfunc("l"))
 		offset := utils.StringToInt(paramfunc("o"))

@@ -23,3 +23,13 @@ func ParseURL(uri string) *url.URL {
 	}
 	return u
 }
+
+// Unescape unescapes a URL-encoded string, e.g. a path param ("%23" -> "#")
+// if unescaping fails, it returns the original value
+func Unescape(value string) string {
+	unescapedValue, err := url.QueryUnescape(value)
+	if err == nil {
+		return unescapedValue
+	}
+	return value
+}
