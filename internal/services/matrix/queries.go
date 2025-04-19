@@ -68,6 +68,7 @@ func (s *Server) GetMediaThumbnail(ctx context.Context, serverName, mediaID stri
 		body, _ := io.ReadAll(resp.Body) //nolint:errcheck // intended
 		resp.Body.Close()
 		log.Warn().Str("server", serverName).Str("mediaID", mediaID).Int("status", resp.StatusCode).Str("body", string(body)).Msg("cannot get media thumbnail")
+		return nil, ""
 	}
 	return s.getImageFromMultipart(span.Context(), resp)
 }
