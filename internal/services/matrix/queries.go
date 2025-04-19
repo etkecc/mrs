@@ -59,7 +59,7 @@ func (s *Server) GetMediaThumbnail(ctx context.Context, serverName, mediaID stri
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", version.UserAgent)
 
-	resp, err := utils.Do(req)
+	resp, err := utils.Do(req, 0)
 	if err != nil {
 		log.Warn().Err(err).Str("server", serverName).Str("mediaID", mediaID).Msg("cannot get media thumbnail")
 		return nil, ""
