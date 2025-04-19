@@ -25,7 +25,7 @@ func search(svc searchService, plausible plausibleService, cfg configService, pa
 			paramfunc = c.Param
 		}
 
-		query := utils.Unescape(paramfunc("query"))
+		query := utils.Unescape(paramfunc("q"))
 		go func(req *http.Request, ip, query string) {
 			ctx := context.WithoutCancel(req.Context())
 			plausible.TrackSearch(ctx, req, ip, query)
