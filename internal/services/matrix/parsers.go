@@ -74,6 +74,12 @@ func (s *Server) parseClientWellKnown(ctx context.Context, serverName string) (s
 	if wellknown.Homeserver.BaseURL == "" {
 		return "", fmt.Errorf("/.well-known/matrix/client is empty")
 	}
+
+	// fixing misconfigured well-known, example.com:443 -> https://example.com
+	if !strings.HasPrefix(wellknown.Homeserver.BaseURL, "https://") && !strings.HasPrefix(wellknown.Homeserver.BaseURL, "http://") {
+		wellknown.Homeserver.BaseURL = "https://" + wellknown.Homeserver.BaseURL
+	}
+	wellknown.Homeserver.BaseURL = strings.TrimSuffix(wellknown.Homeserver.BaseURL, ":443")
 	return wellknown.Homeserver.BaseURL, nil
 }
 
