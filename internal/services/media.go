@@ -118,13 +118,21 @@ func (m *Media) Add(ctx context.Context, serverName, mediaID string, params url.
 
 // Delete removes the media file from disk
 func (m *Media) Delete(ctx context.Context, serverName, mediaID string) {
-	mediaPath := m.getPath(serverName, mediaID, url.Values{})
-	if mediaPath == "" {
+	media := m.cfg.Get().Path.Media
+	log := zerolog.Ctx(ctx).With().Str("server", serverName).Str("mediaID", mediaID).Logger()
+	entries, err := os.ReadDir(media)
+	if err != nil {
+		log.Warn().Err(err).Msg("cannot read media directory")
 		return
 	}
 
-	if err := os.RemoveAll(mediaPath); err != nil {
-		zerolog.Ctx(ctx).Warn().Str("server", serverName).Str("mediaID", mediaID).Str("file", mediaPath).Err(err).Msg("cannot delete media file")
+	for _, entry := range entries {
+		if !strings.HasPrefix(entry.Name(), fmt.Sprintf("%s-%s-", serverName, mediaID)) {
+			continue
+		}
+		if err := os.Remove(filepath.Join(media, entry.Name())); err != nil {
+			log.Warn().Str("file", entry.Name()).Err(err).Msg("cannot delete media file")
+		}
 	}
 }
 
@@ -138,8 +146,8 @@ func (m *Media) getPath(serverName, mediaID string, params url.Values) string {
 	filename.WriteString(serverName)
 	filename.WriteString("-")
 	filename.WriteString(mediaID)
+	filename.WriteString("-")
 	if len(params) > 0 {
-		filename.WriteString("-")
 		filename.WriteString(utils.HashURLValues(params))
 	}
 	return filepath.Join(mediaPath, filename.String())
