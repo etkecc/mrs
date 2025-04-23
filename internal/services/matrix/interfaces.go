@@ -2,6 +2,7 @@ package matrix
 
 import (
 	"context"
+	"io"
 	"net/http"
 
 	"github.com/etkecc/mrs/internal/model"
@@ -13,6 +14,11 @@ type configService interface {
 
 type searchService interface {
 	Search(ctx context.Context, originServer, query, sortBy string, limit, offset int) ([]*model.Entry, int, error)
+}
+
+type mediaService interface {
+	Get(ctx context.Context, serverName, mediaID string) (content io.Reader, contentType string)
+	Add(ctx context.Context, serverName, mediaID string, content []byte)
 }
 
 type dataRepository interface {

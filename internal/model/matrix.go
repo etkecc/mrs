@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/mail"
-	"net/url"
 	"strings"
 	"time"
 
@@ -110,7 +109,7 @@ func (r *MatrixRoom) DirectoryEntry() *RoomDirectoryRoom {
 }
 
 // Parse matrix room info to prepare custom fields
-func (r *MatrixRoom) Parse(detector lingua.LanguageDetector, mrsPublicURL, mrsServerName string) {
+func (r *MatrixRoom) Parse(detector lingua.LanguageDetector, media mediaURLService, mrsServerName string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
 	defer cancel()
 
@@ -139,7 +138,7 @@ func (r *MatrixRoom) Parse(detector lingua.LanguageDetector, mrsPublicURL, mrsSe
 		return
 	}
 
-	r.parseAvatar(mrsPublicURL)
+	r.parseAvatar(media)
 }
 
 // Servers returns all servers from the room object, except own server
@@ -251,8 +250,12 @@ func (r *MatrixRoom) parseLanguageOption(mrsServerName string) string {
 	return language
 }
 
+type mediaURLService interface {
+	GetURL(serverName, mediaID string) string
+}
+
 // parseAvatar builds HTTP URL to access room avatar
-func (r *MatrixRoom) parseAvatar(mrsPublicURL string) {
+func (r *MatrixRoom) parseAvatar(media mediaURLService) {
 	if r.Avatar == "" {
 		return
 	}
@@ -260,9 +263,5 @@ func (r *MatrixRoom) parseAvatar(mrsPublicURL string) {
 	if len(parts) != 2 {
 		return
 	}
-	base, err := url.Parse(mrsPublicURL)
-	if err != nil {
-		return
-	}
-	r.AvatarURL = base.JoinPath("/avatar", parts[0], parts[1]).String()
+	r.AvatarURL = media.GetURL(parts[0], parts[1])
 }

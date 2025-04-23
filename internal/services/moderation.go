@@ -25,6 +25,7 @@ type EmailService interface {
 type Moderation struct {
 	cfg   ConfigService
 	data  DataRepository
+	media MediaService
 	mail  EmailService
 	index IndexRepository
 }
@@ -37,11 +38,12 @@ type webhookPayload struct {
 }
 
 // NewModeration service
-func NewModeration(cfg ConfigService, data DataRepository, index IndexRepository, mail EmailService) *Moderation {
+func NewModeration(cfg ConfigService, data DataRepository, media MediaService, index IndexRepository, mail EmailService) *Moderation {
 	return &Moderation{
 		cfg:   cfg,
 		data:  data,
 		mail:  mail,
+		media: media,
 		index: index,
 	}
 }
@@ -214,10 +216,27 @@ func (m *Moderation) List(ctx context.Context, serverName ...string) ([]string, 
 
 // Ban a room
 func (m *Moderation) Ban(ctx context.Context, roomID string) error {
+	room, err := m.data.GetRoom(ctx, roomID)
+	if err != nil {
+		return fmt.Errorf("cannot get room %s to ban: %w - room could be already banned", roomID, err)
+	}
 	if err := m.data.BanRoom(ctx, roomID); err != nil {
 		return err
 	}
-	return m.index.Delete(roomID)
+	if err := m.index.Delete(roomID); err != nil {
+		return err
+	}
+
+	if room.Avatar == "" {
+		return nil
+	}
+
+	parts := strings.Split(strings.TrimPrefix(room.Avatar, "mxc://"), "/")
+	if len(parts) != 2 {
+		return fmt.Errorf("invalid mxc avatar: %s", room.Avatar)
+	}
+	m.media.Delete(ctx, parts[0], parts[1])
+	return nil
 }
 
 // Unban a room

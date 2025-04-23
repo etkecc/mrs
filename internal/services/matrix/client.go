@@ -2,9 +2,7 @@ package matrix
 
 import (
 	"context"
-	"io"
 	"net/http"
-	"net/url"
 
 	"github.com/rs/zerolog"
 
@@ -120,34 +118,4 @@ func (s *Server) GetClientRoomVisibility(ctx context.Context, id string) (status
 		return http.StatusInternalServerError, s.getErrorResp(span.Context(), "M_INTERNAL_ERROR", "internal error")
 	}
 	return http.StatusOK, resp
-}
-
-// GetClientMediaThumbnail is /_matrix/media/v3/thumbnail/{serverName}/{mediaID}
-// Deprecated: use GetMediaThumbnail() instead, ref: https://spec.matrix.org/v1.11/server-server-api/#get_matrixfederationv1mediathumbnailmediaid
-func (s *Server) GetClientMediaThumbnail(ctx context.Context, serverName, mediaID string, params url.Values) (content io.Reader, contentType string) {
-	span := utils.StartSpan(ctx, "matrix.GetClientMediaThumbnail")
-	defer span.Finish()
-
-	query := utils.ValuesOrDefault(params, defaultThumbnailParams)
-	urls := make([]string, 0, len(mediaFallbacks)+1)
-	serverURL := s.QueryCSURL(span.Context(), serverName)
-	if serverURL != "" {
-		urls = append(urls, serverURL+"/_matrix/media/v3/thumbnail/"+serverName+"/"+mediaID+"?"+query)
-	}
-	for _, serverURL := range mediaFallbacks {
-		urls = append(urls, serverURL+"/_matrix/media/v3/thumbnail/"+serverName+"/"+mediaID+"?"+query)
-	}
-	for _, avatarURL := range urls {
-		resp, err := utils.Get(span.Context(), avatarURL, 0)
-		if err != nil {
-			continue
-		}
-		if resp.StatusCode != http.StatusOK {
-			resp.Body.Close()
-			continue
-		}
-		return resp.Body, resp.Header.Get("Content-Type")
-	}
-
-	return nil, ""
 }

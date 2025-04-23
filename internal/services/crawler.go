@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/etkecc/go-kit/workpool"
@@ -23,6 +24,7 @@ type Crawler struct {
 	eachrooming bool
 	fed         FederationService
 	block       BlocklistService
+	media       MediaService
 	data        DataRepository
 	detector    lingua.LanguageDetector
 }
@@ -82,12 +84,13 @@ type FederationService interface {
 }
 
 // NewCrawler service
-func NewCrawler(cfg ConfigService, fedSvc FederationService, v ValidatorService, block BlocklistService, data DataRepository, detector lingua.LanguageDetector) *Crawler {
+func NewCrawler(cfg ConfigService, fedSvc FederationService, v ValidatorService, block BlocklistService, media MediaService, data DataRepository, detector lingua.LanguageDetector) *Crawler {
 	return &Crawler{
 		v:        v,
 		cfg:      cfg,
 		fed:      fedSvc,
 		block:    block,
+		media:    media,
 		data:     data,
 		detector: detector,
 	}
@@ -335,10 +338,10 @@ func (m *Crawler) afterRoomParsing(ctx context.Context) {
 	log.Info().Msg("after room parsing......")
 	started := time.Now().UTC()
 	counts := []roomCount{}
-	toRemove := []string{}
+	toRemove := map[string]string{}
 	m.data.EachRoom(span.Context(), func(id string, data *model.MatrixRoom) bool {
 		if started.Sub(data.ParsedAt) >= 24*7*time.Hour { // parsed more than a week ago
-			toRemove = append(toRemove, id)
+			toRemove[id] = data.Avatar
 			return false
 		}
 
@@ -376,7 +379,18 @@ func (m *Crawler) afterRoomParsing(ctx context.Context) {
 
 	if len(toRemove) > 0 {
 		log.Info().Int("rooms", len(toRemove)).Msg("removing rooms last updated more than a week ago...")
-		m.data.RemoveRooms(span.Context(), toRemove)
+		toRemoveSlice := utils.MapKeys(toRemove)
+		for _, mxcURL := range toRemove {
+			if mxcURL == "" {
+				continue
+			}
+			parts := strings.Split(strings.TrimPrefix(mxcURL, "mxc://"), "/")
+			if len(parts) != 2 {
+				continue
+			}
+			m.media.Delete(span.Context(), parts[0], parts[1])
+		}
+		m.data.RemoveRooms(span.Context(), toRemoveSlice)
 	}
 }
 
@@ -444,7 +458,7 @@ func (m *Crawler) getPublicRooms(ctx context.Context, name string) *utils.List[s
 				continue
 			}
 
-			room.Parse(m.detector, m.cfg.Get().Public.API, m.cfg.Get().Matrix.ServerName)
+			room.Parse(m.detector, m.media, m.cfg.Get().Matrix.ServerName)
 			servers.AddSlice(room.Servers(m.cfg.Get().Matrix.ServerName))
 
 			m.data.AddRoomBatch(span.Context(), room)

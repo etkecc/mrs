@@ -123,6 +123,7 @@ type ConfigCron struct {
 type ConfigPaths struct {
 	Index string `yaml:"index"`
 	Data  string `yaml:"data"`
+	Media string `yaml:"media"`
 }
 
 // ConfigBatch - batches related configuration

@@ -70,6 +70,10 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot open data repo")
 	}
+	media, err := services.NewMedia(cfg)
+	if err != nil {
+		log.Fatal().Err(err).Msg("cannot open media repo")
+	}
 
 	detector := getLanguageDetector(cfg.Get().Languages)
 	index, err = search.NewIndex(cfg.Get().Path.Index, detector, "en")
@@ -82,17 +86,17 @@ func main() {
 	statsSvc := services.NewStats(cfg, dataRepo, index, blockSvc)
 	indexSvc := services.NewIndex(cfg, index)
 	searchSvc := services.NewSearch(cfg, dataRepo, index, blockSvc, statsSvc)
-	matrixSvc, err := matrix.NewServer(cfg, dataRepo, searchSvc, plausibleSvc)
+	matrixSvc, err := matrix.NewServer(cfg, dataRepo, media, searchSvc, plausibleSvc)
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot start matrix service")
 	}
 	validatorSvc := services.NewValidator(cfg, blockSvc, matrixSvc, robotsSvc)
-	crawlerSvc := services.NewCrawler(cfg, matrixSvc, validatorSvc, blockSvc, dataRepo, detector)
+	crawlerSvc := services.NewCrawler(cfg, matrixSvc, validatorSvc, blockSvc, media, dataRepo, detector)
 	matrixSvc.SetDiscover(crawlerSvc.AddServer)
 	cacheSvc := services.NewCache(cfg, statsSvc)
 	dataSvc := services.NewDataFacade(crawlerSvc, indexSvc, statsSvc)
 	mailSvc := services.NewEmail(cfg)
-	modSvc := services.NewModeration(cfg, dataRepo, index, mailSvc)
+	modSvc := services.NewModeration(cfg, dataRepo, media, index, mailSvc)
 
 	e = echo.New()
 	e.Logger = lecho.From(*log)
