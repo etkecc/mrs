@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"net/url"
 
 	"github.com/etkecc/mrs/internal/model"
 )
@@ -17,8 +18,8 @@ type searchService interface {
 }
 
 type mediaService interface {
-	Get(ctx context.Context, serverName, mediaID string) (content io.Reader, contentType string)
-	Add(ctx context.Context, serverName, mediaID string, content []byte)
+	Get(ctx context.Context, serverName, mediaID string, params url.Values) (content io.Reader, contentType string)
+	Add(ctx context.Context, serverName, mediaID string, params url.Values, content []byte)
 }
 
 type dataRepository interface {

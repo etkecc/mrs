@@ -128,11 +128,6 @@ func (r *MatrixRoom) Parse(detector lingua.LanguageDetector, media mediaURLServi
 		return
 	}
 
-	r.Topic = utils.Truncate(r.Topic, 400)
-	if ctx.Err() != nil {
-		return
-	}
-
 	r.parseServer()
 	if ctx.Err() != nil {
 		return

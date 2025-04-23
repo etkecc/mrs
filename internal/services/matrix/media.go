@@ -20,7 +20,7 @@ var defaultThumbnailParams = url.Values{
 	"width":    []string{"40"},
 	"height":   []string{"40"},
 	"method":   []string{"crop"},
-}.Encode()
+}
 
 // GetMediaThumbnail is /_matrix/federation/v1/media/thumbnail/{mediaId}
 func (s *Server) GetMediaThumbnail(ctx context.Context, serverName, mediaID string, params url.Values) (content io.Reader, contentType string) {
@@ -28,7 +28,8 @@ func (s *Server) GetMediaThumbnail(ctx context.Context, serverName, mediaID stri
 	defer span.Finish()
 	log := zerolog.Ctx(span.Context())
 
-	if content, contentType := s.media.Get(span.Context(), serverName, mediaID); content != nil {
+	params = utils.ValuesOrDefault(params, defaultThumbnailParams)
+	if content, contentType := s.media.Get(span.Context(), serverName, mediaID, params); content != nil {
 		return content, contentType
 	}
 
@@ -38,7 +39,7 @@ func (s *Server) GetMediaThumbnail(ctx context.Context, serverName, mediaID stri
 		return nil, ""
 	}
 
-	query := utils.ValuesOrDefault(params, defaultThumbnailParams)
+	query := params.Encode()
 	path := "/_matrix/federation/v1/media/thumbnail/" + mediaID
 	apiURL := serverURL + path + "?" + query
 	authHeaders, err := s.Authorize(serverName, http.MethodGet, path+"?"+query, nil)
@@ -77,7 +78,7 @@ func (s *Server) GetMediaThumbnail(ctx context.Context, serverName, mediaID stri
 		return nil, ""
 	}
 	newReader, contents := s.readerBytes(reader)
-	s.media.Add(span.Context(), serverName, mediaID, contents)
+	s.media.Add(span.Context(), serverName, mediaID, params, contents)
 	return newReader, contentType
 }
 
@@ -87,11 +88,12 @@ func (s *Server) GetClientMediaThumbnail(ctx context.Context, serverName, mediaI
 	span := utils.StartSpan(ctx, "matrix.GetClientMediaThumbnail")
 	defer span.Finish()
 
-	if content, contentType := s.media.Get(span.Context(), serverName, mediaID); content != nil {
+	params = utils.ValuesOrDefault(params, defaultThumbnailParams)
+	if content, contentType := s.media.Get(span.Context(), serverName, mediaID, params); content != nil {
 		return content, contentType
 	}
 
-	query := utils.ValuesOrDefault(params, defaultThumbnailParams)
+	query := params.Encode()
 	urls := make([]string, 0, len(mediaFallbacks)+1)
 	serverURL := s.QueryCSURL(span.Context(), serverName)
 	if serverURL != "" {
@@ -113,7 +115,7 @@ func (s *Server) GetClientMediaThumbnail(ctx context.Context, serverName, mediaI
 		if strings.HasPrefix(contentType, "image/") {
 			reader, contents := s.readerBytes(resp.Body)
 			resp.Body.Close()
-			s.media.Add(span.Context(), serverName, mediaID, contents)
+			s.media.Add(span.Context(), serverName, mediaID, params, contents)
 			return reader, contentType
 		}
 		return resp.Body, resp.Header.Get("Content-Type")

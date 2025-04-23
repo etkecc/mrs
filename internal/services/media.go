@@ -9,8 +9,11 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/rs/zerolog"
+
+	"github.com/etkecc/mrs/internal/utils"
 )
 
 // Media service controls (cached) avatars files on disk
@@ -20,10 +23,10 @@ type Media struct {
 }
 
 type MediaService interface {
-	Exists(serverName, mediaID string) bool
+	Exists(serverName, mediaID string, params url.Values) bool
 	GetURL(serverName, mediaID string) string
-	Get(ctx context.Context, serverName, mediaID string) (content io.Reader, contentType string)
-	Add(ctx context.Context, serverName, mediaID string, content []byte)
+	Get(ctx context.Context, serverName, mediaID string, params url.Values) (content io.Reader, contentType string)
+	Add(ctx context.Context, serverName, mediaID string, params url.Values, content []byte)
 	Delete(ctx context.Context, serverName, mediaID string)
 }
 
@@ -42,8 +45,8 @@ func NewMedia(cfg ConfigService) (*Media, error) {
 }
 
 // Exists checks if the media file exists on disk
-func (m *Media) Exists(serverName, mediaID string) bool {
-	path := m.getPath(serverName, mediaID)
+func (m *Media) Exists(serverName, mediaID string, params url.Values) bool {
+	path := m.getPath(serverName, mediaID, params)
 	if path == "" {
 		return false
 	}
@@ -57,12 +60,12 @@ func (m *Media) GetURL(serverName, mediaID string) string {
 }
 
 // Get retrieves the media file from disk
-func (m *Media) Get(ctx context.Context, serverName, mediaID string) (content io.Reader, contentType string) {
-	if !m.Exists(serverName, mediaID) {
+func (m *Media) Get(ctx context.Context, serverName, mediaID string, params url.Values) (content io.Reader, contentType string) {
+	if !m.Exists(serverName, mediaID, params) {
 		return nil, ""
 	}
 
-	mediaPath := m.getPath(serverName, mediaID)
+	mediaPath := m.getPath(serverName, mediaID, params)
 	if mediaPath == "" {
 		return nil, ""
 	}
@@ -96,8 +99,8 @@ func (m *Media) Get(ctx context.Context, serverName, mediaID string) (content io
 }
 
 // Add saves the media file to disk
-func (m *Media) Add(ctx context.Context, serverName, mediaID string, content []byte) {
-	mediaPath := m.getPath(serverName, mediaID)
+func (m *Media) Add(ctx context.Context, serverName, mediaID string, params url.Values, content []byte) {
+	mediaPath := m.getPath(serverName, mediaID, params)
 	if mediaPath == "" {
 		return
 	}
@@ -115,25 +118,29 @@ func (m *Media) Add(ctx context.Context, serverName, mediaID string, content []b
 
 // Delete removes the media file from disk
 func (m *Media) Delete(ctx context.Context, serverName, mediaID string) {
-	mediaPath := m.getPath(serverName, mediaID)
+	mediaPath := m.getPath(serverName, mediaID, url.Values{})
 	if mediaPath == "" {
 		return
 	}
 
-	if !m.Exists(serverName, mediaID) {
-		return
-	}
-
-	if err := os.Remove(mediaPath); err != nil {
+	if err := os.RemoveAll(mediaPath); err != nil {
 		zerolog.Ctx(ctx).Warn().Str("server", serverName).Str("mediaID", mediaID).Str("file", mediaPath).Err(err).Msg("cannot delete media file")
 	}
 }
 
 // getPath returns the path to the media file on disk
-func (m *Media) getPath(serverName, mediaID string) string {
+func (m *Media) getPath(serverName, mediaID string, params url.Values) string {
 	mediaPath := m.cfg.Get().Path.Media
 	if mediaPath == "" || serverName == "" || mediaID == "" {
 		return ""
 	}
-	return filepath.Join(mediaPath, serverName, mediaID)
+	var filename strings.Builder
+	filename.WriteString(serverName)
+	filename.WriteString("-")
+	filename.WriteString(mediaID)
+	if len(params) > 0 {
+		filename.WriteString("-")
+		filename.WriteString(utils.HashURLValues(params))
+	}
+	return filepath.Join(mediaPath, filename.String())
 }
