@@ -98,10 +98,15 @@ func (m *Media) Get(ctx context.Context, serverName, mediaID string, params url.
 	return bytes.NewReader(contents), contentType
 }
 
-// Add saves the media file to disk
+// Add saves the media file to disk if it doesn't already exist
 func (m *Media) Add(ctx context.Context, serverName, mediaID string, params url.Values, content []byte) {
 	mediaPath := m.getPath(serverName, mediaID, params)
 	if mediaPath == "" {
+		return
+	}
+
+	// Matrix media is immutable, so if the file already exists, we don't need to write it again
+	if _, err := os.Stat(mediaPath); !os.IsNotExist(err) {
 		return
 	}
 
