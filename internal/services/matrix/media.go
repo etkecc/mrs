@@ -41,7 +41,6 @@ func (s *Server) GetMediaThumbnail(ctx context.Context, serverName, mediaID stri
 	query := utils.ValuesOrDefault(params, defaultThumbnailParams)
 	path := "/_matrix/federation/v1/media/thumbnail/" + mediaID
 	apiURL := serverURL + path + "?" + query
-	log.Info().Str("url", apiURL).Msg("media thumbnail URL")
 	authHeaders, err := s.Authorize(serverName, http.MethodGet, path+"?"+query, nil)
 	if err != nil {
 		log.Warn().Err(err).Str("server", serverName).Str("mediaID", mediaID).Msg("cannot authorize")
