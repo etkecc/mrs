@@ -176,7 +176,7 @@ github.com/blevesearch/zapx/v16
 # github.com/buger/jsonparser v1.1.1
 ## explicit; go 1.13
 github.com/buger/jsonparser
-# github.com/etkecc/go-apm v1.3.4
+# github.com/etkecc/go-apm v1.3.5
 ## explicit; go 1.23.0
 github.com/etkecc/go-apm
 # github.com/etkecc/go-echo-basic-auth v1.2.0
@@ -208,9 +208,6 @@ github.com/getsentry/sentry-go/internal/debug
 github.com/getsentry/sentry-go/internal/otel/baggage
 github.com/getsentry/sentry-go/internal/otel/baggage/internal/baggage
 github.com/getsentry/sentry-go/internal/ratelimit
-# github.com/getsentry/sentry-go/echo v0.32.0
-## explicit; go 1.21
-github.com/getsentry/sentry-go/echo
 # github.com/getsentry/sentry-go/zerolog v0.32.0
 ## explicit; go 1.21
 github.com/getsentry/sentry-go/zerolog

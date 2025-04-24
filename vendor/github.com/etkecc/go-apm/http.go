@@ -26,6 +26,7 @@ type RoundTripper struct {
 	rt         http.RoundTripper
 	maxRetries int
 	retryDelay time.Duration
+	hcEnabled  bool
 }
 
 // RoundTripperOption is a function that configures an APMRoundTripper
@@ -42,6 +43,12 @@ func WithMaxRetries(maxRetries int) RoundTripperOption {
 func WithRetryDelay(retryDelay time.Duration) RoundTripperOption {
 	return func(rt *RoundTripper) {
 		rt.retryDelay = retryDelay
+	}
+}
+
+func WithHealthchecks(enabled bool) RoundTripperOption {
+	return func(rt *RoundTripper) {
+		rt.hcEnabled = enabled
 	}
 }
 
@@ -63,6 +70,7 @@ func WrapRoundTripper(rt http.RoundTripper, opts ...RoundTripperOption) http.Rou
 		rt:         rt,
 		maxRetries: MaxRetries,
 		retryDelay: RetryDelay,
+		hcEnabled:  true,
 	}
 	for _, opt := range opts {
 		opt(apmrt)
@@ -102,7 +110,7 @@ func (rt *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 		resp, err = rt.retry(req)
 	}
 
-	if err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
+	if err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) && rt.hcEnabled {
 		HealthcheckFail(strings.NewReader(fmt.Sprintf("http.RoundTripper: %s %s failed: %+v", req.Method, req.URL.String(), err)))
 	}
 	return resp, err

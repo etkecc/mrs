@@ -55,8 +55,8 @@ github.com/coreos/go-systemd/v22 v22.5.0/go.mod h1:Y58oyj3AT4RCenI/lSvhwexgC+NSV
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/etkecc/go-apm v1.3.4 h1:M/V7YZ+cUqtIe9BA/c5hTeVvuZr7f2iWka4WH0c+XXI=
-github.com/etkecc/go-apm v1.3.4/go.mod h1:SCTjzKlNLcFeAO3RhE9uvcRWQF3L7sbfHq+ks4tTIz0=
+github.com/etkecc/go-apm v1.3.5 h1:Cx324wHDOwWqkiXxOolawIe7Lw7wpWbeszvbkkn78nI=
+github.com/etkecc/go-apm v1.3.5/go.mod h1:SCTjzKlNLcFeAO3RhE9uvcRWQF3L7sbfHq+ks4tTIz0=
 github.com/etkecc/go-echo-basic-auth v1.2.0 h1:XzskQo5JpEbFT4y6YTLbVk4n52qIolje3u3u5p12wSw=
 github.com/etkecc/go-echo-basic-auth v1.2.0/go.mod h1:i11w+XgygRe6kpVgrJaABPXiYMlyKFNIFZxJ4s7IQKw=
 github.com/etkecc/go-fswatcher v1.0.1 h1:n9hqtjzTS3ETb9hcZe1EqYA1lkkhlzZlztu3hXwFDQc=
@@ -71,8 +71,6 @@ github.com/fsnotify/fsnotify v1.9.0 h1:2Ml+OJNzbYCTzsxtv8vKSFD9PbJjmhYF14k/jKC7S
 github.com/fsnotify/fsnotify v1.9.0/go.mod h1:8jBTzvmWwFyi3Pb8djgCCO5IBqzKJ/Jwo8TRcHyHii0=
 github.com/getsentry/sentry-go v0.32.0 h1:YKs+//QmwE3DcYtfKRH8/KyOOF/I6Qnx7qYGNHCGmCY=
 github.com/getsentry/sentry-go v0.32.0/go.mod h1:CYNcMMz73YigoHljQRG+qPF+eMq8gG72XcGN/p71BAY=
-github.com/getsentry/sentry-go/echo v0.32.0 h1:Klqbny8ye5sbyDqTrfGryh10FhNz1BMX5TfP/q77tYg=
-github.com/getsentry/sentry-go/echo v0.32.0/go.mod h1:ArnzlIGY1cCs6cIRcc3ryZrQwwfV8DRgVOFMRGzunLA=
 github.com/getsentry/sentry-go/zerolog v0.32.0 h1:FxjD23ayGjlCAzO0iaceol6FuRY1NWDoCrtR0GaE4/w=
 github.com/getsentry/sentry-go/zerolog v0.32.0/go.mod h1:c2hD7+FSgavn1RPh7TICDQaV6dnoahpP1Yo0WLPivdk=
 github.com/ghodss/yaml v1.0.0 h1:wQHKEahhL6wmXdzwWG11gIVCkOv05bNOh+Rxn0yngAk=

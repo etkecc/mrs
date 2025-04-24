@@ -20,7 +20,7 @@ const (
 )
 
 // httpClient with timeout
-var httpClient = apm.WrapClient(&http.Client{Timeout: DefaultTimeout})
+var httpClient = apm.WrapClient(&http.Client{Timeout: DefaultTimeout}, apm.WithHealthchecks(false))
 
 // Get performs HTTP GET request with timeout, User-Agent, and retrier
 func Get(ctx context.Context, uri string) (*http.Response, error) {
