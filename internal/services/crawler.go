@@ -240,6 +240,17 @@ func (m *Crawler) GetServersRoomsCount(ctx context.Context) map[string]int {
 	return m.data.GetServersRoomsCount(ctx)
 }
 
+func (m *Crawler) GetRoom(ctx context.Context, roomID string) (*model.MatrixRoom, error) {
+	room, err := m.data.GetRoom(ctx, roomID)
+	if err != nil {
+		return nil, err
+	}
+	if !m.v.IsRoomAllowed(ctx, room.Server, room) {
+		return nil, nil
+	}
+	return room, nil
+}
+
 func (m *Crawler) loadServers(ctx context.Context) *utils.List[string, string] {
 	span := utils.StartSpan(ctx, "crawler.loadServers")
 	defer span.Finish()

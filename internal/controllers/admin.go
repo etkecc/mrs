@@ -7,6 +7,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"gopkg.in/yaml.v3"
 
+	"github.com/etkecc/mrs/internal/model"
 	"github.com/etkecc/mrs/internal/utils"
 )
 
@@ -18,6 +19,7 @@ type dataService interface {
 	Ingest(context.Context)
 	Full(context.Context, int, int)
 	GetServersRoomsCount(ctx context.Context) map[string]int
+	GetRoom(ctx context.Context, roomID string) (*model.MatrixRoom, error)
 }
 
 type crawlerService interface {

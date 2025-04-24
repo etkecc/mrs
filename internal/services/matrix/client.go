@@ -10,7 +10,10 @@ import (
 	"github.com/etkecc/mrs/internal/utils"
 )
 
-var mediaFallbacks = []string{"https://matrix-client.matrix.org"}
+var (
+	mediaFallbacks = []string{"https://matrix-client.matrix.org"}
+	roomVisibility = utils.MustJSON(map[string]string{"visibility": "public"})
+)
 
 // GetClientWellKnown returns json-eligible response for /.well-known/matrix/client
 func (s *Server) GetClientWellKnown() []byte {
@@ -97,25 +100,10 @@ func (s *Server) GetClientRoomSummary(ctx context.Context, aliasOrID string) (st
 }
 
 // GetClientRoomVisibility is /_matrix/client/v3/directory/list/room/{roomID}
-func (s *Server) GetClientRoomVisibility(ctx context.Context, id string) (statusCode int, resp []byte) {
-	span := utils.StartSpan(ctx, "matrix.GetClientRoomVisibility")
-	defer span.Finish()
-	log := zerolog.Ctx(span.Context())
-	id = utils.Unescape(id)
-
-	room, err := s.data.GetRoom(ctx, id)
-	if err != nil {
-		log.Error().Err(err).Str("room", id).Msg("cannot get room")
-		return http.StatusInternalServerError, s.getErrorResp(span.Context(), "M_INTERNAL_ERROR", "internal error")
-	}
-	if room == nil {
-		return http.StatusNotFound, s.getErrorResp(span.Context(), "M_NOT_FOUND", "room not found")
-	}
-
-	resp, err = utils.JSON(map[string]string{"visibility": "public"}) // MRS doesn't have any other
-	if err != nil {
-		log.Error().Err(err).Str("room", id).Msg("cannot marshal room visibility")
-		return http.StatusInternalServerError, s.getErrorResp(span.Context(), "M_INTERNAL_ERROR", "internal error")
-	}
-	return http.StatusOK, resp
+// this is a stub endpoint, because MRS works only with public rooms,
+// so we always return public visibility.
+// That may change in the future (e.g., if protocol adds more visibility types),
+// but for now we just return public visibility.
+func (s *Server) GetClientRoomVisibility(_ context.Context, _ string) (statusCode int, resp []byte) {
+	return http.StatusOK, roomVisibility
 }

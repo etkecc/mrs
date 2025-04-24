@@ -17,6 +17,7 @@ type dataCrawlerService interface {
 	ParseRooms(context.Context, int)
 	EachRoom(context.Context, func(string, *model.MatrixRoom) bool)
 	GetServersRoomsCount(ctx context.Context) map[string]int
+	GetRoom(ctx context.Context, roomID string) (*model.MatrixRoom, error)
 }
 
 type dataIndexService interface {
@@ -127,4 +128,8 @@ func (df *DataFacade) Full(ctx context.Context, discoveryWorkers, parsingWorkers
 
 func (df *DataFacade) GetServersRoomsCount(ctx context.Context) map[string]int {
 	return df.crawler.GetServersRoomsCount(ctx)
+}
+
+func (df *DataFacade) GetRoom(ctx context.Context, roomID string) (*model.MatrixRoom, error) {
+	return df.crawler.GetRoom(ctx, roomID)
 }

@@ -8,7 +8,10 @@ import (
 	"github.com/matrix-org/gomatrixserverlib"
 )
 
-var aliasRegex = regexp.MustCompile(`^#[a-zA-Z0-9_.-]+:[a-zA-Z0-9_.-]+$`)
+var (
+	aliasRegex = regexp.MustCompile(`^#[a-zA-Z0-9_.-]+:[a-zA-Z0-9_.-]+$`)
+	idRegex    = regexp.MustCompile(`^![a-zA-Z0-9_.-]+:[a-zA-Z0-9_.-]+$`)
+)
 
 // IsValidRoomAlias checks if the given alias is a valid matrix room alias
 func IsValidAlias(alias string) bool {
@@ -17,6 +20,15 @@ func IsValidAlias(alias string) bool {
 	}
 
 	return aliasRegex.MatchString(alias)
+}
+
+// IsValidRoomID checks if the given ID is a valid matrix room ID
+func IsValidID(id string) bool {
+	if id == "" {
+		return false
+	}
+
+	return idRegex.MatchString(id)
 }
 
 // Server returns server name from the matrix ID (room id/alias, user ID, etc)
@@ -38,4 +50,13 @@ func JSON(input any) ([]byte, error) {
 		return nil, err
 	}
 	return gomatrixserverlib.CanonicalJSON(data)
+}
+
+// MustJSON marshals input into canonical json and panics on error
+func MustJSON(input any) []byte {
+	data, err := JSON(input)
+	if err != nil {
+		panic(err)
+	}
+	return data
 }

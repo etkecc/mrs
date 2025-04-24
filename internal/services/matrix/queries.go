@@ -49,12 +49,7 @@ func (s *Server) QueryDirectory(ctx context.Context, req *http.Request, alias st
 		return http.StatusUnauthorized, s.getErrorResp(span.Context(), "M_UNAUTHORIZED", "authorization failed")
 	}
 
-	var unescapedAlias string
-	var unescapeErr error
-	unescapedAlias, unescapeErr = url.QueryUnescape(alias)
-	if unescapeErr == nil {
-		alias = unescapedAlias
-	}
+	alias = utils.Unescape(alias)
 	log.Info().Str("alias", alias).Str("origin", origin).Msg("querying directory")
 	if alias == "" {
 		return http.StatusNotFound, s.getErrorResp(span.Context(), "M_NOT_FOUND", "room not found")
