@@ -6,8 +6,6 @@ import (
 	"time"
 
 	"github.com/rs/zerolog"
-
-	"github.com/etkecc/mrs/internal/utils"
 )
 
 // Batch struct
@@ -43,13 +41,11 @@ func (b *Batch[T]) Flush(ctx context.Context) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	span := utils.StartSpan(ctx, "batch.Flush")
-	defer span.Finish()
-	log := zerolog.Ctx(span.Context())
+	log := zerolog.Ctx(ctx)
 
 	started := time.Now().UTC()
 	log.Info().Int("len", len(b.data)).Msg("storing data batch")
-	b.flushfunc(span.Context(), b.data)
+	b.flushfunc(ctx, b.data)
 	log.Info().Int("len", len(b.data)).Str("took", time.Since(started).String()).Msg("stored data batch")
 	b.data = make([]T, 0, b.size)
 }

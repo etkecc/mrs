@@ -135,9 +135,6 @@ func (s *Stats) CollectServers(ctx context.Context, reload bool) {
 
 // Collect all stats from repository
 func (s *Stats) Collect(ctx context.Context) {
-	span := utils.StartSpan(ctx, "stats.Collect")
-	defer span.Finish()
-
 	log := zerolog.Ctx(ctx)
 
 	if s.collecting {
@@ -147,39 +144,39 @@ func (s *Stats) Collect(ctx context.Context) {
 	s.collecting = true
 	defer func() { s.collecting = false }()
 
-	s.CollectServers(span.Context(), false)
+	s.CollectServers(ctx, false)
 
 	var rooms int
-	s.data.EachRoom(span.Context(), func(_ string, _ *model.MatrixRoom) bool {
+	s.data.EachRoom(ctx, func(_ string, _ *model.MatrixRoom) bool {
 		rooms++
 		return false
 	})
-	if err := s.data.SetIndexParsedRooms(span.Context(), rooms); err != nil {
+	if err := s.data.SetIndexParsedRooms(ctx, rooms); err != nil {
 		log.Error().Err(err).Msg("cannot set parsed rooms count")
 	}
-	if err := s.data.SetIndexIndexedRooms(span.Context(), s.index.Len()); err != nil {
+	if err := s.data.SetIndexIndexedRooms(ctx, s.index.Len()); err != nil {
 		log.Error().Err(err).Msg("cannot set indexed rooms count")
 	}
-	banned, berr := s.data.GetBannedRooms(span.Context())
+	banned, berr := s.data.GetBannedRooms(ctx)
 	if berr != nil {
 		log.Error().Err(berr).Msg("cannot get banned rooms count")
 	}
-	if err := s.data.SetIndexBannedRooms(span.Context(), len(banned)); err != nil {
+	if err := s.data.SetIndexBannedRooms(ctx, len(banned)); err != nil {
 		log.Error().Err(berr).Msg("cannot set banned rooms count")
 	}
-	reported, rerr := s.data.GetReportedRooms(span.Context())
+	reported, rerr := s.data.GetReportedRooms(ctx)
 	if rerr != nil {
 		log.Error().Err(berr).Msg("cannot get reported rooms count")
 	}
-	if err := s.data.SetIndexReportedRooms(span.Context(), len(reported)); err != nil {
+	if err := s.data.SetIndexReportedRooms(ctx, len(reported)); err != nil {
 		log.Error().Err(berr).Msg("cannot set reported rooms count")
 	}
 
-	s.reload(span.Context())
-	if err := s.data.SetIndexStatsTL(span.Context(), time.Now().UTC(), s.stats); err != nil {
+	s.reload(ctx)
+	if err := s.data.SetIndexStatsTL(ctx, time.Now().UTC(), s.stats); err != nil {
 		log.Error().Err(err).Msg("cannot set stats timeline")
 	}
-	s.sendWebhook(span.Context())
+	s.sendWebhook(ctx)
 }
 
 // sendWebhook send request to webhook if provided
@@ -187,8 +184,6 @@ func (s *Stats) sendWebhook(ctx context.Context) {
 	if s.cfg.Get().Webhooks.Stats == "" {
 		return
 	}
-	span := utils.StartSpan(ctx, "stats.sendWebhook")
-	defer span.Finish()
 	log := zerolog.Ctx(ctx)
 
 	var user string

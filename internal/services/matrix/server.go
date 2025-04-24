@@ -25,10 +25,7 @@ func (s *Server) GetServerVersion() []byte {
 
 // GetKeyServer returns jsonblob-eligible response for /_matrix/key/v2/server
 func (s *Server) GetKeyServer(ctx context.Context) []byte {
-	span := utils.StartSpan(ctx, "matrix.GetKeyServer")
-	defer span.Finish()
-
-	log := zerolog.Ctx(span.Context())
+	log := zerolog.Ctx(ctx)
 
 	resp := s.keyServer
 	resp.ValidUntilTS = time.Now().UTC().Add(24 * 7 * time.Hour).UnixMilli()
@@ -41,11 +38,8 @@ func (s *Server) GetKeyServer(ctx context.Context) []byte {
 
 // PublicRooms returns /_matrix/federation/v1/publicRooms response
 func (s *Server) PublicRooms(ctx context.Context, req *http.Request, rdReq *model.RoomDirectoryRequest) (statusCode int, resp []byte) {
-	span := utils.StartSpan(ctx, "matrix.PublicRooms")
-	defer span.Finish()
-	log := zerolog.Ctx(span.Context())
-
-	origin, err := s.ValidateAuth(span.Context(), req)
+	log := zerolog.Ctx(ctx)
+	origin, err := s.ValidateAuth(ctx, req)
 	if err != nil {
 		log.Warn().Err(err).Str("header", req.Header.Get("Authorization")).Msg("matrix auth failed")
 		return http.StatusUnauthorized, nil
@@ -54,7 +48,7 @@ func (s *Server) PublicRooms(ctx context.Context, req *http.Request, rdReq *mode
 	go func(ctx context.Context, req *http.Request, origin, ip, query string) {
 		ctx = context.WithoutCancel(ctx)
 		s.trackSearch(ctx, req, origin, ip, query)
-	}(span.Context(), req, origin, rdReq.IP, rdReq.Filter.GenericSearchTerm)
+	}(ctx, req, origin, rdReq.IP, rdReq.Filter.GenericSearchTerm)
 	defer metrics.IncSearchQueries("matrix", origin)
 
 	limit := rdReq.Limit
@@ -65,7 +59,7 @@ func (s *Server) PublicRooms(ctx context.Context, req *http.Request, rdReq *mode
 		limit = s.cfg.Get().Search.Defaults.Limit
 	}
 	offset := utils.StringToInt(rdReq.Since)
-	entries, total, err := s.search.Search(span.Context(), origin, rdReq.Filter.GenericSearchTerm, "", limit, offset)
+	entries, total, err := s.search.Search(ctx, origin, rdReq.Filter.GenericSearchTerm, "", limit, offset)
 	if err != nil {
 		log.Error().Err(err).Msg("search from matrix failed")
 		return http.StatusInternalServerError, nil

@@ -51,9 +51,6 @@ func (s *Server) parseErrorResp(status string, body []byte) *model.MatrixError {
 
 // parseClientWellKnown returns URL of the Matrix CS API server
 func (s *Server) parseClientWellKnown(ctx context.Context, serverName string) (string, error) {
-	span := utils.StartSpan(ctx, "matrix.parseClientWellKnown")
-	defer span.Finish()
-
 	resp, err := utils.Get(ctx, "https://"+serverName+"/.well-known/matrix/client")
 	if err != nil {
 		return "", err
@@ -85,11 +82,9 @@ func (s *Server) parseClientWellKnown(ctx context.Context, serverName string) (s
 
 // parseServerWellKnown returns Federation API host:port
 func (s *Server) parseServerWellKnown(ctx context.Context, serverName string) (string, error) {
-	span := utils.StartSpan(ctx, "matrix.parseServerWellKnown")
-	defer span.Finish()
-	log := zerolog.Ctx(span.Context()).With().Str("server", serverName).Logger()
+	log := zerolog.Ctx(ctx).With().Str("server", serverName).Logger()
 
-	resp, err := utils.Get(span.Context(), "https://"+serverName+"/.well-known/matrix/server")
+	resp, err := utils.Get(ctx, "https://"+serverName+"/.well-known/matrix/server")
 	if err != nil {
 		log.Warn().Err(err).Msg("failed to get /.well-known/matrix/server")
 		return "", err
@@ -129,10 +124,7 @@ func (s *Server) parseServerWellKnown(ctx context.Context, serverName string) (s
 
 // parseSRV returns Federation API host:port
 func (s *Server) parseSRV(ctx context.Context, service, serverName string) (string, error) {
-	span := utils.StartSpan(ctx, "matrix.parseSRV")
-	defer span.Finish()
-
-	_, addrs, err := net.LookupSRV(service, "tcp", serverName)
+	_, addrs, err := net.DefaultResolver.LookupSRV(ctx, service, "tcp", serverName)
 	if err != nil {
 		return "", err
 	}
@@ -155,48 +147,43 @@ func (s *Server) dcrURL(ctx context.Context, serverName, serverURL string, disco
 
 // getURL returns Federation API URL
 func (s *Server) getURL(ctx context.Context, serverName string, discover bool) string {
-	span := utils.StartSpan(ctx, "matrix.getURL")
-	defer span.Finish()
-
 	cached, ok := s.surlsCache.Get(serverName)
 	if ok {
 		return cached
 	}
 
-	log := zerolog.Ctx(span.Context()).With().Str("server", serverName).Logger()
-	fromWellKnown, err := s.parseServerWellKnown(span.Context(), serverName)
+	log := zerolog.Ctx(ctx).With().Str("server", serverName).Logger()
+	fromWellKnown, err := s.parseServerWellKnown(ctx, serverName)
 	if err == nil {
-		return s.dcrURL(span.Context(), serverName, "https://"+fromWellKnown, discover)
+		return s.dcrURL(ctx, serverName, "https://"+fromWellKnown, discover)
 	}
 	log.Warn().Err(err).Msg("failed to parse /.well-known/matrix/server")
 
-	fromSRV, err := s.parseSRV(span.Context(), "matrix-fed", serverName)
+	fromSRV, err := s.parseSRV(ctx, "matrix-fed", serverName)
 	if err == nil {
-		return s.dcrURL(span.Context(), serverName, "https://"+fromSRV, discover)
+		return s.dcrURL(ctx, serverName, "https://"+fromSRV, discover)
 	}
 	log.Warn().Err(err).Msg("failed to parse SRV matrix-fed")
 
-	fromSRV, err = s.parseSRV(span.Context(), "matrix", serverName)
+	fromSRV, err = s.parseSRV(ctx, "matrix", serverName)
 	if err == nil {
-		return s.dcrURL(span.Context(), serverName, "https://"+fromSRV, discover)
+		return s.dcrURL(ctx, serverName, "https://"+fromSRV, discover)
 	}
 	log.Warn().Err(err).Msg("failed to parse SRV matrix, using server name as host")
 
-	return s.dcrURL(span.Context(), serverName, "https://"+serverName+":8448", discover)
+	return s.dcrURL(ctx, serverName, "https://"+serverName+":8448", discover)
 }
 
 // lookupKeys requests /_matrix/key/v2/server by serverName
 func (s *Server) lookupKeys(ctx context.Context, serverName string, discover bool) (*matrixKeyResp, error) {
-	span := utils.StartSpan(ctx, "matrix.lookupKeys")
-	defer span.Finish()
-	log := zerolog.Ctx(span.Context()).With().Str("server", serverName).Logger()
+	log := zerolog.Ctx(ctx).With().Str("server", serverName).Logger()
 
-	keysURL, err := url.Parse(s.getURL(span.Context(), serverName, discover) + "/_matrix/key/v2/server")
+	keysURL, err := url.Parse(s.getURL(ctx, serverName, discover) + "/_matrix/key/v2/server")
 	if err != nil {
 		log.Warn().Err(err).Msg("failed to parse keys URL")
 		return nil, err
 	}
-	resp, err := utils.Get(span.Context(), keysURL.String())
+	resp, err := utils.Get(ctx, keysURL.String())
 	if err != nil {
 		log.Warn().Err(err).Msg("failed to get keys")
 		return nil, err

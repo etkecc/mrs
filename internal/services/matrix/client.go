@@ -31,22 +31,20 @@ func (s *Server) GetClientVersion() []byte {
 
 // GetClientDirectory is /_matrix/client/v3/directory/room/{roomAlias}
 func (s *Server) GetClientDirectory(ctx context.Context, alias string) (statusCode int, respb []byte) {
-	span := utils.StartSpan(ctx, "matrix.GetClientDirectory")
-	defer span.Finish()
-	log := zerolog.Ctx(span.Context())
+	log := zerolog.Ctx(ctx)
 	alias = utils.Unescape(alias)
 
 	log.Info().Str("alias", alias).Str("origin", "client").Msg("querying directory")
 	if alias == "" {
-		return http.StatusBadRequest, s.getErrorResp(span.Context(), "M_INVALID_PARAM", "Room alias invalid")
+		return http.StatusBadRequest, s.getErrorResp(ctx, "M_INVALID_PARAM", "Room alias invalid")
 	}
 
-	room, err := s.getRoom(span.Context(), alias)
+	room, err := s.getRoom(ctx, alias)
 	if err != nil {
 		log.Error().Err(err).Msg("cannot get room from data store")
 	}
 	if room == nil {
-		return http.StatusNotFound, s.getErrorResp(span.Context(), "M_NOT_FOUND", "room not found")
+		return http.StatusNotFound, s.getErrorResp(ctx, "M_NOT_FOUND", "room not found")
 	}
 
 	resp := &queryDirectoryResp{
@@ -64,22 +62,20 @@ func (s *Server) GetClientDirectory(ctx context.Context, alias string) (statusCo
 
 // GetClientRoomSummary is /_matrix/client/unstable/is.nheko.summary/summary/{roomIdOrAlias}
 func (s *Server) GetClientRoomSummary(ctx context.Context, aliasOrID string) (statusCode int, resp []byte) {
-	span := utils.StartSpan(ctx, "matrix.GetClientRoomSummary")
-	defer span.Finish()
-	log := zerolog.Ctx(span.Context())
+	log := zerolog.Ctx(ctx)
 	aliasOrID = utils.Unescape(aliasOrID)
 
 	log.Info().Str("aliasOrID", aliasOrID).Str("origin", "client").Msg("getting room summary")
 	if aliasOrID == "" {
-		return http.StatusBadRequest, s.getErrorResp(span.Context(), "M_INVALID_PARAM", "Room alias or id is invalid")
+		return http.StatusBadRequest, s.getErrorResp(ctx, "M_INVALID_PARAM", "Room alias or id is invalid")
 	}
 
-	room, err := s.getRoom(span.Context(), aliasOrID)
+	room, err := s.getRoom(ctx, aliasOrID)
 	if err != nil {
 		log.Error().Err(err).Msg("cannot get room from data store")
 	}
 	if room == nil {
-		return http.StatusNotFound, s.getErrorResp(span.Context(), "M_NOT_FOUND", "room not found")
+		return http.StatusNotFound, s.getErrorResp(ctx, "M_NOT_FOUND", "room not found")
 	}
 	respb, err := utils.JSON(room.DirectoryEntry())
 	if err != nil {

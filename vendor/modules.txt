@@ -100,12 +100,16 @@ github.com/blevesearch/bleve/v2/search/scorer
 github.com/blevesearch/bleve/v2/search/searcher
 github.com/blevesearch/bleve/v2/size
 github.com/blevesearch/bleve/v2/util
-# github.com/blevesearch/bleve_index_api v1.2.7
+# github.com/blevesearch/bleve_index_api v1.2.8
 ## explicit; go 1.21
 github.com/blevesearch/bleve_index_api
-# github.com/blevesearch/geo v0.1.20
-## explicit; go 1.18
+# github.com/blevesearch/geo v0.2.0
+## explicit; go 1.21.0
 github.com/blevesearch/geo/geojson
+github.com/blevesearch/geo/r1
+github.com/blevesearch/geo/r2
+github.com/blevesearch/geo/r3
+github.com/blevesearch/geo/s1
 github.com/blevesearch/geo/s2
 # github.com/blevesearch/go-faiss v1.0.25
 ## explicit; go 1.21
@@ -119,7 +123,7 @@ github.com/blevesearch/gtreap
 # github.com/blevesearch/mmap-go v1.0.4
 ## explicit; go 1.13
 github.com/blevesearch/mmap-go
-# github.com/blevesearch/scorch_segment_api/v2 v2.3.9
+# github.com/blevesearch/scorch_segment_api/v2 v2.3.10
 ## explicit; go 1.21
 github.com/blevesearch/scorch_segment_api/v2
 # github.com/blevesearch/segment v0.9.1
@@ -169,7 +173,7 @@ github.com/blevesearch/zapx/v14
 # github.com/blevesearch/zapx/v15 v15.4.1
 ## explicit; go 1.21
 github.com/blevesearch/zapx/v15
-# github.com/blevesearch/zapx/v16 v16.2.2
+# github.com/blevesearch/zapx/v16 v16.2.3
 ## explicit; go 1.21
 github.com/blevesearch/zapx/v16
 # github.com/buger/jsonparser v1.1.1
@@ -229,12 +233,6 @@ github.com/goccy/go-json/internal/encoder/vm_color_indent
 github.com/goccy/go-json/internal/encoder/vm_indent
 github.com/goccy/go-json/internal/errors
 github.com/goccy/go-json/internal/runtime
-# github.com/golang/geo v0.0.0-20250414194827-ce8b7816b692
-## explicit; go 1.21.0
-github.com/golang/geo/r1
-github.com/golang/geo/r2
-github.com/golang/geo/r3
-github.com/golang/geo/s1
 # github.com/golang/protobuf v1.5.4
 ## explicit; go 1.17
 github.com/golang/protobuf/proto
@@ -353,8 +351,8 @@ github.com/yuin/goldmark/renderer
 github.com/yuin/goldmark/renderer/html
 github.com/yuin/goldmark/text
 github.com/yuin/goldmark/util
-# github.com/ziflex/lecho/v3 v3.7.0
-## explicit; go 1.17
+# github.com/ziflex/lecho/v3 v3.8.0
+## explicit; go 1.20
 github.com/ziflex/lecho/v3
 # go.etcd.io/bbolt v1.4.0
 ## explicit; go 1.23

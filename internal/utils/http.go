@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/rs/zerolog"
 
 	"github.com/etkecc/mrs/internal/version"
@@ -34,33 +33,12 @@ func Get(ctx context.Context, uri string, maxRetries ...int) (*http.Response, er
 
 // Do performs HTTP request with timeout, User-Agent, and retrier
 func Do(req *http.Request, maxRetries ...int) (*http.Response, error) {
-	// creating a custom http.client transaction if not already present to avoid unlabeled transactions
-	name := req.Method + " " + req.URL.String()
-	transaction := sentry.TransactionFromContext(req.Context())
-	if transaction == nil {
-		transaction = sentry.StartTransaction(req.Context(), name,
-			sentry.WithOpName("http.client"),
-			sentry.WithTransactionSource(sentry.SourceURL),
-		)
-		defer transaction.Finish()
-		req = req.WithContext(transaction.Context())
-	}
-
-	// creating a custom span for the http.client transaction, duplicating transaction options, to avoid missing context
-	span := sentry.StartSpan(req.Context(), "http.client",
-		sentry.WithOpName("http.client"),
-		sentry.WithDescription(name),
-		sentry.WithTransactionName(name),
-		sentry.WithTransactionSource(sentry.SourceURL),
-	)
-	defer span.Finish()
-
 	// edge case: when function ends it execution and automatically calls cancel(),
 	// it causes error "context canceled" when the function caller tries to read the body of the response
 	// so we defer the cancel() function to be called only when there is an error
 	var err error
 	var resp *http.Response
-	ctx, cancel := context.WithTimeout(span.Context(), DefaultTimeout)
+	ctx, cancel := context.WithTimeout(req.Context(), DefaultTimeout)
 	defer func() {
 		if err != nil {
 			cancel()

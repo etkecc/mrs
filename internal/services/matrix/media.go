@@ -24,16 +24,14 @@ var defaultThumbnailParams = url.Values{
 
 // GetMediaThumbnail is /_matrix/federation/v1/media/thumbnail/{mediaId}
 func (s *Server) GetMediaThumbnail(ctx context.Context, serverName, mediaID string, params url.Values) (content io.Reader, contentType string) {
-	span := utils.StartSpan(ctx, "matrix.GetMediaThumbnail")
-	defer span.Finish()
-	log := zerolog.Ctx(span.Context())
+	log := zerolog.Ctx(ctx)
 
 	params = utils.ValuesOrDefault(params, defaultThumbnailParams)
-	if content, contentType := s.media.Get(span.Context(), serverName, mediaID, params); content != nil {
+	if content, contentType := s.media.Get(ctx, serverName, mediaID, params); content != nil {
 		return content, contentType
 	}
 
-	serverURL := s.getURL(span.Context(), serverName, false)
+	serverURL := s.getURL(ctx, serverName, false)
 	if serverURL == "" {
 		log.Warn().Str("server", serverName).Msg("cannot get server URL")
 		return nil, ""
@@ -48,7 +46,7 @@ func (s *Server) GetMediaThumbnail(ctx context.Context, serverName, mediaID stri
 		return nil, ""
 	}
 
-	ctx, cancel := context.WithTimeout(span.Context(), utils.DefaultTimeout)
+	ctx, cancel := context.WithTimeout(ctx, utils.DefaultTimeout)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiURL, http.NoBody)
 	if err != nil {
@@ -73,29 +71,26 @@ func (s *Server) GetMediaThumbnail(ctx context.Context, serverName, mediaID stri
 		log.Warn().Str("server", serverName).Str("mediaID", mediaID).Int("status", resp.StatusCode).Str("body", string(body)).Msg("cannot get media thumbnail")
 		return nil, ""
 	}
-	reader, contentType := s.getImageFromMultipart(span.Context(), resp)
+	reader, contentType := s.getImageFromMultipart(ctx, resp)
 	if reader == nil {
 		return nil, ""
 	}
 	newReader, contents := s.readerBytes(reader)
-	s.media.Add(span.Context(), serverName, mediaID, params, contents)
+	s.media.Add(ctx, serverName, mediaID, params, contents)
 	return newReader, contentType
 }
 
 // GetClientMediaThumbnail is /_matrix/media/v3/thumbnail/{serverName}/{mediaID}
 // Deprecated: use GetMediaThumbnail() instead, ref: https://spec.matrix.org/v1.11/server-server-api/#get_matrixfederationv1mediathumbnailmediaid
 func (s *Server) GetClientMediaThumbnail(ctx context.Context, serverName, mediaID string, params url.Values) (content io.Reader, contentType string) {
-	span := utils.StartSpan(ctx, "matrix.GetClientMediaThumbnail")
-	defer span.Finish()
-
 	params = utils.ValuesOrDefault(params, defaultThumbnailParams)
-	if content, contentType := s.media.Get(span.Context(), serverName, mediaID, params); content != nil {
+	if content, contentType := s.media.Get(ctx, serverName, mediaID, params); content != nil {
 		return content, contentType
 	}
 
 	query := params.Encode()
 	urls := make([]string, 0, len(mediaFallbacks)+1)
-	serverURL := s.QueryCSURL(span.Context(), serverName)
+	serverURL := s.QueryCSURL(ctx, serverName)
 	if serverURL != "" {
 		urls = append(urls, serverURL+"/_matrix/media/v3/thumbnail/"+serverName+"/"+mediaID+"?"+query)
 	}
@@ -103,7 +98,7 @@ func (s *Server) GetClientMediaThumbnail(ctx context.Context, serverName, mediaI
 		urls = append(urls, serverURL+"/_matrix/media/v3/thumbnail/"+serverName+"/"+mediaID+"?"+query)
 	}
 	for _, avatarURL := range urls {
-		resp, err := utils.Get(span.Context(), avatarURL, 0)
+		resp, err := utils.Get(ctx, avatarURL, 0)
 		if err != nil {
 			continue
 		}
@@ -115,7 +110,7 @@ func (s *Server) GetClientMediaThumbnail(ctx context.Context, serverName, mediaI
 		if strings.HasPrefix(contentType, "image/") {
 			reader, contents := s.readerBytes(resp.Body)
 			resp.Body.Close()
-			s.media.Add(span.Context(), serverName, mediaID, params, contents)
+			s.media.Add(ctx, serverName, mediaID, params, contents)
 			return reader, contentType
 		}
 		return resp.Body, resp.Header.Get("Content-Type")

@@ -20,7 +20,7 @@ import (
 
 	index "github.com/blevesearch/bleve_index_api"
 	"github.com/blevesearch/geo/s2"
-	"github.com/golang/geo/s1"
+	"github.com/blevesearch/geo/s1"
 )
 
 // ------------------------------------------------------------------------

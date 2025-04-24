@@ -6,15 +6,11 @@ import (
 
 	"github.com/rs/zerolog"
 	"go.etcd.io/bbolt"
-
-	"github.com/etkecc/mrs/internal/utils"
 )
 
 // SetServersRoomsCount sets the count of rooms for each server
 func (d *Data) SetServersRoomsCount(ctx context.Context, data map[string]int) error {
-	span := utils.StartSpan(ctx, "data.SetServersRoomsCount")
-	defer span.Finish()
-
+	zerolog.Ctx(ctx).Info().Int("count", len(data)).Msg("updating servers rooms count")
 	return d.db.Batch(func(tx *bbolt.Tx) error {
 		bucket := tx.Bucket(serversRoomsCountBucket)
 		for server, count := range data {
@@ -32,10 +28,7 @@ func (d *Data) SetServersRoomsCount(ctx context.Context, data map[string]int) er
 
 // GetServersRoomsCount returns the count of rooms for each server
 func (d *Data) GetServersRoomsCount(ctx context.Context) map[string]int {
-	span := utils.StartSpan(ctx, "data.GetServersRoomsCount")
-	defer span.Finish()
-
-	log := zerolog.Ctx(utils.NewContext(span.Context()))
+	log := zerolog.Ctx(ctx)
 	data := make(map[string]int)
 	d.db.View(func(tx *bbolt.Tx) error { //nolint:errcheck // we don't care about errors here
 		bucket := tx.Bucket(serversRoomsCountBucket)
@@ -56,10 +49,7 @@ func (d *Data) GetServersRoomsCount(ctx context.Context) map[string]int {
 //
 //nolint:gocognit // TODO
 func (d *Data) SaveServersRooms(ctx context.Context, data map[string][]string) error {
-	span := utils.StartSpan(ctx, "data.SaveServersRooms")
-	defer span.Finish()
-
-	log := zerolog.Ctx(utils.NewContext(span.Context()))
+	log := zerolog.Ctx(ctx)
 	return d.db.Update(func(tx *bbolt.Tx) error {
 		if err := tx.DeleteBucket(serversRoomsBucket); err != nil {
 			return err

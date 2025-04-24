@@ -223,6 +223,7 @@ func (m *Moderation) Ban(ctx context.Context, roomID string) error {
 	if err := m.data.BanRoom(ctx, roomID); err != nil {
 		return err
 	}
+	m.data.RemoveRoomMapping(ctx, room.ID, room.Alias)
 	if err := m.index.Delete(roomID); err != nil {
 		return err
 	}

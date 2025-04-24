@@ -8,13 +8,10 @@ import (
 	"go.etcd.io/bbolt"
 
 	"github.com/etkecc/mrs/internal/model"
-	"github.com/etkecc/mrs/internal/utils"
 )
 
 // AddServer info
 func (d *Data) AddServer(ctx context.Context, server *model.MatrixServer) error {
-	span := utils.StartSpan(ctx, "data.AddServer")
-	defer span.Finish()
 	log := zerolog.Ctx(ctx)
 
 	return d.db.Batch(func(tx *bbolt.Tx) error {
@@ -29,8 +26,6 @@ func (d *Data) AddServer(ctx context.Context, server *model.MatrixServer) error 
 
 // BatchServers adds a batch of servers at once
 func (d *Data) BatchServers(ctx context.Context, servers []string) error {
-	span := utils.StartSpan(ctx, "data.BatchServers")
-	defer span.Finish()
 	log := zerolog.Ctx(ctx)
 
 	return d.db.Batch(func(tx *bbolt.Tx) error {
@@ -53,9 +48,7 @@ func (d *Data) BatchServers(ctx context.Context, servers []string) error {
 
 // HasServer checks if server is already exists
 func (d *Data) HasServer(ctx context.Context, name string) bool {
-	span := utils.StartSpan(ctx, "data.HasServer")
-	defer span.Finish()
-
+	zerolog.Ctx(ctx).Debug().Str("server", name).Msg("checking if server exists")
 	var has bool
 	d.db.View(func(tx *bbolt.Tx) error { //nolint:errcheck // that's ok
 		v := tx.Bucket(serversInfoBucket).Get([]byte(name))
@@ -67,9 +60,7 @@ func (d *Data) HasServer(ctx context.Context, name string) bool {
 
 // GetServerInfo
 func (d *Data) GetServerInfo(ctx context.Context, name string) (*model.MatrixServer, error) {
-	span := utils.StartSpan(ctx, "data.GetServerInfo")
-	defer span.Finish()
-
+	zerolog.Ctx(ctx).Debug().Str("server", name).Msg("getting server info")
 	var server *model.MatrixServer
 	err := d.db.View(func(tx *bbolt.Tx) error {
 		v := tx.Bucket(serversInfoBucket).Get([]byte(name))
@@ -88,9 +79,7 @@ func (d *Data) GetServerInfo(ctx context.Context, name string) (*model.MatrixSer
 
 // RemoveServer info
 func (d *Data) RemoveServer(ctx context.Context, name string) error {
-	span := utils.StartSpan(ctx, "data.RemoveServer")
-	defer span.Finish()
-
+	zerolog.Ctx(ctx).Debug().Str("server", name).Msg("removing server info")
 	nameb := []byte(name)
 	return d.db.Batch(func(tx *bbolt.Tx) error {
 		err := tx.Bucket(serversBucket).Delete(nameb)
@@ -107,9 +96,7 @@ func (d *Data) RemoveServers(ctx context.Context, keys []string) {
 		return
 	}
 
-	span := utils.StartSpan(ctx, "data.RemoveServers")
-	defer span.Finish()
-
+	zerolog.Ctx(ctx).Info().Int("count", len(keys)).Msg("removing servers from db")
 	d.db.Update(func(tx *bbolt.Tx) error { //nolint:errcheck // that's ok
 		sbucket := tx.Bucket(serversBucket)
 		sibucket := tx.Bucket(serversInfoBucket)
@@ -154,9 +141,7 @@ func (d *Data) MarkServersOffline(ctx context.Context, keys []string) {
 		return
 	}
 
-	span := utils.StartSpan(ctx, "data.MarkServersOffline")
-	defer span.Finish()
-
+	zerolog.Ctx(ctx).Info().Int("count", len(keys)).Msg("marking servers offline")
 	d.db.Batch(func(tx *bbolt.Tx) error { //nolint:errcheck // that's ok
 		bucket := tx.Bucket(serversInfoBucket)
 		for _, k := range keys {
@@ -167,8 +152,6 @@ func (d *Data) MarkServersOffline(ctx context.Context, keys []string) {
 }
 
 func (d *Data) FilterServers(ctx context.Context, filter func(server *model.MatrixServer) bool) map[string]*model.MatrixServer {
-	span := utils.StartSpan(ctx, "data.FilterServers")
-	defer span.Finish()
 	log := zerolog.Ctx(ctx)
 
 	servers := make(map[string]*model.MatrixServer)

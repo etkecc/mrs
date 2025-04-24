@@ -17,16 +17,14 @@ import (
 
 // QueryServerName finds server name on the /_matrix/key/v2/server page
 func (s *Server) QueryServerName(ctx context.Context, serverName string) (string, error) {
-	span := utils.StartSpan(ctx, "matrix.QueryServerName")
-	defer span.Finish()
-	log := zerolog.Ctx(span.Context())
+	log := zerolog.Ctx(ctx)
 
 	cached, ok := s.namesCache.Get(serverName)
 	if ok {
 		return cached, nil
 	}
 	discovered := ""
-	resp, err := s.lookupKeys(span.Context(), serverName, false)
+	resp, err := s.lookupKeys(ctx, serverName, false)
 	if err == nil && resp != nil {
 		discovered = resp.ServerName
 		s.namesCache.Add(serverName, discovered)
@@ -39,27 +37,25 @@ func (s *Server) QueryServerName(ctx context.Context, serverName string) (string
 
 // QueryDirectory is /_matrix/federation/v1/query/directory?room_alias={roomAlias}
 func (s *Server) QueryDirectory(ctx context.Context, req *http.Request, alias string) (statusCode int, respb []byte) {
-	span := utils.StartSpan(ctx, "matrix.QueryDirectory")
-	defer span.Finish()
-	log := zerolog.Ctx(span.Context())
+	log := zerolog.Ctx(ctx)
 
-	origin, err := s.ValidateAuth(span.Context(), req)
+	origin, err := s.ValidateAuth(ctx, req)
 	if err != nil {
 		log.Warn().Err(err).Msg("matrix auth failed")
-		return http.StatusUnauthorized, s.getErrorResp(span.Context(), "M_UNAUTHORIZED", "authorization failed")
+		return http.StatusUnauthorized, s.getErrorResp(ctx, "M_UNAUTHORIZED", "authorization failed")
 	}
 
 	alias = utils.Unescape(alias)
 	log.Info().Str("alias", alias).Str("origin", origin).Msg("querying directory")
 	if alias == "" {
-		return http.StatusNotFound, s.getErrorResp(span.Context(), "M_NOT_FOUND", "room not found")
+		return http.StatusNotFound, s.getErrorResp(ctx, "M_NOT_FOUND", "room not found")
 	}
-	room, err := s.getRoom(span.Context(), alias)
+	room, err := s.getRoom(ctx, alias)
 	if err != nil {
 		log.Error().Err(err).Msg("cannot get room from data store")
 	}
 	if room == nil {
-		return http.StatusNotFound, s.getErrorResp(span.Context(), "M_NOT_FOUND", "room not found")
+		return http.StatusNotFound, s.getErrorResp(ctx, "M_NOT_FOUND", "room not found")
 	}
 
 	resp := &queryDirectoryResp{
@@ -77,10 +73,7 @@ func (s *Server) QueryDirectory(ctx context.Context, req *http.Request, alias st
 
 // QueryVersion from /_matrix/federation/v1/version
 func (s *Server) QueryVersion(ctx context.Context, serverName string) (server, serverVersion string, err error) {
-	span := utils.StartSpan(ctx, "matrix.QueryVersion")
-	defer span.Finish()
-
-	resp, err := utils.Get(span.Context(), s.getURL(span.Context(), serverName, false)+"/_matrix/federation/v1/version")
+	resp, err := utils.Get(ctx, s.getURL(ctx, serverName, false)+"/_matrix/federation/v1/version")
 	if err != nil {
 		return "", "", err
 	}
@@ -109,10 +102,7 @@ func (s *Server) QueryVersion(ctx context.Context, serverName string) (server, s
 
 // QueryPublicRooms over federation
 func (s *Server) QueryPublicRooms(ctx context.Context, serverName, limit, since string) (*model.RoomDirectoryResponse, error) {
-	span := utils.StartSpan(ctx, "matrix.QueryPublicRooms")
-	defer span.Finish()
-
-	ctx, cancel := context.WithTimeout(span.Context(), utils.DefaultTimeout)
+	ctx, cancel := context.WithTimeout(ctx, utils.DefaultTimeout)
 	defer cancel()
 	req, err := s.buildPublicRoomsReq(ctx, serverName, limit, since)
 	if err != nil {
@@ -156,9 +146,6 @@ func (s *Server) QueryCSURL(ctx context.Context, serverName string) string {
 	if ok {
 		return cached
 	}
-
-	span := utils.StartSpan(ctx, "matrix.QueryCSURL")
-	defer span.Finish()
 
 	csurl := "https://" + serverName
 	fromWellKnown, err := s.parseClientWellKnown(ctx, serverName)

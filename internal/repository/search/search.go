@@ -6,16 +6,14 @@ import (
 	"github.com/blevesearch/bleve/v2"
 	"github.com/blevesearch/bleve/v2/search"
 	"github.com/blevesearch/bleve/v2/search/query"
+	"github.com/rs/zerolog"
 
 	"github.com/etkecc/mrs/internal/model"
-	"github.com/etkecc/mrs/internal/utils"
 )
 
 // Search something!
 func (i *Index) Search(ctx context.Context, searchQuery query.Query, limit, offset int, sortBy []string) (results []*model.Entry, total int, err error) {
-	span := utils.StartSpan(ctx, "search.Search")
-	defer span.Finish()
-
+	zerolog.Ctx(ctx).Debug().Msg("searching index")
 	req := bleve.NewSearchRequestOptions(searchQuery, limit, offset, false)
 	req.Fields = []string{"*"}
 	req.SortBy(sortBy)

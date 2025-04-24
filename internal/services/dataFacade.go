@@ -113,16 +113,13 @@ func (df *DataFacade) Ingest(ctx context.Context) {
 
 // Full data pipeline (discovery, parsing, indexing)
 func (df *DataFacade) Full(ctx context.Context, discoveryWorkers, parsingWorkers int) {
-	span := utils.StartSpan(ctx, "dataFacade.Full")
-	defer span.Finish()
-
-	log := zerolog.Ctx(span.Context())
-	df.DiscoverServers(span.Context(), discoveryWorkers)
-	df.ParseRooms(span.Context(), parsingWorkers)
-	df.Ingest(span.Context())
+	log := zerolog.Ctx(ctx)
+	df.DiscoverServers(ctx, discoveryWorkers)
+	df.ParseRooms(ctx, parsingWorkers)
+	df.Ingest(ctx)
 
 	log.Info().Msg("collecting stats...")
-	df.stats.Collect(span.Context())
+	df.stats.Collect(ctx)
 	log.Info().Msg("stats have been collected")
 }
 

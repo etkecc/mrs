@@ -26,8 +26,7 @@ func (d *Data) FlushRoomBatch(ctx context.Context) {
 }
 
 func (d *Data) SetBiggestRooms(ctx context.Context, ids []string) error {
-	span := utils.StartSpan(ctx, "data.SetBiggestRooms")
-	defer span.Finish()
+	zerolog.Ctx(ctx).Info().Int("count", len(ids)).Msg("updating biggest rooms")
 
 	return d.db.Update(func(tx *bbolt.Tx) error {
 		if err := tx.DeleteBucket(biggestRoomsBucket); err != nil {
@@ -56,8 +55,6 @@ func (d *Data) SetBiggestRooms(ctx context.Context, ids []string) error {
 }
 
 func (d *Data) GetBiggestRooms(ctx context.Context, limit, offset int) []*model.MatrixRoom {
-	span := utils.StartSpan(ctx, "data.GetBiggestRooms")
-	defer span.Finish()
 	log := zerolog.Ctx(ctx)
 
 	start := []byte(fmt.Sprintf("%06d", offset))
@@ -82,9 +79,7 @@ func (d *Data) GetBiggestRooms(ctx context.Context, limit, offset int) []*model.
 
 // GetRoom info
 func (d *Data) GetRoom(ctx context.Context, roomID string) (*model.MatrixRoom, error) {
-	span := utils.StartSpan(ctx, "data.GetRoom")
-	defer span.Finish()
-
+	zerolog.Ctx(ctx).Debug().Str("room_id", roomID).Msg("getting a room")
 	var room *model.MatrixRoom
 	err := d.db.View(func(tx *bbolt.Tx) error {
 		v := tx.Bucket(roomsBucket).Get([]byte(roomID))
@@ -102,9 +97,7 @@ func (d *Data) RemoveRooms(ctx context.Context, keys []string) {
 		return
 	}
 
-	span := utils.StartSpan(ctx, "data.RemoveRooms")
-	defer span.Finish()
-
+	zerolog.Ctx(ctx).Info().Int("count", len(keys)).Msg("removing rooms from db")
 	d.db.Update(func(tx *bbolt.Tx) error { //nolint:errcheck // that's ok
 		bucket := tx.Bucket(roomsBucket)
 		mbucket := tx.Bucket(roomsMappingsBucket)
@@ -120,8 +113,7 @@ func (d *Data) RemoveRooms(ctx context.Context, keys []string) {
 //
 //nolint:errcheck // that's ok
 func (d *Data) EachRoom(ctx context.Context, handler func(roomID string, data *model.MatrixRoom) bool) {
-	span := utils.StartSpan(ctx, "data.EachRoom")
-	defer span.Finish()
+	zerolog.Ctx(ctx).Warn().Msg("iterating over all rooms")
 
 	var room *model.MatrixRoom
 	d.db.View(func(tx *bbolt.Tx) error {
@@ -146,13 +138,11 @@ func (d *Data) EachRoom(ctx context.Context, handler func(roomID string, data *m
 
 // GetBannedRooms returns full list of the banned rooms
 func (d *Data) GetBannedRooms(ctx context.Context, serverName ...string) ([]string, error) {
-	span := utils.StartSpan(ctx, "data.GetBannedRooms")
-	defer span.Finish()
-
 	var server string
 	if len(serverName) > 0 {
 		server = serverName[0]
 	}
+	zerolog.Ctx(ctx).Info().Str("server", server).Msg("getting a list of banned rooms")
 	list := []string{}
 	err := d.db.View(func(tx *bbolt.Tx) error {
 		return tx.Bucket(roomsBanlistBucket).ForEach(func(k, _ []byte) error {
@@ -170,9 +160,7 @@ func (d *Data) GetBannedRooms(ctx context.Context, serverName ...string) ([]stri
 
 // BanRoom
 func (d *Data) BanRoom(ctx context.Context, roomID string) error {
-	span := utils.StartSpan(ctx, "data.BanRoom")
-	defer span.Finish()
-
+	zerolog.Ctx(ctx).Info().Str("room_id", roomID).Msg("banning a room")
 	return d.db.Batch(func(tx *bbolt.Tx) error {
 		return tx.Bucket(roomsBanlistBucket).Put([]byte(roomID), []byte(`true`))
 	})
@@ -180,9 +168,7 @@ func (d *Data) BanRoom(ctx context.Context, roomID string) error {
 
 // UnbanRoom
 func (d *Data) UnbanRoom(ctx context.Context, roomID string) error {
-	span := utils.StartSpan(ctx, "data.UnbanRoom")
-	defer span.Finish()
-
+	zerolog.Ctx(ctx).Info().Str("room_id", roomID).Msg("unbanning a room")
 	return d.db.Batch(func(tx *bbolt.Tx) error {
 		if err := tx.Bucket(roomsBanlistBucket).Delete([]byte(roomID)); err != nil {
 			return err
@@ -193,8 +179,7 @@ func (d *Data) UnbanRoom(ctx context.Context, roomID string) error {
 
 // GetReportedRooms returns full list of the banned rooms with reasons
 func (d *Data) GetReportedRooms(ctx context.Context, serverName ...string) (map[string]string, error) {
-	span := utils.StartSpan(ctx, "data.GetReportedRooms")
-	defer span.Finish()
+	zerolog.Ctx(ctx).Info().Msg("getting a list of reported rooms")
 
 	var server string
 	if len(serverName) > 0 {
@@ -217,9 +202,7 @@ func (d *Data) GetReportedRooms(ctx context.Context, serverName ...string) (map[
 
 // IsReported returns true if room was already reported
 func (d *Data) IsReported(ctx context.Context, roomID string) bool {
-	span := utils.StartSpan(ctx, "data.IsReported")
-	defer span.Finish()
-
+	zerolog.Ctx(ctx).Debug().Str("room_id", roomID).Msg("checking if a room is reported")
 	var reported bool
 	d.db.View(func(tx *bbolt.Tx) error { //nolint:errcheck // that's ok
 		v := tx.Bucket(roomsReportsBucket).Get([]byte(roomID))
@@ -232,9 +215,7 @@ func (d *Data) IsReported(ctx context.Context, roomID string) bool {
 
 // ReportRoom
 func (d *Data) ReportRoom(ctx context.Context, roomID, reason string) error {
-	span := utils.StartSpan(ctx, "data.ReportRoom")
-	defer span.Finish()
-
+	zerolog.Ctx(ctx).Info().Str("room_id", roomID).Msg("reporting a room")
 	return d.db.Batch(func(tx *bbolt.Tx) error {
 		return tx.Bucket(roomsReportsBucket).Put([]byte(roomID), []byte(reason))
 	})
@@ -242,21 +223,18 @@ func (d *Data) ReportRoom(ctx context.Context, roomID, reason string) error {
 
 // UnreportRoom
 func (d *Data) UnreportRoom(ctx context.Context, roomID string) error {
-	span := utils.StartSpan(ctx, "data.UnreportRoom")
-	defer span.Finish()
-
+	zerolog.Ctx(ctx).Info().Str("room_id", roomID).Msg("unreporting a room")
 	return d.db.Batch(func(tx *bbolt.Tx) error {
 		return tx.Bucket(roomsReportsBucket).Delete([]byte(roomID))
 	})
 }
 
 func (d *Data) AddRoomMapping(ctx context.Context, roomID, alias string) error {
-	span := utils.StartSpan(ctx, "data.AddRoomMapping")
-	defer span.Finish()
 	if roomID == "" || alias == "" {
 		return nil
 	}
 
+	zerolog.Ctx(ctx).Debug().Str("room_id", roomID).Str("alias", alias).Msg("adding a room mapping")
 	return d.db.Batch(func(tx *bbolt.Tx) error {
 		if err := tx.Bucket(roomsMappingsBucket).Put([]byte(roomID), []byte(alias)); err != nil {
 			return err
@@ -271,9 +249,7 @@ func (d *Data) AddRoomMapping(ctx context.Context, roomID, alias string) error {
 
 // GetRoomMapping returns room ID or alias for a given room ID or alias
 func (d *Data) GetRoomMapping(ctx context.Context, idOrAlias string) string {
-	span := utils.StartSpan(ctx, "data.GetRoomMapping")
-	defer span.Finish()
-
+	zerolog.Ctx(ctx).Debug().Str("id_or_alias", idOrAlias).Msg("getting a room mapping")
 	var mapping string
 	d.db.View(func(tx *bbolt.Tx) error { //nolint:errcheck // that's ok
 		v := tx.Bucket(roomsMappingsBucket).Get([]byte(idOrAlias))
@@ -287,9 +263,7 @@ func (d *Data) GetRoomMapping(ctx context.Context, idOrAlias string) string {
 
 // RemoveRoomMapping removes room ID and alias from the mapping
 func (d *Data) RemoveRoomMapping(ctx context.Context, id, alias string) {
-	span := utils.StartSpan(ctx, "data.RemoveRoomMapping")
-	defer span.Finish()
-
+	zerolog.Ctx(ctx).Debug().Str("id", id).Str("alias", alias).Msg("removing a room mapping")
 	d.db.Update(func(tx *bbolt.Tx) error { //nolint:errcheck // that's ok
 		tx.Bucket(roomsMappingsBucket).Delete([]byte(id))    //nolint:errcheck // that's ok
 		tx.Bucket(roomsMappingsBucket).Delete([]byte(alias)) //nolint:errcheck // that's ok

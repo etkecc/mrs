@@ -106,9 +106,6 @@ func (m *Crawler) DiscoverServers(ctx context.Context, workers int, overrideList
 		log.Info().Msg("servers discovery already in progress, ignoring request")
 		return
 	}
-	span := utils.StartSpan(ctx, "crawler.DiscoverServers")
-	defer span.Finish()
-
 	m.discovering = true
 	defer func() { m.discovering = false }()
 
@@ -116,38 +113,36 @@ func (m *Crawler) DiscoverServers(ctx context.Context, workers int, overrideList
 	if len(overrideList) > 0 {
 		servers = overrideList[0]
 	} else {
-		servers = m.loadServers(span.Context())
+		servers = m.loadServers(ctx)
 	}
 
-	offline := m.discoverServers(span.Context(), servers, workers)
+	offline := m.discoverServers(ctx, servers, workers)
 
 	log.Info().Int("offline", offline.Len()).Msg("marking offline servers")
-	m.data.MarkServersOffline(span.Context(), offline.Slice())
+	m.data.MarkServersOffline(ctx, offline.Slice())
 }
 
 // AddServers by name in bulk, intended for HTTP API
 func (m *Crawler) AddServers(ctx context.Context, names []string, workers int) {
-	span := utils.StartSpan(ctx, "crawler.AddServers")
 	servers := utils.NewListFromSlice(names)
 	// exclude already known servers first
 	for _, server := range servers.Slice() {
-		if m.data.HasServer(span.Context(), server) {
+		if m.data.HasServer(ctx, server) {
 			servers.Remove(server)
 		}
 	}
 
-	m.discoverServers(span.Context(), servers, workers)
+	m.discoverServers(ctx, servers, workers)
 }
 
 // AddServer by name, intended for HTTP API
 // returns http status code to send to the reporter
 func (m *Crawler) AddServer(ctx context.Context, name string) int {
-	span := utils.StartSpan(ctx, "crawler.AddServer")
-	if m.data.HasServer(span.Context(), name) {
+	if m.data.HasServer(ctx, name) {
 		return http.StatusAlreadyReported
 	}
 
-	server := m.discoverServer(span.Context(), name)
+	server := m.discoverServer(ctx, name)
 	if server == nil {
 		return http.StatusUnprocessableEntity
 	}
@@ -163,14 +158,11 @@ func (m *Crawler) ParseRooms(ctx context.Context, workers int) {
 		return
 	}
 
-	span := utils.StartSpan(ctx, "crawler.ParseRooms")
-	defer span.Finish()
-
 	m.parsing = true
 	defer func() { m.parsing = false }()
 
 	servers := utils.NewList[string, string]()
-	servers.AddSlice(m.IndexableServers(span.Context()))
+	servers.AddSlice(m.IndexableServers(ctx))
 	servers.RemoveSlice(m.block.Slice())
 	slice := servers.Slice()
 	total := len(slice)
@@ -184,13 +176,13 @@ func (m *Crawler) ParseRooms(ctx context.Context, workers int) {
 	for _, srvName := range slice {
 		name := srvName
 		wp.Do(func() {
-			serversFromRooms := m.getPublicRooms(span.Context(), name)
+			serversFromRooms := m.getPublicRooms(ctx, name)
 			discoveredServers.AddSlice(serversFromRooms.Slice())
 		})
 	}
 
 	wp.Run()
-	m.data.FlushRoomBatch(span.Context())
+	m.data.FlushRoomBatch(ctx)
 	discoveredServers.RemoveSlice(servers.Slice())
 	log.
 		Info().
@@ -198,9 +190,9 @@ func (m *Crawler) ParseRooms(ctx context.Context, workers int) {
 		Int("discovered_servers", discoveredServers.Len()).
 		Msg("parsing rooms has been finished")
 
-	m.DiscoverServers(span.Context(), m.cfg.Get().Workers.Discovery, discoveredServers)
+	m.DiscoverServers(ctx, m.cfg.Get().Workers.Discovery, discoveredServers)
 
-	m.afterRoomParsing(span.Context())
+	m.afterRoomParsing(ctx)
 }
 
 // EachRoom allows to work with each known room
@@ -262,15 +254,12 @@ func (m *Crawler) GetRoom(ctx context.Context, roomIDorAlias string) (*model.Mat
 }
 
 func (m *Crawler) loadServers(ctx context.Context) *utils.List[string, string] {
-	span := utils.StartSpan(ctx, "crawler.loadServers")
-	defer span.Finish()
-
-	log := zerolog.Ctx(span.Context())
+	log := zerolog.Ctx(ctx)
 	log.Info().Msg("loading servers")
 	servers := utils.NewList[string, string]()
 	servers.AddSlice(m.cfg.Get().Servers)
 	log.Info().Int("servers", servers.Len()).Msg("loaded servers from config")
-	servers.AddSlice(utils.MapKeys(m.data.FilterServers(span.Context(), func(_ *model.MatrixServer) bool {
+	servers.AddSlice(utils.MapKeys(m.data.FilterServers(ctx, func(_ *model.MatrixServer) bool {
 		return true
 	})))
 	log.Info().Int("servers", servers.Len()).Msg("loaded servers from config and db")
@@ -280,28 +269,25 @@ func (m *Crawler) loadServers(ctx context.Context) *utils.List[string, string] {
 
 // discoverServer parses server information
 func (m *Crawler) discoverServer(ctx context.Context, name string) *model.MatrixServer {
-	span := utils.StartSpan(ctx, "crawler.discoverServer")
-	defer span.Finish()
-
-	name, ok := m.v.IsOnline(span.Context(), name)
+	name, ok := m.v.IsOnline(ctx, name)
 	if name == "" {
 		return nil
 	}
 
 	server := &model.MatrixServer{
 		Name:     name,
-		URL:      m.fed.QueryCSURL(span.Context(), name),
-		Contacts: m.getServerContacts(span.Context(), name),
+		URL:      m.fed.QueryCSURL(ctx, name),
+		Contacts: m.getServerContacts(ctx, name),
 		Online:   ok,
 		OnlineAt: time.Now().UTC(),
 	}
 
-	if m.v.IsIndexable(span.Context(), name) {
+	if m.v.IsIndexable(ctx, name) {
 		server.Indexable = true
 	}
 
-	if err := m.data.AddServer(span.Context(), server); err != nil {
-		zerolog.Ctx(span.Context()).
+	if err := m.data.AddServer(ctx, server); err != nil {
+		zerolog.Ctx(ctx).
 			Error().Err(err).Msg("cannot store server")
 	}
 	return server
@@ -352,15 +338,12 @@ func (m *Crawler) afterRoomParsing(ctx context.Context) {
 	serversRoomsCount := map[string]int{}
 	// serversRooms := map[string][]string{} //nolint:gocritic // TODO: implement
 
-	span := utils.StartSpan(ctx, "crawler.afterRoomParsing")
-	defer span.Finish()
-
-	log := zerolog.Ctx(span.Context())
+	log := zerolog.Ctx(ctx)
 	log.Info().Msg("after room parsing......")
 	started := time.Now().UTC()
 	counts := []roomCount{}
 	toRemove := map[string]string{}
-	m.data.EachRoom(span.Context(), func(id string, data *model.MatrixRoom) bool {
+	m.data.EachRoom(ctx, func(id string, data *model.MatrixRoom) bool {
 		if started.Sub(data.ParsedAt) >= 24*7*time.Hour { // parsed more than a week ago
 			toRemove[id] = data.Avatar
 			return false
@@ -384,17 +367,17 @@ func (m *Crawler) afterRoomParsing(ctx context.Context) {
 		ids = append(ids, count.id)
 	}
 	log.Info().Str("took", time.Since(started).String()).Msg("biggest rooms have been calculated, storing")
-	if err := m.data.SetBiggestRooms(span.Context(), ids); err != nil {
+	if err := m.data.SetBiggestRooms(ctx, ids); err != nil {
 		log.Error().Err(err).Msg("cannot set biggest rooms")
 	}
 	log.Info().Str("took", time.Since(started).String()).Msg("biggest rooms have been calculated and stored")
 
-	if err := m.data.SetServersRoomsCount(span.Context(), serversRoomsCount); err != nil {
+	if err := m.data.SetServersRoomsCount(ctx, serversRoomsCount); err != nil {
 		log.Error().Err(err).Msg("cannot set servers rooms count")
 	}
 
 	// TODO: implement
-	// if err := m.data.SaveServersRooms(span.Context(), serversRooms); err != nil {
+	// if err := m.data.SaveServersRooms(ctx, serversRooms); err != nil {
 	// 	log.Error().Err(err).Msg("cannot save servers rooms")
 	// }
 
@@ -409,19 +392,16 @@ func (m *Crawler) afterRoomParsing(ctx context.Context) {
 			if len(parts) != 2 {
 				continue
 			}
-			m.media.Delete(span.Context(), parts[0], parts[1])
+			m.media.Delete(ctx, parts[0], parts[1])
 		}
-		m.data.RemoveRooms(span.Context(), toRemoveSlice)
+		m.data.RemoveRooms(ctx, toRemoveSlice)
 	}
 }
 
 // getServerContacts as per MSC1929
 func (m *Crawler) getServerContacts(ctx context.Context, name string) model.MatrixServerContacts {
-	span := utils.StartSpan(ctx, "crawler.getServerContacts")
-	defer span.Finish()
-
 	var contacts model.MatrixServerContacts
-	resp, err := msc1929.GetWithContext(span.Context(), name)
+	resp, err := msc1929.GetWithContext(ctx, name)
 	if err != nil {
 		return contacts
 	}
@@ -455,13 +435,11 @@ func (m *Crawler) getPublicRooms(ctx context.Context, name string) *utils.List[s
 	var added int
 	limit := "10000"
 	servers := utils.NewList[string, string]()
-	span := utils.StartSpan(ctx, "crawler.getPublicRooms")
-	defer span.Finish()
-	log := zerolog.Ctx(span.Context())
+	log := zerolog.Ctx(ctx)
 
 	for {
 		start := time.Now()
-		resp, err := m.fed.QueryPublicRooms(span.Context(), name, limit, since)
+		resp, err := m.fed.QueryPublicRooms(ctx, name, limit, since)
 		if err != nil {
 			log.Warn().Err(err).Str("server", name).Msg("cannot query public rooms")
 			return servers
@@ -474,7 +452,7 @@ func (m *Crawler) getPublicRooms(ctx context.Context, name string) *utils.List[s
 		added += len(resp.Chunk)
 		for _, rdRoom := range resp.Chunk {
 			room := rdRoom.Convert()
-			if !m.v.IsRoomAllowed(span.Context(), name, room) {
+			if !m.v.IsRoomAllowed(ctx, name, room) {
 				added--
 				continue
 			}
@@ -482,8 +460,8 @@ func (m *Crawler) getPublicRooms(ctx context.Context, name string) *utils.List[s
 			room.Parse(m.detector, m.media, m.cfg.Get().Matrix.ServerName)
 			servers.AddSlice(room.Servers(m.cfg.Get().Matrix.ServerName))
 
-			m.data.AddRoomBatch(span.Context(), room)
-			m.data.AddRoomMapping(span.Context(), room.ID, room.Alias) //nolint:errcheck // ignore error
+			m.data.AddRoomBatch(ctx, room)
+			m.data.AddRoomMapping(ctx, room.ID, room.Alias) //nolint:errcheck // ignore error
 		}
 		log.
 			Info().

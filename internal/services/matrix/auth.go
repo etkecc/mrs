@@ -18,9 +18,7 @@ import (
 
 // ValidateAuth validates matrix auth
 func (s *Server) ValidateAuth(ctx context.Context, r *http.Request) (serverName string, err error) {
-	span := utils.StartSpan(ctx, "matrix.ValidateAuth")
-	defer span.Finish()
-	log := zerolog.Ctx(span.Context())
+	log := zerolog.Ctx(ctx)
 
 	defer r.Body.Close()
 	if s.cfg.Get().Matrix.ServerName == devhost {
@@ -38,7 +36,7 @@ func (s *Server) ValidateAuth(ctx context.Context, r *http.Request) (serverName 
 		}
 	}
 
-	auths := s.parseAuths(span.Context(), r)
+	auths := s.parseAuths(ctx, r)
 	if len(auths) == 0 {
 		return "", fmt.Errorf("no auth provided")
 	}
@@ -55,7 +53,7 @@ func (s *Server) ValidateAuth(ctx context.Context, r *http.Request) (serverName 
 	if err != nil {
 		return "", err
 	}
-	keys := s.queryKeys(span.Context(), auths[0].Origin)
+	keys := s.queryKeys(ctx, auths[0].Origin)
 	if len(keys) == 0 {
 		return "", fmt.Errorf("no server keys available")
 	}

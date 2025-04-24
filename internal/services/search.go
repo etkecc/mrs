@@ -59,9 +59,7 @@ func NewSearch(cfg ConfigService, data searchDataRepository, repo SearchReposito
 // Search things
 // ref: https://blevesearch.com/docs/Query-String-Query/
 func (s *Search) Search(ctx context.Context, originServer, q, sortBy string, limit, offset int) ([]*model.Entry, int, error) {
-	span := utils.StartSpan(ctx, "searchSvc.Search")
-	defer span.Finish()
-	log := zerolog.Ctx(span.Context())
+	log := zerolog.Ctx(ctx)
 	highlights := s.availableHighlights(originServer)
 	if limit == 0 {
 		limit = s.cfg.Get().Search.Defaults.Limit
@@ -80,7 +78,7 @@ func (s *Search) Search(ctx context.Context, originServer, q, sortBy string, lim
 
 	var builtQuery query.Query
 	if q == "" {
-		entries, length := s.getEmptyQueryResults(span.Context(), limit, offset)
+		entries, length := s.getEmptyQueryResults(ctx, limit, offset)
 		entries = s.addHighlights(originServer, entries)
 		return entries, length, nil
 	}
@@ -88,7 +86,7 @@ func (s *Search) Search(ctx context.Context, originServer, q, sortBy string, lim
 	if builtQuery == nil {
 		return []*model.Entry{}, 0, nil
 	}
-	results, total, err := s.repo.Search(span.Context(), builtQuery, limit, offset, utils.StringToSlice(sortBy, s.cfg.Get().Search.Defaults.SortBy))
+	results, total, err := s.repo.Search(ctx, builtQuery, limit, offset, utils.StringToSlice(sortBy, s.cfg.Get().Search.Defaults.SortBy))
 	results = s.addHighlights(originServer, s.removeBlocked(results))
 	log.Info().
 		Err(err).
