@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/etkecc/go-apm"
 	"github.com/etkecc/go-kit"
-	"github.com/rs/zerolog"
 
 	"github.com/etkecc/mrs/internal/metrics"
 	"github.com/etkecc/mrs/internal/model"
@@ -26,7 +26,7 @@ func (s *Server) GetServerVersion() []byte {
 
 // GetKeyServer returns jsonblob-eligible response for /_matrix/key/v2/server
 func (s *Server) GetKeyServer(ctx context.Context) []byte {
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 
 	resp := s.keyServer
 	resp.ValidUntilTS = time.Now().UTC().Add(24 * 7 * time.Hour).UnixMilli()
@@ -39,7 +39,7 @@ func (s *Server) GetKeyServer(ctx context.Context) []byte {
 
 // PublicRooms returns /_matrix/federation/v1/publicRooms response
 func (s *Server) PublicRooms(ctx context.Context, req *http.Request, rdReq *model.RoomDirectoryRequest) (statusCode int, resp []byte) {
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 	origin, err := s.ValidateAuth(ctx, req)
 	if err != nil {
 		log.Warn().Err(err).Str("header", req.Header.Get("Authorization")).Msg("matrix auth failed")

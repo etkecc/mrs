@@ -7,23 +7,30 @@ import (
 
 // Config is MRS configuration model
 type Config struct {
-	Port      string           `yaml:"port"`
-	SentryDSN string           `yaml:"sentry_dsn"`
-	Public    *ConfigPublic    `yaml:"public"`
-	Matrix    *ConfigMatrix    `yaml:"matrix"`
-	Search    *ConfigSearch    `yaml:"search"`
-	Path      *ConfigPaths     `yaml:"path"`
-	Batch     *ConfigBatch     `yaml:"batch"`
-	Auth      *ConfigAuth      `yaml:"auth"`
-	Cron      *ConfigCron      `yaml:"cron"`
-	Cache     *ConfigCache     `yaml:"cache"`
-	Workers   *ConfigWorkers   `yaml:"workers"`
-	Webhooks  *ConfigWebhooks  `yaml:"webhooks"`
-	Email     *ConfigEmail     `yaml:"email"`
-	Plausible *ConfigPlausible `yaml:"plausible"`
-	Languages []string         `yaml:"languages"`
-	Servers   []string         `yaml:"servers"`
-	Blocklist *ConfigBlocklist `yaml:"blocklist"`
+	Port         string              `yaml:"port"`
+	SentryDSN    string              `yaml:"sentry_dsn"`
+	Healthchecks *ConfigHealthchecks `yaml:"healthchecks"`
+	Public       *ConfigPublic       `yaml:"public"`
+	Matrix       *ConfigMatrix       `yaml:"matrix"`
+	Search       *ConfigSearch       `yaml:"search"`
+	Path         *ConfigPaths        `yaml:"path"`
+	Batch        *ConfigBatch        `yaml:"batch"`
+	Auth         *ConfigAuth         `yaml:"auth"`
+	Cron         *ConfigCron         `yaml:"cron"`
+	Cache        *ConfigCache        `yaml:"cache"`
+	Workers      *ConfigWorkers      `yaml:"workers"`
+	Webhooks     *ConfigWebhooks     `yaml:"webhooks"`
+	Email        *ConfigEmail        `yaml:"email"`
+	Plausible    *ConfigPlausible    `yaml:"plausible"`
+	Languages    []string            `yaml:"languages"`
+	Servers      []string            `yaml:"servers"`
+	Blocklist    *ConfigBlocklist    `yaml:"blocklist"`
+}
+
+// ConfigHealthchecks - healthchecks.io configuration
+type ConfigHealthchecks struct {
+	URL  string `yaml:"url"`
+	UUID string `yaml:"uuid"`
 }
 
 // ConfigPublic - instance public information

@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/etkecc/go-apm"
 	"github.com/goccy/go-json"
-	"github.com/rs/zerolog"
 	"go.etcd.io/bbolt"
 
 	"github.com/etkecc/mrs/internal/model"
@@ -15,7 +15,7 @@ import (
 
 // SetIndexStatsTL sets index stats for the given time
 func (d *Data) SetIndexStatsTL(ctx context.Context, calculatedAt time.Time, stats *model.IndexStats) error {
-	zerolog.Ctx(ctx).Info().Msg("updating index stats")
+	apm.Log(ctx).Info().Msg("updating index stats")
 	id := []byte(calculatedAt.UTC().Format(time.RFC3339))
 	statsb, err := json.Marshal(stats)
 	if err != nil {
@@ -29,7 +29,7 @@ func (d *Data) SetIndexStatsTL(ctx context.Context, calculatedAt time.Time, stat
 
 //nolint:gocognit // TODO: optimize the complexity
 func (d *Data) getIndexStatsFullTL(ctx context.Context) (map[time.Time]*model.IndexStats, error) {
-	zerolog.Ctx(ctx).Debug().Msg("getting index stats")
+	apm.Log(ctx).Debug().Msg("getting index stats")
 	months := map[string]struct{}{}
 	currentYear := []byte(time.Now().UTC().Format("2006"))
 	statsTL := make(map[time.Time]*model.IndexStats)
@@ -64,7 +64,7 @@ func (d *Data) getIndexStatsFullTL(ctx context.Context) (map[time.Time]*model.In
 
 // GetIndexStatsTL returns index stats for the given time prefix in RFC3339 format
 func (d *Data) GetIndexStatsTL(ctx context.Context, prefix string) (map[time.Time]*model.IndexStats, error) {
-	zerolog.Ctx(ctx).Debug().Str("prefix", prefix).Msg("getting index stats timeline")
+	apm.Log(ctx).Debug().Str("prefix", prefix).Msg("getting index stats timeline")
 	if prefix == "" {
 		return d.getIndexStatsFullTL(ctx)
 	}
@@ -96,7 +96,7 @@ func (d *Data) GetIndexStatsTL(ctx context.Context, prefix string) (map[time.Tim
 //
 //nolint:errcheck // that's ok
 func (d *Data) GetIndexStats(ctx context.Context) *model.IndexStats {
-	zerolog.Ctx(ctx).Debug().Msg("getting index stats")
+	apm.Log(ctx).Debug().Msg("getting index stats")
 	stats := &model.IndexStats{
 		Servers:   model.IndexStatsServers{},
 		Rooms:     model.IndexStatsRooms{},
@@ -145,7 +145,7 @@ func (d *Data) GetIndexStats(ctx context.Context) *model.IndexStats {
 
 // SetIndexOnlineServers sets count of discovered online servers
 func (d *Data) SetIndexOnlineServers(ctx context.Context, servers int) error {
-	zerolog.Ctx(ctx).Info().Int("count", servers).Msg("updating online servers count")
+	apm.Log(ctx).Info().Int("count", servers).Msg("updating online servers count")
 	return d.db.Update(func(tx *bbolt.Tx) error {
 		value := []byte(strconv.Itoa(servers))
 		return tx.Bucket(indexBucket).Put([]byte("servers_online"), value)
@@ -154,7 +154,7 @@ func (d *Data) SetIndexOnlineServers(ctx context.Context, servers int) error {
 
 // SetIndexIndexableServers sets count of discovered indexable servers
 func (d *Data) SetIndexIndexableServers(ctx context.Context, servers int) error {
-	zerolog.Ctx(ctx).Info().Int("count", servers).Msg("updating indexable servers count")
+	apm.Log(ctx).Info().Int("count", servers).Msg("updating indexable servers count")
 	return d.db.Update(func(tx *bbolt.Tx) error {
 		value := []byte(strconv.Itoa(servers))
 		return tx.Bucket(indexBucket).Put([]byte("servers_indexable"), value)
@@ -163,7 +163,7 @@ func (d *Data) SetIndexIndexableServers(ctx context.Context, servers int) error 
 
 // SetIndexBlockedServers sets count of discovered online servers
 func (d *Data) SetIndexBlockedServers(ctx context.Context, servers int) error {
-	zerolog.Ctx(ctx).Info().Int("count", servers).Msg("updating blocked servers count")
+	apm.Log(ctx).Info().Int("count", servers).Msg("updating blocked servers count")
 	return d.db.Update(func(tx *bbolt.Tx) error {
 		value := []byte(strconv.Itoa(servers))
 		return tx.Bucket(indexBucket).Put([]byte("servers_blocked"), value)
@@ -172,7 +172,7 @@ func (d *Data) SetIndexBlockedServers(ctx context.Context, servers int) error {
 
 // SetIndexIndexedRooms sets count of indexed rooms
 func (d *Data) SetIndexIndexedRooms(ctx context.Context, rooms int) error {
-	zerolog.Ctx(ctx).Info().Int("count", rooms).Msg("updating indexed rooms count")
+	apm.Log(ctx).Info().Int("count", rooms).Msg("updating indexed rooms count")
 	return d.db.Update(func(tx *bbolt.Tx) error {
 		value := []byte(strconv.Itoa(rooms))
 		return tx.Bucket(indexBucket).Put([]byte("rooms"), value)
@@ -181,7 +181,7 @@ func (d *Data) SetIndexIndexedRooms(ctx context.Context, rooms int) error {
 
 // SetIndexParsedRooms sets count of parsed rooms
 func (d *Data) SetIndexParsedRooms(ctx context.Context, rooms int) error {
-	zerolog.Ctx(ctx).Info().Int("count", rooms).Msg("updating parsed rooms count")
+	apm.Log(ctx).Info().Int("count", rooms).Msg("updating parsed rooms count")
 	return d.db.Update(func(tx *bbolt.Tx) error {
 		value := []byte(strconv.Itoa(rooms))
 		return tx.Bucket(indexBucket).Put([]byte("rooms_parsed"), value)
@@ -190,7 +190,7 @@ func (d *Data) SetIndexParsedRooms(ctx context.Context, rooms int) error {
 
 // SetIndexBannedRooms sets count of banned rooms
 func (d *Data) SetIndexBannedRooms(ctx context.Context, rooms int) error {
-	zerolog.Ctx(ctx).Info().Int("count", rooms).Msg("updating banned rooms count")
+	apm.Log(ctx).Info().Int("count", rooms).Msg("updating banned rooms count")
 	return d.db.Update(func(tx *bbolt.Tx) error {
 		value := []byte(strconv.Itoa(rooms))
 		return tx.Bucket(indexBucket).Put([]byte("rooms_banned"), value)
@@ -199,7 +199,7 @@ func (d *Data) SetIndexBannedRooms(ctx context.Context, rooms int) error {
 
 // SetIndexReportedRooms sets count of banned rooms
 func (d *Data) SetIndexReportedRooms(ctx context.Context, rooms int) error {
-	zerolog.Ctx(ctx).Info().Int("count", rooms).Msg("updating reported rooms count")
+	apm.Log(ctx).Info().Int("count", rooms).Msg("updating reported rooms count")
 	return d.db.Update(func(tx *bbolt.Tx) error {
 		value := []byte(strconv.Itoa(rooms))
 		return tx.Bucket(indexBucket).Put([]byte("rooms_reported"), value)
@@ -208,7 +208,7 @@ func (d *Data) SetIndexReportedRooms(ctx context.Context, rooms int) error {
 
 // SetStartedAt sets start time of the new process
 func (d *Data) SetStartedAt(ctx context.Context, process string, startedAt time.Time) error {
-	zerolog.Ctx(ctx).Info().Str("process", process).Msg("updating started at time")
+	apm.Log(ctx).Info().Str("process", process).Msg("updating started at time")
 	return d.db.Update(func(tx *bbolt.Tx) error {
 		value := []byte(startedAt.Format(time.RFC3339))
 		return tx.Bucket(indexBucket).Put([]byte(process+"_started_at"), value)
@@ -217,7 +217,7 @@ func (d *Data) SetStartedAt(ctx context.Context, process string, startedAt time.
 
 // SetFinishedAt sets end time of the finished process
 func (d *Data) SetFinishedAt(ctx context.Context, process string, finishedAt time.Time) error {
-	zerolog.Ctx(ctx).Info().Str("process", process).Msg("updating finished at time")
+	apm.Log(ctx).Info().Str("process", process).Msg("updating finished at time")
 	return d.db.Update(func(tx *bbolt.Tx) error {
 		value := []byte(finishedAt.Format(time.RFC3339))
 		return tx.Bucket(indexBucket).Put([]byte(process+"_finished_at"), value)

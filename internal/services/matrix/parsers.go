@@ -14,8 +14,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/etkecc/go-apm"
 	"github.com/goccy/go-json"
-	"github.com/rs/zerolog"
 
 	"github.com/etkecc/mrs/internal/model"
 	"github.com/etkecc/mrs/internal/utils"
@@ -28,7 +28,7 @@ func (s *Server) getErrorResp(ctx context.Context, code, message string) []byte 
 		Message: message,
 	})
 	if err != nil {
-		zerolog.Ctx(ctx).Error().Err(err).Msg("cannot marshal canonical json")
+		apm.Log(ctx).Error().Err(err).Msg("cannot marshal canonical json")
 	}
 	return respb
 }
@@ -82,7 +82,7 @@ func (s *Server) parseClientWellKnown(ctx context.Context, serverName string) (s
 
 // parseServerWellKnown returns Federation API host:port
 func (s *Server) parseServerWellKnown(ctx context.Context, serverName string) (string, error) {
-	log := zerolog.Ctx(ctx).With().Str("server", serverName).Logger()
+	log := apm.Log(ctx).With().Str("server", serverName).Logger()
 
 	resp, err := utils.Get(ctx, "https://"+serverName+"/.well-known/matrix/server")
 	if err != nil {
@@ -152,7 +152,7 @@ func (s *Server) getURL(ctx context.Context, serverName string, discover bool) s
 		return cached
 	}
 
-	log := zerolog.Ctx(ctx).With().Str("server", serverName).Logger()
+	log := apm.Log(ctx).With().Str("server", serverName).Logger()
 	fromWellKnown, err := s.parseServerWellKnown(ctx, serverName)
 	if err == nil {
 		return s.dcrURL(ctx, serverName, "https://"+fromWellKnown, discover)
@@ -176,7 +176,7 @@ func (s *Server) getURL(ctx context.Context, serverName string, discover bool) s
 
 // lookupKeys requests /_matrix/key/v2/server by serverName
 func (s *Server) lookupKeys(ctx context.Context, serverName string, discover bool) (*matrixKeyResp, error) {
-	log := zerolog.Ctx(ctx).With().Str("server", serverName).Logger()
+	log := apm.Log(ctx).With().Str("server", serverName).Logger()
 
 	keysURL, err := url.Parse(s.getURL(ctx, serverName, discover) + "/_matrix/key/v2/server")
 	if err != nil {
@@ -213,7 +213,7 @@ func (s *Server) queryKeys(ctx context.Context, serverName string) map[string]ed
 	if ok {
 		return cached
 	}
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 	resp, err := s.lookupKeys(ctx, serverName, true)
 	if err != nil {
 		log.Warn().Err(err).Msg("keys query failed")

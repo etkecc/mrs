@@ -11,11 +11,10 @@ import (
 	"github.com/blevesearch/bleve/v2/analysis/tokenizer/letter"
 	"github.com/blevesearch/bleve/v2/analysis/tokenizer/unicode"
 	"github.com/blevesearch/bleve/v2/mapping"
+	"github.com/etkecc/go-apm"
 	"github.com/pemistahl/lingua-go"
-	"github.com/rs/zerolog"
 
 	"github.com/etkecc/mrs/internal/repository/search/multilang"
-	"github.com/etkecc/mrs/internal/utils"
 )
 
 const backupSuffix = ".bak"
@@ -55,7 +54,7 @@ var (
 )
 
 func getIndexMapping(ctx context.Context) mapping.IndexMapping {
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 	m := bleve.NewIndexMapping()
 	m.TypeField = "type"
 	m.DefaultType = "room"
@@ -118,7 +117,7 @@ func NewIndex(path string, detector lingua.LanguageDetector, defaultLang string)
 	i := &Index{
 		path: path,
 	}
-	err := i.load(utils.NewContext())
+	err := i.load(apm.NewContext())
 
 	return i, err
 }
@@ -151,7 +150,7 @@ func (i *Index) Swap(ctx context.Context) error {
 	defer func() {
 		// bleve's scorch has data race that may cause panic
 		if r := recover(); r != nil {
-			log := zerolog.Ctx(ctx)
+			log := apm.Log(ctx)
 			log.Error().Interface("recover", r).Msg("panic in index swap")
 		}
 	}()
@@ -160,7 +159,7 @@ func (i *Index) Swap(ctx context.Context) error {
 		return err
 	}
 
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 	if err := os.RemoveAll(i.path + backupSuffix); err != nil {
 		log.Warn().Err(err).Msg("cannot remove index backup")
 	}

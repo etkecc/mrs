@@ -4,8 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/rs/zerolog"
-
+	"github.com/etkecc/go-apm"
 	"github.com/etkecc/mrs/internal/utils"
 )
 
@@ -31,7 +30,7 @@ func (s *Server) GetClientVersion() []byte {
 
 // GetClientDirectory is /_matrix/client/v3/directory/room/{roomAlias}
 func (s *Server) GetClientDirectory(ctx context.Context, alias string) (statusCode int, respb []byte) {
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 	alias = utils.Unescape(alias)
 
 	log.Info().Str("alias", alias).Str("origin", "client").Msg("querying directory")
@@ -62,7 +61,7 @@ func (s *Server) GetClientDirectory(ctx context.Context, alias string) (statusCo
 
 // GetClientRoomSummary is /_matrix/client/unstable/is.nheko.summary/summary/{roomIdOrAlias}
 func (s *Server) GetClientRoomSummary(ctx context.Context, aliasOrID string) (statusCode int, resp []byte) {
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 	aliasOrID = utils.Unescape(aliasOrID)
 
 	log.Info().Str("aliasOrID", aliasOrID).Str("origin", "client").Msg("getting room summary")

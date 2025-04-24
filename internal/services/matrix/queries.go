@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/etkecc/go-apm"
 	"github.com/etkecc/go-kit"
 	"github.com/goccy/go-json"
-	"github.com/rs/zerolog"
 
 	"github.com/etkecc/mrs/internal/model"
 	"github.com/etkecc/mrs/internal/utils"
@@ -18,7 +18,7 @@ import (
 
 // QueryServerName finds server name on the /_matrix/key/v2/server page
 func (s *Server) QueryServerName(ctx context.Context, serverName string) (string, error) {
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 
 	cached, ok := s.namesCache.Get(serverName)
 	if ok {
@@ -38,7 +38,7 @@ func (s *Server) QueryServerName(ctx context.Context, serverName string) (string
 
 // QueryDirectory is /_matrix/federation/v1/query/directory?room_alias={roomAlias}
 func (s *Server) QueryDirectory(ctx context.Context, req *http.Request, alias string) (statusCode int, respb []byte) {
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 
 	origin, err := s.ValidateAuth(ctx, req)
 	if err != nil {

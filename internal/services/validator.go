@@ -6,8 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/rs/zerolog"
-
+	"github.com/etkecc/go-apm"
 	"github.com/etkecc/mrs/internal/model"
 )
 
@@ -75,7 +74,7 @@ func (v *Validator) IsOnline(ctx context.Context, server string) (string, bool) 
 
 // IsIndexable check if server is indexable
 func (v *Validator) IsIndexable(ctx context.Context, server string) bool {
-	log := zerolog.Ctx(ctx).With().Str("server", server).Logger()
+	log := apm.Log(ctx).With().Str("server", server).Logger()
 	if !v.Domain(server) {
 		log.Info().Str("reason", "domain").Msg("not indexable")
 		return false

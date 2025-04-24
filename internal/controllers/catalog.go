@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/etkecc/go-apm"
 	"github.com/labstack/echo/v4"
-	"github.com/rs/zerolog"
 
 	"github.com/etkecc/mrs/internal/model"
 	"github.com/etkecc/mrs/internal/utils"
@@ -24,7 +24,7 @@ func openRoom(plausible plausibleService) echo.HandlerFunc {
 				Message: "invalid alias",
 			})
 			if err != nil {
-				zerolog.Ctx(c.Request().Context()).Error().Err(err).Msg("cannot marshal canonical json")
+				apm.Log(c.Request().Context()).Error().Err(err).Msg("cannot marshal canonical json")
 			}
 			return c.JSONBlob(http.StatusBadRequest, respb)
 		}
@@ -63,7 +63,7 @@ func catalogRoom(dataSvc dataService) echo.HandlerFunc {
 				Message: err.Error(),
 			})
 			if jerr != nil {
-				zerolog.Ctx(c.Request().Context()).Error().Err(jerr).Msg("cannot marshal canonical json")
+				apm.Log(c.Request().Context()).Error().Err(jerr).Msg("cannot marshal canonical json")
 			}
 			return c.JSONBlob(http.StatusBadRequest, respb)
 		}
@@ -74,7 +74,7 @@ func catalogRoom(dataSvc dataService) echo.HandlerFunc {
 				Message: "room not found",
 			})
 			if err != nil {
-				zerolog.Ctx(c.Request().Context()).Error().Err(err).Msg("cannot marshal canonical json")
+				apm.Log(c.Request().Context()).Error().Err(err).Msg("cannot marshal canonical json")
 			}
 			return c.JSONBlob(http.StatusNotFound, respb)
 		}

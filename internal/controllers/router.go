@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/etkecc/go-apm"
 	echobasicauth "github.com/etkecc/go-echo-basic-auth"
 	_ "github.com/etkecc/mrs/docs" // required for swaggo
-	sentryecho "github.com/getsentry/sentry-go/echo"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	echoSwagger "github.com/swaggo/echo-swagger"
@@ -93,8 +93,7 @@ func ConfigureRouter(
 
 func configureRouter(e *echo.Echo, cacheSvc cacheService) {
 	e.Use(middleware.Recover())
-	e.Use(sentryecho.New(sentryecho.Options{}))
-	e.Use(SentryTransaction())
+	e.Use(apm.WithSentry())
 	e.Use(cacheSvc.Middleware())
 	e.Use(middleware.Secure())
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{MaxAge: 86400}))

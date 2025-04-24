@@ -7,9 +7,9 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/etkecc/go-apm"
 	"github.com/etkecc/mrs/internal/utils"
 	"github.com/goccy/go-json"
-	"github.com/rs/zerolog"
 )
 
 // Plausible - plausible analytics service
@@ -30,7 +30,7 @@ func (p *Plausible) Enabled() bool {
 }
 
 func (p *Plausible) sendEvent(ctx context.Context, incomingReq *http.Request, name, ip string, props map[string]any) {
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 	if !p.Enabled() {
 		return
 	}

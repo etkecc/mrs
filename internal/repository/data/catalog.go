@@ -4,13 +4,13 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/rs/zerolog"
+	"github.com/etkecc/go-apm"
 	"go.etcd.io/bbolt"
 )
 
 // SetServersRoomsCount sets the count of rooms for each server
 func (d *Data) SetServersRoomsCount(ctx context.Context, data map[string]int) error {
-	zerolog.Ctx(ctx).Info().Int("count", len(data)).Msg("updating servers rooms count")
+	apm.Log(ctx).Info().Int("count", len(data)).Msg("updating servers rooms count")
 	return d.db.Batch(func(tx *bbolt.Tx) error {
 		bucket := tx.Bucket(serversRoomsCountBucket)
 		for server, count := range data {
@@ -28,7 +28,7 @@ func (d *Data) SetServersRoomsCount(ctx context.Context, data map[string]int) er
 
 // GetServersRoomsCount returns the count of rooms for each server
 func (d *Data) GetServersRoomsCount(ctx context.Context) map[string]int {
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 	data := make(map[string]int)
 	d.db.View(func(tx *bbolt.Tx) error { //nolint:errcheck // we don't care about errors here
 		bucket := tx.Bucket(serversRoomsCountBucket)
@@ -49,7 +49,7 @@ func (d *Data) GetServersRoomsCount(ctx context.Context) map[string]int {
 //
 //nolint:gocognit // TODO
 func (d *Data) SaveServersRooms(ctx context.Context, data map[string][]string) error {
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 	return d.db.Update(func(tx *bbolt.Tx) error {
 		if err := tx.DeleteBucket(serversRoomsBucket); err != nil {
 			return err

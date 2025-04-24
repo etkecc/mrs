@@ -6,11 +6,12 @@ toolchain go1.24.1
 
 require (
 	github.com/VictoriaMetrics/metrics v1.35.2
-	github.com/archdx/zerolog-sentry v1.8.5
 	github.com/benjaminestes/robots/v2 v2.0.5
 	github.com/blevesearch/bleve/v2 v2.5.0
+	github.com/etkecc/go-apm v1.3.4
 	github.com/etkecc/go-echo-basic-auth v1.2.0
 	github.com/etkecc/go-fswatcher v1.0.1
+	github.com/etkecc/go-healthchecks/v2 v2.2.2
 	github.com/etkecc/go-kit v1.6.0
 	github.com/etkecc/go-msc1929 v1.2.0
 	github.com/fsnotify/fsnotify v1.9.0
@@ -58,6 +59,7 @@ require (
 	github.com/blevesearch/zapx/v15 v15.4.1 // indirect
 	github.com/blevesearch/zapx/v16 v16.2.3 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
+	github.com/getsentry/sentry-go/zerolog v0.32.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-openapi/jsonpointer v0.21.1 // indirect
 	github.com/go-openapi/jsonreference v0.21.0 // indirect
@@ -65,6 +67,7 @@ require (
 	github.com/go-openapi/swag v0.23.1 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v1.0.0 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/labstack/gommon v0.4.2 // indirect

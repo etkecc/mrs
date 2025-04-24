@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/etkecc/go-apm"
 	"github.com/labstack/echo/v4"
-	"github.com/rs/zerolog"
 
 	"github.com/etkecc/mrs/internal/model"
 )
@@ -84,7 +84,7 @@ func configureMatrixCSEndpoints(e *echo.Echo, matrixSvc matrixService, cacheSvc 
 // /_matrix/federation/v1/publicRooms
 func matrixRoomDirectory(matrixSvc matrixService) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		log := zerolog.Ctx(c.Request().Context())
+		log := apm.Log(c.Request().Context())
 		r := c.Request()
 		body, err := io.ReadAll(r.Body)
 		if err != nil {

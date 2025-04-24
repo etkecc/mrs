@@ -11,10 +11,12 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
-	"github.com/getsentry/sentry-go"
+	"github.com/etkecc/go-apm"
+	"github.com/etkecc/go-healthchecks/v2"
 	"github.com/labstack/echo/v4"
 	"github.com/mileusna/crontab"
 	"github.com/pemistahl/lingua-go"
@@ -26,7 +28,6 @@ import (
 	"github.com/etkecc/mrs/internal/repository/search"
 	"github.com/etkecc/mrs/internal/services"
 	"github.com/etkecc/mrs/internal/services/matrix"
-	"github.com/etkecc/mrs/internal/utils"
 )
 
 // AllLanguages to load all language models at once
@@ -39,6 +40,7 @@ var (
 	index      *search.Index
 	cron       *crontab.Crontab
 	log        *zerolog.Logger
+	hc         *healthchecks.Client
 	e          *echo.Echo
 )
 
@@ -48,9 +50,24 @@ func main() {
 	flag.BoolVar(&runGenKey, "genkey", false, "Generate matrix signing key")
 	flag.Parse()
 
-	utils.SetName("MRS")
-	utils.SetLogLevel("info")
-	log = zerolog.Ctx(utils.NewContext())
+	cfg, err := services.NewConfig(configPath)
+	if err != nil {
+		log.Fatal().Err(err).Msg("cannot read config")
+	}
+
+	apm.SetName("MRS")
+	apm.SetSentryDSN(cfg.Get().SentryDSN)
+	apm.SetLogLevel("info")
+	log = apm.Log()
+	if cfg.Get().Healthchecks.UUID != "" {
+		hc = healthchecks.New(
+			healthchecks.WithBaseURL(cfg.Get().Healthchecks.URL),
+			healthchecks.WithCheckUUID(cfg.Get().Healthchecks.UUID),
+		)
+		apm.SetHealthchecks(hc)
+		hc.Start(strings.NewReader("MRS is starting..."))
+		go hc.Auto(60 * time.Second)
+	}
 
 	if runGenKey {
 		if _, err := generateKey(); err != nil {
@@ -58,13 +75,6 @@ func main() {
 		}
 		return
 	}
-
-	cfg, err := services.NewConfig(configPath)
-	if err != nil {
-		log.Fatal().Err(err).Msg("cannot read config")
-	}
-	utils.SetSentryDSN(cfg.Get().SentryDSN)
-	log = zerolog.Ctx(utils.NewContext())
 
 	dataRepo, err = data.New(cfg.Get().Path.Data)
 	if err != nil {
@@ -161,7 +171,7 @@ func initShutdown(quit chan struct{}) {
 }
 
 func initCron(cfg *services.Config, dataSvc *services.DataFacade) {
-	ctx := utils.NewContext()
+	ctx := apm.NewContext()
 	cron = crontab.New()
 	if schedule := cfg.Get().Cron.Discovery; schedule != "" {
 		log.Info().Str("job", "discovery").Msg("cron job enabled")
@@ -183,12 +193,15 @@ func initCron(cfg *services.Config, dataSvc *services.DataFacade) {
 
 func shutdown() {
 	log.Info().Msg("shutting down...")
-	defer sentry.Flush(2 * time.Second)
+	defer apm.Flush()
 	cron.Shutdown()
 	if err := index.Close(); err != nil {
 		log.Error().Err(err).Msg("cannot close the index")
 	}
 	dataRepo.Close()
+	if hc != nil {
+		hc.ExitStatus(0)
+	}
 	// api was not started yet
 	if e == nil {
 		return

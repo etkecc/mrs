@@ -6,8 +6,8 @@ import (
 
 	"github.com/blevesearch/bleve/v2"
 	"github.com/blevesearch/bleve/v2/search/query"
+	"github.com/etkecc/go-apm"
 	"github.com/etkecc/go-kit"
-	"github.com/rs/zerolog"
 	"golang.org/x/exp/slices"
 
 	"github.com/etkecc/mrs/internal/model"
@@ -59,7 +59,7 @@ func NewSearch(cfg ConfigService, data searchDataRepository, repo SearchReposito
 // Search things
 // ref: https://blevesearch.com/docs/Query-String-Query/
 func (s *Search) Search(ctx context.Context, originServer, q, sortBy string, limit, offset int) ([]*model.Entry, int, error) {
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 	highlights := s.availableHighlights(originServer)
 	if limit == 0 {
 		limit = s.cfg.Get().Search.Defaults.Limit

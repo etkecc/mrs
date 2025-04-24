@@ -5,13 +5,12 @@ import (
 	"os"
 	"sync"
 
+	"github.com/etkecc/go-apm"
 	"github.com/etkecc/go-fswatcher"
 	"github.com/fsnotify/fsnotify"
-	"github.com/rs/zerolog"
 	"gopkg.in/yaml.v3"
 
 	"github.com/etkecc/mrs/internal/model"
-	"github.com/etkecc/mrs/internal/utils"
 )
 
 // Config service
@@ -28,7 +27,7 @@ type ConfigService interface {
 
 // NewConfig creates new config service and loads the config
 func NewConfig(path string) (*Config, error) {
-	ctx := utils.NewContext()
+	ctx := apm.NewContext()
 	c := &Config{
 		mu:   &sync.Mutex{},
 		path: path,
@@ -54,7 +53,7 @@ func (c *Config) Get() *model.Config {
 func (c *Config) Read(ctx context.Context) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 
 	log.Info().Msg("reading config")
 	configb, err := os.ReadFile(c.path)

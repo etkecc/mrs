@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/blevesearch/bleve/v2"
-	"github.com/rs/zerolog"
+	"github.com/etkecc/go-apm"
 
 	"github.com/etkecc/mrs/internal/model"
 )
@@ -55,7 +55,7 @@ func (i *Index) RoomsBatch(ctx context.Context, roomID string, data *model.Entry
 
 // IndexBatch performs indexing of the current batch
 func (i *Index) IndexBatch(ctx context.Context) error {
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 	size := i.batch.Size()
 	started := time.Now()
 	log.Info().Int("len", size).Msg("indexing batch...")

@@ -10,9 +10,10 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/etkecc/go-apm"
+
 	"github.com/etkecc/mrs/internal/utils"
 	"github.com/etkecc/mrs/internal/version"
-	"github.com/rs/zerolog"
 )
 
 var defaultThumbnailParams = url.Values{
@@ -24,7 +25,7 @@ var defaultThumbnailParams = url.Values{
 
 // GetMediaThumbnail is /_matrix/federation/v1/media/thumbnail/{mediaId}
 func (s *Server) GetMediaThumbnail(ctx context.Context, serverName, mediaID string, params url.Values) (content io.Reader, contentType string) {
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 
 	params = utils.ValuesOrDefault(params, defaultThumbnailParams)
 	if content, contentType := s.media.Get(ctx, serverName, mediaID, params); content != nil {
@@ -59,7 +60,7 @@ func (s *Server) GetMediaThumbnail(ctx context.Context, serverName, mediaID stri
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", version.UserAgent)
 
-	resp, err := utils.Do(req, 0)
+	resp, err := utils.Do(req)
 	if err != nil {
 		log.Warn().Err(err).Str("server", serverName).Str("mediaID", mediaID).Msg("cannot get media thumbnail")
 		return nil, ""
@@ -131,7 +132,7 @@ func (s *Server) readerBytes(reader io.Reader) (newReader io.Reader, contents []
 
 // getImageFromMultipart reads the image from the multipart response
 func (s *Server) getImageFromMultipart(ctx context.Context, resp *http.Response) (contentStream io.Reader, contentType string) {
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 	_, mediaParams, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
 	if err != nil {
 		log.Warn().Err(err).Msg("cannot parse content type")

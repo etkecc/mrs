@@ -11,14 +11,14 @@ import (
 
 	"github.com/goccy/go-json"
 	"github.com/matrix-org/gomatrixserverlib"
-	"github.com/rs/zerolog"
 
+	"github.com/etkecc/go-apm"
 	"github.com/etkecc/mrs/internal/utils"
 )
 
 // ValidateAuth validates matrix auth
 func (s *Server) ValidateAuth(ctx context.Context, r *http.Request) (serverName string, err error) {
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 
 	defer r.Body.Close()
 	if s.cfg.Get().Matrix.ServerName == devhost {
@@ -115,7 +115,7 @@ func (s *Server) Authorize(serverName, method, uri string, body any) ([]string, 
 }
 
 func (s *Server) parseAuth(ctx context.Context, authorization string) *matrixAuth {
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 	auth := &matrixAuth{}
 	paramsStr := strings.ReplaceAll(authorization, "X-Matrix ", "")
 	paramsSlice := strings.Split(paramsStr, ",")

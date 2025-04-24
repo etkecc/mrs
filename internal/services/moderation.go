@@ -9,9 +9,9 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/etkecc/go-apm"
 	"github.com/etkecc/go-kit"
 	"github.com/goccy/go-json"
-	"github.com/rs/zerolog"
 
 	"github.com/etkecc/mrs/internal/model"
 	"github.com/etkecc/mrs/internal/utils"
@@ -50,7 +50,7 @@ func NewModeration(cfg ConfigService, data DataRepository, media MediaService, i
 }
 
 func (m *Moderation) getReportText(ctx context.Context, roomID, reason string, room *model.MatrixRoom, server *model.MatrixServer) string {
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 	var roomtxt string
 	roomb, err := json.MarshalIndent(room, "", "    ")
 	if err == nil {
@@ -171,7 +171,7 @@ func (m *Moderation) Report(ctx context.Context, roomID, reason string, noMSC192
 		return nil
 	}
 
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 	room, err := m.data.GetRoom(ctx, roomID)
 	if err != nil {
 		return err

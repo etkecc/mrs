@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rs/zerolog"
+	"github.com/etkecc/go-apm"
 )
 
 // Batch struct
@@ -41,7 +41,7 @@ func (b *Batch[T]) Flush(ctx context.Context) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 
 	started := time.Now().UTC()
 	log.Info().Int("len", len(b.data)).Msg("storing data batch")

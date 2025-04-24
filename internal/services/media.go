@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/rs/zerolog"
+	"github.com/etkecc/go-apm"
 
 	"github.com/etkecc/mrs/internal/utils"
 )
@@ -70,7 +70,7 @@ func (m *Media) Get(ctx context.Context, serverName, mediaID string, params url.
 		return nil, ""
 	}
 
-	log := zerolog.Ctx(ctx).With().Str("server", serverName).Str("mediaID", mediaID).Str("file", mediaPath).Logger()
+	log := apm.Log(ctx).With().Str("server", serverName).Str("mediaID", mediaID).Str("file", mediaPath).Logger()
 	file, err := os.Open(mediaPath)
 	if err != nil {
 		log.Warn().Err(err).Msg("cannot open media file")
@@ -110,7 +110,7 @@ func (m *Media) Add(ctx context.Context, serverName, mediaID string, params url.
 		return
 	}
 
-	log := zerolog.Ctx(ctx).With().Str("server", serverName).Str("mediaID", mediaID).Str("file", mediaPath).Logger()
+	log := apm.Log(ctx).With().Str("server", serverName).Str("mediaID", mediaID).Str("file", mediaPath).Logger()
 	if err := os.MkdirAll(filepath.Dir(mediaPath), 0o755); err != nil {
 		log.Warn().Err(err).Msg("cannot create media directory")
 		return
@@ -124,7 +124,7 @@ func (m *Media) Add(ctx context.Context, serverName, mediaID string, params url.
 // Delete removes the media file from disk
 func (m *Media) Delete(ctx context.Context, serverName, mediaID string) {
 	media := m.cfg.Get().Path.Media
-	log := zerolog.Ctx(ctx).With().Str("server", serverName).Str("mediaID", mediaID).Logger()
+	log := apm.Log(ctx).With().Str("server", serverName).Str("mediaID", mediaID).Logger()
 	entries, err := os.ReadDir(media)
 	if err != nil {
 		log.Warn().Err(err).Msg("cannot read media directory")

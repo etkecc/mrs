@@ -4,9 +4,9 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/etkecc/go-apm"
 	"github.com/etkecc/go-kit/template"
 	"github.com/mattevans/postmark-go"
-	"github.com/rs/zerolog"
 
 	"github.com/etkecc/mrs/internal/model"
 	"github.com/etkecc/mrs/internal/utils"
@@ -43,7 +43,7 @@ func (e *Email) getClient() *postmark.EmailService {
 
 // SendReport sends report email
 func (e *Email) SendReport(ctx context.Context, room *model.MatrixRoom, server *model.MatrixServer, reason string, emails []string) error {
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 	if len(emails) == 0 {
 		log.Info().Str("reason", "no recipients").Msg("email sending canceled")
 		return nil

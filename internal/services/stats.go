@@ -11,11 +11,10 @@ import (
 	"time"
 
 	"github.com/goccy/go-json"
-	"github.com/rs/zerolog"
 
+	"github.com/etkecc/go-apm"
 	"github.com/etkecc/mrs/internal/metrics"
 	"github.com/etkecc/mrs/internal/model"
-	"github.com/etkecc/mrs/internal/utils"
 )
 
 type StatsRepository interface {
@@ -51,7 +50,7 @@ type Stats struct {
 // NewStats service
 func NewStats(cfg ConfigService, data StatsRepository, index, blocklist Lenable) *Stats {
 	stats := &Stats{cfg: cfg, data: data, index: index, block: blocklist}
-	stats.reload(utils.NewContext())
+	stats.reload(apm.NewContext())
 
 	return stats
 }
@@ -81,7 +80,7 @@ func (s *Stats) Get() *model.IndexStats {
 func (s *Stats) GetTL(ctx context.Context) map[time.Time]*model.IndexStats {
 	tl, err := s.data.GetIndexStatsTL(ctx, "")
 	if err != nil {
-		zerolog.Ctx(ctx).Error().Err(err).Msg("cannot get stats timeline")
+		apm.Log(ctx).Error().Err(err).Msg("cannot get stats timeline")
 	}
 	return tl
 }
@@ -89,7 +88,7 @@ func (s *Stats) GetTL(ctx context.Context) map[time.Time]*model.IndexStats {
 // SetStartedAt of the process
 func (s *Stats) SetStartedAt(ctx context.Context, process string, startedAt time.Time) {
 	if err := s.data.SetStartedAt(ctx, process, startedAt); err != nil {
-		zerolog.Ctx(ctx).Error().Err(err).Str("process", process).Msg("cannot set started_at")
+		apm.Log(ctx).Error().Err(err).Str("process", process).Msg("cannot set started_at")
 	}
 	s.stats = s.data.GetIndexStats(ctx)
 }
@@ -97,7 +96,7 @@ func (s *Stats) SetStartedAt(ctx context.Context, process string, startedAt time
 // SetFinishedAt of the process
 func (s *Stats) SetFinishedAt(ctx context.Context, process string, finishedAt time.Time) {
 	if err := s.data.SetFinishedAt(ctx, process, finishedAt); err != nil {
-		zerolog.Ctx(ctx).Error().Err(err).Str("process", process).Msg("cannot set finished_at")
+		apm.Log(ctx).Error().Err(err).Str("process", process).Msg("cannot set finished_at")
 	}
 	s.stats = s.data.GetIndexStats(ctx)
 }
@@ -115,7 +114,7 @@ func (s *Stats) CollectServers(ctx context.Context, reload bool) {
 		return false
 	})
 
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 	if err := s.data.SetIndexOnlineServers(ctx, online); err != nil {
 		log.Error().Err(err).Msg("cannot set online servers count")
 	}
@@ -135,7 +134,7 @@ func (s *Stats) CollectServers(ctx context.Context, reload bool) {
 
 // Collect all stats from repository
 func (s *Stats) Collect(ctx context.Context) {
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 
 	if s.collecting {
 		log.Info().Msg("stats collection already in progress, ignoring request")
@@ -184,7 +183,7 @@ func (s *Stats) sendWebhook(ctx context.Context) {
 	if s.cfg.Get().Webhooks.Stats == "" {
 		return
 	}
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 
 	var user string
 	parsedUIURL, err := url.Parse(s.cfg.Get().Public.UI)

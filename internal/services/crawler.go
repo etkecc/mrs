@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/etkecc/go-apm"
 	"github.com/etkecc/go-kit"
 	"github.com/etkecc/go-kit/workpool"
 	"github.com/etkecc/go-msc1929"
 	"github.com/pemistahl/lingua-go"
-	"github.com/rs/zerolog"
 
 	"github.com/etkecc/mrs/internal/model"
 	"github.com/etkecc/mrs/internal/utils"
@@ -102,7 +102,7 @@ func NewCrawler(cfg ConfigService, fedSvc FederationService, v ValidatorService,
 
 // DiscoverServers across federation and remove invalid ones
 func (m *Crawler) DiscoverServers(ctx context.Context, workers int, overrideList ...*kit.List[string, string]) {
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 	if m.discovering {
 		log.Info().Msg("servers discovery already in progress, ignoring request")
 		return
@@ -153,7 +153,7 @@ func (m *Crawler) AddServer(ctx context.Context, name string) int {
 
 // ParseRooms across all discovered servers
 func (m *Crawler) ParseRooms(ctx context.Context, workers int) {
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 	if m.parsing {
 		log.Info().Msg("room parsing already in progress, ignoring request")
 		return
@@ -198,7 +198,7 @@ func (m *Crawler) ParseRooms(ctx context.Context, workers int) {
 
 // EachRoom allows to work with each known room
 func (m *Crawler) EachRoom(ctx context.Context, handler func(roomID string, data *model.MatrixRoom) bool) {
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 	if m.eachrooming {
 		log.Info().Msg("iterating over each room is already in progress, ignoring request")
 		return
@@ -255,7 +255,7 @@ func (m *Crawler) GetRoom(ctx context.Context, roomIDorAlias string) (*model.Mat
 }
 
 func (m *Crawler) loadServers(ctx context.Context) *kit.List[string, string] {
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 	log.Info().Msg("loading servers")
 	servers := kit.NewList[string, string]()
 	servers.AddSlice(m.cfg.Get().Servers)
@@ -288,7 +288,7 @@ func (m *Crawler) discoverServer(ctx context.Context, name string) *model.Matrix
 	}
 
 	if err := m.data.AddServer(ctx, server); err != nil {
-		zerolog.Ctx(ctx).
+		apm.Log(ctx).
 			Error().Err(err).Msg("cannot store server")
 	}
 	return server
@@ -297,7 +297,7 @@ func (m *Crawler) discoverServer(ctx context.Context, name string) *model.Matrix
 // discoverServers parses servers information and returns lists of OFFLINE servers
 func (m *Crawler) discoverServers(ctx context.Context, servers *kit.List[string, string], workers int) (offline *kit.List[string, string]) {
 	wp := workpool.New(workers)
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 	online := kit.NewList[string, string]()
 	offline = kit.NewList[string, string]()
 	indexable := kit.NewList[string, string]() // just for stats
@@ -339,7 +339,7 @@ func (m *Crawler) afterRoomParsing(ctx context.Context) {
 	serversRoomsCount := map[string]int{}
 	// serversRooms := map[string][]string{} //nolint:gocritic // TODO: implement
 
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 	log.Info().Msg("after room parsing......")
 	started := time.Now().UTC()
 	counts := []roomCount{}
@@ -436,7 +436,7 @@ func (m *Crawler) getPublicRooms(ctx context.Context, name string) *kit.List[str
 	var added int
 	limit := "10000"
 	servers := kit.NewList[string, string]()
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 
 	for {
 		start := time.Now()

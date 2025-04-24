@@ -3,10 +3,8 @@ package multilang
 import (
 	"github.com/blevesearch/bleve/v2/analysis"
 	"github.com/blevesearch/bleve/v2/registry"
+	"github.com/etkecc/go-apm"
 	"github.com/pemistahl/lingua-go"
-	"github.com/rs/zerolog"
-
-	"github.com/etkecc/mrs/internal/utils"
 )
 
 const (
@@ -19,7 +17,7 @@ const (
 
 // Register multilang analyzer
 func Register(detector lingua.LanguageDetector, defaultLang string) {
-	log := zerolog.Ctx(utils.NewContext())
+	log := apm.Log()
 	defer func() {
 		if err := recover(); err != nil {
 			log.Error().Any("error", err).Msg("cannot register multilang analyzer")

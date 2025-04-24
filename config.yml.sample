@@ -1,5 +1,8 @@
 port: 8080
 sentry_dsn: '' # optional sentry dsn
+healthchecks: # optional healthchecks.io config
+  url: https://hc-ping.com/ # default healthchecks.io ping URL
+  uuid: # healthchecks.io UUID
 public: # public-facing information
   name: MRS # instance name
   ui: http://localhost # UI URL

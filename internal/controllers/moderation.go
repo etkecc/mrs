@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/etkecc/go-apm"
 	"github.com/labstack/echo/v4"
-	"github.com/rs/zerolog"
 )
 
 type moderationService interface {
@@ -24,7 +24,7 @@ type reportSubmission struct {
 
 func report(svc moderationService) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		log := zerolog.Ctx(c.Request().Context())
+		log := apm.Log(c.Request().Context())
 		var report reportSubmission
 		if err := c.Bind(&report); err != nil {
 			log.Error().Err(err).Msg("cannot bind report")

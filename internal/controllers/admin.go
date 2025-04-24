@@ -8,7 +8,6 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/etkecc/mrs/internal/model"
-	"github.com/etkecc/mrs/internal/utils"
 )
 
 type dataService interface {
@@ -47,7 +46,6 @@ func discover(data dataService, cfg configService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		ctx := c.Request().Context()
 		ctx = context.WithoutCancel(ctx)
-		ctx = utils.NewContext(ctx)
 		go data.DiscoverServers(ctx, cfg.Get().Workers.Discovery)
 		return c.NoContent(http.StatusCreated)
 	}
@@ -57,7 +55,6 @@ func parse(data dataService, cfg configService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		ctx := c.Request().Context()
 		ctx = context.WithoutCancel(ctx)
-		ctx = utils.NewContext(ctx)
 		go data.ParseRooms(ctx, cfg.Get().Workers.Parsing)
 		return c.NoContent(http.StatusCreated)
 	}
@@ -67,7 +64,6 @@ func reindex(data dataService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		ctx := c.Request().Context()
 		ctx = context.WithoutCancel(ctx)
-		ctx = utils.NewContext(ctx)
 		go data.Ingest(ctx)
 		return c.NoContent(http.StatusCreated)
 	}
@@ -77,7 +73,6 @@ func full(data dataService, cfg configService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		ctx := c.Request().Context()
 		ctx = context.WithoutCancel(ctx)
-		ctx = utils.NewContext(ctx)
 		go data.Full(ctx, cfg.Get().Workers.Discovery, cfg.Get().Workers.Parsing)
 		return c.NoContent(http.StatusCreated)
 	}

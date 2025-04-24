@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/etkecc/go-apm"
 	"github.com/etkecc/go-kit"
-	"github.com/rs/zerolog"
 
 	"github.com/etkecc/mrs/internal/model"
 )
@@ -66,7 +66,7 @@ func (df *DataFacade) AddServers(ctx context.Context, names []string, workers in
 
 // DiscoverServers matrix servers
 func (df *DataFacade) DiscoverServers(ctx context.Context, workers int) {
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 	log.Info().Msg("discovering matrix servers...")
 
 	start := time.Now().UTC()
@@ -78,7 +78,7 @@ func (df *DataFacade) DiscoverServers(ctx context.Context, workers int) {
 
 // ParseRooms from discovered servers
 func (df *DataFacade) ParseRooms(ctx context.Context, workers int) {
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 	log.Info().Msg("parsing matrix rooms...")
 	start := time.Now().UTC()
 	df.stats.SetStartedAt(ctx, "parsing", start)
@@ -89,7 +89,7 @@ func (df *DataFacade) ParseRooms(ctx context.Context, workers int) {
 
 // Ingest data into search index
 func (df *DataFacade) Ingest(ctx context.Context) {
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 	log.Info().Msg("creating fresh index...")
 	if err := df.index.EmptyIndex(ctx); err != nil {
 		log.Error().Err(err).Msg("cannot create empty index")
@@ -113,7 +113,7 @@ func (df *DataFacade) Ingest(ctx context.Context) {
 
 // Full data pipeline (discovery, parsing, indexing)
 func (df *DataFacade) Full(ctx context.Context, discoveryWorkers, parsingWorkers int) {
-	log := zerolog.Ctx(ctx)
+	log := apm.Log(ctx)
 	df.DiscoverServers(ctx, discoveryWorkers)
 	df.ParseRooms(ctx, parsingWorkers)
 	df.Ingest(ctx)
