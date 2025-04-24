@@ -30,7 +30,10 @@ type MediaService interface {
 	Delete(ctx context.Context, serverName, mediaID string)
 }
 
-var _ MediaService = (*Media)(nil)
+var (
+	invalidPathChars              = []string{"..", "/", "\\"}
+	_                MediaService = (*Media)(nil)
+)
 
 func NewMedia(cfg ConfigService) (*Media, error) {
 	m := &Media{
@@ -144,7 +147,7 @@ func (m *Media) Delete(ctx context.Context, serverName, mediaID string) {
 // getPath returns the path to the media file on disk
 func (m *Media) getPath(serverName, mediaID string, params url.Values) string {
 	mediaPath := m.cfg.Get().Path.Media
-	if mediaPath == "" || serverName == "" || mediaID == "" {
+	if mediaPath == "" || serverName == "" || mediaID == "" || !m.validatePathPart(serverName) || !m.validatePathPart(mediaID) {
 		return ""
 	}
 	var filename strings.Builder
@@ -156,4 +159,14 @@ func (m *Media) getPath(serverName, mediaID string, params url.Values) string {
 		filename.WriteString(utils.HashURLValues(params))
 	}
 	return filepath.Join(mediaPath, filename.String())
+}
+
+// validatePath checks if the path does not contain any dangerous characters
+func (m *Media) validatePathPart(part string) bool {
+	for _, invalid := range invalidPathChars {
+		if strings.Contains(part, invalid) {
+			return false
+		}
+	}
+	return true
 }
