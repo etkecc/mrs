@@ -46,30 +46,23 @@ func catalogServers(dataSvc dataService) echo.HandlerFunc {
 	}
 }
 
-// catalogRoom returns the room data for the given room ID
-// EXPERIMENT! This endpoint returns the room data for the given room ID,
+// catalogRoom returns the room data for the given room ID or alias.
+// EXPERIMENT! This endpoint returns the room data for the given room ID or alias.
 // similar to the room preview endpoint from Matrix CS API, but using all MRS' room properties (like language, etc)
 func catalogRoom(dataSvc dataService) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		roomID := utils.Unescape(c.Param("room_id"))
-		if !utils.IsValidID(roomID) {
-			respb, err := utils.JSON(model.MatrixError{
-				Code:    "M_INVALID_PARAM",
-				Message: "invalid room ID",
-			})
-			if err != nil {
-				zerolog.Ctx(c.Request().Context()).Error().Err(err).Msg("cannot marshal canonical json")
-			}
-			return c.JSONBlob(http.StatusBadRequest, respb)
+		roomIDorAlias := utils.Unescape(c.Param("room_id_or_alias"))
+		if utils.IsValidAlias("#" + roomIDorAlias) {
+			roomIDorAlias = "#" + roomIDorAlias
 		}
 
-		room, err := dataSvc.GetRoom(c.Request().Context(), roomID)
+		room, err := dataSvc.GetRoom(c.Request().Context(), roomIDorAlias)
 		if err != nil {
 			respb, jerr := utils.JSON(model.MatrixError{
 				Code:    "M_INTERNAL_SERVER_ERROR",
 				Message: err.Error(),
 			})
-			if err != nil {
+			if jerr != nil {
 				zerolog.Ctx(c.Request().Context()).Error().Err(jerr).Msg("cannot marshal canonical json")
 			}
 			return c.JSONBlob(http.StatusBadRequest, respb)

@@ -6,7 +6,6 @@ import (
 
 	"github.com/rs/zerolog"
 
-	"github.com/etkecc/mrs/internal/model"
 	"github.com/etkecc/mrs/internal/utils"
 )
 
@@ -42,14 +41,10 @@ func (s *Server) GetClientDirectory(ctx context.Context, alias string) (statusCo
 		return http.StatusBadRequest, s.getErrorResp(span.Context(), "M_INVALID_PARAM", "Room alias invalid")
 	}
 
-	var room *model.MatrixRoom
-	s.data.EachRoom(span.Context(), func(_ string, data *model.MatrixRoom) bool {
-		if data.Alias == alias {
-			room = data
-			return true
-		}
-		return false
-	})
+	room, err := s.getRoom(span.Context(), alias)
+	if err != nil {
+		log.Error().Err(err).Msg("cannot get room from data store")
+	}
 	if room == nil {
 		return http.StatusNotFound, s.getErrorResp(span.Context(), "M_NOT_FOUND", "room not found")
 	}
@@ -58,7 +53,7 @@ func (s *Server) GetClientDirectory(ctx context.Context, alias string) (statusCo
 		RoomID:  room.ID,
 		Servers: room.Servers(s.cfg.Get().Matrix.ServerName),
 	}
-	respb, err := utils.JSON(resp)
+	respb, err = utils.JSON(resp)
 	if err != nil {
 		log.Error().Err(err).Msg("cannot marshal query directory resp")
 		return http.StatusInternalServerError, nil
@@ -79,14 +74,10 @@ func (s *Server) GetClientRoomSummary(ctx context.Context, aliasOrID string) (st
 		return http.StatusBadRequest, s.getErrorResp(span.Context(), "M_INVALID_PARAM", "Room alias or id is invalid")
 	}
 
-	var room *model.MatrixRoom
-	s.data.EachRoom(span.Context(), func(_ string, data *model.MatrixRoom) bool {
-		if data.Alias == aliasOrID || data.ID == aliasOrID {
-			room = data
-			return true
-		}
-		return false
-	})
+	room, err := s.getRoom(span.Context(), aliasOrID)
+	if err != nil {
+		log.Error().Err(err).Msg("cannot get room from data store")
+	}
 	if room == nil {
 		return http.StatusNotFound, s.getErrorResp(span.Context(), "M_NOT_FOUND", "room not found")
 	}

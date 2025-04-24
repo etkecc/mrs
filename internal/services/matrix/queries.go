@@ -54,15 +54,10 @@ func (s *Server) QueryDirectory(ctx context.Context, req *http.Request, alias st
 	if alias == "" {
 		return http.StatusNotFound, s.getErrorResp(span.Context(), "M_NOT_FOUND", "room not found")
 	}
-
-	var room *model.MatrixRoom
-	s.data.EachRoom(span.Context(), func(_ string, data *model.MatrixRoom) bool {
-		if data.Alias == alias {
-			room = data
-			return true
-		}
-		return false
-	})
+	room, err := s.getRoom(span.Context(), alias)
+	if err != nil {
+		log.Error().Err(err).Msg("cannot get room from data store")
+	}
 	if room == nil {
 		return http.StatusNotFound, s.getErrorResp(span.Context(), "M_NOT_FOUND", "room not found")
 	}
@@ -226,4 +221,16 @@ func (s *Server) trackSearch(ctx context.Context, req *http.Request, origin, ip,
 		req.Header.Set("User-Agent", "Synapse")
 	}
 	s.plausible.TrackSearch(ctx, req, ip, query)
+}
+
+// getRoom is a helper function to get a room by ID or alias
+func (s *Server) getRoom(ctx context.Context, roomIDorAlias string) (*model.MatrixRoom, error) {
+	roomID := roomIDorAlias
+	if utils.IsValidAlias(roomIDorAlias) {
+		if mapped := s.data.GetRoomMapping(ctx, roomIDorAlias); mapped != "" {
+			roomID = mapped
+		}
+	}
+
+	return s.data.GetRoom(ctx, roomID)
 }

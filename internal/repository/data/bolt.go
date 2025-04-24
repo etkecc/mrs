@@ -18,6 +18,9 @@ var (
 	// rooms bucket
 	// contains information about rooms
 	roomsBucket = []byte(`rooms`)
+	// rooms_mappings bucket
+	// contains mappings room_id <-> room_alias
+	roomsMappingsBucket = []byte(`rooms_mappings`)
 	// biggest rooms bucket
 	// contains the same content as rooms bucket, but sorted by the number of users
 	biggestRoomsBucket = []byte(`rooms_biggest`)
@@ -34,7 +37,7 @@ var (
 	// contains index stats by date
 	indexTLBucket = []byte(`index_timeline`)
 
-	buckets = [][]byte{serversBucket, serversInfoBucket, serversRoomsBucket, serversRoomsCountBucket, roomsBucket, biggestRoomsBucket, roomsBanlistBucket, roomsReportsBucket, indexBucket, indexTLBucket}
+	buckets = [][]byte{serversBucket, serversInfoBucket, serversRoomsBucket, serversRoomsCountBucket, roomsBucket, biggestRoomsBucket, roomsBanlistBucket, roomsReportsBucket, roomsMappingsBucket, indexBucket, indexTLBucket}
 )
 
 func initBuckets(db *bbolt.DB) error {

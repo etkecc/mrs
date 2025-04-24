@@ -107,8 +107,10 @@ func (d *Data) RemoveRooms(ctx context.Context, keys []string) {
 
 	d.db.Update(func(tx *bbolt.Tx) error { //nolint:errcheck // that's ok
 		bucket := tx.Bucket(roomsBucket)
+		mbucket := tx.Bucket(roomsMappingsBucket)
 		for _, k := range keys {
-			bucket.Delete([]byte(k)) //nolint:errcheck // that's ok
+			bucket.Delete([]byte(k))  //nolint:errcheck // that's ok
+			mbucket.Delete([]byte(k)) //nolint:errcheck // that's ok
 		}
 		return nil
 	})
@@ -245,5 +247,52 @@ func (d *Data) UnreportRoom(ctx context.Context, roomID string) error {
 
 	return d.db.Batch(func(tx *bbolt.Tx) error {
 		return tx.Bucket(roomsReportsBucket).Delete([]byte(roomID))
+	})
+}
+
+func (d *Data) AddRoomMapping(ctx context.Context, roomID, alias string) error {
+	span := utils.StartSpan(ctx, "data.AddRoomMapping")
+	defer span.Finish()
+	if roomID == "" || alias == "" {
+		return nil
+	}
+
+	return d.db.Batch(func(tx *bbolt.Tx) error {
+		if err := tx.Bucket(roomsMappingsBucket).Put([]byte(roomID), []byte(alias)); err != nil {
+			return err
+		}
+		// if alias already exists, do not overwrite. Multiple room IDs can point to the same alias
+		if v := tx.Bucket(roomsMappingsBucket).Get([]byte(alias)); v != nil {
+			return nil
+		}
+		return tx.Bucket(roomsMappingsBucket).Put([]byte(alias), []byte(roomID))
+	})
+}
+
+// GetRoomMapping returns room ID or alias for a given room ID or alias
+func (d *Data) GetRoomMapping(ctx context.Context, idOrAlias string) string {
+	span := utils.StartSpan(ctx, "data.GetRoomMapping")
+	defer span.Finish()
+
+	var mapping string
+	d.db.View(func(tx *bbolt.Tx) error { //nolint:errcheck // that's ok
+		v := tx.Bucket(roomsMappingsBucket).Get([]byte(idOrAlias))
+		if v != nil {
+			mapping = string(v)
+		}
+		return nil
+	})
+	return mapping
+}
+
+// RemoveRoomMapping removes room ID and alias from the mapping
+func (d *Data) RemoveRoomMapping(ctx context.Context, id, alias string) {
+	span := utils.StartSpan(ctx, "data.RemoveRoomMapping")
+	defer span.Finish()
+
+	d.db.Update(func(tx *bbolt.Tx) error { //nolint:errcheck // that's ok
+		tx.Bucket(roomsMappingsBucket).Delete([]byte(id))    //nolint:errcheck // that's ok
+		tx.Bucket(roomsMappingsBucket).Delete([]byte(alias)) //nolint:errcheck // that's ok
+		return nil
 	})
 }

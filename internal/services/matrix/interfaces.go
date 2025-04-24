@@ -23,8 +23,8 @@ type mediaService interface {
 }
 
 type dataRepository interface {
-	EachRoom(ctx context.Context, handler func(roomID string, data *model.MatrixRoom) bool)
 	GetRoom(ctx context.Context, roomID string) (*model.MatrixRoom, error)
+	GetRoomMapping(ctx context.Context, roomIDorAlias string) string
 }
 
 type plausibleService interface {

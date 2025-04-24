@@ -54,6 +54,9 @@ type DataRepository interface {
 	AddRoomBatch(context.Context, *model.MatrixRoom)
 	FlushRoomBatch(context.Context)
 	GetRoom(context.Context, string) (*model.MatrixRoom, error)
+	AddRoomMapping(context.Context, string, string) error
+	GetRoomMapping(context.Context, string) string
+	RemoveRoomMapping(context.Context, string, string)
 	EachRoom(context.Context, func(string, *model.MatrixRoom) bool)
 	SetBiggestRooms(context.Context, []string) error
 	SetServersRoomsCount(ctx context.Context, data map[string]int) error
@@ -240,7 +243,14 @@ func (m *Crawler) GetServersRoomsCount(ctx context.Context) map[string]int {
 	return m.data.GetServersRoomsCount(ctx)
 }
 
-func (m *Crawler) GetRoom(ctx context.Context, roomID string) (*model.MatrixRoom, error) {
+func (m *Crawler) GetRoom(ctx context.Context, roomIDorAlias string) (*model.MatrixRoom, error) {
+	roomID := roomIDorAlias
+	if utils.IsValidAlias(roomIDorAlias) {
+		if mapped := m.data.GetRoomMapping(ctx, roomIDorAlias); mapped != "" {
+			roomID = mapped
+		}
+	}
+
 	room, err := m.data.GetRoom(ctx, roomID)
 	if err != nil {
 		return nil, err
@@ -473,6 +483,7 @@ func (m *Crawler) getPublicRooms(ctx context.Context, name string) *utils.List[s
 			servers.AddSlice(room.Servers(m.cfg.Get().Matrix.ServerName))
 
 			m.data.AddRoomBatch(span.Context(), room)
+			m.data.AddRoomMapping(span.Context(), room.ID, room.Alias) //nolint:errcheck // ignore error
 		}
 		log.
 			Info().
