@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/etkecc/go-kit"
 	"github.com/etkecc/go-kit/workpool"
 	"github.com/etkecc/go-msc1929"
 	"github.com/pemistahl/lingua-go"
@@ -100,7 +101,7 @@ func NewCrawler(cfg ConfigService, fedSvc FederationService, v ValidatorService,
 }
 
 // DiscoverServers across federation and remove invalid ones
-func (m *Crawler) DiscoverServers(ctx context.Context, workers int, overrideList ...*utils.List[string, string]) {
+func (m *Crawler) DiscoverServers(ctx context.Context, workers int, overrideList ...*kit.List[string, string]) {
 	log := zerolog.Ctx(ctx)
 	if m.discovering {
 		log.Info().Msg("servers discovery already in progress, ignoring request")
@@ -109,7 +110,7 @@ func (m *Crawler) DiscoverServers(ctx context.Context, workers int, overrideList
 	m.discovering = true
 	defer func() { m.discovering = false }()
 
-	var servers *utils.List[string, string]
+	var servers *kit.List[string, string]
 	if len(overrideList) > 0 {
 		servers = overrideList[0]
 	} else {
@@ -124,7 +125,7 @@ func (m *Crawler) DiscoverServers(ctx context.Context, workers int, overrideList
 
 // AddServers by name in bulk, intended for HTTP API
 func (m *Crawler) AddServers(ctx context.Context, names []string, workers int) {
-	servers := utils.NewListFromSlice(names)
+	servers := kit.NewListFrom(names)
 	// exclude already known servers first
 	for _, server := range servers.Slice() {
 		if m.data.HasServer(ctx, server) {
@@ -161,7 +162,7 @@ func (m *Crawler) ParseRooms(ctx context.Context, workers int) {
 	m.parsing = true
 	defer func() { m.parsing = false }()
 
-	servers := utils.NewList[string, string]()
+	servers := kit.NewList[string, string]()
 	servers.AddSlice(m.IndexableServers(ctx))
 	servers.RemoveSlice(m.block.Slice())
 	slice := servers.Slice()
@@ -171,7 +172,7 @@ func (m *Crawler) ParseRooms(ctx context.Context, workers int) {
 		workers = total
 	}
 	wp := workpool.New(workers)
-	discoveredServers := utils.NewList[string, string]()
+	discoveredServers := kit.NewList[string, string]()
 	log.Info().Int("servers", total).Int("workers", workers).Msg("parsing rooms")
 	for _, srvName := range slice {
 		name := srvName
@@ -219,14 +220,14 @@ func (m *Crawler) EachRoom(ctx context.Context, handler func(roomID string, data
 
 // OnlineServers returns all known online servers
 func (m *Crawler) OnlineServers(ctx context.Context) []string {
-	return utils.MapKeys(m.data.FilterServers(ctx, func(server *model.MatrixServer) bool {
+	return kit.MapKeys(m.data.FilterServers(ctx, func(server *model.MatrixServer) bool {
 		return server.Online
 	}))
 }
 
 // IndexableServers returns all known indexable servers
 func (m *Crawler) IndexableServers(ctx context.Context) []string {
-	return utils.MapKeys(m.data.FilterServers(ctx, func(server *model.MatrixServer) bool {
+	return kit.MapKeys(m.data.FilterServers(ctx, func(server *model.MatrixServer) bool {
 		return server.Online && server.Indexable
 	}))
 }
@@ -253,13 +254,13 @@ func (m *Crawler) GetRoom(ctx context.Context, roomIDorAlias string) (*model.Mat
 	return room, nil
 }
 
-func (m *Crawler) loadServers(ctx context.Context) *utils.List[string, string] {
+func (m *Crawler) loadServers(ctx context.Context) *kit.List[string, string] {
 	log := zerolog.Ctx(ctx)
 	log.Info().Msg("loading servers")
-	servers := utils.NewList[string, string]()
+	servers := kit.NewList[string, string]()
 	servers.AddSlice(m.cfg.Get().Servers)
 	log.Info().Int("servers", servers.Len()).Msg("loaded servers from config")
-	servers.AddSlice(utils.MapKeys(m.data.FilterServers(ctx, func(_ *model.MatrixServer) bool {
+	servers.AddSlice(kit.MapKeys(m.data.FilterServers(ctx, func(_ *model.MatrixServer) bool {
 		return true
 	})))
 	log.Info().Int("servers", servers.Len()).Msg("loaded servers from config and db")
@@ -294,12 +295,12 @@ func (m *Crawler) discoverServer(ctx context.Context, name string) *model.Matrix
 }
 
 // discoverServers parses servers information and returns lists of OFFLINE servers
-func (m *Crawler) discoverServers(ctx context.Context, servers *utils.List[string, string], workers int) (offline *utils.List[string, string]) {
+func (m *Crawler) discoverServers(ctx context.Context, servers *kit.List[string, string], workers int) (offline *kit.List[string, string]) {
 	wp := workpool.New(workers)
 	log := zerolog.Ctx(ctx)
-	online := utils.NewList[string, string]()
-	offline = utils.NewList[string, string]()
-	indexable := utils.NewList[string, string]() // just for stats
+	online := kit.NewList[string, string]()
+	offline = kit.NewList[string, string]()
+	indexable := kit.NewList[string, string]() // just for stats
 	log.Info().Int("servers", servers.Len()).Int("workers", workers).Msg("validating servers")
 
 	for _, server := range servers.Slice() {
@@ -383,7 +384,7 @@ func (m *Crawler) afterRoomParsing(ctx context.Context) {
 
 	if len(toRemove) > 0 {
 		log.Info().Int("rooms", len(toRemove)).Msg("removing rooms last updated more than a week ago...")
-		toRemoveSlice := utils.MapKeys(toRemove)
+		toRemoveSlice := kit.MapKeys(toRemove)
 		for _, mxcURL := range toRemove {
 			if mxcURL == "" {
 				continue
@@ -410,19 +411,19 @@ func (m *Crawler) getServerContacts(ctx context.Context, name string) model.Matr
 	}
 
 	if emails := resp.ModeratorEmails(); len(emails) > 0 {
-		contacts.Emails = utils.Uniq(emails)
+		contacts.Emails = kit.Uniq(emails)
 	} else if emails := resp.AdminEmails(); len(emails) > 0 {
-		contacts.Emails = utils.Uniq(emails)
+		contacts.Emails = kit.Uniq(emails)
 	} else {
-		contacts.Emails = utils.Uniq(resp.AllEmails())
+		contacts.Emails = kit.Uniq(resp.AllEmails())
 	}
 
 	if mxids := resp.ModeratorMatrixIDs(); len(mxids) > 0 {
-		contacts.MXIDs = utils.Uniq(mxids)
+		contacts.MXIDs = kit.Uniq(mxids)
 	} else if mxids := resp.AdminMatrixIDs(); len(mxids) > 0 {
-		contacts.MXIDs = utils.Uniq(mxids)
+		contacts.MXIDs = kit.Uniq(mxids)
 	} else {
-		contacts.MXIDs = utils.Uniq(resp.AllMatrixIDs())
+		contacts.MXIDs = kit.Uniq(resp.AllMatrixIDs())
 	}
 	contacts.URL = resp.SupportPage
 	return contacts
@@ -430,11 +431,11 @@ func (m *Crawler) getServerContacts(ctx context.Context, name string) model.Matr
 
 // getPublicRooms reads public rooms of the given server from the matrix client-server api
 // and sends them into channel
-func (m *Crawler) getPublicRooms(ctx context.Context, name string) *utils.List[string, string] {
+func (m *Crawler) getPublicRooms(ctx context.Context, name string) *kit.List[string, string] {
 	var since string
 	var added int
 	limit := "10000"
-	servers := utils.NewList[string, string]()
+	servers := kit.NewList[string, string]()
 	log := zerolog.Ctx(ctx)
 
 	for {

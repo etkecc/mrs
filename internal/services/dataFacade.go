@@ -4,14 +4,14 @@ import (
 	"context"
 	"time"
 
+	"github.com/etkecc/go-kit"
 	"github.com/rs/zerolog"
 
 	"github.com/etkecc/mrs/internal/model"
-	"github.com/etkecc/mrs/internal/utils"
 )
 
 type dataCrawlerService interface {
-	DiscoverServers(context.Context, int, ...*utils.List[string, string])
+	DiscoverServers(context.Context, int, ...*kit.List[string, string])
 	AddServer(context.Context, string) int
 	AddServers(context.Context, []string, int)
 	ParseRooms(context.Context, int)

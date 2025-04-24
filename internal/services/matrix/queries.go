@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/etkecc/go-kit"
 	"github.com/goccy/go-json"
 	"github.com/rs/zerolog"
 
@@ -121,7 +122,7 @@ func (s *Server) QueryPublicRooms(ctx context.Context, serverName, limit, since 
 		if merr == nil {
 			bodyhint := ""
 			if len(body) > 0 {
-				bodyhint = fmt.Sprintf("; body: %s", utils.Truncate(string(body), 400))
+				bodyhint = fmt.Sprintf("; body: %s", kit.Truncate(string(body), 400))
 			}
 			return nil, fmt.Errorf("cannot get public rooms: %s%s", resp.Status, bodyhint)
 		}

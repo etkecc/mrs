@@ -3,14 +3,14 @@ package data
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"strconv"
 	"time"
 
+	"github.com/goccy/go-json"
+	"github.com/rs/zerolog"
 	"go.etcd.io/bbolt"
 
 	"github.com/etkecc/mrs/internal/model"
-	"github.com/rs/zerolog"
 )
 
 // SetIndexStatsTL sets index stats for the given time

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/etkecc/go-kit"
 	"github.com/pemistahl/lingua-go"
 
 	"github.com/etkecc/mrs/internal/utils"
@@ -149,7 +150,7 @@ func (r *MatrixRoom) Servers(ownServerName string) []string {
 		servers = append(servers, server)
 	}
 
-	return utils.Uniq(servers)
+	return kit.Uniq(servers)
 }
 
 // parseServer from room ID

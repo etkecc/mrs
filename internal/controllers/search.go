@@ -6,6 +6,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
+	"github.com/etkecc/go-kit"
 	"github.com/etkecc/mrs/internal/metrics"
 	"github.com/etkecc/mrs/internal/model"
 	"github.com/etkecc/mrs/internal/utils"
@@ -31,8 +32,8 @@ func search(svc searchService, plausible plausibleService, cfg configService, pa
 			plausible.TrackSearch(ctx, req, ip, query)
 		}(c.Request(), c.RealIP(), query)
 
-		limit := utils.StringToInt(paramfunc("l"))
-		offset := utils.StringToInt(paramfunc("o"))
+		limit := kit.StringToInt(paramfunc("l"))
+		offset := kit.StringToInt(paramfunc("o"))
 		sortBy := paramfunc("s")
 		entries, _, err := svc.Search(c.Request().Context(), origin, query, sortBy, limit, offset)
 		if err != nil {

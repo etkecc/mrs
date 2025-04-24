@@ -1,25 +1,26 @@
-package utils
+package kit
 
 import (
+	"cmp"
 	"sync"
 )
 
-// List is unique list
-type List[T comparable, V any] struct {
+// List is unique list, V is used only for AddMapKeys
+type List[T cmp.Ordered, V any] struct {
 	mu   *sync.Mutex
 	data map[T]struct{}
 }
 
 // NewList creates new list
-func NewList[T comparable, V any]() *List[T, V] {
+func NewList[T cmp.Ordered, V any]() *List[T, V] {
 	return &List[T, V]{
 		mu:   &sync.Mutex{},
 		data: make(map[T]struct{}),
 	}
 }
 
-// NewListFromSlice creates a new list and popupates it from slice
-func NewListFromSlice[T comparable](slice []T) *List[T, T] {
+// NewListFrom creates a new list and popupates it from slice
+func NewListFrom[T cmp.Ordered](slice []T) *List[T, T] {
 	list := NewList[T, T]()
 	list.AddSlice(slice)
 	return list

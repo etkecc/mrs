@@ -187,7 +187,9 @@ github.com/etkecc/go-echo-basic-auth
 github.com/etkecc/go-fswatcher
 # github.com/etkecc/go-kit v1.6.0
 ## explicit; go 1.22
+github.com/etkecc/go-kit
 github.com/etkecc/go-kit/format
+github.com/etkecc/go-kit/template
 github.com/etkecc/go-kit/workpool
 # github.com/etkecc/go-msc1929 v1.2.0
 ## explicit; go 1.18

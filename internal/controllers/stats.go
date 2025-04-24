@@ -8,7 +8,6 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/etkecc/mrs/internal/model"
-	"github.com/etkecc/mrs/internal/utils"
 )
 
 func stats(stats statsService) echo.HandlerFunc {
@@ -21,7 +20,10 @@ func stats(stats statsService) echo.HandlerFunc {
 		resp["details"] = statsDetails(info)
 
 		tl := stats.GetTL(c.Request().Context())
-		keys := utils.MapKeys(tl)
+		keys := make([]time.Time, 0, len(tl))
+		for k := range tl {
+			keys = append(keys, k)
+		}
 		sort.Slice(keys, func(i, j int) bool {
 			return keys[i].Before(keys[j])
 		})

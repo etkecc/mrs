@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/etkecc/go-kit/template"
 	"github.com/mattevans/postmark-go"
 	"github.com/rs/zerolog"
 
@@ -61,11 +62,11 @@ func (e *Email) SendReport(ctx context.Context, room *model.MatrixRoom, server *
 	}
 
 	vars := emailVars{Public: e.cfg.Get().Public, Room: room, Server: server, Reason: reason, RoomAliasOrID: aliasOrID}
-	subject, err := utils.Template(e.cfg.Get().Email.Templates.Report.Subject, vars)
+	subject, err := template.Execute(e.cfg.Get().Email.Templates.Report.Subject, vars)
 	if err != nil {
 		return err
 	}
-	body, err := utils.Template(e.cfg.Get().Email.Templates.Report.Body, vars)
+	body, err := template.Execute(e.cfg.Get().Email.Templates.Report.Body, vars)
 	if err != nil {
 		return err
 	}

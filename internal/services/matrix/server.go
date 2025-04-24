@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/etkecc/go-kit"
 	"github.com/rs/zerolog"
 
 	"github.com/etkecc/mrs/internal/metrics"
@@ -58,7 +59,7 @@ func (s *Server) PublicRooms(ctx context.Context, req *http.Request, rdReq *mode
 	if limit > MatrixSearchLimit {
 		limit = s.cfg.Get().Search.Defaults.Limit
 	}
-	offset := utils.StringToInt(rdReq.Since)
+	offset := kit.StringToInt(rdReq.Since)
 	entries, total, err := s.search.Search(ctx, origin, rdReq.Filter.GenericSearchTerm, "", limit, offset)
 	if err != nil {
 		log.Error().Err(err).Msg("search from matrix failed")

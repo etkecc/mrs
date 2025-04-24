@@ -6,11 +6,11 @@ import (
 
 	"github.com/blevesearch/bleve/v2"
 	"github.com/blevesearch/bleve/v2/search/query"
+	"github.com/etkecc/go-kit"
 	"github.com/rs/zerolog"
 	"golang.org/x/exp/slices"
 
 	"github.com/etkecc/mrs/internal/model"
-	"github.com/etkecc/mrs/internal/utils"
 )
 
 // Search service
@@ -86,7 +86,7 @@ func (s *Search) Search(ctx context.Context, originServer, q, sortBy string, lim
 	if builtQuery == nil {
 		return []*model.Entry{}, 0, nil
 	}
-	results, total, err := s.repo.Search(ctx, builtQuery, limit, offset, utils.StringToSlice(sortBy, s.cfg.Get().Search.Defaults.SortBy))
+	results, total, err := s.repo.Search(ctx, builtQuery, limit, offset, kit.StringToSlice(sortBy, s.cfg.Get().Search.Defaults.SortBy))
 	results = s.addHighlights(originServer, s.removeBlocked(results))
 	log.Info().
 		Err(err).

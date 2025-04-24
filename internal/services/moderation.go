@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/etkecc/go-kit"
 	"github.com/goccy/go-json"
 	"github.com/rs/zerolog"
 
@@ -110,10 +111,10 @@ func (m *Moderation) getServerContactsText(contacts model.MatrixServerContacts) 
 
 	text.WriteString("**Server Contacts**\n\n")
 	if len(emails) > 0 {
-		text.WriteString("* Emails: " + utils.SliceToString(emails, ", ", utils.MarkdownEmail) + "\n")
+		text.WriteString("* Emails: " + kit.SliceToString(emails, ", ", utils.MarkdownEmail) + "\n")
 	}
 	if len(mxids) > 0 {
-		text.WriteString("* MXIDs: " + utils.SliceToString(mxids, ", ", utils.MarkdownMXID) + "\n")
+		text.WriteString("* MXIDs: " + kit.SliceToString(mxids, ", ", utils.MarkdownMXID) + "\n")
 	}
 	if page != "" {
 		text.WriteString("* URL: " + utils.MarkdownLink(page) + "\n")
@@ -193,7 +194,7 @@ func (m *Moderation) Report(ctx context.Context, roomID, reason string, noMSC192
 	emails := server.Contacts.Emails
 	if room.Email != "" {
 		emails = append(emails, room.Email)
-		emails = utils.Uniq(emails)
+		emails = kit.Uniq(emails)
 	}
 
 	if !noMSC1929 {

@@ -4,9 +4,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/etkecc/go-kit"
 	"golang.org/x/exp/slices"
-
-	"github.com/etkecc/mrs/internal/utils"
 )
 
 // Blocklist service
@@ -32,7 +31,7 @@ func (b *Blocklist) Len() int {
 
 // Slice returns slice of the static+dynamic blocklist
 func (b *Blocklist) Slice() []string {
-	return utils.Uniq(append(utils.MapKeys(b.dynamic), b.cfg.Get().Blocklist.Servers...))
+	return kit.Uniq(append(kit.MapKeys(b.dynamic), b.cfg.Get().Blocklist.Servers...))
 }
 
 // Reset dynamic part of the blocklist
