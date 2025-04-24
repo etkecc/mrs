@@ -99,7 +99,7 @@ func (s *Server) GetClientMediaThumbnail(ctx context.Context, serverName, mediaI
 		urls = append(urls, serverURL+"/_matrix/media/v3/thumbnail/"+serverName+"/"+mediaID+"?"+query)
 	}
 	for _, avatarURL := range urls {
-		resp, err := utils.Get(ctx, avatarURL, 0)
+		resp, err := utils.Get(ctx, avatarURL)
 		if err != nil {
 			continue
 		}
