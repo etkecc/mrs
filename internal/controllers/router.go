@@ -56,7 +56,7 @@ func ConfigureRouter(
 
 	e.GET("/metrics", echo.WrapHandler(&metrics.Handler{}), echobasicauth.NewMiddleware(&cfg.Get().Auth.Metrics))
 	e.GET("/stats", stats(statsSvc))
-	e.GET("/avatar/:name/:id", avatar(matrixSvc), getRL(100))
+	e.GET("/avatar/:name/:id", avatar(matrixSvc), cacheSvc.MiddlewareImmutable(), getRL(100))
 	e.GET("/room/:room_id_or_alias", catalogRoom(dataSvc), cacheSvc.Middleware(), getRL(3))
 	e.GET("/to/:room_alias", openRoom(plausibleSvc), getRL(1))
 
