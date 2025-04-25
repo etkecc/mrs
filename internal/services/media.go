@@ -84,7 +84,7 @@ func (m *Media) Get(ctx context.Context, serverName, mediaID string, params url.
 	// detect content type
 	sniff := make([]byte, 512)
 	if _, err := file.Read(sniff); err != nil {
-		log.Warn().Msg("cannot read media file")
+		log.Warn().Err(err).Msg("cannot read media file")
 		return nil, ""
 	}
 	contentType = http.DetectContentType(sniff)
@@ -107,13 +107,16 @@ func (m *Media) Add(ctx context.Context, serverName, mediaID string, params url.
 	if mediaPath == "" {
 		return
 	}
+	log := apm.Log(ctx).With().Str("server", serverName).Str("mediaID", mediaID).Str("file", mediaPath).Logger()
+	if len(content) == 0 {
+		log.Warn().Msg("the media file is empty")
+		return
+	}
 
 	// Matrix media is immutable, so if the file already exists, we don't need to write it again
 	if _, err := os.Stat(mediaPath); !os.IsNotExist(err) {
 		return
 	}
-
-	log := apm.Log(ctx).With().Str("server", serverName).Str("mediaID", mediaID).Str("file", mediaPath).Logger()
 	if err := os.MkdirAll(filepath.Dir(mediaPath), 0o755); err != nil {
 		log.Warn().Err(err).Msg("cannot create media directory")
 		return

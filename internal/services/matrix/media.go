@@ -28,7 +28,7 @@ func (s *Server) GetMediaThumbnail(ctx context.Context, serverName, mediaID stri
 	log := apm.Log(ctx)
 
 	params = utils.ValuesOrDefault(params, defaultThumbnailParams)
-	if content, contentType := s.media.Get(ctx, serverName, mediaID, params); content != nil {
+	if content, contentType := s.media.Get(ctx, serverName, mediaID, params); content != nil && contentType != "" {
 		return content, contentType
 	}
 
@@ -85,7 +85,7 @@ func (s *Server) GetMediaThumbnail(ctx context.Context, serverName, mediaID stri
 // Deprecated: use GetMediaThumbnail() instead, ref: https://spec.matrix.org/v1.11/server-server-api/#get_matrixfederationv1mediathumbnailmediaid
 func (s *Server) GetClientMediaThumbnail(ctx context.Context, serverName, mediaID string, params url.Values) (content io.Reader, contentType string) {
 	params = utils.ValuesOrDefault(params, defaultThumbnailParams)
-	if content, contentType := s.media.Get(ctx, serverName, mediaID, params); content != nil {
+	if content, contentType := s.media.Get(ctx, serverName, mediaID, params); content != nil && contentType != "" {
 		return content, contentType
 	}
 
