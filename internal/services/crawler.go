@@ -248,6 +248,9 @@ func (m *Crawler) GetRoom(ctx context.Context, roomIDorAlias string) (*model.Mat
 	if err != nil {
 		return nil, err
 	}
+	if room == nil {
+		return nil, nil
+	}
 	if !m.v.IsRoomAllowed(ctx, room.Server, room) {
 		return nil, nil
 	}
