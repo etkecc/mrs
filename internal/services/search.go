@@ -95,6 +95,7 @@ func (s *Search) Search(ctx context.Context, originServer, q, sortBy string, lim
 		Int("offset", offset).
 		Int("results", len(results)).
 		Int("total", total).
+		Any("query", builtQuery).
 		Msg("search request")
 	if err != nil {
 		return nil, 0, err
@@ -256,6 +257,9 @@ func (s *Search) getSearchQuery(q string, fields map[string]string) query.Query 
 	if s.shouldReject(q, fields) {
 		return nil
 	}
+	if q == "" {
+		return s.getFieldsQuery(fields)
+	}
 
 	phrase := strings.Contains(q, " ")
 	queries := []query.Query{
@@ -270,16 +274,22 @@ func (s *Search) getSearchQuery(q string, fields map[string]string) query.Query 
 		s.newMatchQuery(q, "server", phrase),
 	}
 
+	mainQ := bleve.NewDisjunctionQuery(queries...)
 	// optional fields, like "language:EN"
-	fieldsQ := []query.Query{}
-	if len(fields) > 0 {
-		boolQ := bleve.NewBooleanQuery()
-		for field, fieldQ := range fields {
-			boolQ.AddMust(s.newTermQuery(fieldQ, field))
-		}
-		fieldsQ = append(fieldsQ, boolQ)
+	fieldsQ := s.getFieldsQuery(fields)
+	if fieldsQ == nil {
+		return mainQ
 	}
+	return bleve.NewConjunctionQuery(mainQ, fieldsQ)
+}
 
-	finalQuery := append([]query.Query{bleve.NewDisjunctionQuery(queries...)}, fieldsQ...)
-	return bleve.NewConjunctionQuery(finalQuery...)
+func (s *Search) getFieldsQuery(fields map[string]string) query.Query {
+	if len(fields) == 0 {
+		return nil
+	}
+	boolQ := bleve.NewBooleanQuery()
+	for field, fieldQ := range fields {
+		boolQ.AddMust(s.newTermQuery(fieldQ, field))
+	}
+	return boolQ
 }
