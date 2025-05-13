@@ -215,6 +215,14 @@ func (s *Search) newMatchQuery(match, field string, phrase bool) bleveQuery {
 	return searchQuery
 }
 
+func (s *Search) newTermQuery(match, field string) bleveQuery {
+	searchQuery := bleve.NewTermQuery(match)
+	searchQuery.SetField(field)
+	searchQuery.SetBoost(SearchFieldsBoost[field])
+
+	return searchQuery
+}
+
 func (s *Search) newFuzzyQuery(match, field string) bleveQuery {
 	searchQuery := bleve.NewFuzzyQuery(match)
 	searchQuery.SetField(field)
@@ -263,13 +271,15 @@ func (s *Search) getSearchQuery(q string, fields map[string]string) query.Query 
 	}
 
 	// optional fields, like "language:EN"
+	fieldsQ := []query.Query{}
 	if len(fields) > 0 {
 		boolQ := bleve.NewBooleanQuery()
 		for field, fieldQ := range fields {
-			boolQ.AddMust(s.newMatchQuery(fieldQ, field, false))
+			boolQ.AddMust(s.newTermQuery(fieldQ, field))
 		}
-		queries = append(queries, boolQ)
+		fieldsQ = append(fieldsQ, boolQ)
 	}
 
-	return bleve.NewDisjunctionQuery(queries...)
+	finalQuery := append([]query.Query{bleve.NewDisjunctionQuery(queries...)}, fieldsQ...)
+	return bleve.NewConjunctionQuery(finalQuery...)
 }
