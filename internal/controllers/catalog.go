@@ -19,14 +19,10 @@ func openRoom(plausible plausibleService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		alias := "#" + utils.Unescape(c.Param("room_alias"))
 		if !utils.IsValidAlias(alias) {
-			respb, err := utils.JSON(model.MatrixError{
+			return c.JSONBlob(http.StatusBadRequest, utils.MustJSON(model.MatrixError{
 				Code:    "M_INVALID_PARAM",
 				Message: "invalid alias",
-			})
-			if err != nil {
-				apm.Log(c.Request().Context()).Error().Err(err).Msg("cannot marshal canonical json")
-			}
-			return c.JSONBlob(http.StatusBadRequest, respb)
+			}))
 		}
 
 		go func(req *http.Request, ip, alias string) {
@@ -59,25 +55,17 @@ func catalogRoom(dataSvc dataService) echo.HandlerFunc {
 		apm.Log(c.Request().Context()).Info().Str("room_id_or_alias", roomIDorAlias).Msg("catalogRoom")
 		room, err := dataSvc.GetRoom(c.Request().Context(), roomIDorAlias)
 		if err != nil {
-			respb, jerr := utils.JSON(model.MatrixError{
+			return c.JSONBlob(http.StatusInternalServerError, utils.MustJSON(model.MatrixError{
 				Code:    "M_INTERNAL_SERVER_ERROR",
 				Message: err.Error(),
-			})
-			if jerr != nil {
-				apm.Log(c.Request().Context()).Error().Err(jerr).Msg("cannot marshal canonical json")
-			}
-			return c.JSONBlob(http.StatusBadRequest, respb)
+			}))
 		}
 
 		if room == nil {
-			respb, err := utils.JSON(model.MatrixError{
+			return c.JSONBlob(http.StatusNotFound, utils.MustJSON(model.MatrixError{
 				Code:    "M_NOT_FOUND",
 				Message: "room not found",
-			})
-			if err != nil {
-				apm.Log(c.Request().Context()).Error().Err(err).Msg("cannot marshal canonical json")
-			}
-			return c.JSONBlob(http.StatusNotFound, respb)
+			}))
 		}
 
 		return c.JSON(http.StatusOK, room)
