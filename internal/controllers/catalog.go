@@ -52,10 +52,11 @@ func catalogServers(dataSvc dataService) echo.HandlerFunc {
 func catalogRoom(dataSvc dataService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		roomIDorAlias := utils.Unescape(c.Param("room_id_or_alias"))
-		if utils.IsValidAlias("#" + roomIDorAlias) {
+		if !utils.IsValidID(roomIDorAlias) && utils.IsValidAlias("#"+roomIDorAlias) {
 			roomIDorAlias = "#" + roomIDorAlias
 		}
 
+		apm.Log(c.Request().Context()).Info().Str("room_id_or_alias", roomIDorAlias).Msg("catalogRoom")
 		room, err := dataSvc.GetRoom(c.Request().Context(), roomIDorAlias)
 		if err != nil {
 			respb, jerr := utils.JSON(model.MatrixError{

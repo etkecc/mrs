@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	aliasRegex = regexp.MustCompile(`^#[a-zA-Z0-9_.-]+:[a-zA-Z0-9_.-]+$`)
+	aliasRegex = regexp.MustCompile(`^#[^:\x00]+:[a-zA-Z0-9.\-]+(:\d+)?$`)
 	idRegex    = regexp.MustCompile(`^![a-zA-Z0-9_.-]+:[a-zA-Z0-9_.-]+$`)
 )
 
