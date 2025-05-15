@@ -1,6 +1,8 @@
 package data
 
-import "go.etcd.io/bbolt"
+import (
+	"go.etcd.io/bbolt"
+)
 
 var (
 	// servers_info bucket
@@ -32,7 +34,18 @@ var (
 )
 
 func initBuckets(db *bbolt.DB) error {
+	bucketsMap := map[string]bool{}
+	for _, bucket := range buckets {
+		bucketsMap[string(bucket)] = true
+	}
+
 	return db.Update(func(tx *bbolt.Tx) error {
+		// Remove unused buckets
+		if err := cleanupBuckets(bucketsMap, tx); err != nil {
+			return err
+		}
+
+		// Create buckets if they don't exist
 		for _, bucket := range buckets {
 			_, err := tx.CreateBucketIfNotExists(bucket)
 			if err != nil {
@@ -42,4 +55,21 @@ func initBuckets(db *bbolt.DB) error {
 
 		return nil
 	})
+}
+
+func cleanupBuckets(bucketsMap map[string]bool, tx *bbolt.Tx) error {
+	cursor := tx.Cursor()
+	toRemove := [][]byte{}
+	for k, _ := cursor.First(); k != nil; k, _ = cursor.Next() {
+		if !bucketsMap[string(k)] {
+			toRemove = append(toRemove, k)
+		}
+	}
+	for _, bucket := range toRemove {
+		err := tx.DeleteBucket(bucket)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
