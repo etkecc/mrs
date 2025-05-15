@@ -38,11 +38,6 @@ type BlocklistService interface {
 	Reset()
 }
 
-type RobotsService interface {
-	// Deprecated: use ValidatorService instead
-	Allowed(ctx context.Context, serverName, endpoint string) bool
-}
-
 type DataRepository interface {
 	AddServer(context.Context, *model.MatrixServer) error
 	HasServer(context.Context, string) bool
@@ -60,9 +55,6 @@ type DataRepository interface {
 	RemoveRoomMapping(context.Context, string, string)
 	EachRoom(context.Context, func(string, *model.MatrixRoom) bool)
 	SetBiggestRooms(context.Context, []string) error
-	SetServersRoomsCount(ctx context.Context, data map[string]int) error
-	SaveServersRooms(ctx context.Context, data map[string][]string) error
-	GetServersRoomsCount(ctx context.Context) map[string]int
 	GetBannedRooms(context.Context, ...string) ([]string, error)
 	RemoveRooms(context.Context, []string)
 	BanRoom(context.Context, string) error
@@ -77,7 +69,7 @@ type ValidatorService interface {
 	Domain(server string) bool
 	IsOnline(ctx context.Context, server string) (string, bool)
 	IsIndexable(ctx context.Context, server string) bool
-	IsRoomAllowed(ctx context.Context, server string, room *model.MatrixRoom) bool
+	IsRoomAllowed(server string, room *model.MatrixRoom) bool
 }
 
 type FederationService interface {
@@ -208,7 +200,7 @@ func (m *Crawler) EachRoom(ctx context.Context, handler func(roomID string, data
 
 	toRemove := []string{}
 	m.data.EachRoom(ctx, func(id string, room *model.MatrixRoom) bool {
-		if !m.v.IsRoomAllowed(ctx, room.Server, room) {
+		if !m.v.IsRoomAllowed(room.Server, room) {
 			toRemove = append(toRemove, id)
 			return false
 		}
@@ -232,10 +224,6 @@ func (m *Crawler) IndexableServers(ctx context.Context) []string {
 	}))
 }
 
-func (m *Crawler) GetServersRoomsCount(ctx context.Context) map[string]int {
-	return m.data.GetServersRoomsCount(ctx)
-}
-
 func (m *Crawler) GetRoom(ctx context.Context, roomIDorAlias string) (*model.MatrixRoom, error) {
 	roomID := roomIDorAlias
 	if utils.IsValidAlias(roomIDorAlias) {
@@ -251,7 +239,7 @@ func (m *Crawler) GetRoom(ctx context.Context, roomIDorAlias string) (*model.Mat
 	if room == nil {
 		return nil, nil
 	}
-	if !m.v.IsRoomAllowed(ctx, room.Server, room) {
+	if !m.v.IsRoomAllowed(room.Server, room) {
 		return nil, nil
 	}
 	return room, nil
@@ -339,8 +327,6 @@ func (m *Crawler) afterRoomParsing(ctx context.Context) {
 		id      string
 		members int
 	}
-	serversRoomsCount := map[string]int{}
-	// serversRooms := map[string][]string{} //nolint:gocritic // TODO: implement
 
 	log := apm.Log(ctx)
 	log.Info().Msg("after room parsing......")
@@ -352,13 +338,6 @@ func (m *Crawler) afterRoomParsing(ctx context.Context) {
 			toRemove[id] = data.Avatar
 			return false
 		}
-
-		serversRoomsCount[data.Server]++
-		//nolint:gocritic // TODO: implement
-		// if _, ok := serversRooms[data.Server]; !ok {
-		// 	serversRooms[data.Server] = []string{}
-		// }
-		// serversRooms[data.Server] = append(serversRooms[data.Server], data.ID)
 		counts = append(counts, roomCount{data.ID, data.Members})
 		return false
 	})
@@ -375,15 +354,6 @@ func (m *Crawler) afterRoomParsing(ctx context.Context) {
 		log.Error().Err(err).Msg("cannot set biggest rooms")
 	}
 	log.Info().Str("took", time.Since(started).String()).Msg("biggest rooms have been calculated and stored")
-
-	if err := m.data.SetServersRoomsCount(ctx, serversRoomsCount); err != nil {
-		log.Error().Err(err).Msg("cannot set servers rooms count")
-	}
-
-	// TODO: implement
-	// if err := m.data.SaveServersRooms(ctx, serversRooms); err != nil {
-	// 	log.Error().Err(err).Msg("cannot save servers rooms")
-	// }
 
 	if len(toRemove) > 0 {
 		log.Info().Int("rooms", len(toRemove)).Msg("removing rooms last updated more than a week ago...")
@@ -456,7 +426,7 @@ func (m *Crawler) getPublicRooms(ctx context.Context, name string) *kit.List[str
 		added += len(resp.Chunk)
 		for _, rdRoom := range resp.Chunk {
 			room := rdRoom.Convert()
-			if !m.v.IsRoomAllowed(ctx, name, room) {
+			if !m.v.IsRoomAllowed(name, room) {
 				added--
 				continue
 			}

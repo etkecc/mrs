@@ -5,8 +5,6 @@ const (
 	Version = "v0.0.0"
 	// Name of the project
 	Name = "MatrixRoomsSearch"
-	// Bot name for robots.txt
-	Bot = "MRSBot"
 )
 
 var (

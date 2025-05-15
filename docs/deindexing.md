@@ -53,32 +53,6 @@ Example:
 example.com:noindex
 ```
 
-## (deprecated) robots.txt
-
-While robots.txt is not part of the Matrix protocol, that's the easiest and convenient way to prevent your server from indexing.
-MRS supports several made-up endpoints to prevent indexing your server.
-
-> NOTE: due to the fact robots.txt is not part of the Matrix protocol, MRS treats it a bit differently than usual bots.
-> `User-agent: MRSBot` **MUST** be present in your robots.txt file to make it work (`User-agent: *` will be ignored!)
-
-### whole server
-
-Just add the following to your `robots.txt`:
-
-```
-User-agent: MRSBot
-Disallow: /_matrix/federation/v1/publicRooms
-```
-
-### specific rooms
-
-Just add the following to your `robots.txt` (you can add multiple `Disallow` lines, one per room ID):
-
-```
-User-agent: MRSBot
-Disallow: /_matrix/federation/v1/publicRooms/!yourRoomID:example.com
-```
-
 ## contact instance maintainers
 
 MRS is open source project (code), it doesn't parse/index/process any data by itself, so you have to contact specific instance's maintainers.

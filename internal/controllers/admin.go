@@ -17,7 +17,6 @@ type dataService interface {
 	ParseRooms(context.Context, int)
 	Ingest(context.Context)
 	Full(context.Context, int, int)
-	GetServersRoomsCount(ctx context.Context) map[string]int
 	GetRoom(ctx context.Context, roomID string) (*model.MatrixRoom, error)
 }
 

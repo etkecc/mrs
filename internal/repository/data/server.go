@@ -82,10 +82,6 @@ func (d *Data) RemoveServer(ctx context.Context, name string) error {
 	apm.Log(ctx).Debug().Str("server", name).Msg("removing server info")
 	nameb := []byte(name)
 	return d.db.Batch(func(tx *bbolt.Tx) error {
-		err := tx.Bucket(serversBucket).Delete(nameb)
-		if err != nil {
-			return err
-		}
 		return tx.Bucket(serversInfoBucket).Delete(nameb)
 	})
 }
@@ -98,10 +94,8 @@ func (d *Data) RemoveServers(ctx context.Context, keys []string) {
 
 	apm.Log(ctx).Info().Int("count", len(keys)).Msg("removing servers from db")
 	d.db.Update(func(tx *bbolt.Tx) error { //nolint:errcheck // that's ok
-		sbucket := tx.Bucket(serversBucket)
 		sibucket := tx.Bucket(serversInfoBucket)
 		for _, k := range keys {
-			sbucket.Delete([]byte(k))  //nolint:errcheck // that's ok
 			sibucket.Delete([]byte(k)) //nolint:errcheck // that's ok
 		}
 		return nil

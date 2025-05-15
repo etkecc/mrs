@@ -90,7 +90,6 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot open index repo")
 	}
-	robotsSvc := services.NewRobots()
 	plausibleSvc := services.NewPlausible(cfg)
 	blockSvc := services.NewBlocklist(cfg)
 	statsSvc := services.NewStats(cfg, dataRepo, index, blockSvc)
@@ -100,7 +99,7 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot start matrix service")
 	}
-	validatorSvc := services.NewValidator(cfg, blockSvc, matrixSvc, robotsSvc)
+	validatorSvc := services.NewValidator(cfg, blockSvc, matrixSvc)
 	crawlerSvc := services.NewCrawler(cfg, matrixSvc, validatorSvc, blockSvc, media, dataRepo, detector)
 	matrixSvc.SetDiscover(crawlerSvc.AddServer)
 	cacheSvc := services.NewCache(cfg, statsSvc)

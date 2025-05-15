@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"fmt"
 	"regexp"
 	"strings"
 
@@ -18,16 +17,14 @@ type Validator struct {
 	cfg    ConfigService
 	block  BlocklistService
 	matrix FederationService
-	robots RobotsService
 }
 
 // NewValidator creates new validation service
-func NewValidator(cfg ConfigService, block BlocklistService, matrix FederationService, robots RobotsService) *Validator {
+func NewValidator(cfg ConfigService, block BlocklistService, matrix FederationService) *Validator {
 	return &Validator{
 		cfg:    cfg,
 		block:  block,
 		matrix: matrix,
-		robots: robots,
 	}
 }
 
@@ -83,10 +80,6 @@ func (v *Validator) IsIndexable(ctx context.Context, server string) bool {
 		log.Info().Str("reason", "blocklist").Msg("not indexable")
 		return false
 	}
-	if !v.robots.Allowed(ctx, server, RobotsTxtPublicRooms) {
-		log.Info().Str("reason", "robots.txt").Msg("not indexable")
-		return false
-	}
 	if _, err := v.matrix.QueryPublicRooms(ctx, server, "1", ""); err != nil {
 		log.Info().Err(err).Str("reason", "publicRooms").Msg("not indexable")
 		return false
@@ -114,7 +107,7 @@ func (v *Validator) isBlockedByTopic(topic string) bool {
 }
 
 // IsRoomAllowed checks if room is allowed
-func (v *Validator) IsRoomAllowed(ctx context.Context, server string, room *model.MatrixRoom) bool {
+func (v *Validator) IsRoomAllowed(server string, room *model.MatrixRoom) bool {
 	if room.ID == "" || room.Alias == "" {
 		return false
 	}
@@ -134,5 +127,5 @@ func (v *Validator) IsRoomAllowed(ctx context.Context, server string, room *mode
 		return false
 	}
 
-	return v.robots.Allowed(ctx, server, fmt.Sprintf(RobotsTxtPublicRoom, room.ID))
+	return true
 }

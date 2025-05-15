@@ -6,7 +6,6 @@ toolchain go1.24.1
 
 require (
 	github.com/VictoriaMetrics/metrics v1.35.2
-	github.com/benjaminestes/robots/v2 v2.0.5
 	github.com/blevesearch/bleve/v2 v2.5.0
 	github.com/etkecc/go-apm v1.3.5
 	github.com/etkecc/go-echo-basic-auth v1.2.0
@@ -36,7 +35,6 @@ require (
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/RoaringBitmap/roaring/v2 v2.4.5 // indirect
-	github.com/benjaminestes/robots v1.0.0 // indirect
 	github.com/bits-and-blooms/bitset v1.22.0 // indirect
 	github.com/blevesearch/bleve_index_api v1.2.8 // indirect
 	github.com/blevesearch/geo v0.2.0 // indirect

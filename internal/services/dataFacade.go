@@ -16,7 +16,6 @@ type dataCrawlerService interface {
 	AddServers(context.Context, []string, int)
 	ParseRooms(context.Context, int)
 	EachRoom(context.Context, func(string, *model.MatrixRoom) bool)
-	GetServersRoomsCount(ctx context.Context) map[string]int
 	GetRoom(ctx context.Context, roomID string) (*model.MatrixRoom, error)
 }
 
@@ -121,10 +120,6 @@ func (df *DataFacade) Full(ctx context.Context, discoveryWorkers, parsingWorkers
 	log.Info().Msg("collecting stats...")
 	df.stats.Collect(ctx)
 	log.Info().Msg("stats have been collected")
-}
-
-func (df *DataFacade) GetServersRoomsCount(ctx context.Context) map[string]int {
-	return df.crawler.GetServersRoomsCount(ctx)
 }
 
 func (df *DataFacade) GetRoom(ctx context.Context, roomID string) (*model.MatrixRoom, error) {

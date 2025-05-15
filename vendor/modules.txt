@@ -9,11 +9,6 @@ github.com/RoaringBitmap/roaring/v2/roaring64
 # github.com/VictoriaMetrics/metrics v1.35.2
 ## explicit; go 1.17
 github.com/VictoriaMetrics/metrics
-# github.com/benjaminestes/robots v1.0.0
-## explicit
-# github.com/benjaminestes/robots/v2 v2.0.5
-## explicit; go 1.13
-github.com/benjaminestes/robots/v2
 # github.com/bits-and-blooms/bitset v1.22.0
 ## explicit; go 1.16
 github.com/bits-and-blooms/bitset
