@@ -16,18 +16,11 @@ import (
 	"github.com/etkecc/mrs/internal/version"
 )
 
-var defaultThumbnailParams = url.Values{
-	"animated": []string{"true"},
-	"width":    []string{"40"},
-	"height":   []string{"40"},
-	"method":   []string{"crop"},
-}
-
 // GetMediaThumbnail is /_matrix/federation/v1/media/thumbnail/{mediaId}
 func (s *Server) GetMediaThumbnail(ctx context.Context, serverName, mediaID string, params url.Values) (content io.Reader, contentType string) {
 	log := apm.Log(ctx)
 
-	params = utils.ValuesOrDefault(params, defaultThumbnailParams)
+	params = utils.ValuesOrDefault(params, s.getDefaultThumbnailParams())
 	if content, contentType := s.media.Get(ctx, serverName, mediaID, params); content != nil && contentType != "" {
 		return content, contentType
 	}
@@ -84,7 +77,7 @@ func (s *Server) GetMediaThumbnail(ctx context.Context, serverName, mediaID stri
 // GetClientMediaThumbnail is /_matrix/media/v3/thumbnail/{serverName}/{mediaID}
 // Deprecated: use GetMediaThumbnail() instead, ref: https://spec.matrix.org/v1.11/server-server-api/#get_matrixfederationv1mediathumbnailmediaid
 func (s *Server) GetClientMediaThumbnail(ctx context.Context, serverName, mediaID string, params url.Values) (content io.Reader, contentType string) {
-	params = utils.ValuesOrDefault(params, defaultThumbnailParams)
+	params = utils.ValuesOrDefault(params, s.getDefaultThumbnailParams())
 	if content, contentType := s.media.Get(ctx, serverName, mediaID, params); content != nil && contentType != "" {
 		return content, contentType
 	}
@@ -157,4 +150,15 @@ func (s *Server) getImageFromMultipart(ctx context.Context, resp *http.Response)
 	}
 	log.Warn().Msg("cannot find image in multipart")
 	return nil, ""
+}
+
+// getDefaultThumbnailParams returns the default thumbnail parameters
+// it is intentionally returning a new url.Values object to avoid concurrent map access
+func (s *Server) getDefaultThumbnailParams() url.Values {
+	return url.Values{
+		"animated": []string{"true"},
+		"width":    []string{"40"},
+		"height":   []string{"40"},
+		"method":   []string{"crop"},
+	}
 }
