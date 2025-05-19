@@ -60,7 +60,7 @@ type DataRepository interface {
 	BanRoom(context.Context, string) error
 	UnbanRoom(context.Context, string) error
 	GetReportedRooms(context.Context, ...string) (map[string]string, error)
-	ReportRoom(context.Context, string, string) error
+	ReportRoom(context.Context, string, string, string) error
 	UnreportRoom(context.Context, string) error
 	IsReported(context.Context, string) bool
 }

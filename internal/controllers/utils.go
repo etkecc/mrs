@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -12,7 +13,13 @@ import (
 	"github.com/etkecc/mrs/internal/utils"
 )
 
-var rls = map[rate.Limit]echo.MiddlewareFunc{}
+var (
+	rls        = map[rate.Limit]echo.MiddlewareFunc{}
+	mForbidden = utils.MustJSON(&model.MatrixError{
+		Code:    "M_FORBIDDEN",
+		Message: "forbidden",
+	})
+)
 
 // getOrigin returns the origin of the request (if provided), or referer (if provided), or the MRS server name
 func getOrigin(cfg configService, r *http.Request) string {
@@ -64,4 +71,19 @@ func getRL(limit rate.Limit) echo.MiddlewareFunc {
 	})
 	rls[limit] = middleware.RateLimiterWithConfig(cfg)
 	return rls[limit]
+}
+
+func withBlocklist(cfg configService) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			if cfg.Get().Blocklist == nil || len(cfg.Get().Blocklist.IPs) == 0 {
+				return next(c)
+			}
+			ip := c.RealIP()
+			if slices.Contains(cfg.Get().Blocklist.IPs, ip) {
+				return c.JSONBlob(http.StatusForbidden, mForbidden)
+			}
+			return next(c)
+		}
+	}
 }

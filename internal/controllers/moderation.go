@@ -10,7 +10,7 @@ import (
 )
 
 type moderationService interface {
-	Report(context.Context, string, string, bool) error
+	Report(context.Context, string, string, string, bool) error
 	List(context.Context, ...string) ([]string, error)
 	Ban(context.Context, string) error
 	Unban(context.Context, string) error
@@ -31,7 +31,7 @@ func report(svc moderationService) echo.HandlerFunc {
 			return err
 		}
 
-		if err := svc.Report(c.Request().Context(), report.RoomID, report.Reason, report.NoMSC1929); err != nil {
+		if err := svc.Report(c.Request().Context(), c.RealIP(), report.RoomID, report.Reason, report.NoMSC1929); err != nil {
 			log.Error().Err(err).Msg("cannot report room")
 			return err
 		}

@@ -50,7 +50,7 @@ func ConfigureRouter(
 	modSvc moderationService,
 	plausibleSvc plausibleService,
 ) {
-	configureRouter(e, cacheSvc)
+	configureRouter(e, cfg, cacheSvc)
 	configureMatrixS2SEndpoints(e, matrixSvc, cacheSvc)
 	configureMatrixCSEndpoints(e, matrixSvc, cacheSvc)
 
@@ -70,7 +70,7 @@ func ConfigureRouter(
 	e.POST("/discover/bulk", addServers(dataSvc, cfg), echobasicauth.NewMiddleware(&cfg.Get().Auth.Discovery))
 	e.POST("/discover/:name", addServer(dataSvc), discoveryProtection(rl, cfg))
 
-	e.POST("/mod/report/:room_id", report(modSvc), rl) // doesn't use mod group to allow without auth
+	e.POST("/mod/report/:room_id", report(modSvc), getRL(3.0/600.0)) // doesn't use mod group to allow without auth
 	m := e.Group("mod")
 	m.Use(echobasicauth.NewMiddleware(&cfg.Get().Auth.Moderation))
 	m.GET("/list", listBanned(modSvc), rl)
@@ -88,12 +88,13 @@ func ConfigureRouter(
 	a.POST("/full", full(dataSvc, cfg))
 }
 
-func configureRouter(e *echo.Echo, cacheSvc cacheService) {
+func configureRouter(e *echo.Echo, cfgSvc configService, cacheSvc cacheService) {
 	e.Use(middleware.Recover())
 	e.Use(apm.WithSentry())
 	e.Use(cacheSvc.Middleware())
 	e.Use(middleware.Secure())
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{MaxAge: 86400}))
+	e.Use(withBlocklist(cfgSvc))
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			c.Response().Header().Set(echo.HeaderReferrerPolicy, "origin")

@@ -49,7 +49,7 @@ func NewModeration(cfg ConfigService, data DataRepository, media MediaService, i
 	}
 }
 
-func (m *Moderation) getReportText(ctx context.Context, roomID, reason string, room *model.MatrixRoom, server *model.MatrixServer) string {
+func (m *Moderation) getReportText(ctx context.Context, roomID, reason, fromIP string, room *model.MatrixRoom, server *model.MatrixServer) string {
 	log := apm.Log(ctx)
 	var roomtxt string
 	roomb, err := json.MarshalIndent(room, "", "    ")
@@ -67,6 +67,10 @@ func (m *Moderation) getReportText(ctx context.Context, roomID, reason string, r
 	text.WriteString("](https://matrix.to/#/")
 	text.WriteString(roomID)
 	text.WriteString(")\n")
+
+	text.WriteString("* From IP: ")
+	text.WriteString(fromIP)
+	text.WriteString("\n")
 
 	text.WriteString("* Reason: ")
 	text.WriteString(reason)
@@ -126,14 +130,14 @@ func (m *Moderation) getServerContactsText(contacts model.MatrixServerContacts) 
 }
 
 // sendWebhook sends a report to the configured webhook
-func (m *Moderation) sendWebhook(ctx context.Context, room *model.MatrixRoom, server *model.MatrixServer, reason string) error {
+func (m *Moderation) sendWebhook(ctx context.Context, room *model.MatrixRoom, server *model.MatrixServer, fromIP, reason string) error {
 	if m.cfg.Get().Webhooks.Moderation == "" {
 		return nil
 	}
 
 	payload, err := json.Marshal(webhookPayload{
 		Username: m.cfg.Get().Matrix.ServerName,
-		Markdown: m.getReportText(ctx, room.ID, reason, room, server),
+		Markdown: m.getReportText(ctx, room.ID, reason, fromIP, room, server),
 	})
 	if err != nil {
 		return err
@@ -157,16 +161,16 @@ func (m *Moderation) sendWebhook(ctx context.Context, room *model.MatrixRoom, se
 }
 
 // sendEmail sends a report to the configured moderators' email
-func (m *Moderation) sendEmail(ctx context.Context, room *model.MatrixRoom, server *model.MatrixServer, reason string) error {
+func (m *Moderation) sendEmail(ctx context.Context, room *model.MatrixRoom, server *model.MatrixServer, reason, fromIP string) error {
 	if m.cfg.Get().Email.Moderation == "" {
 		return nil
 	}
-	text := m.getReportText(ctx, room.ID, reason, room, server)
+	text := m.getReportText(ctx, room.ID, reason, fromIP, room, server)
 	return m.mail.SendModReport(text, m.cfg.Get().Email.Moderation)
 }
 
 // Report a room
-func (m *Moderation) Report(ctx context.Context, roomID, reason string, noMSC1929 bool) error {
+func (m *Moderation) Report(ctx context.Context, fromIP, roomID, reason string, noMSC1929 bool) error {
 	if m.data.IsReported(ctx, roomID) {
 		return nil
 	}
@@ -187,7 +191,7 @@ func (m *Moderation) Report(ctx context.Context, roomID, reason string, noMSC192
 		server = &model.MatrixServer{Name: room.Server}
 	}
 
-	if err := m.sendWebhook(ctx, room, server, reason); err != nil {
+	if err := m.sendWebhook(ctx, room, server, reason, fromIP); err != nil {
 		log.Error().Err(err).Msg("cannot send moderation webhook")
 	}
 
@@ -203,11 +207,11 @@ func (m *Moderation) Report(ctx context.Context, roomID, reason string, noMSC192
 		}
 	}
 
-	if err := m.sendEmail(ctx, room, server, reason); err != nil {
+	if err := m.sendEmail(ctx, room, server, reason, fromIP); err != nil {
 		log.Error().Err(err).Msg("cannot send moderation email")
 	}
 
-	return m.data.ReportRoom(ctx, roomID, reason)
+	return m.data.ReportRoom(ctx, fromIP, roomID, reason)
 }
 
 // List returns full list of the banned rooms (optionally from specific server)

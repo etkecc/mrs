@@ -146,6 +146,7 @@ type ConfigWorkers struct {
 
 // ConfigBlocklist - blocklist related configuration
 type ConfigBlocklist struct {
+	IPs     []string `json:"ips"`
 	Servers []string `json:"servers"`
 	Queries []string `json:"queries"`
 }

@@ -212,8 +212,8 @@ func (d *Data) IsReported(ctx context.Context, roomID string) bool {
 }
 
 // ReportRoom
-func (d *Data) ReportRoom(ctx context.Context, roomID, reason string) error {
-	apm.Log(ctx).Info().Str("room_id", roomID).Msg("reporting a room")
+func (d *Data) ReportRoom(ctx context.Context, fromIP, roomID, reason string) error {
+	apm.Log(ctx).Info().Str("room", roomID).Str("from", fromIP).Msg("reporting a room")
 	return d.db.Batch(func(tx *bbolt.Tx) error {
 		return tx.Bucket(roomsReportsBucket).Put([]byte(roomID), []byte(reason))
 	})
