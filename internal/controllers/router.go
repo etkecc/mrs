@@ -70,7 +70,7 @@ func ConfigureRouter(
 	e.POST("/discover/bulk", addServers(dataSvc, cfg), echobasicauth.NewMiddleware(&cfg.Get().Auth.Discovery))
 	e.POST("/discover/:name", addServer(dataSvc), discoveryProtection(rl, cfg))
 
-	e.POST("/mod/report/:room_id", report(modSvc), getRL(3.0/600.0)) // doesn't use mod group to allow without auth
+	e.POST("/mod/report/:room_id", report(modSvc), getRL(1)) // doesn't use mod group to allow without auth
 	m := e.Group("mod")
 	m.Use(echobasicauth.NewMiddleware(&cfg.Get().Auth.Moderation))
 	m.GET("/list", listBanned(modSvc), rl)
