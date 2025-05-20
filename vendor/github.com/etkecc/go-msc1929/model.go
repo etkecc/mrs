@@ -63,6 +63,7 @@ func (c *Contact) IsSecurity() bool {
 // Response of the MSC1929 support file
 type Response struct {
 	Contacts    []*Contact `json:"contacts,omitempty" yaml:"contacts,omitempty"`         // Contacts list
+	Admins      []*Contact `json:"admins,omitempty" yaml:"admins,omitempty"`             // Admins list, deprecated since Nov 15, 2023, but still used by some servers
 	SupportPage string     `json:"support_page,omitempty" yaml:"support_page,omitempty"` // SupportPage URL
 	sanitized   bool       `json:"-"`                                                    // Flag to indicate if the response has been sanitized
 }
@@ -75,9 +76,18 @@ func (r *Response) Sanitize() {
 			r.SupportPage = ""
 		}
 	}
+	r.Contacts = r.sanitizeContacts(r.Contacts)
+	r.Admins = r.sanitizeContacts(r.Admins)
+	r.sanitized = true
+}
+
+func (r *Response) sanitizeContacts(rawContacts []*Contact) []*Contact {
+	if len(rawContacts) == 0 {
+		return nil
+	}
 
 	contacts := []*Contact{}
-	for _, contact := range r.Contacts {
+	for _, contact := range rawContacts {
 		if contact.Email != "" {
 			if email, _ := mail.ParseAddress(contact.Email); email != nil {
 				contact.Email = email.Address
@@ -94,8 +104,7 @@ func (r *Response) Sanitize() {
 			contacts = append(contacts, contact)
 		}
 	}
-	r.Contacts = contacts
-	r.sanitized = true
+	return contacts
 }
 
 // IsEmpty checks if response contains at least one contact (either email or mxid) or SupportPage
@@ -117,6 +126,16 @@ func (r *Response) IsEmpty() bool {
 			break
 		}
 	}
+
+	if !hasContent {
+		for _, contact := range r.Admins {
+			if !contact.IsEmpty() {
+				hasContent = true
+				break
+			}
+		}
+	}
+
 	return !hasContent && r.SupportPage == ""
 }
 
@@ -131,6 +150,16 @@ func (r *Response) Clone() *Response {
 			Role:     contact.Role,
 		}
 	}
+	if r.Admins != nil {
+		clone.Admins = make([]*Contact, len(r.Admins))
+		for i, contact := range r.Admins {
+			clone.Admins[i] = &Contact{
+				Email:    contact.Email,
+				MatrixID: contact.MatrixID,
+				Role:     contact.Role,
+			}
+		}
+	}
 	clone.SupportPage = r.SupportPage
 	return clone
 }
@@ -139,6 +168,11 @@ func (r *Response) Clone() *Response {
 func (r *Response) AdminEmails() []string {
 	var emails []string
 	for _, contact := range r.Contacts {
+		if contact.IsAdmin() && contact.Email != "" {
+			emails = append(emails, contact.Email)
+		}
+	}
+	for _, contact := range r.Admins {
 		if contact.IsAdmin() && contact.Email != "" {
 			emails = append(emails, contact.Email)
 		}
@@ -154,6 +188,11 @@ func (r *Response) AdminMatrixIDs() []string {
 			mxids = append(mxids, contact.MatrixID)
 		}
 	}
+	for _, contact := range r.Admins {
+		if contact.IsAdmin() && contact.MatrixID != "" {
+			mxids = append(mxids, contact.MatrixID)
+		}
+	}
 	return mxids
 }
 
@@ -161,6 +200,11 @@ func (r *Response) AdminMatrixIDs() []string {
 func (r *Response) ModeratorEmails() []string {
 	var emails []string
 	for _, contact := range r.Contacts {
+		if contact.IsModerator() && contact.Email != "" {
+			emails = append(emails, contact.Email)
+		}
+	}
+	for _, contact := range r.Admins {
 		if contact.IsModerator() && contact.Email != "" {
 			emails = append(emails, contact.Email)
 		}
@@ -176,6 +220,11 @@ func (r *Response) ModeratorMatrixIDs() []string {
 			mxids = append(mxids, contact.MatrixID)
 		}
 	}
+	for _, contact := range r.Admins {
+		if contact.IsModerator() && contact.MatrixID != "" {
+			mxids = append(mxids, contact.MatrixID)
+		}
+	}
 	return mxids
 }
 
@@ -183,6 +232,11 @@ func (r *Response) ModeratorMatrixIDs() []string {
 func (r *Response) DPOEmails() []string {
 	var emails []string
 	for _, contact := range r.Contacts {
+		if contact.IsDPO() && contact.Email != "" {
+			emails = append(emails, contact.Email)
+		}
+	}
+	for _, contact := range r.Admins {
 		if contact.IsDPO() && contact.Email != "" {
 			emails = append(emails, contact.Email)
 		}
@@ -198,6 +252,11 @@ func (r *Response) DPOMatrixIDs() []string {
 			mxids = append(mxids, contact.MatrixID)
 		}
 	}
+	for _, contact := range r.Admins {
+		if contact.IsDPO() && contact.MatrixID != "" {
+			mxids = append(mxids, contact.MatrixID)
+		}
+	}
 	return mxids
 }
 
@@ -205,6 +264,11 @@ func (r *Response) DPOMatrixIDs() []string {
 func (r *Response) SecurityEmails() []string {
 	var emails []string
 	for _, contact := range r.Contacts {
+		if contact.IsSecurity() && contact.Email != "" {
+			emails = append(emails, contact.Email)
+		}
+	}
+	for _, contact := range r.Admins {
 		if contact.IsSecurity() && contact.Email != "" {
 			emails = append(emails, contact.Email)
 		}
@@ -220,6 +284,11 @@ func (r *Response) SecurityMatrixIDs() []string {
 			mxids = append(mxids, contact.MatrixID)
 		}
 	}
+	for _, contact := range r.Admins {
+		if contact.IsSecurity() && contact.MatrixID != "" {
+			mxids = append(mxids, contact.MatrixID)
+		}
+	}
 	return mxids
 }
 
@@ -231,6 +300,11 @@ func (r *Response) AllEmails() []string {
 			emails = append(emails, contact.Email)
 		}
 	}
+	for _, contact := range r.Admins {
+		if contact.Email != "" {
+			emails = append(emails, contact.Email)
+		}
+	}
 	return emails
 }
 
@@ -238,6 +312,11 @@ func (r *Response) AllEmails() []string {
 func (r *Response) AllMatrixIDs() []string {
 	var mxids []string
 	for _, contact := range r.Contacts {
+		if contact.MatrixID != "" {
+			mxids = append(mxids, contact.MatrixID)
+		}
+	}
+	for _, contact := range r.Admins {
 		if contact.MatrixID != "" {
 			mxids = append(mxids, contact.MatrixID)
 		}

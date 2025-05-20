@@ -1,18 +1,18 @@
 # github.com/KyleBanks/depth v1.2.1
 ## explicit
 github.com/KyleBanks/depth
-# github.com/RoaringBitmap/roaring/v2 v2.4.5
+# github.com/RoaringBitmap/roaring/v2 v2.5.0
 ## explicit; go 1.15
 github.com/RoaringBitmap/roaring/v2
 github.com/RoaringBitmap/roaring/v2/internal
 github.com/RoaringBitmap/roaring/v2/roaring64
-# github.com/VictoriaMetrics/metrics v1.35.2
+# github.com/VictoriaMetrics/metrics v1.37.0
 ## explicit; go 1.17
 github.com/VictoriaMetrics/metrics
 # github.com/bits-and-blooms/bitset v1.22.0
 ## explicit; go 1.16
 github.com/bits-and-blooms/bitset
-# github.com/blevesearch/bleve/v2 v2.5.0
+# github.com/blevesearch/bleve/v2 v2.5.1
 ## explicit; go 1.23
 github.com/blevesearch/bleve/v2
 github.com/blevesearch/bleve/v2/analysis
@@ -95,7 +95,7 @@ github.com/blevesearch/bleve/v2/util
 # github.com/blevesearch/bleve_index_api v1.2.8
 ## explicit; go 1.21
 github.com/blevesearch/bleve_index_api
-# github.com/blevesearch/geo v0.2.0
+# github.com/blevesearch/geo v0.2.3
 ## explicit; go 1.21.0
 github.com/blevesearch/geo/geojson
 github.com/blevesearch/geo/r1
@@ -150,19 +150,19 @@ github.com/blevesearch/vellum
 github.com/blevesearch/vellum/levenshtein
 github.com/blevesearch/vellum/regexp
 github.com/blevesearch/vellum/utf8
-# github.com/blevesearch/zapx/v11 v11.4.1
+# github.com/blevesearch/zapx/v11 v11.4.2
 ## explicit; go 1.21
 github.com/blevesearch/zapx/v11
-# github.com/blevesearch/zapx/v12 v12.4.1
+# github.com/blevesearch/zapx/v12 v12.4.2
 ## explicit; go 1.21
 github.com/blevesearch/zapx/v12
-# github.com/blevesearch/zapx/v13 v13.4.1
+# github.com/blevesearch/zapx/v13 v13.4.2
 ## explicit; go 1.21
 github.com/blevesearch/zapx/v13
-# github.com/blevesearch/zapx/v14 v14.4.1
+# github.com/blevesearch/zapx/v14 v14.4.2
 ## explicit; go 1.21
 github.com/blevesearch/zapx/v14
-# github.com/blevesearch/zapx/v15 v15.4.1
+# github.com/blevesearch/zapx/v15 v15.4.2
 ## explicit; go 1.21
 github.com/blevesearch/zapx/v15
 # github.com/blevesearch/zapx/v16 v16.2.3
@@ -189,21 +189,22 @@ github.com/etkecc/go-kit
 github.com/etkecc/go-kit/format
 github.com/etkecc/go-kit/template
 github.com/etkecc/go-kit/workpool
-# github.com/etkecc/go-msc1929 v1.2.0
+# github.com/etkecc/go-msc1929 v1.2.1
 ## explicit; go 1.18
 github.com/etkecc/go-msc1929
 # github.com/fsnotify/fsnotify v1.9.0
 ## explicit; go 1.17
 github.com/fsnotify/fsnotify
 github.com/fsnotify/fsnotify/internal
-# github.com/getsentry/sentry-go v0.32.0
+# github.com/getsentry/sentry-go v0.33.0
 ## explicit; go 1.21
 github.com/getsentry/sentry-go
+github.com/getsentry/sentry-go/attribute
 github.com/getsentry/sentry-go/internal/debug
 github.com/getsentry/sentry-go/internal/otel/baggage
 github.com/getsentry/sentry-go/internal/otel/baggage/internal/baggage
 github.com/getsentry/sentry-go/internal/ratelimit
-# github.com/getsentry/sentry-go/zerolog v0.32.0
+# github.com/getsentry/sentry-go/zerolog v0.33.0
 ## explicit; go 1.21
 github.com/getsentry/sentry-go/zerolog
 # github.com/ghodss/yaml v1.0.0
@@ -267,8 +268,8 @@ github.com/labstack/gommon/log
 github.com/mailru/easyjson/buffer
 github.com/mailru/easyjson/jlexer
 github.com/mailru/easyjson/jwriter
-# github.com/matrix-org/gomatrixserverlib v0.0.0-20250324075430-479c9abf1ca5
-## explicit; go 1.22
+# github.com/matrix-org/gomatrixserverlib v0.0.0-20250520070507-c70b2132a00a
+## explicit; go 1.23.0
 github.com/matrix-org/gomatrixserverlib
 github.com/matrix-org/gomatrixserverlib/spec
 # github.com/matrix-org/util v0.0.0-20221111132719-399730281e66
@@ -343,7 +344,7 @@ github.com/valyala/fasttemplate
 # github.com/valyala/histogram v1.2.0
 ## explicit; go 1.12
 github.com/valyala/histogram
-# github.com/yuin/goldmark v1.7.10
+# github.com/yuin/goldmark v1.7.12
 ## explicit; go 1.22
 github.com/yuin/goldmark
 github.com/yuin/goldmark/ast
@@ -363,16 +364,16 @@ go.etcd.io/bbolt
 go.etcd.io/bbolt/errors
 go.etcd.io/bbolt/internal/common
 go.etcd.io/bbolt/internal/freelist
-# golang.org/x/crypto v0.37.0
+# golang.org/x/crypto v0.38.0
 ## explicit; go 1.23.0
 golang.org/x/crypto/acme
 golang.org/x/crypto/acme/autocert
 golang.org/x/crypto/ed25519
-# golang.org/x/exp v0.0.0-20250408133849-7e4ce0ab07d0
+# golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6
 ## explicit; go 1.23.0
 golang.org/x/exp/maps
 golang.org/x/exp/slices
-# golang.org/x/net v0.39.0
+# golang.org/x/net v0.40.0
 ## explicit; go 1.23.0
 golang.org/x/net/http/httpguts
 golang.org/x/net/http2
@@ -380,12 +381,12 @@ golang.org/x/net/http2/h2c
 golang.org/x/net/http2/hpack
 golang.org/x/net/idna
 golang.org/x/net/internal/httpcommon
-# golang.org/x/sys v0.32.0
+# golang.org/x/sys v0.33.0
 ## explicit; go 1.23.0
 golang.org/x/sys/execabs
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/text v0.24.0
+# golang.org/x/text v0.25.0
 ## explicit; go 1.23.0
 golang.org/x/text/cases
 golang.org/x/text/internal
@@ -400,7 +401,7 @@ golang.org/x/text/unicode/norm
 # golang.org/x/time v0.11.0
 ## explicit; go 1.23.0
 golang.org/x/time/rate
-# golang.org/x/tools v0.32.0
+# golang.org/x/tools v0.33.0
 ## explicit; go 1.23.0
 golang.org/x/tools/go/ast/astutil
 golang.org/x/tools/go/buildutil
