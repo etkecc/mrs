@@ -696,6 +696,26 @@ paths:
           description: too many requests, slow down.
         '500':
           description: something is wrong, check the logs
+  /discover/msc1929/{server_name}:
+    post:
+      tags:
+        - public
+      summary: Verify the MSC1929 contacts of a server
+      description: Verify the MSC1929 support file of a server
+      operationId: verifyMSC1929
+      parameters:
+        - name: server_name
+          in: path
+          description: server name,domain
+          required: true
+          schema:
+            type: string
+            example: 'example.com'
+      responses:
+        '204':
+          description: the support file is valid and not empty
+        '400':
+          description: the support file is invalid or empty
       security:
         - { }
         - discovery:

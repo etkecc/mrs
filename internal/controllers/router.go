@@ -69,6 +69,7 @@ func ConfigureRouter(
 
 	e.POST("/discover/bulk", addServers(dataSvc, cfg), echobasicauth.NewMiddleware(&cfg.Get().Auth.Discovery))
 	e.POST("/discover/:name", addServer(dataSvc), discoveryProtection(rl, cfg))
+	e.POST("/discover/msc1929/:name", checkMSC1929(), getRL(1))
 
 	e.POST("/mod/report/:room_id", report(modSvc), getRL(1)) // doesn't use mod group to allow without auth
 	m := e.Group("mod")

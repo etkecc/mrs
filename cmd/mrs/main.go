@@ -17,6 +17,7 @@ import (
 
 	"github.com/etkecc/go-apm"
 	"github.com/etkecc/go-healthchecks/v2"
+	"github.com/etkecc/go-msc1929"
 	"github.com/labstack/echo/v4"
 	"github.com/mileusna/crontab"
 	"github.com/pemistahl/lingua-go"
@@ -28,6 +29,7 @@ import (
 	"github.com/etkecc/mrs/internal/repository/search"
 	"github.com/etkecc/mrs/internal/services"
 	"github.com/etkecc/mrs/internal/services/matrix"
+	"github.com/etkecc/mrs/internal/version"
 )
 
 // AllLanguages to load all language models at once
@@ -76,6 +78,7 @@ func main() {
 		return
 	}
 
+	msc1929.UserAgent = version.UserAgent
 	dataRepo, err = data.New(cfg.Get().Path.Data)
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot open data repo")
