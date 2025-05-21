@@ -112,6 +112,9 @@ func configureRouter(e *echo.Echo, cfgSvc configService, cacheSvc cacheService) 
 	e.Any("/_health", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
 	})
+	e.GET("/robots.txt", func(c echo.Context) error {
+		return c.String(http.StatusOK, "User-agent: *\nDisallow: /")
+	})
 	e.GET("/_docs", func(c echo.Context) error {
 		return c.Redirect(http.StatusMovedPermanently, "/_docs/index.html")
 	})
