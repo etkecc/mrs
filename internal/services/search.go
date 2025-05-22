@@ -169,11 +169,13 @@ func (s *Search) removeBlocked(results []*model.Entry) []*model.Entry {
 	return allowed
 }
 
-func (s *Search) matchFields(queryStr string) (sanitizedQuery string, fields map[string]string) {
+// matchFields parses the query string and returns the sanitized query string, fields and fuzzy flag
+// fuzzy flag is a field "fuzzy" in the fields map, if it is set to "true" (default), then the query should be treated as fuzzy
+func (s *Search) matchFields(queryStr string) (sanitizedQuery string, fields map[string]string, fuzzy bool) {
 	if !strings.Contains(queryStr, ":") { // if no key:value pair(-s) - nothing is here
-		return queryStr, nil
+		return queryStr, nil, true
 	}
-	fields = map[string]string{}
+	fields = map[string]string{"fuzzy": "true"}
 	parts := strings.Split(queryStr, " ") // e.g. "language:EN foss"
 	toRemove := []string{}
 	for _, part := range parts {
@@ -186,15 +188,17 @@ func (s *Search) matchFields(queryStr string) (sanitizedQuery string, fields map
 		if len(pair) < 2 {
 			continue
 		}
-		fields[strings.TrimSpace(pair[0])] = strings.TrimSpace(pair[1])
+		fields[strings.TrimSpace(strings.ToLower(pair[0]))] = strings.TrimSpace(pair[1])
 	}
 
 	for _, remove := range toRemove {
 		queryStr = strings.ReplaceAll(queryStr, remove, "")
 	}
 	queryStr = strings.TrimSpace(queryStr)
+	isFuzzy := strings.EqualFold(fields["fuzzy"], "true")
+	delete(fields, "fuzzy") // it's not a real field, but a flag, so remove it to not confuse bleve
 
-	return queryStr, fields
+	return queryStr, fields, isFuzzy
 }
 
 type bleveQuery interface {
@@ -251,7 +255,7 @@ func (s *Search) shouldReject(q string, fields map[string]string) bool {
 	return false
 }
 
-func (s *Search) getSearchQuery(q string, fields map[string]string) query.Query {
+func (s *Search) getSearchQuery(q string, fields map[string]string, fuzzy bool) query.Query {
 	// base/standard query
 	q = strings.TrimSpace(q)
 	if s.shouldReject(q, fields) {
@@ -263,15 +267,19 @@ func (s *Search) getSearchQuery(q string, fields map[string]string) query.Query 
 
 	phrase := strings.Contains(q, " ")
 	queries := []query.Query{
-		s.newFuzzyQuery(q, "name"),
-		s.newFuzzyQuery(q, "alias"),
-		s.newFuzzyQuery(q, "topic"),
-		s.newFuzzyQuery(q, "server"),
-
 		s.newMatchQuery(q, "name", phrase),
 		s.newMatchQuery(q, "alias", phrase),
 		s.newMatchQuery(q, "topic", phrase),
 		s.newMatchQuery(q, "server", phrase),
+	}
+
+	if fuzzy {
+		queries = append(queries,
+			s.newFuzzyQuery(q, "name"),
+			s.newFuzzyQuery(q, "alias"),
+			s.newFuzzyQuery(q, "topic"),
+			s.newFuzzyQuery(q, "server"),
+		)
 	}
 
 	mainQ := bleve.NewDisjunctionQuery(queries...)
