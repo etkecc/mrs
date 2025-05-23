@@ -257,7 +257,7 @@ func (s *Search) shouldReject(q string, fields map[string]string) bool {
 
 func (s *Search) getSearchQuery(q string, fields map[string]string, fuzzy bool) query.Query {
 	// base/standard query
-	q = strings.TrimSpace(q)
+	q = strings.TrimPrefix(strings.TrimSpace(q), "#")
 	if s.shouldReject(q, fields) {
 		return nil
 	}
