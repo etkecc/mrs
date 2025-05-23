@@ -47,6 +47,7 @@ func (s *Server) PublicRooms(ctx context.Context, req *http.Request, rdReq *mode
 		return http.StatusUnauthorized, nil
 	}
 	ctx = mcontext.WithOrigin(ctx, origin)
+	req.Header.Set("Referer", "https://"+origin+"/_matrix/client/v3/publicRooms") // workaround to set correct referer for this endpoint
 	defer metrics.IncSearchQueries("matrix", origin)
 
 	limit := rdReq.Limit

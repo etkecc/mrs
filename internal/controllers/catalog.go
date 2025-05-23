@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/etkecc/go-apm"
 	"github.com/labstack/echo/v4"
 
 	"github.com/etkecc/mrs/internal/model"
@@ -21,7 +20,6 @@ func catalogRoom(dataSvc dataService, plausible plausibleService) echo.HandlerFu
 			roomIDorAlias = "#" + roomIDorAlias
 		}
 
-		apm.Log(c.Request().Context()).Info().Str("room_id_or_alias", roomIDorAlias).Msg("catalogRoom")
 		room, err := dataSvc.GetRoom(c.Request().Context(), roomIDorAlias)
 		if err != nil {
 			return c.JSONBlob(http.StatusInternalServerError, utils.MustJSON(model.MatrixError{
