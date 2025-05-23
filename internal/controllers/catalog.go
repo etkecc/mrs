@@ -37,10 +37,11 @@ func catalogRoom(dataSvc dataService, plausible plausibleService) echo.HandlerFu
 			}))
 		}
 
-		go func(req *http.Request, ip, alias string) {
-			ctx := context.WithoutCancel(req.Context())
-			plausible.TrackOpen(ctx, req, ip, alias)
-		}(c.Request(), c.RealIP(), roomIDorAlias)
+		evt := model.NewAnalyticsEvent(c.Request().Context(), "Open", map[string]string{"room": room.Alias}, c.Request())
+		go func(ctx context.Context, evt *model.AnalyticsEvent) {
+			ctx = context.WithoutCancel(ctx)
+			plausible.Track(ctx, evt)
+		}(c.Request().Context(), evt)
 
 		return c.JSON(http.StatusOK, room)
 	}

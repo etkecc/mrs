@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"net/http"
 	"strings"
 
 	"github.com/blevesearch/bleve/v2"
@@ -11,15 +12,17 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/etkecc/mrs/internal/model"
+	"github.com/etkecc/mrs/internal/model/mcontext"
 )
 
 // Search service
 type Search struct {
-	cfg   ConfigService
-	data  searchDataRepository
-	repo  SearchRepository
-	stats StatsService
-	block BlocklistService
+	cfg       ConfigService
+	data      searchDataRepository
+	repo      SearchRepository
+	stats     StatsService
+	block     BlocklistService
+	plausible PlausibleService
 }
 
 type searchDataRepository interface {
@@ -44,13 +47,14 @@ var SearchFieldsBoost = map[string]float64{
 }
 
 // NewSearch creates new search service
-func NewSearch(cfg ConfigService, data searchDataRepository, repo SearchRepository, block BlocklistService, stats StatsService) *Search {
+func NewSearch(cfg ConfigService, data searchDataRepository, repo SearchRepository, block BlocklistService, stats StatsService, plausible PlausibleService) *Search {
 	s := &Search{
-		cfg:   cfg,
-		data:  data,
-		repo:  repo,
-		stats: stats,
-		block: block,
+		cfg:       cfg,
+		data:      data,
+		repo:      repo,
+		stats:     stats,
+		block:     block,
+		plausible: plausible,
 	}
 
 	return s
@@ -58,8 +62,9 @@ func NewSearch(cfg ConfigService, data searchDataRepository, repo SearchReposito
 
 // Search things
 // ref: https://blevesearch.com/docs/Query-String-Query/
-func (s *Search) Search(ctx context.Context, originServer, q, sortBy string, limit, offset int) ([]*model.Entry, int, error) {
+func (s *Search) Search(ctx context.Context, req *http.Request, q, sortBy string, limit, offset int) ([]*model.Entry, int, error) {
 	log := apm.Log(ctx)
+	originServer := mcontext.GetOrigin(ctx)
 	highlights := s.availableHighlights(originServer)
 	if limit == 0 {
 		limit = s.cfg.Get().Search.Defaults.Limit
@@ -82,7 +87,18 @@ func (s *Search) Search(ctx context.Context, originServer, q, sortBy string, lim
 		entries = s.addHighlights(originServer, entries)
 		return entries, length, nil
 	}
-	builtQuery = s.getSearchQuery(s.matchFields(q))
+	q, fields, fuzzy := s.matchFields(q)
+	q = strings.TrimPrefix(strings.TrimSpace(q), "#")
+	qTrack := strings.TrimSpace(strings.ToLower(q))
+	if qTrack != "" {
+		evt := model.NewAnalyticsEvent(ctx, "Search", map[string]string{"query": qTrack}, req)
+		go func(ctx context.Context, evt *model.AnalyticsEvent) {
+			ctx = context.WithoutCancel(ctx)
+			s.plausible.Track(ctx, evt)
+		}(ctx, evt)
+	}
+
+	builtQuery = s.getSearchQuery(q, fields, fuzzy)
 	if builtQuery == nil {
 		return []*model.Entry{}, 0, nil
 	}
@@ -105,6 +121,9 @@ func (s *Search) Search(ctx context.Context, originServer, q, sortBy string, lim
 }
 
 func (s *Search) availableHighlights(originServer string) int {
+	if originServer == "" {
+		return 0
+	}
 	highlights := s.cfg.Get().Search.Highlights
 	if len(highlights) == 0 {
 		return 0
@@ -257,7 +276,6 @@ func (s *Search) shouldReject(q string, fields map[string]string) bool {
 
 func (s *Search) getSearchQuery(q string, fields map[string]string, fuzzy bool) query.Query {
 	// base/standard query
-	q = strings.TrimPrefix(strings.TrimSpace(q), "#")
 	if s.shouldReject(q, fields) {
 		return nil
 	}

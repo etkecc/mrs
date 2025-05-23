@@ -13,13 +13,12 @@ import (
 )
 
 type searchService interface {
-	Search(ctx context.Context, originServer, query, sortBy string, limit, offset int) ([]*model.Entry, int, error)
+	Search(ctx context.Context, req *http.Request, query, sortBy string, limit, offset int) ([]*model.Entry, int, error)
 }
 
-func search(svc searchService, plausible plausibleService, cfg configService, path bool) echo.HandlerFunc {
+func search(svc searchService, cfg configService, path bool) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		origin := getOrigin(cfg, c.Request())
-		defer metrics.IncSearchQueries("rest", origin)
+		defer metrics.IncSearchQueries("rest", cfg.Get().Matrix.ServerName)
 
 		paramfunc := c.QueryParam
 		if path {
@@ -27,15 +26,11 @@ func search(svc searchService, plausible plausibleService, cfg configService, pa
 		}
 
 		query := utils.Unescape(paramfunc("q"))
-		go func(req *http.Request, ip, query string) {
-			ctx := context.WithoutCancel(req.Context())
-			plausible.TrackSearch(ctx, req, ip, query)
-		}(c.Request(), c.RealIP(), query)
 
 		limit := kit.StringToInt(paramfunc("l"))
 		offset := kit.StringToInt(paramfunc("o"))
 		sortBy := paramfunc("s")
-		entries, _, err := svc.Search(c.Request().Context(), origin, query, sortBy, limit, offset)
+		entries, _, err := svc.Search(c.Request().Context(), c.Request(), query, sortBy, limit, offset)
 		if err != nil {
 			return err
 		}

@@ -194,23 +194,6 @@ func (s *Server) buildPublicRoomsReq(ctx context.Context, serverName, limit, sin
 	return req, nil
 }
 
-// trackSearch is a helper function to track search events
-func (s *Server) trackSearch(ctx context.Context, req *http.Request, origin, ip, query string) {
-	if req.Referer() == "" {
-		req.Header.Set("Referer", "https://"+origin)
-	}
-	// hacky workaround to signal plausible that this is a search via Matrix Federation.
-	// Plausible uses https://github.com/matomo-org/device-detector library to parse user-agents,
-	// and if the user-agent is empty (or doesn't match any known user-agent for that library),
-	// it will not recognize it.
-	// To avoid such issues, we set the user-agent to "Synapse" if it is empty,
-	// knowing well that this is not a real user-agent, but at least it will be recognized.
-	if req.UserAgent() == "" {
-		req.Header.Set("User-Agent", "Synapse")
-	}
-	s.plausible.TrackSearch(ctx, req, ip, query)
-}
-
 // getRoom is a helper function to get a room by ID or alias
 func (s *Server) getRoom(ctx context.Context, roomIDorAlias string) (*model.MatrixRoom, error) {
 	roomID := roomIDorAlias

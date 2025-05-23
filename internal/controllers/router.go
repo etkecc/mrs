@@ -33,8 +33,7 @@ type cacheService interface {
 }
 
 type plausibleService interface {
-	TrackSearch(ctx context.Context, incomingReq *http.Request, ip, query string)
-	TrackOpen(ctx context.Context, incomingReq *http.Request, ip, roomAlias string)
+	Track(ctx context.Context, evt *model.AnalyticsEvent)
 }
 
 // ConfigureRouter configures echo router
@@ -61,11 +60,11 @@ func ConfigureRouter(
 
 	rl := getRL(3)
 	searchCache := cacheSvc.MiddlewareSearch()
-	e.GET("/search", search(searchSvc, plausibleSvc, cfg, false), searchCache, rl)
-	e.GET("/search/:q", search(searchSvc, plausibleSvc, cfg, true), searchCache, rl)
-	e.GET("/search/:q/:l", search(searchSvc, plausibleSvc, cfg, true), searchCache, rl)
-	e.GET("/search/:q/:l/:o", search(searchSvc, plausibleSvc, cfg, true), searchCache, rl)
-	e.GET("/search/:q/:l/:o/:s", search(searchSvc, plausibleSvc, cfg, true), searchCache, rl)
+	e.GET("/search", search(searchSvc, cfg, false), searchCache, rl)
+	e.GET("/search/:q", search(searchSvc, cfg, true), searchCache, rl)
+	e.GET("/search/:q/:l", search(searchSvc, cfg, true), searchCache, rl)
+	e.GET("/search/:q/:l/:o", search(searchSvc, cfg, true), searchCache, rl)
+	e.GET("/search/:q/:l/:o/:s", search(searchSvc, cfg, true), searchCache, rl)
 
 	e.POST("/discover/bulk", addServers(dataSvc, cfg), echobasicauth.NewMiddleware(&cfg.Get().Auth.Discovery))
 	e.POST("/discover/:name", addServer(dataSvc), discoveryProtection(rl, cfg))
@@ -96,6 +95,7 @@ func configureRouter(e *echo.Echo, cfgSvc configService, cacheSvc cacheService) 
 	e.Use(middleware.Secure())
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{MaxAge: 86400}))
 	e.Use(withBlocklist(cfgSvc))
+	e.Use(withMContext(cfgSvc))
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			c.Response().Header().Set(echo.HeaderReferrerPolicy, "origin")

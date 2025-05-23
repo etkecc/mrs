@@ -14,7 +14,7 @@ type configService interface {
 }
 
 type searchService interface {
-	Search(ctx context.Context, originServer, query, sortBy string, limit, offset int) ([]*model.Entry, int, error)
+	Search(ctx context.Context, req *http.Request, query, sortBy string, limit, offset int) ([]*model.Entry, int, error)
 }
 
 type mediaService interface {
@@ -25,8 +25,4 @@ type mediaService interface {
 type dataRepository interface {
 	GetRoom(ctx context.Context, roomID string) (*model.MatrixRoom, error)
 	GetRoomMapping(ctx context.Context, roomIDorAlias string) string
-}
-
-type plausibleService interface {
-	TrackSearch(ctx context.Context, incomingReq *http.Request, ip, query string)
 }

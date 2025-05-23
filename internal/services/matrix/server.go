@@ -11,6 +11,7 @@ import (
 
 	"github.com/etkecc/mrs/internal/metrics"
 	"github.com/etkecc/mrs/internal/model"
+	"github.com/etkecc/mrs/internal/model/mcontext"
 	"github.com/etkecc/mrs/internal/utils"
 )
 
@@ -45,11 +46,7 @@ func (s *Server) PublicRooms(ctx context.Context, req *http.Request, rdReq *mode
 		log.Warn().Err(err).Str("header", req.Header.Get("Authorization")).Msg("matrix auth failed")
 		return http.StatusUnauthorized, nil
 	}
-
-	go func(ctx context.Context, req *http.Request, origin, ip, query string) {
-		ctx = context.WithoutCancel(ctx)
-		s.trackSearch(ctx, req, origin, ip, query)
-	}(ctx, req, origin, rdReq.IP, rdReq.Filter.GenericSearchTerm)
+	ctx = mcontext.WithOrigin(ctx, origin)
 	defer metrics.IncSearchQueries("matrix", origin)
 
 	limit := rdReq.Limit
@@ -60,7 +57,7 @@ func (s *Server) PublicRooms(ctx context.Context, req *http.Request, rdReq *mode
 		limit = s.cfg.Get().Search.Defaults.Limit
 	}
 	offset := kit.StringToInt(rdReq.Since)
-	entries, total, err := s.search.Search(ctx, origin, rdReq.Filter.GenericSearchTerm, "", limit, offset)
+	entries, total, err := s.search.Search(ctx, req, rdReq.Filter.GenericSearchTerm, "", limit, offset)
 	if err != nil {
 		log.Error().Err(err).Msg("search from matrix failed")
 		return http.StatusInternalServerError, nil

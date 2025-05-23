@@ -5,12 +5,16 @@ import (
 	"context"
 	"net/http"
 	"net/url"
-	"strings"
 
 	"github.com/etkecc/go-apm"
+	"github.com/etkecc/mrs/internal/model"
 	"github.com/etkecc/mrs/internal/utils"
 	"github.com/goccy/go-json"
 )
+
+type PlausibleService interface {
+	Track(ctx context.Context, evt *model.AnalyticsEvent)
+}
 
 // Plausible - plausible analytics service
 type Plausible struct {
@@ -29,7 +33,7 @@ func (p *Plausible) Enabled() bool {
 	return p.cfg.Get().Plausible.Host != "" && p.cfg.Get().Plausible.Domain != ""
 }
 
-func (p *Plausible) sendEvent(ctx context.Context, incomingReq *http.Request, name, ip string, props map[string]any) {
+func (p *Plausible) Track(ctx context.Context, evt *model.AnalyticsEvent) {
 	log := apm.Log(ctx)
 	if !p.Enabled() {
 		return
@@ -41,11 +45,11 @@ func (p *Plausible) sendEvent(ctx context.Context, incomingReq *http.Request, na
 		Path:   "/api/event",
 	}
 	data := map[string]any{
-		"name":     name,
-		"url":      incomingReq.URL.String(),
+		"name":     evt.Name,
+		"url":      evt.URL,
 		"domain":   p.cfg.Get().Plausible.Domain,
-		"referrer": incomingReq.Referer(),
-		"props":    props,
+		"referrer": evt.Referrer,
+		"props":    evt.Props,
 	}
 	datab, err := json.Marshal(data)
 	if err != nil {
@@ -61,8 +65,8 @@ func (p *Plausible) sendEvent(ctx context.Context, incomingReq *http.Request, na
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", incomingReq.UserAgent())
-	req.Header.Set("X-Forwarded-For", ip)
+	req.Header.Set("User-Agent", evt.UserAgent)
+	req.Header.Set("X-Forwarded-For", evt.XForwardedFor)
 
 	resp, err := utils.Do(req)
 	if err != nil {
@@ -73,23 +77,4 @@ func (p *Plausible) sendEvent(ctx context.Context, incomingReq *http.Request, na
 	if resp.StatusCode != http.StatusAccepted {
 		log.Error().Int("status", resp.StatusCode).Msg("unexpected plausible response")
 	}
-}
-
-// TrackSearch - track search event
-func (p *Plausible) TrackSearch(ctx context.Context, incomingReq *http.Request, ip, query string) {
-	query = strings.TrimSpace(strings.ToLower(query))
-	if query == "" {
-		return
-	}
-
-	p.sendEvent(ctx, incomingReq, "Search", ip, map[string]any{"query": query})
-}
-
-// TrackOpen - track room open event - when user clicks on the room link
-func (p *Plausible) TrackOpen(ctx context.Context, incomingReq *http.Request, ip, roomAlias string) {
-	roomAlias = strings.TrimSpace(strings.ToLower(roomAlias))
-	if roomAlias == "" {
-		return
-	}
-	p.sendEvent(ctx, incomingReq, "Open", ip, map[string]any{"room": roomAlias})
 }

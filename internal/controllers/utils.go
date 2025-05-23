@@ -10,6 +10,7 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/etkecc/mrs/internal/model"
+	"github.com/etkecc/mrs/internal/model/mcontext"
 	"github.com/etkecc/mrs/internal/utils"
 )
 
@@ -20,23 +21,6 @@ var (
 		Message: "forbidden",
 	})
 )
-
-// getOrigin returns the origin of the request (if provided), or referer (if provided), or the MRS server name
-func getOrigin(cfg configService, r *http.Request) string {
-	var origin string
-	if parsed := utils.ParseURL(r.Header.Get("Origin")); parsed != nil {
-		origin = parsed.Hostname()
-	}
-	if origin == "" {
-		if parsed := utils.ParseURL(r.Header.Get("Referer")); parsed != nil {
-			origin = parsed.Hostname()
-		}
-	}
-	if origin == "" {
-		origin = cfg.Get().Matrix.ServerName
-	}
-	return origin
-}
 
 func getRL(limit rate.Limit) echo.MiddlewareFunc {
 	rl, ok := rls[limit]
@@ -83,6 +67,34 @@ func withBlocklist(cfg configService) echo.MiddlewareFunc {
 			if slices.Contains(cfg.Get().Blocklist.IPs, ip) {
 				return c.JSONBlob(http.StatusForbidden, mForbidden)
 			}
+			return next(c)
+		}
+	}
+}
+
+// withMContext is a middleware that sets the context for the request
+func withMContext(cfg configService) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			ctx := c.Request().Context()
+			ctx = mcontext.WithIP(ctx, c.RealIP())
+
+			var origin string
+			if parsed := utils.ParseURL(c.Request().Header.Get("Origin")); parsed != nil {
+				origin = parsed.Hostname()
+			}
+			if origin == "" {
+				if parsed := utils.ParseURL(c.Request().Header.Get("Referer")); parsed != nil {
+					origin = parsed.Hostname()
+				}
+			}
+			if origin == "" {
+				origin = cfg.Get().Matrix.ServerName
+			}
+			ctx = mcontext.WithOrigin(ctx, origin)
+
+			c.SetRequest(c.Request().WithContext(ctx))
+
 			return next(c)
 		}
 	}
