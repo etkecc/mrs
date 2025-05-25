@@ -12,11 +12,11 @@ require (
 	github.com/etkecc/go-fswatcher v1.0.1
 	github.com/etkecc/go-healthchecks/v2 v2.2.2
 	github.com/etkecc/go-kit v1.6.0
-	github.com/etkecc/go-msc1929 v1.2.1
+	github.com/etkecc/go-msc1929 v1.2.3
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/goccy/go-json v0.10.5
 	github.com/hashicorp/golang-lru/v2 v2.0.7
-	github.com/labstack/echo/v4 v4.13.3
+	github.com/labstack/echo/v4 v4.13.4
 	github.com/matrix-org/gomatrixserverlib v0.0.0-20250520070507-c70b2132a00a
 	github.com/mattevans/postmark-go v1.0.0
 	github.com/mileusna/crontab v1.2.0

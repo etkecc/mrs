@@ -189,7 +189,7 @@ github.com/etkecc/go-kit
 github.com/etkecc/go-kit/format
 github.com/etkecc/go-kit/template
 github.com/etkecc/go-kit/workpool
-# github.com/etkecc/go-msc1929 v1.2.1
+# github.com/etkecc/go-msc1929 v1.2.3
 ## explicit; go 1.18
 github.com/etkecc/go-msc1929
 # github.com/fsnotify/fsnotify v1.9.0
@@ -254,8 +254,8 @@ github.com/josharian/intern
 # github.com/json-iterator/go v1.1.12
 ## explicit; go 1.12
 github.com/json-iterator/go
-# github.com/labstack/echo/v4 v4.13.3
-## explicit; go 1.20
+# github.com/labstack/echo/v4 v4.13.4
+## explicit; go 1.23.0
 github.com/labstack/echo/v4
 github.com/labstack/echo/v4/middleware
 # github.com/labstack/gommon v0.4.2
