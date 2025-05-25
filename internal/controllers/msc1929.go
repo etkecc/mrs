@@ -42,6 +42,7 @@ func validateMSC1929(resp *msc1929.Response) []*model.MatrixError {
 	errs := []*model.MatrixError{}
 	if resp.IsEmpty() {
 		errs = append(errs, errMSC1929Empty)
+		return errs
 	}
 	if len(resp.Admins) > 0 {
 		errs = append(errs, errMSC1929Outdated)
