@@ -36,6 +36,12 @@ type plausibleService interface {
 	Track(ctx context.Context, evt *model.AnalyticsEvent)
 }
 
+var doNotGZIP = map[string]bool{
+	"/avatar/:name/:id":                     true, // binary data
+	"/_matrix/media/r0/thumbnail/:name/:id": true, // binary data
+	"/_matrix/media/v3/thumbnail/:name/:id": true, // binary data
+}
+
 // ConfigureRouter configures echo router
 func ConfigureRouter(
 	e *echo.Echo,
@@ -94,6 +100,7 @@ func configureRouter(e *echo.Echo, cfgSvc configService, cacheSvc cacheService) 
 	e.Use(cacheSvc.Middleware())
 	e.Use(middleware.Secure())
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{MaxAge: 86400}))
+	e.Use(middleware.GzipWithConfig(middleware.GzipConfig{Skipper: func(c echo.Context) bool { return doNotGZIP[c.Path()] }}))
 	e.Use(withBlocklist(cfgSvc))
 	e.Use(withMContext(cfgSvc))
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
