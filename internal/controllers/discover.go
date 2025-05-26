@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"io"
 	"net/http"
 
@@ -28,7 +29,8 @@ func addServers(dataSvc dataService, cfg configService) echo.HandlerFunc {
 			return err
 		}
 
-		go dataSvc.AddServers(c.Request().Context(), servers, cfg.Get().Workers.Discovery)
+		ctx := context.WithoutCancel(c.Request().Context())
+		go dataSvc.AddServers(ctx, servers, cfg.Get().Workers.Discovery)
 		return c.NoContent(http.StatusAccepted)
 	}
 }
