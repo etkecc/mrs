@@ -86,6 +86,7 @@ func ConfigureRouter(
 
 	a := e.Group("-")
 	a.Use(echobasicauth.NewMiddleware(&cfg.Get().Auth.Admin))
+	a.GET("/rooms", rooms(dataSvc))
 	a.GET("/servers", servers(crawlerSvc))
 	a.GET("/status", status(statsSvc))
 	a.POST("/discover", discover(dataSvc, cfg))

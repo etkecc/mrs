@@ -75,6 +75,11 @@ func (df *DataFacade) DiscoverServers(ctx context.Context, workers int) {
 	log.Info().Str("took", time.Since(start).String()).Msg("servers discovery has been finished")
 }
 
+// EachRoom iterates over all discovered rooms
+func (df *DataFacade) EachRoom(ctx context.Context, handler func(roomID string, room *model.MatrixRoom) bool) {
+	df.crawler.EachRoom(ctx, handler)
+}
+
 // ParseRooms from discovered servers
 func (df *DataFacade) ParseRooms(ctx context.Context, workers int) {
 	log := apm.Log(ctx)
