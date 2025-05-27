@@ -23,6 +23,7 @@ type Search struct {
 	stats     StatsService
 	block     BlocklistService
 	plausible PlausibleService
+	stopwords map[string]bool
 }
 
 type searchDataRepository interface {
@@ -56,6 +57,7 @@ func NewSearch(cfg ConfigService, data searchDataRepository, repo SearchReposito
 		block:     block,
 		plausible: plausible,
 	}
+	s.initStopwords()
 
 	return s
 }
@@ -220,60 +222,6 @@ func (s *Search) matchFields(queryStr string) (sanitizedQuery string, fields map
 	return queryStr, fields, isFuzzy
 }
 
-type bleveQuery interface {
-	query.Query
-	SetField(string)
-	SetBoost(float64)
-}
-
-func (s *Search) newMatchQuery(match, field string, phrase bool) bleveQuery {
-	var searchQuery bleveQuery
-	if phrase {
-		searchQuery = bleve.NewMatchPhraseQuery(match)
-	} else {
-		searchQuery = bleve.NewMatchQuery(match)
-	}
-	searchQuery.SetField(field)
-	searchQuery.SetBoost(SearchFieldsBoost[field])
-
-	return searchQuery
-}
-
-func (s *Search) newTermQuery(match, field string) bleveQuery {
-	searchQuery := bleve.NewTermQuery(match)
-	searchQuery.SetField(field)
-	searchQuery.SetBoost(SearchFieldsBoost[field])
-
-	return searchQuery
-}
-
-func (s *Search) newFuzzyQuery(match, field string) bleveQuery {
-	searchQuery := bleve.NewFuzzyQuery(match)
-	searchQuery.SetField(field)
-	searchQuery.SetBoost(SearchFieldsBoost[field])
-
-	return searchQuery
-}
-
-// shouldReject checks if query or fields contain words from the stoplist
-func (s *Search) shouldReject(q string, fields map[string]string) bool {
-	stopwords := s.cfg.Get().Blocklist.Queries
-	for k, v := range fields {
-		if slices.Contains(stopwords, k) {
-			return true
-		}
-		if slices.Contains(stopwords, v) {
-			return true
-		}
-	}
-	for _, k := range strings.Split(q, " ") {
-		if slices.Contains(stopwords, k) {
-			return true
-		}
-	}
-	return false
-}
-
 func (s *Search) getSearchQuery(q string, fields map[string]string, fuzzy bool) query.Query {
 	// base/standard query
 	if s.shouldReject(q, fields) {
@@ -318,4 +266,67 @@ func (s *Search) getFieldsQuery(fields map[string]string) query.Query {
 		boolQ.AddMust(s.newTermQuery(fieldQ, field))
 	}
 	return boolQ
+}
+
+// initStopwords initializes the stopwords map from the configuration
+func (s *Search) initStopwords() {
+	s.stopwords = map[string]bool{}
+	for _, word := range s.cfg.Get().Blocklist.Queries {
+		word = strings.ToLower(strings.TrimSpace(word))
+		if word != "" {
+			s.stopwords[word] = true
+		}
+	}
+}
+
+// shouldReject checks if query or fields contain words from the stoplist
+func (s *Search) shouldReject(q string, fields map[string]string) bool {
+	for k, v := range fields {
+		v = strings.ToLower(strings.TrimSpace(v))
+		if s.stopwords[k] || s.stopwords[v] {
+			return true
+		}
+	}
+	for _, k := range strings.Split(strings.ToLower(q), " ") {
+		k = strings.TrimSpace(k)
+		if s.stopwords[k] {
+			return true
+		}
+	}
+	return false
+}
+
+type bleveQuery interface {
+	query.Query
+	SetField(string)
+	SetBoost(float64)
+}
+
+func (s *Search) newMatchQuery(match, field string, phrase bool) bleveQuery {
+	var searchQuery bleveQuery
+	if phrase {
+		searchQuery = bleve.NewMatchPhraseQuery(match)
+	} else {
+		searchQuery = bleve.NewMatchQuery(match)
+	}
+	searchQuery.SetField(field)
+	searchQuery.SetBoost(SearchFieldsBoost[field])
+
+	return searchQuery
+}
+
+func (s *Search) newTermQuery(match, field string) bleveQuery {
+	searchQuery := bleve.NewTermQuery(match)
+	searchQuery.SetField(field)
+	searchQuery.SetBoost(SearchFieldsBoost[field])
+
+	return searchQuery
+}
+
+func (s *Search) newFuzzyQuery(match, field string) bleveQuery {
+	searchQuery := bleve.NewFuzzyQuery(match)
+	searchQuery.SetField(field)
+	searchQuery.SetBoost(SearchFieldsBoost[field])
+
+	return searchQuery
 }
