@@ -137,16 +137,16 @@ func (r *MatrixRoom) Parse(detector lingua.LanguageDetector, media mediaURLServi
 	r.parseAvatar(media)
 }
 
-// Servers returns all servers from the room object, except own server
-func (r *MatrixRoom) Servers(ownServerName string) []string {
+// Servers returns all servers from the room object
+func (r *MatrixRoom) Servers() []string {
 	servers := []string{}
-	if server := utils.ServerFrom(r.ID); server != ownServerName {
+	if server := utils.ServerFrom(r.ID); server != "" {
 		servers = append(servers, server)
 	}
-	if server := utils.ServerFrom(r.Alias); server != ownServerName {
+	if server := utils.ServerFrom(r.Alias); server != "" {
 		servers = append(servers, server)
 	}
-	if server := r.Server; server != ownServerName {
+	if server := r.Server; server != "" {
 		servers = append(servers, server)
 	}
 

@@ -61,7 +61,7 @@ func (s *Server) QueryDirectory(ctx context.Context, req *http.Request, alias st
 
 	resp := &queryDirectoryResp{
 		RoomID:  room.ID,
-		Servers: room.Servers(s.cfg.Get().Matrix.ServerName),
+		Servers: room.Servers(),
 	}
 	respb, err = utils.JSON(resp)
 	if err != nil {
