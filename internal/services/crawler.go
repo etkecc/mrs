@@ -34,7 +34,6 @@ type BlocklistService interface {
 	Add(server string)
 	ByID(matrixID string) bool
 	ByServer(server string) bool
-	Slice() []string
 	Reset()
 }
 
@@ -155,8 +154,13 @@ func (m *Crawler) ParseRooms(ctx context.Context, workers int) {
 	defer func() { m.parsing = false }()
 
 	servers := kit.NewList[string, string]()
-	servers.AddSlice(m.IndexableServers(ctx))
-	servers.RemoveSlice(m.block.Slice())
+	indexable := m.IndexableServers(ctx)
+	for _, server := range indexable {
+		if m.block.ByServer(server) {
+			continue
+		}
+		servers.Add(server)
+	}
 	slice := servers.Slice()
 	total := len(slice)
 
@@ -261,6 +265,10 @@ func (m *Crawler) loadServers(ctx context.Context) *kit.List[string, string] {
 
 // discoverServer parses server information
 func (m *Crawler) discoverServer(ctx context.Context, name string) *model.MatrixServer {
+	if m.block.ByServer(name) {
+		apm.Log(ctx).Info().Str("server", name).Msg("server is blocked, skipping")
+		return nil
+	}
 	name, ok := m.v.IsOnline(ctx, name)
 	if name == "" {
 		return nil

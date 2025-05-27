@@ -165,12 +165,6 @@ func (s *Server) getURL(ctx context.Context, serverName string, discover bool) s
 	}
 	log.Warn().Err(err).Msg("failed to parse SRV matrix-fed")
 
-	fromSRV, err = s.parseSRV(ctx, "matrix", serverName)
-	if err == nil {
-		return s.dcrURL(ctx, serverName, "https://"+fromSRV, discover)
-	}
-	log.Warn().Err(err).Msg("failed to parse SRV matrix, using server name as host")
-
 	return s.dcrURL(ctx, serverName, "https://"+serverName+":8448", discover)
 }
 

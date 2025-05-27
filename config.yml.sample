@@ -118,7 +118,7 @@ servers:
 # blocklist config
 blocklist:
   ips: [] # list of IPs to reject requests from completely
-  servers: [] # list of servers to ignore completely
+  servers: [] # list of servers to ignore completely (regular expressions)
   queries: [] # list of words, if at least one of them is present in a search query, empty results will be returned
 
 # vi: ft=yaml
