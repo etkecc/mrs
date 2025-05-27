@@ -34,6 +34,7 @@ func (b *Blocklist) initRegexes() {
 
 	b.regexes = make([]*regexp.Regexp, 0, len(b.cfg.Get().Blocklist.Servers))
 	for _, r := range b.cfg.Get().Blocklist.Servers {
+		r = strings.ReplaceAll(r, "\\\\", "\\") // replace double backslashes with single backslash, because they could be escaped in the config file
 		re, err := regexp.Compile(r)
 		if err != nil {
 			apm.Log().Error().Err(err).Str("regex", r).Msg("Failed to compile blocklist.servers regex for blocklist")
@@ -80,6 +81,7 @@ func (b *Blocklist) ByID(matrixID string) bool {
 func (b *Blocklist) ByServer(server string) bool {
 	for _, re := range b.regexes {
 		if re.MatchString(server) {
+			apm.Log().Info().Str("server", server).Msg("Server is blocked by blocklist")
 			return true
 		}
 	}
