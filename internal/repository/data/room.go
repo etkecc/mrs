@@ -237,10 +237,6 @@ func (d *Data) AddRoomMapping(ctx context.Context, roomID, alias string) error {
 		if err := tx.Bucket(roomsMappingsBucket).Put([]byte(roomID), []byte(alias)); err != nil {
 			return err
 		}
-		// if alias already exists, do not overwrite. Multiple room IDs can point to the same alias
-		if v := tx.Bucket(roomsMappingsBucket).Get([]byte(alias)); v != nil {
-			return nil
-		}
 		return tx.Bucket(roomsMappingsBucket).Put([]byte(alias), []byte(roomID))
 	})
 }
@@ -263,8 +259,12 @@ func (d *Data) GetRoomMapping(ctx context.Context, idOrAlias string) string {
 func (d *Data) RemoveRoomMapping(ctx context.Context, id, alias string) {
 	apm.Log(ctx).Debug().Str("id", id).Str("alias", alias).Msg("removing a room mapping")
 	d.db.Update(func(tx *bbolt.Tx) error { //nolint:errcheck // that's ok
-		tx.Bucket(roomsMappingsBucket).Delete([]byte(id))    //nolint:errcheck // that's ok
-		tx.Bucket(roomsMappingsBucket).Delete([]byte(alias)) //nolint:errcheck // that's ok
+		if id != "" {
+			tx.Bucket(roomsMappingsBucket).Delete([]byte(id)) //nolint:errcheck // that's ok
+		}
+		if alias != "" {
+			tx.Bucket(roomsMappingsBucket).Delete([]byte(alias)) //nolint:errcheck // that's ok
+		}
 		return nil
 	})
 }
