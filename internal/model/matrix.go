@@ -114,6 +114,9 @@ func (r *MatrixRoom) Parse(detector lingua.LanguageDetector, media mediaURLServi
 	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
 	defer cancel()
 
+	r.Name = utils.Sanitize(r.Name)
+	r.Topic = utils.Sanitize(r.Topic)
+
 	r.ParsedAt = time.Now().UTC()
 	if ctx.Err() != nil {
 		return

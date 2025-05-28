@@ -19,6 +19,7 @@ require (
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/matrix-org/gomatrixserverlib v0.0.0-20250520070507-c70b2132a00a
 	github.com/mattevans/postmark-go v1.0.0
+	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/mileusna/crontab v1.2.0
 	github.com/pemistahl/lingua-go v1.4.0
 	github.com/rs/zerolog v1.34.0
@@ -35,6 +36,7 @@ require (
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/RoaringBitmap/roaring/v2 v2.5.0 // indirect
+	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/bits-and-blooms/bitset v1.22.0 // indirect
 	github.com/blevesearch/bleve_index_api v1.2.8 // indirect
 	github.com/blevesearch/geo v0.2.3 // indirect
@@ -53,7 +55,7 @@ require (
 	github.com/blevesearch/zapx/v13 v13.4.2 // indirect
 	github.com/blevesearch/zapx/v14 v14.4.2 // indirect
 	github.com/blevesearch/zapx/v15 v15.4.2 // indirect
-	github.com/blevesearch/zapx/v16 v16.2.3 // indirect
+	github.com/blevesearch/zapx/v16 v16.2.4 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/getsentry/sentry-go v0.33.0 // indirect
 	github.com/getsentry/sentry-go/zerolog v0.33.0 // indirect
@@ -65,6 +67,7 @@ require (
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v1.0.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/gorilla/css v1.0.1 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/labstack/gommon v0.4.2 // indirect
