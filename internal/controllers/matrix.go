@@ -72,7 +72,11 @@ func configureMatrixCSEndpoints(e *echo.Echo, matrixSvc matrixService, cacheSvc 
 		return c.JSONBlob(matrixSvc.GetClientRoomVisibility(c.Request().Context(), c.Param("room_id")))
 	}, rl, cacheSvc.MiddlewareImmutable())
 
-	// MSC3326 - correct and incorrect (but implemented by matrix.to) endpoints
+	// MSC3326 (stable) endpoint, ref: https://github.com/matrix-org/matrix-spec/pull/2125
+	e.GET("/_matrix/client/v1/room_summary/:room_id_alias", func(c echo.Context) error {
+		return c.JSONBlob(matrixSvc.GetClientRoomSummary(c.Request().Context(), c.Param("room_id_alias")))
+	}, rl)
+	// MSC3326 (unstable) - correct and incorrect (but implemented by matrix.to) endpoints
 	e.GET("/_matrix/client/unstable/im.nheko.summary/summary/:room_id_alias", func(c echo.Context) error {
 		return c.JSONBlob(matrixSvc.GetClientRoomSummary(c.Request().Context(), c.Param("room_id_alias")))
 	}, rl)
