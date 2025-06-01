@@ -81,7 +81,7 @@ func (b *Blocklist) ByID(matrixID string) bool {
 func (b *Blocklist) ByServer(server string) bool {
 	for _, re := range b.regexes {
 		if re.MatchString(server) {
-			apm.Log().Info().Str("server", server).Msg("Server is blocked by blocklist")
+			apm.Log().Info().Str("server", server).Msg("server is blocked by blocklist")
 			return true
 		}
 	}

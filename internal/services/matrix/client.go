@@ -7,6 +7,7 @@ import (
 	"net/url"
 
 	"github.com/etkecc/go-apm"
+	"github.com/etkecc/go-kit"
 	"github.com/etkecc/mrs/internal/model"
 	"github.com/etkecc/mrs/internal/utils"
 	"github.com/goccy/go-json"
@@ -91,6 +92,17 @@ func (s *Server) GetClientRoomSummary(ctx context.Context, aliasOrID, via string
 	if s.data.IsBanned(ctx, entry.ID) {
 		log.Warn().Msg("attempting to get summary of a banned room")
 		return http.StatusNotFound, nil
+	}
+
+	servers := kit.Uniq([]string{
+		utils.ServerFrom(entry.ID),
+		utils.ServerFrom(entry.Alias),
+	})
+
+	for _, server := range servers {
+		if s.blocklist.ByServer(server) {
+			return http.StatusNotFound, nil
+		}
 	}
 
 	return http.StatusOK, entry

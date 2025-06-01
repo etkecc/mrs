@@ -98,7 +98,7 @@ func main() {
 	statsSvc := services.NewStats(cfg, dataRepo, index, blockSvc)
 	indexSvc := services.NewIndex(cfg, index)
 	searchSvc := services.NewSearch(cfg, dataRepo, index, blockSvc, statsSvc, plausibleSvc)
-	matrixSvc, err := matrix.NewServer(cfg, dataRepo, media, searchSvc)
+	matrixSvc, err := matrix.NewServer(cfg, dataRepo, media, searchSvc, blockSvc)
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot start matrix service")
 	}

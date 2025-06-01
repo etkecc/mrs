@@ -22,6 +22,10 @@ type mediaService interface {
 	Add(ctx context.Context, serverName, mediaID string, params url.Values, content []byte)
 }
 
+type blocklistService interface {
+	ByServer(server string) bool
+}
+
 type dataRepository interface {
 	GetRoom(ctx context.Context, roomID string) (*model.MatrixRoom, error)
 	GetRoomMapping(ctx context.Context, roomIDorAlias string) string
