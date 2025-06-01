@@ -52,6 +52,7 @@ type DataRepository interface {
 	AddRoomMapping(context.Context, string, string) error
 	GetRoomMapping(context.Context, string) string
 	RemoveRoomMapping(context.Context, string, string)
+	RecreateRoomMapping(context.Context, map[string]string) error
 	EachRoom(context.Context, func(string, *model.MatrixRoom) bool)
 	SetBiggestRooms(context.Context, []string) error
 	GetBannedRooms(context.Context, ...string) ([]string, error)
@@ -330,6 +331,7 @@ func (m *Crawler) discoverServers(ctx context.Context, servers *kit.List[string,
 	return offline
 }
 
+//nolint:gocognit // TODO: refactor
 func (m *Crawler) afterRoomParsing(ctx context.Context) {
 	type roomCount struct {
 		id      string
@@ -341,12 +343,14 @@ func (m *Crawler) afterRoomParsing(ctx context.Context) {
 	started := time.Now().UTC()
 	counts := []roomCount{}
 	toRemove := map[string]string{}
+	mapping := map[string]string{}
 	m.data.EachRoom(ctx, func(id string, data *model.MatrixRoom) bool {
 		if started.Sub(data.ParsedAt) >= 24*7*time.Hour { // parsed more than a week ago
 			toRemove[id] = data.Avatar
 			return false
 		}
 		counts = append(counts, roomCount{data.ID, data.Members})
+		mapping[data.ID] = data.Alias
 		return false
 	})
 
@@ -377,6 +381,12 @@ func (m *Crawler) afterRoomParsing(ctx context.Context) {
 			m.media.Delete(ctx, parts[0], parts[1])
 		}
 		m.data.RemoveRooms(ctx, toRemoveSlice)
+	}
+	if len(mapping) > 0 {
+		log.Info().Int("rooms", len(mapping)).Msg("recreating room mappings...")
+		if err := m.data.RecreateRoomMapping(ctx, mapping); err != nil {
+			log.Error().Err(err).Msg("cannot recreate room mappings")
+		}
 	}
 }
 

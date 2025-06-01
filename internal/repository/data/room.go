@@ -268,3 +268,29 @@ func (d *Data) RemoveRoomMapping(ctx context.Context, id, alias string) {
 		return nil
 	})
 }
+
+// RecreateRoomMapping replaces the whole mapping with a new one
+func (d *Data) RecreateRoomMapping(ctx context.Context, newMapping map[string]string) error {
+	log := apm.Log(ctx)
+	log.Info().Int("new_count", len(newMapping)).Msg("recreating room mappings")
+	return d.db.Update(func(tx *bbolt.Tx) error {
+		if err := tx.DeleteBucket(roomsMappingsBucket); err != nil {
+			return err
+		}
+		mBucket, cerr := tx.CreateBucket(roomsMappingsBucket)
+		if cerr != nil {
+			return cerr
+		}
+
+		for k, v := range newMapping {
+			if err := mBucket.Put([]byte(k), []byte(v)); err != nil {
+				log.Error().Err(err).Str("key", k).Str("value", v).Msg("cannot put a room mapping")
+			}
+			if err := mBucket.Put([]byte(v), []byte(k)); err != nil {
+				log.Error().Err(err).Str("key", v).Str("value", k).Msg("cannot put a room mapping")
+			}
+		}
+
+		return nil
+	})
+}
