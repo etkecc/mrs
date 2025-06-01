@@ -11,6 +11,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/etkecc/mrs/internal/model"
+	"github.com/etkecc/mrs/internal/utils"
 )
 
 type matrixService interface {
@@ -22,7 +23,7 @@ type matrixService interface {
 	GetKeyServer(context.Context) []byte
 	GetClientDirectory(ctx context.Context, alias string) (int, []byte)
 	GetClientRoomVisibility(ctx context.Context, roomID string) (int, []byte)
-	GetClientRoomSummary(ctx context.Context, roomAliasOrID string) (int, []byte)
+	GetClientRoomSummary(ctx context.Context, roomAliasOrID, via string, onlyMSC3266 bool) (int, *model.RoomDirectoryRoom)
 	GetClientMediaThumbnail(ctx context.Context, serverName, mediaID string, params url.Values) (io.Reader, string)
 	GetMediaThumbnail(ctx context.Context, serverName, mediaID string, params url.Values) (io.Reader, string)
 	PublicRooms(context.Context, *http.Request, *model.RoomDirectoryRequest) (int, []byte)
@@ -74,14 +75,35 @@ func configureMatrixCSEndpoints(e *echo.Echo, matrixSvc matrixService, cacheSvc 
 
 	// MSC3326 (stable) endpoint, ref: https://github.com/matrix-org/matrix-spec/pull/2125
 	e.GET("/_matrix/client/v1/room_summary/:room_id_alias", func(c echo.Context) error {
-		return c.JSONBlob(matrixSvc.GetClientRoomSummary(c.Request().Context(), c.Param("room_id_alias")))
+		code, room := matrixSvc.GetClientRoomSummary(c.Request().Context(), c.Param("room_id_alias"), c.QueryParam("via"), false)
+		if code != http.StatusOK {
+			return c.JSONBlob(code, utils.MustJSON(model.MatrixError{
+				Code:    "M_NOT_FOUND",
+				Message: "room not found",
+			}))
+		}
+		return c.JSONBlob(code, utils.MustJSON(room))
 	}, rl)
 	// MSC3326 (unstable) - correct and incorrect (but implemented by matrix.to) endpoints
 	e.GET("/_matrix/client/unstable/im.nheko.summary/summary/:room_id_alias", func(c echo.Context) error {
-		return c.JSONBlob(matrixSvc.GetClientRoomSummary(c.Request().Context(), c.Param("room_id_alias")))
+		code, room := matrixSvc.GetClientRoomSummary(c.Request().Context(), c.Param("room_id_alias"), c.QueryParam("via"), false)
+		if code != http.StatusOK {
+			return c.JSONBlob(code, utils.MustJSON(model.MatrixError{
+				Code:    "M_NOT_FOUND",
+				Message: "room not found",
+			}))
+		}
+		return c.JSONBlob(code, utils.MustJSON(room))
 	}, rl)
 	e.GET("_matrix/client/unstable/im.nheko.summary/rooms/:room_id_alias/summary", func(c echo.Context) error {
-		return c.JSONBlob(matrixSvc.GetClientRoomSummary(c.Request().Context(), c.Param("room_id_alias")))
+		code, room := matrixSvc.GetClientRoomSummary(c.Request().Context(), c.Param("room_id_alias"), c.QueryParam("via"), false)
+		if code != http.StatusOK {
+			return c.JSONBlob(code, utils.MustJSON(model.MatrixError{
+				Code:    "M_NOT_FOUND",
+				Message: "room not found",
+			}))
+		}
+		return c.JSONBlob(code, utils.MustJSON(room))
 	}, rl)
 }
 

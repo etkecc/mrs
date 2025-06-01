@@ -156,6 +156,19 @@ func (d *Data) GetBannedRooms(ctx context.Context, serverName ...string) ([]stri
 	return list, err
 }
 
+// IsBanned checks if a room is banned
+func (d *Data) IsBanned(ctx context.Context, roomID string) bool {
+	apm.Log(ctx).Debug().Str("room_id", roomID).Msg("checking if a room is banned")
+	var banned bool
+	d.db.View(func(tx *bbolt.Tx) error { //nolint:errcheck // that's ok
+		v := tx.Bucket(roomsBanlistBucket).Get([]byte(roomID))
+		banned = v != nil
+		return nil
+	})
+
+	return banned
+}
+
 // BanRoom
 func (d *Data) BanRoom(ctx context.Context, roomID string) error {
 	apm.Log(ctx).Info().Str("room_id", roomID).Msg("banning a room")

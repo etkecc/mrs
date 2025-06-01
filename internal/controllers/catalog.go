@@ -13,13 +13,14 @@ import (
 // catalogRoom returns the room data for the given room ID or alias.
 // EXPERIMENT! This endpoint returns the room data for the given room ID or alias.
 // similar to the room preview endpoint from Matrix CS API, but using all MRS' room properties (like language, etc)
-func catalogRoom(dataSvc dataService, plausible plausibleService) echo.HandlerFunc {
+func catalogRoom(dataSvc dataService, matrixSvc matrixService, plausible plausibleService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		roomIDorAlias := utils.Unescape(c.Param("room_id_or_alias"))
 		if !utils.IsValidID(roomIDorAlias) && utils.IsValidAlias("#"+roomIDorAlias) {
 			roomIDorAlias = "#" + roomIDorAlias
 		}
 
+		// 1. Try to get the room directly from the database
 		room, err := dataSvc.GetRoom(c.Request().Context(), roomIDorAlias)
 		if err != nil {
 			return c.JSONBlob(http.StatusInternalServerError, utils.MustJSON(model.MatrixError{
@@ -28,6 +29,16 @@ func catalogRoom(dataSvc dataService, plausible plausibleService) echo.HandlerFu
 			}))
 		}
 
+		// 2. If the room is not found, try to get it using MSC3266
+		if room == nil {
+			_, entry := matrixSvc.GetClientRoomSummary(c.Request().Context(), roomIDorAlias, c.QueryParam("via"), true)
+			if entry != nil {
+				room = entry.Convert()
+				c.Response().Header().Set("X-MRS-MSC3266", "true")
+			}
+		}
+
+		// 3. If the room is still not found, return 404
 		if room == nil {
 			return c.JSONBlob(http.StatusNotFound, utils.MustJSON(model.MatrixError{
 				Code:    "M_NOT_FOUND",

@@ -62,7 +62,7 @@ func ConfigureRouter(
 	e.GET("/metrics", echo.WrapHandler(&metrics.Handler{}), echobasicauth.NewMiddleware(&cfg.Get().Auth.Metrics))
 	e.GET("/stats", stats(statsSvc))
 	e.GET("/avatar/:name/:id", avatar(matrixSvc), cacheSvc.MiddlewareImmutable(), getRL(100))
-	e.GET("/room/:room_id_or_alias", catalogRoom(dataSvc, plausibleSvc), cacheSvc.Middleware(), getRL(3))
+	e.GET("/room/:room_id_or_alias", catalogRoom(dataSvc, matrixSvc, plausibleSvc), cacheSvc.Middleware(), getRL(3))
 
 	rl := getRL(3)
 	searchCache := cacheSvc.MiddlewareSearch()
@@ -106,7 +106,6 @@ func configureRouter(e *echo.Echo, cfgSvc configService, cacheSvc cacheService) 
 	e.Use(withMContext(cfgSvc))
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			c.Response().Header().Set(echo.HeaderReferrerPolicy, "origin")
 			c.Response().Header().Set(echo.HeaderServer, version.Server)
 			return next(c)
 		}

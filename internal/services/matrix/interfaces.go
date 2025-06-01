@@ -25,4 +25,5 @@ type mediaService interface {
 type dataRepository interface {
 	GetRoom(ctx context.Context, roomID string) (*model.MatrixRoom, error)
 	GetRoomMapping(ctx context.Context, roomIDorAlias string) string
+	IsBanned(ctx context.Context, roomID string) bool
 }

@@ -376,6 +376,15 @@ paths:
           schema:
             type: string
             example: '#alias:example.com'
+        - name: via
+          in: query
+          description: list of servers to use for resolving the room alias
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              example: 'example.com'
       responses:
         '200':
           description: successful operation
@@ -408,6 +417,15 @@ paths:
           schema:
             type: string
             example: '#alias:example.com'
+        - name: via
+          in: query
+          description: list of servers to use for resolving the room alias
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              example: 'example.com'
       responses:
         '200':
           description: successful operation
@@ -440,6 +458,15 @@ paths:
           schema:
             type: string
             example: '#alias:example.com'
+        - name: via
+          in: query
+          description: list of servers to use for resolving the room alias
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              example: 'example.com'
       responses:
         '200':
           description: successful operation

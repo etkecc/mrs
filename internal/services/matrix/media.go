@@ -83,12 +83,12 @@ func (s *Server) GetClientMediaThumbnail(ctx context.Context, serverName, mediaI
 	}
 
 	query := params.Encode()
-	urls := make([]string, 0, len(mediaFallbacks)+1)
+	urls := make([]string, 0, len(fallbacks)+1)
 	serverURL := s.QueryCSURL(ctx, serverName)
 	if serverURL != "" {
 		urls = append(urls, serverURL+"/_matrix/media/v3/thumbnail/"+serverName+"/"+mediaID+"?"+query)
 	}
-	for _, serverURL := range mediaFallbacks {
+	for _, serverURL := range fallbacks {
 		urls = append(urls, serverURL+"/_matrix/media/v3/thumbnail/"+serverName+"/"+mediaID+"?"+query)
 	}
 	for _, avatarURL := range urls {
