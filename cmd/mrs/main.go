@@ -108,7 +108,7 @@ func main() {
 	cacheSvc := services.NewCache(cfg, statsSvc)
 	dataSvc := services.NewDataFacade(crawlerSvc, indexSvc, statsSvc)
 	mailSvc := services.NewEmail(cfg)
-	modSvc := services.NewModeration(cfg, dataRepo, media, index, mailSvc)
+	modSvc := services.NewModeration(cfg, dataRepo, media, index, mailSvc, matrixSvc)
 
 	e = echo.New()
 	e.Logger = lecho.From(*log)

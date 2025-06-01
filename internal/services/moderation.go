@@ -22,13 +22,18 @@ type EmailService interface {
 	SendModReport(text, email string) error
 }
 
+type matrixService interface {
+	GetClientRoomSummary(ctx context.Context, aliasOrID, via string, onlyMSC3266 bool) (statusCode int, directoryRoom *model.RoomDirectoryRoom)
+}
+
 // Moderation service
 type Moderation struct {
-	cfg   ConfigService
-	data  DataRepository
-	media MediaService
-	mail  EmailService
-	index IndexRepository
+	cfg    ConfigService
+	data   DataRepository
+	media  MediaService
+	mail   EmailService
+	index  IndexRepository
+	matrix matrixService
 }
 
 // webhookPayload for hookshot
@@ -39,13 +44,14 @@ type webhookPayload struct {
 }
 
 // NewModeration service
-func NewModeration(cfg ConfigService, data DataRepository, media MediaService, index IndexRepository, mail EmailService) *Moderation {
+func NewModeration(cfg ConfigService, data DataRepository, media MediaService, index IndexRepository, mail EmailService, matrix matrixService) *Moderation {
 	return &Moderation{
-		cfg:   cfg,
-		data:  data,
-		mail:  mail,
-		media: media,
-		index: index,
+		cfg:    cfg,
+		data:   data,
+		mail:   mail,
+		media:  media,
+		index:  index,
+		matrix: matrix,
 	}
 }
 
@@ -181,8 +187,14 @@ func (m *Moderation) Report(ctx context.Context, fromIP, roomID, reason string, 
 		return err
 	}
 	if room == nil {
-		return fmt.Errorf("room not found")
+		_, entry := m.matrix.GetClientRoomSummary(ctx, roomID, "", true)
+		if entry == nil {
+			return fmt.Errorf("room not found")
+		}
+		log.Warn().Str("roomID", roomID).Msg("room not found in data store, using MSC3266 summary")
+		room = entry.Convert()
 	}
+
 	server, err := m.data.GetServerInfo(ctx, room.Server)
 	if err != nil {
 		log.Error().Err(err).Msg("cannot get server info")
