@@ -233,9 +233,23 @@ func (m *Moderation) List(ctx context.Context, serverName ...string) ([]string, 
 
 // Ban a room
 func (m *Moderation) Ban(ctx context.Context, roomID string) error {
+	log := apm.Log(ctx).With().Str("room", roomID).Logger()
 	room, err := m.data.GetRoom(ctx, roomID)
 	if err != nil {
-		return fmt.Errorf("cannot get room %s to ban: %w - room could be already banned", roomID, err)
+		log.Warn().Err(err).Msg("cannot get room to ban (may be already banned)")
+		return nil
+	}
+	if room == nil {
+		_, entry := m.matrix.GetClientRoomSummary(ctx, roomID, "", true)
+		if entry == nil {
+			return fmt.Errorf("room not found")
+		}
+		log.Warn().Msg("room not found in data store, using MSC3266 summary")
+		room = entry.Convert()
+	}
+
+	if room == nil {
+		room = &model.MatrixRoom{ID: roomID}
 	}
 	if err := m.data.BanRoom(ctx, roomID); err != nil {
 		return err
