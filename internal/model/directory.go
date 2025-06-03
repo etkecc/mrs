@@ -1,5 +1,7 @@
 package model
 
+import "github.com/etkecc/mrs/internal/utils"
+
 // RoomDirectoryRequest sent when calling POST /_matrix/federation/v1/publicRooms
 type RoomDirectoryRequest struct {
 	Filter RoomDirectoryFilter `json:"filter"`
@@ -53,5 +55,6 @@ func (r *RoomDirectoryRoom) Convert() *MatrixRoom {
 		JoinRule:      r.JoinRule,
 		GuestJoinable: r.GuestJoinable,
 		WorldReadable: r.WorldReadable,
+		Server:        utils.ServerFrom(r.ID),
 	}
 }

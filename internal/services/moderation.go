@@ -195,6 +195,10 @@ func (m *Moderation) Report(ctx context.Context, fromIP, roomID, reason string, 
 		room = entry.Convert()
 	}
 
+	if room.Server == "" {
+		room.Server = utils.ServerFrom(roomID)
+	}
+
 	server, err := m.data.GetServerInfo(ctx, room.Server)
 	if err != nil {
 		log.Error().Err(err).Msg("cannot get server info")
