@@ -177,21 +177,25 @@ func (m *Moderation) sendEmail(ctx context.Context, room *model.MatrixRoom, serv
 
 // Report a room
 func (m *Moderation) Report(ctx context.Context, fromIP, roomID, reason string, noMSC1929 bool) error {
+	log := apm.Log(ctx).With().Str("room", roomID).Str("fromIP", fromIP).Logger()
 	if m.data.IsReported(ctx, roomID) {
+		log.Warn().Msg("room already reported")
 		return nil
 	}
 
-	log := apm.Log(ctx)
 	room, err := m.data.GetRoom(ctx, roomID)
 	if err != nil {
+		log.Warn().Err(err).Msg("cannot get room to report")
 		return err
 	}
 	if room == nil {
 		_, entry := m.matrix.GetClientRoomSummary(ctx, roomID, "", true)
 		if entry == nil {
+			log.Warn().Msg("room not found in data store, MSC3266 summary not available")
 			return fmt.Errorf("room not found")
 		}
-		log.Warn().Str("roomID", roomID).Msg("room not found in data store, using MSC3266 summary")
+
+		log.Warn().Msg("room not found in data store, using MSC3266 summary")
 		room = entry.Convert()
 	}
 
@@ -230,9 +234,32 @@ func (m *Moderation) Report(ctx context.Context, fromIP, roomID, reason string, 
 	return m.data.ReportRoom(ctx, fromIP, roomID, reason)
 }
 
+// Unreport a room
+func (m *Moderation) Unreport(ctx context.Context, roomID string) error {
+	log := apm.Log(ctx).With().Str("room", roomID).Logger()
+	if roomID == "" {
+		return m.data.UnreportAll(ctx)
+	}
+
+	if !m.data.IsReported(ctx, roomID) {
+		log.Warn().Msg("room not reported")
+		return nil
+	}
+	if err := m.data.UnreportRoom(ctx, roomID); err != nil {
+		log.Error().Err(err).Msg("cannot unreport room")
+		return err
+	}
+	return nil
+}
+
 // List returns full list of the banned rooms (optionally from specific server)
 func (m *Moderation) List(ctx context.Context, serverName ...string) ([]string, error) {
 	return m.data.GetBannedRooms(ctx, serverName...)
+}
+
+// ListReported returns full list of the reported rooms (optionally from specific server)
+func (m *Moderation) ListReported(ctx context.Context, serverName ...string) (map[string]string, error) {
+	return m.data.GetReportedRooms(ctx, serverName...)
 }
 
 // Ban a room

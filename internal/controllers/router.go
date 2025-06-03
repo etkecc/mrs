@@ -81,6 +81,10 @@ func ConfigureRouter(
 	e.POST("/mod/report/:room_id", report(modSvc), getRL(1)) // doesn't use mod group to allow without auth
 	m := e.Group("mod")
 	m.Use(echobasicauth.NewMiddleware(&cfg.Get().Auth.Moderation))
+	m.GET("/list-reported", listReported(modSvc), rl)
+	m.GET("/list-reported/:server_name", listReported(modSvc), rl)
+	m.GET("/unreport/:room_id", unreport(modSvc), rl)
+	m.GET("/unreport", unreport(modSvc), rl)
 	m.GET("/list", listBanned(modSvc), rl)
 	m.GET("/list/:server_name", listBanned(modSvc), rl)
 	m.GET("/ban/:room_id", ban(modSvc), rl)

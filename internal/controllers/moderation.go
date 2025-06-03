@@ -12,8 +12,10 @@ import (
 type moderationService interface {
 	Report(context.Context, string, string, string, bool) error
 	List(context.Context, ...string) ([]string, error)
+	ListReported(context.Context, ...string) (map[string]string, error)
 	Ban(context.Context, string) error
 	Unban(context.Context, string) error
+	Unreport(context.Context, string) error
 }
 
 type reportSubmission struct {
@@ -40,6 +42,21 @@ func report(svc moderationService) echo.HandlerFunc {
 	}
 }
 
+func unreport(svc moderationService) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		if strings.Contains(c.Request().UserAgent(), "bot") {
+			return c.NoContent(http.StatusForbidden)
+		}
+
+		roomID := c.Param("room_id")
+		if err := svc.Unreport(c.Request().Context(), roomID); err != nil {
+			return err
+		}
+
+		return c.NoContent(http.StatusNoContent)
+	}
+}
+
 func listBanned(svc moderationService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		if strings.Contains(c.Request().UserAgent(), "bot") {
@@ -53,6 +70,31 @@ func listBanned(svc moderationService) echo.HandlerFunc {
 			list, err = svc.List(c.Request().Context(), serverName)
 		} else {
 			list, err = svc.List(c.Request().Context())
+		}
+		if err != nil {
+			return err
+		}
+
+		if len(list) == 0 {
+			return c.NoContent(http.StatusNoContent)
+		}
+		return c.JSON(http.StatusOK, list)
+	}
+}
+
+func listReported(svc moderationService) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		if strings.Contains(c.Request().UserAgent(), "bot") {
+			return c.NoContent(http.StatusForbidden)
+		}
+
+		serverName := c.Param("server_name")
+		var list map[string]string
+		var err error
+		if serverName != "" {
+			list, err = svc.ListReported(c.Request().Context(), serverName)
+		} else {
+			list, err = svc.ListReported(c.Request().Context())
 		}
 		if err != nil {
 			return err

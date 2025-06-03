@@ -62,6 +62,7 @@ type DataRepository interface {
 	GetReportedRooms(context.Context, ...string) (map[string]string, error)
 	ReportRoom(context.Context, string, string, string) error
 	UnreportRoom(context.Context, string) error
+	UnreportAll(context.Context) error
 	IsReported(context.Context, string) bool
 }
 

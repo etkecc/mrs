@@ -173,7 +173,13 @@ func (d *Data) IsBanned(ctx context.Context, roomID string) bool {
 func (d *Data) BanRoom(ctx context.Context, roomID string) error {
 	apm.Log(ctx).Info().Str("room_id", roomID).Msg("banning a room")
 	return d.db.Batch(func(tx *bbolt.Tx) error {
-		return tx.Bucket(roomsBanlistBucket).Put([]byte(roomID), []byte(`true`))
+		if err := tx.Bucket(roomsBucket).Delete([]byte(roomID)); err != nil {
+			return fmt.Errorf("cannot delete room %s: %w", roomID, err)
+		}
+		if err := tx.Bucket(roomsBanlistBucket).Put([]byte(roomID), []byte(`true`)); err != nil {
+			return fmt.Errorf("cannot put room %s to banlist: %w", roomID, err)
+		}
+		return tx.Bucket(roomsReportsBucket).Delete([]byte(roomID))
 	})
 }
 
@@ -237,6 +243,15 @@ func (d *Data) UnreportRoom(ctx context.Context, roomID string) error {
 	apm.Log(ctx).Info().Str("room_id", roomID).Msg("unreporting a room")
 	return d.db.Batch(func(tx *bbolt.Tx) error {
 		return tx.Bucket(roomsReportsBucket).Delete([]byte(roomID))
+	})
+}
+
+func (d *Data) UnreportAll(ctx context.Context) error {
+	apm.Log(ctx).Warn().Msg("unreporting ALL rooms")
+	return d.db.Update(func(tx *bbolt.Tx) error {
+		return tx.Bucket(roomsReportsBucket).ForEach(func(k, _ []byte) error {
+			return tx.Bucket(roomsReportsBucket).Delete(k)
+		})
 	})
 }
 

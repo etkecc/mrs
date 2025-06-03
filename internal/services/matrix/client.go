@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/etkecc/go-apm"
 	"github.com/etkecc/go-kit"
@@ -164,6 +165,10 @@ func (s *Server) roomSummaryFallback(ctx context.Context, aliasOrID, via string)
 
 func (s *Server) roomSummaryVia(ctx context.Context, aliasOrID, via string) *model.RoomDirectoryRoom {
 	log := apm.Log(ctx).With().Str("room", aliasOrID).Str("via", via).Logger()
+	var cancel context.CancelFunc
+	ctx, cancel = context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
 	endpoint := fmt.Sprintf(
 		"%s/_matrix/client/unstable/im.nheko.summary/summary/%s?via=%s",
 		via,
