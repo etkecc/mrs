@@ -10,6 +10,10 @@ import (
 	"github.com/etkecc/mrs/internal/utils"
 )
 
+type crawlerService interface {
+	OnlineServers(context.Context) []string
+}
+
 // catalogRoom returns the room data for the given room ID or alias.
 // EXPERIMENT! This endpoint returns the room data for the given room ID or alias.
 // similar to the room preview endpoint from Matrix CS API, but using all MRS' room properties (like language, etc)
@@ -53,5 +57,28 @@ func catalogRoom(dataSvc dataService, matrixSvc matrixService, plausible plausib
 		}(c.Request().Context(), evt)
 
 		return c.JSON(http.StatusOK, room)
+	}
+}
+
+// rooms returns a list of all rooms in the database.
+func rooms(data dataService) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		rooms := map[string]string{}
+		data.EachRoom(c.Request().Context(), func(roomID string, room *model.MatrixRoom) bool {
+			if room == nil {
+				return false
+			}
+			rooms[roomID] = room.Alias
+			return false
+		})
+		return c.JSON(http.StatusOK, rooms)
+	}
+}
+
+// servers returns a list of online servers that the crawler is aware of.
+func servers(crawler crawlerService) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		servers := crawler.OnlineServers(c.Request().Context())
+		return c.JSON(http.StatusOK, servers)
 	}
 }

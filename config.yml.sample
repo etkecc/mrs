@@ -39,7 +39,7 @@ search: # search config
       world_readable: true
 
 auth: # auth configuration
-  admin: # admin configuration
+  admin: # admin configuration, for /-/* endpoints
     login: admin
     password: changeme
     ips: # (optional) allow access to admin endpoints only from the following IPs
@@ -58,6 +58,11 @@ auth: # auth configuration
     login: moderation
     password: changeme
     ips: # (optional) allow access to moderation endpoints only from the following IPs
+      - 127.0.0.1
+  catalog: # catalog endpoints
+    login: catalog
+    password: changeme
+    ips: # (optional) allow access to catalog endpoints only from the following IPs
       - 127.0.0.1
 cache: # (optional) cache config
   max_age: 0

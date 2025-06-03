@@ -108,6 +108,7 @@ type ConfigCache struct {
 type ConfigAuth struct {
 	Admin      echobasicauth.Auth `yaml:"admin"`
 	Metrics    echobasicauth.Auth `yaml:"metrics"`
+	Catalog    echobasicauth.Auth `yaml:"catalog"`
 	Discovery  echobasicauth.Auth `yaml:"discovery"`
 	Moderation echobasicauth.Auth `yaml:"moderation"`
 }
