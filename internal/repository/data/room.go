@@ -246,6 +246,7 @@ func (d *Data) UnreportRoom(ctx context.Context, roomID string) error {
 	})
 }
 
+// UnreportAll removes all reported rooms
 func (d *Data) UnreportAll(ctx context.Context) error {
 	apm.Log(ctx).Warn().Msg("unreporting ALL rooms")
 	return d.db.Update(func(tx *bbolt.Tx) error {

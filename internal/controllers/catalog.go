@@ -44,6 +44,12 @@ func catalogRoom(dataSvc dataService, matrixSvc matrixService, plausible plausib
 
 		// 3. If the room is still not found, return 404
 		if room == nil {
+			evt := model.NewAnalyticsEvent(c.Request().Context(), "OpenNotFound", map[string]string{"room": roomIDorAlias}, c.Request())
+			go func(ctx context.Context, evt *model.AnalyticsEvent) {
+				ctx = context.WithoutCancel(ctx)
+				plausible.Track(ctx, evt)
+			}(c.Request().Context(), evt)
+
 			return c.JSONBlob(http.StatusNotFound, utils.MustJSON(model.MatrixError{
 				Code:    "M_NOT_FOUND",
 				Message: "room not found",
