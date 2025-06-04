@@ -171,7 +171,7 @@ type ConfigEmailPostmarkType struct {
 	From   string `yaml:"from"`
 }
 
-// ConfigEmailTemplates - email temaplates config
+// ConfigEmailTemplates - email templates config
 type ConfigEmailTemplates struct {
 	Report ConfigEmailTemplate `yaml:"report"`
 }
