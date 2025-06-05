@@ -165,10 +165,12 @@ func (s *Server) MakeJoin() {
 		evtID,
 	))
 	path = "/" + apiURL.EscapedPath()
+	// TODO: something is wrong with this
 	authHeaders, err = s.Authorize("etke.cc", http.MethodPut, path, evtJoin)
 	if err != nil {
 		panic(err)
 	}
+	// TODO: OR this
 	signed, _ := s.signJSON(evtJoin)
 	req, err = http.NewRequestWithContext(ctx, http.MethodPut, apiURL.String(), bytes.NewReader(signed))
 	if err != nil {
