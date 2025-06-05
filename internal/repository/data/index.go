@@ -34,6 +34,7 @@ func (d *Data) getIndexStatsFullTL(ctx context.Context) (map[time.Time]*model.In
 	currentYear := []byte(time.Now().UTC().Format("2006"))
 	statsTL := make(map[time.Time]*model.IndexStats)
 	err := d.db.View(func(tx *bbolt.Tx) error {
+		var prev *model.IndexStats
 		return tx.Bucket(indexTLBucket).ForEach(func(k, v []byte) error {
 			if v == nil {
 				return nil
@@ -55,7 +56,15 @@ func (d *Data) getIndexStatsFullTL(ctx context.Context) (map[time.Time]*model.In
 			if err := json.Unmarshal(v, &stats); err != nil {
 				return err
 			}
+			// Ensure that there is no big difference between the current and previous stats,
+			// because such difference may indicate a bug in the stats collection or a data corruption.
+			if prev != nil {
+				if stats.Rooms.Parsed > 5*prev.Rooms.Parsed || stats.Rooms.Parsed < prev.Rooms.Parsed/5 {
+					return nil
+				}
+			}
 			statsTL[t] = stats
+			prev = stats
 			return nil
 		})
 	})
