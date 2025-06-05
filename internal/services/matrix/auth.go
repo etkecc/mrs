@@ -84,6 +84,7 @@ func (s *Server) Authorize(serverName, method, uri string, body any) ([]string, 
 	if body != nil {
 		obj["content"] = body
 	}
+	fmt.Printf("Authorizing %+v\n", obj)
 	signed, err := s.signJSON(obj)
 	if err != nil {
 		return nil, err
