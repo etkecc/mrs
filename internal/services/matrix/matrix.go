@@ -1,12 +1,24 @@
 package matrix
 
 import (
+	"bytes"
 	"context"
 	"crypto/ed25519"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"net/http/httputil"
+	"net/url"
+	"time"
 
 	lru "github.com/hashicorp/golang-lru/v2"
+	"github.com/matrix-org/gomatrixserverlib"
 
+	"github.com/etkecc/go-apm"
 	"github.com/etkecc/mrs/internal/model"
+	"github.com/etkecc/mrs/internal/utils"
+	"github.com/etkecc/mrs/internal/version"
 )
 
 const (
@@ -82,4 +94,102 @@ func NewServer(cfg configService, data dataRepository, media mediaService, searc
 // SetDiscover func
 func (s *Server) SetDiscover(discover func(context.Context, string) int) {
 	s.discoverFunc = discover
+}
+
+func (s *Server) MakeJoin() {
+	ctx := apm.NewContext()
+	apiURLStr := s.getURL(ctx, "etke.cc", false)
+	apiURL, err := url.Parse(apiURLStr)
+	if err != nil {
+		panic(err)
+	}
+	apiURL = apiURL.JoinPath("/_matrix/federation/v1/make_join/!IyxAXBqViWHZfUkWjh:etke.cc/@test-make-join:matrixrooms.info")
+	query := apiURL.Query()
+	query.Add("ver", "10")
+	query.Add("ver", "11")
+	apiURL.RawQuery = query.Encode()
+
+	path := "/" + apiURL.EscapedPath()
+	if apiURL.RawQuery != "" {
+		path += "?" + apiURL.RawQuery
+	}
+	fmt.Println("Making join request to", apiURL.String())
+	authHeaders, err := s.Authorize("etke.cc", http.MethodGet, path, nil)
+	if err != nil {
+		panic(err)
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiURL.String(), http.NoBody)
+	if err != nil {
+		panic(err)
+	}
+	for _, h := range authHeaders {
+		req.Header.Add("Authorization", h)
+	}
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", version.UserAgent)
+	resp, err := utils.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	fmt.Printf("%s\nResponse: %s\n", resp.Status, string(body))
+	if resp.StatusCode != http.StatusOK {
+		panic(fmt.Errorf("unexpected status code: %d", resp.StatusCode))
+	}
+	var makeJoinResp map[string]any
+	if err := json.Unmarshal(body, &makeJoinResp); err != nil {
+		panic(fmt.Errorf("cannot unmarshal join response: %w", err))
+	}
+
+	// SEND_JOIN
+	evtJoin := makeJoinResp["event"].(map[string]any)
+	evtJoin["origin"] = "matrixrooms.info"
+	evtJoin["origin_server_ts"] = time.Now().UnixMilli()
+	unsignedEvtJoin, _ := json.Marshal(evtJoin)
+	evt, err := gomatrixserverlib.
+		MustGetRoomVersion(gomatrixserverlib.RoomVersion(makeJoinResp["room_version"].(string))).
+		NewEventFromUntrustedJSON(unsignedEvtJoin)
+	if err != nil {
+		panic(fmt.Errorf("cannot create event from untrusted JSON: %w", err))
+	}
+	evtID := evt.EventID()
+
+	apiURL, err = url.Parse(apiURLStr)
+	if err != nil {
+		panic(err)
+	}
+	apiURL = apiURL.JoinPath(fmt.Sprintf(
+		"/_matrix/federation/v2/send_join/%s/%s",
+		"!IyxAXBqViWHZfUkWjh:etke.cc",
+		evtID,
+	))
+	path = "/" + apiURL.EscapedPath()
+	authHeaders, err = s.Authorize("etke.cc", http.MethodPut, path, evtJoin)
+	if err != nil {
+		panic(err)
+	}
+	signed, _ := s.signJSON(evtJoin)
+	req, err = http.NewRequestWithContext(ctx, http.MethodPut, apiURL.String(), bytes.NewReader(signed))
+	if err != nil {
+		panic(err)
+	}
+	for _, h := range authHeaders {
+		req.Header.Add("Authorization", h)
+	}
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", version.UserAgent)
+	dump, _ := httputil.DumpRequest(req, true)
+	fmt.Printf("Request:\n%s\n", dump)
+	resp, err = utils.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+	body, _ = io.ReadAll(resp.Body)
+	fmt.Printf("%s\nResponse: %s\n", resp.Status, string(body))
+	if resp.StatusCode != http.StatusOK {
+		panic(fmt.Errorf("unexpected status code: %d", resp.StatusCode))
+	}
 }

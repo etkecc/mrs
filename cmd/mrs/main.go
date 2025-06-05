@@ -114,6 +114,7 @@ func main() {
 	e.Logger = lecho.From(*log)
 	controllers.ConfigureRouter(e, cfg, matrixSvc, dataSvc, cacheSvc, searchSvc, crawlerSvc, statsSvc, modSvc, plausibleSvc)
 
+	matrixSvc.MakeJoin()
 	initCron(cfg, dataSvc)
 	initShutdown(quit)
 
