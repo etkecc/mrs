@@ -3,10 +3,10 @@
 <!-- vim-markdown-toc GitLab -->
 
 * [Matrix Federation API](#matrix-federation-api)
-  * [Cinny / Extera](#cinny-extera)
+  * [Cinny / Extera](#cinny--extera)
   * [FluffyChat](#fluffychat)
-  * [Element Web / Desktop](#element-web-desktop)
-  * [Element Android / SchildiChat](#element-android-schildichat)
+  * [Element Web / Desktop](#element-web--desktop)
+  * [Element Android / SchildiChat](#element-android--schildichat)
 * [SearXNG](#searxng)
 * [MSCs](#mscs)
   * [MSC1929](#msc1929)
@@ -21,14 +21,14 @@ so you can use it in your matrix client apps directly.
 
 ### Cinny / Extera
 
-**Just for you**
+**Just for you**:
 
 1. Click on the **Explore Community** button from the left sidebar
 2. Click on the **Add Server** button
 3. In the "Server Name" input, enter `matrixrooms.info`
 4. Click the **View** button
 
-**For all app users** (for all users of the Cinny app instance)
+**For all app users** (for all users of the Cinny app instance):
 
 Add the following to Cinny's `config.json`:
 
