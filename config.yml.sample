@@ -70,7 +70,7 @@ cache: # (optional) cache config
 plausible: # (optional) plausible.io integration
   host: plausible.io
   domain: example.com
-cron: # (optional) data jobs, using cron synax, ref: https://github.com/mileusna/crontab#crontab-syntax-
+cron: # (optional) data jobs, using cron syntax, ref: https://github.com/mileusna/crontab#crontab-syntax-
   discovery:
   parsing:
   indexing:
@@ -94,7 +94,7 @@ email: # (optional) email integration, for now only for automatic reporting usin
     report:
       message_stream: postmark message stream ID
       from: email, usually a postmark sender signature
-  templates: # (optional) email templates using go tempates: https://pkg.go.dev/text/template
+  templates: # (optional) email templates using go templates: https://pkg.go.dev/text/template
     report: # report is used when sending automatic email to the server admins using MSC1929 contacts
       subject: "{{ .Public.Name }}: Room {{ .RoomAliasOrID }} has been reported"
       body: |-

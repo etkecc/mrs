@@ -3,14 +3,14 @@
 <!-- vim-markdown-toc GitLab -->
 
 * [Matrix Federation API](#matrix-federation-api)
-    * [Cinny / Extera](#cinny-extera)
-    * [FluffyChat](#fluffychat)
-    * [Element Web / Desktop](#element-web-desktop)
-    * [Element Android / SchildiChat](#element-android-schildichat)
+  * [Cinny / Extera](#cinny--extera)
+  * [FluffyChat](#fluffychat)
+  * [Element Web / Desktop](#element-web--desktop)
+  * [Element Android / SchildiChat](#element-android--schildichat)
 * [SearXNG](#searxng)
 * [MSCs](#mscs)
-    * [MSC1929](#msc1929)
-    * [MSC3266](#msc3266)
+  * [MSC1929](#msc1929)
+  * [MSC3266](#msc3266)
 
 <!-- vim-markdown-toc -->
 
@@ -21,14 +21,14 @@ so you can use it in your matrix client apps directly.
 
 ### Cinny / Extera
 
-**Just for you**
+**Just for you**:
 
 1. Click on the **Explore Community** button from the left sidebar
 2. Click on the **Add Server** button
 3. In the "Server Name" input, enter `matrixrooms.info`
 4. Click the **View** button
 
-**For all app users** (for all users of the Cinny app instance)
+**For all app users** (for all users of the Cinny app instance):
 
 Add the following to Cinny's `config.json`:
 
@@ -94,7 +94,7 @@ matrix_client_element_room_directory_servers: ['matrixrooms.info']
 ## [SearXNG](https://docs.searxng.org)
 
 SearXNG is a free internet metasearch engine which aggregates results from more than 70 search services.
-Users are neither tracked nor profiled. 
+Users are neither tracked nor profiled.
 Additionally, SearXNG can be used over Tor for online anonymity.
 
 Just use the [SearXNG docs](https://docs.searxng.org/dev/engines/online/mrs.html).

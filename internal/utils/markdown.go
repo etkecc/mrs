@@ -31,7 +31,7 @@ func MarkdownLink(link string) string {
 	return markdownURL(link, link)
 }
 
-// MarkdownRender coverts markdown text into text and html forms
+// MarkdownRender converts markdown text into text and html forms
 func MarkdownRender(mdtext string) (text, html string) {
 	html = format.Render(mdtext)
 
