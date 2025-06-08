@@ -3,14 +3,14 @@
 <!-- vim-markdown-toc GitLab -->
 
 * [Matrix Federation API](#matrix-federation-api)
-    * [Cinny / Extera](#cinny-extera)
-    * [FluffyChat](#fluffychat)
-    * [Element Web / Desktop](#element-web-desktop)
-    * [Element Android / SchildiChat](#element-android-schildichat)
+  * [Cinny / Extera](#cinny-extera)
+  * [FluffyChat](#fluffychat)
+  * [Element Web / Desktop](#element-web-desktop)
+  * [Element Android / SchildiChat](#element-android-schildichat)
 * [SearXNG](#searxng)
 * [MSCs](#mscs)
-    * [MSC1929](#msc1929)
-    * [MSC3266](#msc3266)
+  * [MSC1929](#msc1929)
+  * [MSC3266](#msc3266)
 
 <!-- vim-markdown-toc -->
 
@@ -94,7 +94,7 @@ matrix_client_element_room_directory_servers: ['matrixrooms.info']
 ## [SearXNG](https://docs.searxng.org)
 
 SearXNG is a free internet metasearch engine which aggregates results from more than 70 search services.
-Users are neither tracked nor profiled. 
+Users are neither tracked nor profiled.
 Additionally, SearXNG can be used over Tor for online anonymity.
 
 Just use the [SearXNG docs](https://docs.searxng.org/dev/engines/online/mrs.html).
