@@ -12,4 +12,3 @@ COPY --from=builder /app/mrs /bin/mrs
 USER app
 
 ENTRYPOINT ["/bin/mrs"]
-

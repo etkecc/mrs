@@ -10,13 +10,13 @@ Please keep in mind that to have a room indexed, you have to:
 3. Explicitly publish a room in the room directory
 4. Explicitly publish your room catalog over federation
 
-When you do all of those steps, you clearly understand the consequences of your decisions, 
-i.e. a particular room that was made public, federatable, 
+When you do all of those steps, you clearly understand the consequences of your decisions,
+i.e. a particular room that was made public, federatable,
 published in room catalog and then shared room catalog over federation will be accessed over federation.
 
 MRS can't index a room if you didn't explicitly allow a room to be visible over federation.
-You either publish something over federation, or not. 
-MRS is not a special thing, it uses the same API and the same set of rules as any other matrix server does. 
+You either publish something over federation, or not.
+MRS is not a special thing, it uses the same API and the same set of rules as any other matrix server does.
 
 ## unpublish your room directory from the federation
 

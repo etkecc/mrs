@@ -8,8 +8,8 @@ Table of Contents:
 
 * [How?](#how)
 * [Options](#options)
-    * [Language](#language)
-    * [Contact Email](#contact-email)
+  * [Language](#language)
+  * [Contact Email](#contact-email)
 
 <!-- vim-markdown-toc -->
 

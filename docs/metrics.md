@@ -10,7 +10,7 @@ MRS collects stats and metrics and exposes them on the following endpoints:
 
 Servers-related stats
 
-### Online
+### Online servers
 
 * `servers` and `details.servers.online` on `/stats`
 * `servers.online` on `/-/status`
@@ -18,7 +18,7 @@ Servers-related stats
 
 The total amount of online and federatable matrix servers discovered. Updated during the discovering phase
 
-### Indexable
+### Indexable servers
 
 * `details.servers.indexable` on `/stats`
 * `servers.indexable` on `/-/status`
@@ -26,7 +26,7 @@ The total amount of online and federatable matrix servers discovered. Updated du
 
 The total amount of online federatable matrix servers which publish rooms directory over federation. Updated during the discovery phase
 
-### Blocked
+### Blocked servers
 
 * not presented on `/stats`
 * `servers.blocked` on `/-/status`
@@ -36,7 +36,7 @@ The amount of servers in the config (config.yml `blocklist.servers`)
 
 ## Rooms
 
-### Indexed
+### Indexed rooms
 
 * `rooms` and `details.rooms.indexed` on `/stats`
 * `rooms.indexed` on `/-/status`
@@ -44,7 +44,7 @@ The amount of servers in the config (config.yml `blocklist.servers`)
 
 The total amount of indexed (searchable) rooms
 
-### Parsed
+### Parsed rooms
 
 * `details.rooms.parsed` on `/stats`
 * `rooms.parsed` on `/-/status`
@@ -52,7 +52,7 @@ The total amount of indexed (searchable) rooms
 
 The total amount of rooms parsed from public rooms directories
 
-### Blocked
+### Blocked rooms
 
 * not presented on `/stats`
 * `rooms.blocked` on `/-/status`
@@ -60,7 +60,7 @@ The total amount of rooms parsed from public rooms directories
 
 The total amount of banned rooms
 
-### Reported
+### Reported rooms
 
 * not presented on `/stats`
 * `rooms.reported` on `/-/status`

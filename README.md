@@ -7,12 +7,12 @@ Dependencies? None.
 <!-- vim-markdown-toc GitLab -->
 
 * [How it works?](#how-it-works)
-    * [Room configuration](#room-configuration)
-    * [Discovery and indexing](#discovery-and-indexing)
-    * [How the MSC1929 integration works](#how-the-msc1929-integration-works)
-    * [API](#api)
+  * [Room configuration](#room-configuration)
+  * [Discovery and indexing](#discovery-and-indexing)
+  * [How the MSC1929 integration works](#how-the-msc1929-integration-works)
+  * [API](#api)
 * [Quick Start](#quick-start)
-    * [Integrations](#integrations)
+  * [Integrations](#integrations)
 * [Support](#support)
 
 <!-- vim-markdown-toc -->
