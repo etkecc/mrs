@@ -110,8 +110,9 @@ func (r *MatrixRoom) DirectoryEntry() *RoomDirectoryRoom {
 }
 
 // Parse matrix room info to prepare custom fields
-func (r *MatrixRoom) Parse(detector lingua.LanguageDetector, media mediaURLService, mrsServerName string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
+// returns false if the room must not be parsed due to room config tag
+func (r *MatrixRoom) Parse(detector lingua.LanguageDetector, media mediaURLService, mrsServerName string) bool {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	r.Name = utils.Sanitize(r.Name)
@@ -119,25 +120,42 @@ func (r *MatrixRoom) Parse(detector lingua.LanguageDetector, media mediaURLServi
 
 	r.ParsedAt = time.Now().UTC()
 	if ctx.Err() != nil {
-		return
+		return true
 	}
 
-	r.Email = r.parseContact(mrsServerName, "email")
-	if ctx.Err() != nil {
-		return
+	topic, rcfg := ParseRoomConfig(r.Topic)
+	r.Topic = topic
+	if !rcfg.IsEmpty() {
+		r.Language = rcfg.Language
+		r.Email = rcfg.Email
 	}
 
-	r.parseLanguage(detector, mrsServerName)
+	if rcfg.Noindex {
+		// if the room is marked as noindex, we should not parse it further
+		return false
+	}
+
+	if r.Email == "" {
+		r.Email = r.parseContact(mrsServerName, "email")
+	}
 	if ctx.Err() != nil {
-		return
+		return true
+	}
+
+	if r.Language == "" {
+		r.parseLanguage(detector, mrsServerName)
+	}
+	if ctx.Err() != nil {
+		return true
 	}
 
 	r.parseServer()
 	if ctx.Err() != nil {
-		return
+		return true
 	}
 
 	r.parseAvatar(media)
+	return true
 }
 
 // Servers returns all servers from the room object
@@ -167,6 +185,7 @@ func (r *MatrixRoom) parseServer() {
 // parseContact tries to parse contact info from room topic
 // the contact should be in the form of "<matrix.server_name from MRS config>:<field>:<value>" string, example:
 // "example.com:email:admin@example.com"
+// Deprecated: use ParseRoomConfig instead
 func (r *MatrixRoom) parseContact(mrsServerName, field string) string {
 	if r.Topic == "" {
 		return ""
@@ -216,6 +235,7 @@ func (r *MatrixRoom) parseLanguage(detector lingua.LanguageDetector, mrsServerNa
 }
 
 // parseLanguageOption tries to parse language option from room topic
+// Deprecated: use ParseRoomConfig instead
 func (r *MatrixRoom) parseLanguageOption(mrsServerName string) string {
 	if r.Topic == "" {
 		return ""
