@@ -450,7 +450,11 @@ func (m *Crawler) getPublicRooms(ctx context.Context, name string) *kit.List[str
 				continue
 			}
 
-			room.Parse(m.detector, m.media, m.cfg.Get().Matrix.ServerName)
+			if !room.Parse(m.detector, m.media, m.cfg.Get().Matrix.ServerName) {
+				added--
+				continue
+			}
+
 			servers.AddSlice(room.Servers())
 
 			m.data.AddRoomBatch(ctx, room)
