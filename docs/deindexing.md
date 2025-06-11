@@ -26,7 +26,7 @@ There are several ways to prevent rooms from being indexed. You can choose any o
 
 ### Unpublish your room directory from the federation
 
-For indexing rooms, MRS only makes use of information on your public room directory which has been explicitly published on your homeserver. Note that the information is publicly available and basically anyone can retrieve that information.
+For indexing rooms, MRS only makes use of information on your public room directory which has been explicitly published by your homeserver. Note that the information is publicly available and basically any other Matrix server can retrieve that information.
 
 Therefore, it is expected protocol-wise to unpublish the room directory in order to prevent such information from being accessed altogether.
 
@@ -42,13 +42,13 @@ If you use [etke.cc/ansible](https://github.com/etkecc/ansible) and [matrix-dock
 matrix_synapse_allow_public_rooms_over_federation: false
 ```
 
-As enabling the option unfederates your homeserver, *nobody* outside of the homeserver, including a MRS instance, can access to it over federation, making it technically impossible to index the rooms as a matter of course.
+As enabling the option prevents your homeserver from publishing its public rooms directory over federation, *no other Matrix server*, including MRS instances, can access the directory, making it technically impossible to view/parse/index the public rooms as a matter of course.
 
 ### Add special strings to the room's topic
 
-If you do want to make the server itself federated and the room directory to be published over the federation, only preventing rooms from being indexed, you can add special strings which instruct MRS instances not to index them.
+If you do want to make your server publish the public rooms directory over the federation, only preventing rooms from being indexed by MRS instances specifically, you can add special string which instruct any MRS instance not to index them.
 
-As a room administrator/moderator, you can add these strings to the room topic to prevent indexing:
+As a room administrator/moderator, you can add that string to the room topic to prevent indexing:
 
 ```
 (MRS-noindex:true-MRS)
