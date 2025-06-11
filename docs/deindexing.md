@@ -7,13 +7,22 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # Deindexing: How to block your server's rooms from being indexed
 
-If your server publishes room directory over federation and its public rooms are listed on the directory, they will be included in the search index with daily full reindexing process. See [this page](indexing.md) for details about indexing.
+If your server publishes room directory over federation and its public rooms are listed on the directory, they will be included in the search index by Matrix Rooms Search (short: MRS) instances with daily full reindexing process.
+
+## (How indexing occurs)
+
+The rooms will be included in the search index, if these conditions are met:
+
+- The room was configured as federatable when you created it
+- The room is set to "public" in room settings
+- The room is published on your room directory
+- The room catalog is published over federation
+
+⚠️ **Note**: If those conditions are met, any rooms can be discovered and accessed over federation, *whether by a MRS instance or not*. Please note that MRS instances will index rooms purely by following and respecting the Matrix protocol. **They will never index rooms otherwise.** See [this page](indexing.md) for relevant similar information.
+
+## How to prevent rooms from being indexed
 
 There are several ways to prevent rooms from being indexed. You can choose any of those methods per your needs and preference.
-
-**Note**: if a room is public, federatable, and published on the room catalog which is shared over the federation, the room can be freely discovered and accessed over federation, whether by a MRS instance or not. **If the room is not accessible over federation, MRS does not add the room to the index**, strictly following and respecting the Matrix protocol.
-
-## Methods to prevent rooms from being indexed
 
 ### Unpublish your room directory from the federation
 
