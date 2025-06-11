@@ -26,7 +26,14 @@ By adding specially formatted string to the room topic, example:
 The string could be only 1 per room, i.e., multiple `(MRS-...-MRS)` strings are not allowed in the room topic.
 
 The best place to add those options is the end of the room topic, because they will be removed from the topic when MRS will process it
-(that is purely technical information and workaround, so it should not be indexed and it not meant to be searchable via MRS).
+
+💡 **Hint**: you can "hide" that configuration string by utilizing markdown link format - just use `[.]` (or even `[]`) as the link text, so it will not be visible in the room topic, but still will be processed by MRS. Below is an example of how to do that:
+
+```markdown
+[.](MRS-language:EN|email:admin@example.com-MRS)
+```
+
+will look like [.](MRS-language:EN|email:admin@example.com-MRS) (_yes, just a dot_) for client apps that support [MSC3765](https://github.com/matrix-org/matrix-spec-proposals/pull/3765).
 
 ### Format
 

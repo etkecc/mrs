@@ -44,7 +44,7 @@ matrix_synapse_allow_public_rooms_over_federation: false
 
 As enabling the option prevents your homeserver from publishing its public rooms directory over federation, *no other Matrix server*, including MRS instances, can access the directory, making it technically impossible to view/parse/index the public rooms as a matter of course.
 
-### Add special strings to the room's topic
+### Add special string to the room's topic
 
 If you do want to make your server publish the public rooms directory over the federation, only preventing rooms from being indexed by MRS instances specifically, you can add special string which instruct any MRS instance not to index them.
 
