@@ -6,12 +6,12 @@ Dependencies? None.
 
 A public demo instance is available at **[MatrixRooms.info](https://matrixrooms.info)**.
 
-<!-- vim-markdown-toc GitLab -->
+<!-- vim-markdown-toc GFM -->
 
 * [📌 What MRS Does](#-what-mrs-does)
 * [🔍 Why This Exists](#-why-this-exists)
 * [🔐 Privacy and Respect](#-privacy-and-respect)
-* [❌ Opting Out / Deindexing](#-opting-out-deindexing)
+* [❌ Opting Out / Deindexing](#-opting-out--deindexing)
 * [How it works?](#how-it-works)
     * [Room configuration](#room-configuration)
     * [Discovery and indexing](#discovery-and-indexing)
@@ -30,7 +30,7 @@ A public demo instance is available at **[MatrixRooms.info](https://matrixrooms.
   ```
   GET /_matrix/federation/v1/publicRooms
   ```
-* Displays metadata from this API—such as room name, topic, number of joined users, and aliases.
+* Displays metadata from this API - such as room name, topic, number of joined users, and aliases.
 * Does **not** join rooms, collect messages, user profiles, or private data.
 * Does **not** circumvent privacy settings. It only indexes what a homeserver explicitly publishes via federation.
 

@@ -6,7 +6,7 @@ toolchain go1.24.1
 
 require (
 	github.com/VictoriaMetrics/metrics v1.37.0
-	github.com/blevesearch/bleve/v2 v2.5.1
+	github.com/blevesearch/bleve/v2 v2.5.2
 	github.com/etkecc/go-apm v1.3.5
 	github.com/etkecc/go-echo-basic-auth v1.2.0
 	github.com/etkecc/go-fswatcher v1.0.1
@@ -26,9 +26,10 @@ require (
 	github.com/swaggo/echo-swagger v1.4.1
 	github.com/swaggo/swag v1.16.4
 	github.com/ziflex/lecho/v3 v3.8.0
-	go.etcd.io/bbolt v1.4.0
-	golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6
-	golang.org/x/time v0.11.0
+	go.etcd.io/bbolt v1.4.1
+	golang.org/x/exp v0.0.0-20250606033433-dcc06ee1d476
+	golang.org/x/net v0.41.0
+	golang.org/x/time v0.12.0
 	gopkg.in/yaml.v3 v3.0.1
 	mvdan.cc/xurls/v2 v2.6.0
 )
@@ -90,11 +91,10 @@ require (
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/valyala/histogram v1.2.0 // indirect
 	github.com/yuin/goldmark v1.7.12 // indirect
-	golang.org/x/crypto v0.38.0 // indirect
-	golang.org/x/net v0.40.0 // indirect
+	golang.org/x/crypto v0.39.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
-	golang.org/x/text v0.25.0 // indirect
-	golang.org/x/tools v0.33.0 // indirect
+	golang.org/x/text v0.26.0 // indirect
+	golang.org/x/tools v0.34.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
