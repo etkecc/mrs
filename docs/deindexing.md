@@ -62,4 +62,8 @@ If none of the methods described above is available (such as due to lack of perm
 
 We do not recommend this method, as it requires manual intervention by instance's maintainers, and thus it will take much more time for each request to be handled than those methods.
 
-⚠️ **Note**: MRS is open source project (code) which enables to set up MRS instances. *It is these instances which index rooms, not the project*, therefore it is not able for the team behind the project to deindex rooms from MRS instances.
+## 🛠️ Project vs. Instances
+
+MRS is an **open-source software project**, not a centralized service. Individual **MRS instances** decide what they index and how often they sync.
+
+The MRS team **cannot remove rooms** from third-party instances, and we do not control their indexing policies. Always contact the specific instance operator if needed.
