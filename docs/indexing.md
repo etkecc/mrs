@@ -1,47 +1,57 @@
 <!--
 SPDX-FileCopyrightText: 2023 Nikita Chernyi
+SPDX-FileCopyrightText: 2025 Suguru Hirahara
 
 SPDX-License-Identifier: AGPL-3.0-or-later
 -->
 
-# How to add your server's public rooms to the index?
+# Indexing: How to let your server's public rooms added to indexes
 
-How can you add a matrix server to the index on some MRS instance?
-Use POST `/discover/{server_name}` endpoint, here is example using the [MatrixRooms.info](https://matrixrooms.info) demo instance and `example.com` homeserver:
+To let your Matrix server's public rooms indexed on Matrix Rooms Search instances, you can use the POST `/discover/{server_name}` endpoint following the example below.
 
 ```bash
 curl -X POST https://apicdn.matrixrooms.info/discover/example.com
 ```
 
-If your server publishes room directory over federation and has public rooms within the directory,
-they will appear in the search index after the next full reindex process (should be run daily).
+In the example, the [MatrixRooms.info](https://matrixrooms.info) demo Matrix Rooms Search instance and `example.com` homeserver are specified. Please change them as needed.
 
-Please keep in mind that to have a room indexed, you have to:
+## How indexing occurs
 
-1. Explicitly mark a room federatable when creating it
-2. Explicitly mark a room as public in room settings
-3. Explicitly publish a room in the room directory
-4. Explicitly publish your room catalog over federation
+If your server publishes room directory over federation and its public rooms are listed on the directory, they will be included in the search index by MRS instances with daily full reindexing process.
 
-## Why my server and its public rooms aren't discovered/parsed/included?
+The rooms will be included in the search index, if these conditions are met:
 
-Your server must publish public rooms over federation (`/_matrix/federation/v1/publicRooms` endpoint), eg: `https://matrix.etke.cc:8448/_matrix/federation/v1/publicRooms`
+- The room was configured as federatable when you created it
+- The room is set to "public" in room settings
+- The room is published on your room directory
+- The room catalog is published over federation
 
-**I get error on public rooms endpoint**, something like:
+## FAQ
+
+### Why my server and its public rooms are not discovered or included in the indexes?
+
+It is because not all of the conditions described above are met.
+
+In addition to editing configuration of the servers, please also make sure that your server publishes public rooms over federation (`/_matrix/federation/v1/publicRooms` endpoint). You can confirm the status by checking at `https://matrix.example.com:8448/_matrix/federation/v1/publicRooms`.
+
+If you get the error as below at public rooms endpoint, you need to adjust your server's configuration:
 
 ```json
 {"errcode":"M_FORBIDDEN","error":"You are not allowed to view the public rooms list of example.com"}
 ```
 
-In that case you should adjust your server's configuration.
-For synapse, you need to add the following config options in the `homeserver.yaml`:
+For Synapse homeserver, you need to add the following config options in the `homeserver.yaml`:
 
 ```yaml
 allow_public_rooms_over_federation: true
 ```
 
-in case of [etke.cc/ansible](https://github.com/etkecc/ansible) and [matrix-docker-ansible-deploy](https://github.com/spantaleev/matrix-docker-ansible-deploy), add the following to your `vars.yml` configuration file:
+If you use [etke.cc/ansible](https://github.com/etkecc/ansible) and [matrix-docker-ansible-deploy](https://github.com/spantaleev/matrix-docker-ansible-deploy) to manage your Matrix homeserver, add the following to your `vars.yml` configuration file:
 
 ```yaml
 matrix_synapse_allow_public_rooms_over_federation: true
 ```
+
+### How can I block my server's rooms from being indexed?
+
+You can check [this page](deindexing.md) for details.
