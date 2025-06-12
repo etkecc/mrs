@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2023 Nikita Chernyi
+
+SPDX-License-Identifier: AGPL-3.0-or-later
+-->
+
 # How to add your server's public rooms to the index?
 
 How can you add a matrix server to the index on some MRS instance?
