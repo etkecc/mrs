@@ -1,7 +1,7 @@
 ---
 default_install_hook_types: [pre-push]
 
-exclude: ^vendor/|LICENSE.md|swagger.json
+exclude: ^vendor/|LICENSE.md|swagger.json|go.mod|go.sum
 
 # See: https://pre-commit.com/hooks.html
 repos:
