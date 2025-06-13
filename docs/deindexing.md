@@ -15,8 +15,8 @@ The rooms will be included in the search index, if these conditions are met:
 
 - The room was configured as federatable when you created it
 - The room is set to "public" in room settings
-- The room is published on your room directory
-- The room catalog is published over federation
+- The room is published on your server's public rooms directory
+- Your server published the public rooms directory over federation
 
 ⚠️ **Note**: If those conditions are met, any rooms can be discovered and accessed over federation, *whether by a MRS instance or not*. Please note that MRS instances will index rooms purely by following and respecting the Matrix protocol. **They will never index rooms otherwise.** See [this page](indexing.md) for relevant similar information.
 
