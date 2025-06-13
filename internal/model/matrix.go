@@ -32,13 +32,14 @@ func (e MatrixError) Error() string {
 
 // MatrixServer info
 type MatrixServer struct {
-	Name      string               `json:"name"`
-	URL       string               `json:"url"`
-	Online    bool                 `json:"online"`
-	Indexable bool                 `json:"indexable"`
-	Contacts  MatrixServerContacts `json:"contacts"` // Contacts as per MSC1929
+	Name      string               `json:"name"`      // ServerName, as per spec, e.g., "example.com"
+	URL       string               `json:"url"`       // Server-Server API URL, e.g., "https://example.com:8448"
+	Software  string               `json:"software"`  // Software running on the server, e.g., Synapse, Dendrite
+	Version   string               `json:"version"`   // Version of the software, e.g., 1.0.0
+	Online    bool                 `json:"online"`    // Is the server online and federating?
+	Indexable bool                 `json:"indexable"` // Is the server published the public room directory over federation?
+	Contacts  MatrixServerContacts `json:"contacts"`  // Contacts as per MSC1929
 	OnlineAt  time.Time            `json:"online_at"`
-	UpdatedAt time.Time            `json:"updated_at"` // Deprecated
 }
 
 // MatrixServerContacts - MSC1929

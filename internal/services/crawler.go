@@ -68,7 +68,7 @@ type DataRepository interface {
 
 type ValidatorService interface {
 	Domain(server string) bool
-	IsOnline(ctx context.Context, server string) (string, bool)
+	IsOnline(ctx context.Context, server string) (serverName, serverSoftware, serverVersion string, isOnline bool)
 	IsIndexable(ctx context.Context, server string) bool
 	IsRoomAllowed(server string, room *model.MatrixRoom) bool
 }
@@ -271,13 +271,15 @@ func (m *Crawler) discoverServer(ctx context.Context, name string) *model.Matrix
 		apm.Log(ctx).Info().Str("server", name).Msg("server is blocked, skipping")
 		return nil
 	}
-	name, ok := m.v.IsOnline(ctx, name)
+	name, software, version, ok := m.v.IsOnline(ctx, name)
 	if name == "" {
 		return nil
 	}
 
 	server := &model.MatrixServer{
 		Name:     name,
+		Software: software,
+		Version:  version,
 		URL:      m.fed.QueryCSURL(ctx, name),
 		Contacts: m.getServerContacts(ctx, name),
 		Online:   ok,

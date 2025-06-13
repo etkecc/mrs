@@ -49,24 +49,25 @@ func (v *Validator) Domain(server string) bool {
 }
 
 // IsOnline checks if matrix server is online and federatable
-func (v *Validator) IsOnline(ctx context.Context, server string) (string, bool) {
+func (v *Validator) IsOnline(ctx context.Context, server string) (serverName, serverSoftware, serverVersion string, isOnline bool) {
 	// check if domain is valid
 	if !v.Domain(server) {
-		return "", false
+		return "", "", "", false
 	}
 
 	// check if online
 	name, err := v.matrix.QueryServerName(ctx, server)
 	if name == "" || err != nil {
-		return "", false
+		return "", "", "", false
 	}
 
 	// check if federatable
-	if _, _, err := v.matrix.QueryVersion(ctx, server); err != nil {
-		return name, false
+	software, version, err := v.matrix.QueryVersion(ctx, server)
+	if err != nil {
+		return name, software, version, false
 	}
 
-	return name, true
+	return name, software, version, true
 }
 
 // IsIndexable check if server is indexable
