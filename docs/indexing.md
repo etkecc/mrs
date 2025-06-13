@@ -10,7 +10,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 To let your Matrix server's public rooms indexed on Matrix Rooms Search instances, you can use the POST `/discover/{server_name}` endpoint following the example below.
 
 ```bash
-curl -X POST https://apicdn.matrixrooms.info/discover/example.com
+curl -X POST https://api.matrixrooms.info/discover/example.com
 ```
 
 In the example, the [MatrixRooms.info](https://matrixrooms.info) demo Matrix Rooms Search instance and `example.com` homeserver are specified. Please change them as needed.
@@ -23,8 +23,8 @@ The rooms will be included in the search index, if these conditions are met:
 
 - The room was configured as federatable when you created it
 - The room is set to "public" in room settings
-- The room is published on your room directory
-- The room catalog is published over federation
+- The room is published on your server's public rooms directory
+- Your server published the public rooms directory over federation
 
 ## FAQ
 
