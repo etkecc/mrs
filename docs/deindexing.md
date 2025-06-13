@@ -13,12 +13,12 @@ If your server publishes room directory over federation and its public rooms are
 
 The rooms will be included in the search index, if these conditions are met:
 
-- The room was configured as federatable when you created it
-- The room is set to "public" in room settings
+- The room was configured as federatable when created
+- The room is set to "public" on room settings
 - The room is published on your server's public rooms directory
-- Your server published the public rooms directory over federation
+- The server publishes the public rooms directory over federation
 
-⚠️ **Note**: If those conditions are met, any rooms can be discovered and accessed over federation, *whether by a MRS instance or not*. Please note that MRS instances will index rooms purely by following and respecting the Matrix protocol. **They will never index rooms otherwise.** See [this page](indexing.md) for relevant similar information.
+⚠️ **Note**: If those conditions are met, any rooms can be discovered and accessed over federation, *whether by a MRS instance or not*. Please note that MRS instances index rooms purely by following and respecting the Matrix protocol, only making use of information on your public room directory which has been explicitly published by your homeserver. **They will never index rooms otherwise.** See [this page](indexing.md) for relevant similar information.
 
 ## How to prevent rooms from being indexed
 
@@ -26,11 +26,9 @@ There are several ways to prevent rooms from being indexed. You can choose any o
 
 ### Unpublish your room directory from the federation
 
-For indexing rooms, MRS only makes use of information on your public room directory which has been explicitly published by your homeserver. Note that the information is publicly available and basically any other Matrix server can retrieve that information.
+Since the information to be used for indexing is publicly available and basically any other Matrix server can retrieve that information, it is expected protocol-wise to unpublish the room directory in order to prevent such information from being accessed altogether.
 
-Therefore, it is expected protocol-wise to unpublish the room directory in order to prevent such information from being accessed altogether.
-
-For Synapse homeserver, add the following config options in the `homeserver.yaml`:
+For Synapse homeserver, add the following config options to `homeserver.yaml`:
 
 ```yaml
 allow_public_rooms_over_federation: false
