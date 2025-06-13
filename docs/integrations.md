@@ -18,6 +18,7 @@ Matrix Rooms Search (short: MRS) provides integrations for Matrix clients and ot
   * [FluffyChat](#fluffychat)
   * [Element Web / Desktop](#element-web--desktop)
   * [Element Android / SchildiChat Android](#element-android--schildichat-android)
+  * [Fractal](#fractal)
 * [SearXNG](#searxng)
 * [MSCs](#mscs)
   * [MSC1929](#msc1929)
@@ -100,6 +101,16 @@ matrix_client_element_room_directory_servers: ['matrixrooms.info']
 5. Tap on the `Add a new server` at the bottom of the screen
 6. Enter `matrixrooms.info` to the server name input area and click `OK`
 7. Select the newly added server in the list
+
+### Fractal
+
+[Fractal](https://gitlab.gnome.org/World/fractal/) is a Matrix application written in Rust, optimized for GNOME desktop environment.
+
+1. Click on the **Explore** on the left sidebar
+2. Click the dropdown menu next to the search bar
+3. Enter `matrixrooms.info` to the input area and click the plus button
+
+![Input area on Fractal](assets/fractal.png)
 
 ## SearXNG
 
