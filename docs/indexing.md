@@ -32,13 +32,7 @@ The rooms will be included in the search index, if these conditions are met:
 
 It is because not all of the conditions described above are met.
 
-In addition to editing configuration of the servers, please also make sure that your server publishes public rooms over federation (`/_matrix/federation/v1/publicRooms` endpoint). You can confirm the status by checking at `https://matrix.example.com:8448/_matrix/federation/v1/publicRooms`.
-
-If you get the error as below at public rooms endpoint, you need to adjust your server's configuration:
-
-```json
-{"errcode":"M_FORBIDDEN","error":"You are not allowed to view the public rooms list of example.com"}
-```
+In addition to editing the room's configuration, please also make sure that your server publishes the public rooms directory over federation.
 
 For Synapse homeserver, you need to add the following config options in the `homeserver.yaml`:
 
