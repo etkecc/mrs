@@ -1,10 +1,17 @@
+<!--
+SPDX-FileCopyrightText: 2023 - 2025 Nikita Chernyi
+SPDX-FileCopyrightText: 2025 Suguru Hirahara
+
+SPDX-License-Identifier: AGPL-3.0-or-later
+-->
+
 # Matrix Rooms Search
 
-A fully-featured, standalone, matrix rooms search service, available both in web (via [HTTP API](./openapi.yml)) and natively in Matrix (via [Matrix Federation API](./docs/integrations.md)).
+**Matrix Rooms Search** (short: MRS) is a fully-featured, standalone, Matrix rooms search service, available both in web (via [HTTP API](./openapi.yml)) and natively in Matrix (via [Matrix Federation API](./docs/integrations.md)).
 
-Dependencies? None.
+No dependencies are required to run a Matrix Rooms Search instance.
 
-A public demo instance is available at **[MatrixRooms.info](https://matrixrooms.info)**.
+At **[MatrixRooms.info](https://matrixrooms.info)** is a public demo instance available.
 
 <!-- vim-markdown-toc GFM -->
 
@@ -12,10 +19,10 @@ A public demo instance is available at **[MatrixRooms.info](https://matrixrooms.
 * [🔍 Why This Exists](#-why-this-exists)
 * [🔐 Privacy and Respect](#-privacy-and-respect)
 * [❌ Opting Out / Deindexing](#-opting-out--deindexing)
-* [How it works?](#how-it-works)
+* [Mechanism](#mechanism)
     * [Room configuration](#room-configuration)
     * [Discovery and indexing](#discovery-and-indexing)
-    * [How the MSC1929 integration works](#how-the-msc1929-integration-works)
+    * [MSC1929 integration](#msc1929-integration)
     * [API](#api)
 * [Quick Start](#quick-start)
     * [Integrations](#integrations)
@@ -34,14 +41,16 @@ A public demo instance is available at **[MatrixRooms.info](https://matrixrooms.
 * Does **not** join rooms, collect messages, user profiles, or private data.
 * Does **not** circumvent privacy settings. It only indexes what a homeserver explicitly publishes via federation.
 
-[Protocol documentation](https://spec.matrix.org/latest/server-server-api/#get_matrixfederationv1publicrooms)
+See [the protocol documentation](https://spec.matrix.org/latest/server-server-api/#get_matrixfederationv1publicrooms) for technical details.
 
 ## 🔍 Why This Exists
 
-Matrix has no central directory of public rooms. MRS helps solve that by:
+Matrix has inherently no central directory of public rooms, which makes it difficult for visitors to find ones they might be interested in and for room's administrators to advertise their communities to the rest of the Matrix ecosystem.
 
-* Making public rooms easier to find.
-* Improving community visibility across federated homeservers.
+MRS helps to solve the difficulty by:
+
+* Making *public rooms* easier to find.
+* Improving *community visibility* across federated homeservers.
 * Enabling discovery tools to integrate public room metadata into websites and search platforms.
 
 This can help new users connect with open communities more easily.
@@ -57,23 +66,25 @@ MRS is built with privacy and transparency in mind. Here's how it handles data:
 | **No profiling**     | MRS does not collect or store user data.                         |
 | **Easy opt-out**     | Homeserver admins can remove their content at any time.          |
 
+MRS only makes use of publicly-available information. No privacy-invasive method is deployed.
+
 ## ❌ Opting Out / Deindexing
 
-MRS by default respects homeserver admins' decisions to opt out, providing vaiours ways on server and room level.
-Please visit [deindexing documentation](./docs/deindexing.md) for more details.
+Following the Matrix protocol, MRS fully respects homeserver admins' choice to prohibit MRS instances from indexing their public rooms. Please visit [deindexing documentation](./docs/deindexing.md) for more details.
 
-## How it works?
+## Mechanism
+
+MRS essentially works as below:
 
 1. Discover matrix servers (a.k.a find alive and properly configured) from provided config
 2. Parse public rooms from the discovered servers
 3. Ingest parsed public rooms into search index
 
-Each step can be run separately or all at once using admin API
+Each step can be run separately or all at once using admin API.
 
 ### Room configuration
 
-MRS allows you to configure different room parameters by adding special configuration strings to the room topic/description.
-Check [room-configuration.md](./docs/room-configuration.md).
+MRS allows you to configure different room parameters by adding special configuration strings to the room topic/description. Check [room-configuration.md](./docs/room-configuration.md) for details.
 
 ### Discovery and indexing
 
@@ -81,22 +92,24 @@ Check [room-configuration.md](./docs/room-configuration.md).
 
 **Opt-out**: check the [docs/deindexing.md](./docs/deindexing.md)
 
-### How the [MSC1929](https://github.com/matrix-org/matrix-spec-proposals/pull/1929) integration works
+### [MSC1929](https://github.com/matrix-org/matrix-spec-proposals/pull/1929) integration
 
-Check the [docs/msc1929.md](./docs/msc1929.md)
+MRS integrates [MSC1929](https://github.com/matrix-org/matrix-spec-proposals/pull/1929) natively, in order to help homeserver administrators to combat unlawful actions. See details on [this page](./msc1929.md).
 
 ### API
 
-Check [openapi.yml](./openapi.yml)
+See [openapi.yml](./openapi.yml) for details about the API.
 
 ## Quick Start
 
-Check [docs/deploy.md](./docs/deploy.md) and [docs/bootstrapping.md](./docs/bootstrapping.md)
+See [docs/deploy.md](./docs/deploy.md) and [docs/bootstrapping.md](./docs/bootstrapping.md) for details.
+
+MRS is integrated with the [MASH playbook](https://github.com/mother-of-all-self-hosting/mash-playbook/), which helps you to run various web services with Ansible. Check [its documentation](https://github.com/mother-of-all-self-hosting/mash-playbook/blob/main/docs/services/mrs.md) for details about running a MRS instance on your server.
 
 ### Integrations
 
-Check [docs/integrations.md](./docs/integrations.md)
+MRS provides integrations for Matrix clients and other applications like [SearXNG](https://docs.searxng.org). See [docs/integrations.md](./docs/integrations.md) for details.
 
 ## Support
 
-[#mrs:etke.cc](https://matrix.to/#/#mrs:etke.cc) matrix room
+If you have questions, please come to our support room at [#mrs:etke.cc](https://matrixrooms.info/room/mrs:etke.cc) and do not hesitate to ask them!
