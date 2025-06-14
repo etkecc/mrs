@@ -112,4 +112,4 @@ MRS provides integrations for Matrix clients and other applications like [SearXN
 
 ## Support
 
-If you have questions, please come to our support room at [#mrs:etke.cc](https://matrix.to/#/#mrs:etke.cc) and do not hesitate to ask them!
+If you have questions, please come to our support room at [#mrs:etke.cc](https://matrixrooms.info/room/mrs:etke.cc) and do not hesitate to ask them!
