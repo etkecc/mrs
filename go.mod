@@ -5,7 +5,7 @@ go 1.23.0
 toolchain go1.24.1
 
 require (
-	github.com/VictoriaMetrics/metrics v1.37.0
+	github.com/VictoriaMetrics/metrics v1.38.0
 	github.com/blevesearch/bleve/v2 v2.5.2
 	github.com/etkecc/go-apm v1.3.5
 	github.com/etkecc/go-echo-basic-auth v1.2.0
