@@ -20,7 +20,7 @@ jobs:
       - uses: actions/setup-go@v5
       - uses: extractions/setup-just@v3
       - name: lint
-        uses: golangci/golangci-lint-action@v8
+        uses: golangci/golangci-lint-action@v7.0.1
         with:
           version: latest
       - name: test
