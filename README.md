@@ -32,16 +32,19 @@ At **[MatrixRooms.info](https://matrixrooms.info)** is a public demo instance av
 
 ## 📌 What MRS Does
 
-* Queries publicly available Matrix rooms using the documented Matrix federation API:
+* Queries only federation-exposed public room directories with the Matrix federation API:
 
   ```
   GET /_matrix/federation/v1/publicRooms
   ```
-* Displays metadata from this API - such as room name, topic, number of joined users, and aliases.
-* Does **not** join rooms, collect messages, user profiles, or private data.
-* Does **not** circumvent privacy settings. It only indexes what a homeserver explicitly publishes via federation.
+* Displays metadata retrieved via the API — such as room name, topic, number of joined users, and aliases.
 
 See [the protocol documentation](https://spec.matrix.org/latest/server-server-api/#get_matrixfederationv1publicrooms) for technical details.
+
+### What MRS does *not* do
+
+* MRS does **not** join rooms, collect messages, user profiles, or private data.
+* MRS does **not** circumvent privacy settings. It only indexes what a homeserver explicitly publishes via federation.
 
 ## 🔍 Why This Exists
 
