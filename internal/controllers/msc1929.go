@@ -24,13 +24,9 @@ var (
 		Code:    "CC.ETKE.MSC1929_UNSUPPORTED_ROLE",
 		Message: "The support file contains an unsupported role in one of the contacts. Supported roles are: " + strings.Join(msc1929.SupportedRoles, ", "),
 	}
-	errMSC1929NoEmails = &model.MatrixError{
-		Code:    "CC.ETKE.MSC1929_NO_EMAILS",
-		Message: "The support file doesn't contain any email addresses.",
-	}
-	errMSC1929NoMatrixIDs = &model.MatrixError{
-		Code:    "CC.ETKE.MSC1929_NO_MXIDS",
-		Message: "The support file doesn't contain any Matrix IDs.",
+	errMSC1929NoContacts = &model.MatrixError{
+		Code:    "CC.ETKE.MSC1929_NO_CONTACTS",
+		Message: "The support file contains neither email addresses, nor matrix ids.",
 	}
 	errMSC1929Outdated = &model.MatrixError{
 		Code:    "CC.ETKE.MSC1929_OUTDATED",
@@ -47,11 +43,8 @@ func validateMSC1929(resp *msc1929.Response) []*model.MatrixError {
 	if len(resp.Admins) > 0 {
 		errs = append(errs, errMSC1929Outdated)
 	}
-	if len(resp.AllEmails()) == 0 {
-		errs = append(errs, errMSC1929NoEmails)
-	}
-	if len(resp.AllMatrixIDs()) == 0 {
-		errs = append(errs, errMSC1929NoMatrixIDs)
+	if len(resp.AllEmails()) == 0 && len(resp.AllMatrixIDs()) == 0 {
+		errs = append(errs, errMSC1929NoContacts)
 	}
 
 	withoutRole := false
