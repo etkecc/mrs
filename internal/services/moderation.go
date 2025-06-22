@@ -272,11 +272,10 @@ func (m *Moderation) Ban(ctx context.Context, roomID string) error {
 	}
 	if room == nil {
 		_, entry := m.matrix.GetClientRoomSummary(ctx, roomID, "", true)
-		if entry == nil {
-			return fmt.Errorf("room not found")
+		if entry != nil {
+			log.Warn().Msg("room not found in data store, using MSC3266 summary")
+			room = entry.Convert()
 		}
-		log.Warn().Msg("room not found in data store, using MSC3266 summary")
-		room = entry.Convert()
 	}
 
 	if room == nil {
