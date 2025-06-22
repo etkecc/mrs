@@ -39,11 +39,11 @@ func NewMedia(cfg ConfigService) (*Media, error) {
 	m := &Media{
 		cfg: cfg,
 	}
-	url, err := url.Parse(cfg.Get().Public.API)
+	base, err := url.Parse(cfg.Get().Public.API)
 	if err != nil {
 		return nil, fmt.Errorf("invalid public API URL: %w", err)
 	}
-	m.base = url
+	m.base = base
 	return m, nil
 }
 

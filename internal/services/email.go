@@ -95,11 +95,11 @@ func (e *Email) SendModReport(message, email string) error {
 // validateConfig checks if all config vars are set
 func (e *Email) validateConfig() bool {
 	cfg := e.cfg.Get().Email
-	return !(cfg.Postmark.Token == "" ||
-		cfg.Postmark.Report.From == "" ||
-		cfg.Postmark.Report.Stream == "" ||
-		cfg.Templates.Report.Body == "" ||
-		cfg.Templates.Report.Subject == "")
+	return cfg.Postmark.Token != "" &&
+		cfg.Postmark.Report.From != "" &&
+		cfg.Postmark.Report.Stream != "" &&
+		cfg.Templates.Report.Body != "" &&
+		cfg.Templates.Report.Subject != ""
 }
 
 // buildPMReqs builds postmark email for each email
