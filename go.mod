@@ -17,7 +17,7 @@ require (
 	github.com/goccy/go-json v0.10.5
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/labstack/echo/v4 v4.13.4
-	github.com/matrix-org/gomatrixserverlib v0.0.0-20250520070507-c70b2132a00a
+	github.com/matrix-org/gomatrixserverlib v0.0.0-20250619052822-904c8f04597e
 	github.com/mattevans/postmark-go v1.0.0
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/mileusna/crontab v1.2.0
@@ -27,7 +27,7 @@ require (
 	github.com/swaggo/swag v1.16.4
 	github.com/ziflex/lecho/v3 v3.8.0
 	go.etcd.io/bbolt v1.4.1
-	golang.org/x/exp v0.0.0-20250606033433-dcc06ee1d476
+	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b
 	golang.org/x/net v0.41.0
 	golang.org/x/time v0.12.0
 	gopkg.in/yaml.v3 v3.0.1
