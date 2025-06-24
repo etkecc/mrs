@@ -178,7 +178,7 @@ github.com/buger/jsonparser
 # github.com/etkecc/go-apm v1.3.5
 ## explicit; go 1.23.0
 github.com/etkecc/go-apm
-# github.com/etkecc/go-echo-basic-auth v1.3.0
+# github.com/etkecc/go-echo-basic-auth v1.3.1
 ## explicit; go 1.23.0
 github.com/etkecc/go-echo-basic-auth
 # github.com/etkecc/go-fswatcher v1.0.1

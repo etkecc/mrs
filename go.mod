@@ -8,7 +8,7 @@ require (
 	github.com/VictoriaMetrics/metrics v1.38.0
 	github.com/blevesearch/bleve/v2 v2.5.2
 	github.com/etkecc/go-apm v1.3.5
-	github.com/etkecc/go-echo-basic-auth v1.3.0
+	github.com/etkecc/go-echo-basic-auth v1.3.1
 	github.com/etkecc/go-fswatcher v1.0.1
 	github.com/etkecc/go-healthchecks/v2 v2.2.2
 	github.com/etkecc/go-kit v1.7.1
