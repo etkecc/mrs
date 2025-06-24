@@ -30,16 +30,23 @@ func NewValidator(auths ...*Auth) middleware.BasicAuthValidator {
 	return func(login, password string, c echo.Context) (bool, error) {
 		sanitizedPath := strings.ReplaceAll(c.Request().URL.Path, "\n", "")
 		sanitizedPath = strings.ReplaceAll(sanitizedPath, "\r", "")
+		anonymizedIP := anonymizeIP(c.RealIP())
 		for idx, auth := range auths {
 			allowedIP := isIPAllowed(validIPs[idx], validCIDRs[idx], c.RealIP())
 			match := Equals(auth.Login, login) && Equals(auth.Password, password)
 			if match && allowedIP {
 				c.Set(ContextLoginKey, login)
-				c.Logger().Infof("authorization attempt from %s to %s (allowed_ip==%t and allowed_credentials==%t)", c.RealIP(), sanitizedPath, allowedIP, match)
+				c.Logger().Infof(
+					"authorization attempt from %s to %s (allowed_ip==%t and allowed_credentials==%t)",
+					anonymizedIP, sanitizedPath, allowedIP, match,
+				)
 				return true, nil
 			}
 		}
-		c.Logger().Infof("authorization attempt from %s to %s (allowed_ip==%t or allowed_credentials==%t)", c.RealIP(), sanitizedPath, false, false)
+		c.Logger().Infof(
+			"authorization attempt from %s to %s (allowed_ip==%t or allowed_credentials==%t)",
+			anonymizedIP, sanitizedPath, false, false,
+		)
 
 		return false, nil
 	}
@@ -93,4 +100,32 @@ func isIPAllowed(validIPs []string, validCIDRs []*net.IPNet, ip string) bool {
 	}
 
 	return allowedIP
+}
+
+// anonymizeIP drops the last octet of the IPv4 and IPv6 address to anonymize it
+func anonymizeIP(ip string) string {
+	if ip == "" {
+		return ""
+	}
+	parsedIP := net.ParseIP(ip)
+	if parsedIP == nil {
+		return ip // not an ip
+	}
+
+	// IPv4
+	if parsedIP.To4() != nil {
+		ipParts := strings.Split(parsedIP.String(), ".")
+		if len(ipParts) == 4 {
+			ipParts[3] = "0"
+			return strings.Join(ipParts, ".")
+		}
+	}
+
+	// IPv6
+	ipParts := strings.Split(parsedIP.String(), ":")
+	if len(ipParts) > 0 {
+		ipParts[len(ipParts)-1] = "0"
+		return strings.Join(ipParts, ":")
+	}
+	return ip // not an ip
 }

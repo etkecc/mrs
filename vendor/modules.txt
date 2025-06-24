@@ -178,7 +178,7 @@ github.com/buger/jsonparser
 # github.com/etkecc/go-apm v1.3.5
 ## explicit; go 1.23.0
 github.com/etkecc/go-apm
-# github.com/etkecc/go-echo-basic-auth v1.2.0
+# github.com/etkecc/go-echo-basic-auth v1.3.0
 ## explicit; go 1.23.0
 github.com/etkecc/go-echo-basic-auth
 # github.com/etkecc/go-fswatcher v1.0.1
@@ -187,7 +187,7 @@ github.com/etkecc/go-fswatcher
 # github.com/etkecc/go-healthchecks/v2 v2.2.2
 ## explicit; go 1.18
 github.com/etkecc/go-healthchecks/v2
-# github.com/etkecc/go-kit v1.6.0
+# github.com/etkecc/go-kit v1.7.0
 ## explicit; go 1.22
 github.com/etkecc/go-kit
 github.com/etkecc/go-kit/format
@@ -200,7 +200,7 @@ github.com/etkecc/go-msc1929
 ## explicit; go 1.17
 github.com/fsnotify/fsnotify
 github.com/fsnotify/fsnotify/internal
-# github.com/getsentry/sentry-go v0.33.0
+# github.com/getsentry/sentry-go v0.34.0
 ## explicit; go 1.21
 github.com/getsentry/sentry-go
 github.com/getsentry/sentry-go/attribute
@@ -208,7 +208,7 @@ github.com/getsentry/sentry-go/internal/debug
 github.com/getsentry/sentry-go/internal/otel/baggage
 github.com/getsentry/sentry-go/internal/otel/baggage/internal/baggage
 github.com/getsentry/sentry-go/internal/ratelimit
-# github.com/getsentry/sentry-go/zerolog v0.33.0
+# github.com/getsentry/sentry-go/zerolog v0.34.0
 ## explicit; go 1.21
 github.com/getsentry/sentry-go/zerolog
 # github.com/ghodss/yaml v1.0.0

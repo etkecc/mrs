@@ -8,10 +8,10 @@ require (
 	github.com/VictoriaMetrics/metrics v1.38.0
 	github.com/blevesearch/bleve/v2 v2.5.2
 	github.com/etkecc/go-apm v1.3.5
-	github.com/etkecc/go-echo-basic-auth v1.2.0
+	github.com/etkecc/go-echo-basic-auth v1.3.0
 	github.com/etkecc/go-fswatcher v1.0.1
 	github.com/etkecc/go-healthchecks/v2 v2.2.2
-	github.com/etkecc/go-kit v1.6.0
+	github.com/etkecc/go-kit v1.7.0
 	github.com/etkecc/go-msc1929 v1.2.3
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/goccy/go-json v0.10.5
@@ -58,8 +58,8 @@ require (
 	github.com/blevesearch/zapx/v15 v15.4.2 // indirect
 	github.com/blevesearch/zapx/v16 v16.2.4 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
-	github.com/getsentry/sentry-go v0.33.0 // indirect
-	github.com/getsentry/sentry-go/zerolog v0.33.0 // indirect
+	github.com/getsentry/sentry-go v0.34.0 // indirect
+	github.com/getsentry/sentry-go/zerolog v0.34.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-openapi/jsonpointer v0.21.1 // indirect
 	github.com/go-openapi/jsonreference v0.21.0 // indirect
