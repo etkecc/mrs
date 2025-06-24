@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"net"
 	"net/http"
 	"slices"
 	"time"
@@ -57,16 +58,44 @@ func getRL(limit rate.Limit) echo.MiddlewareFunc {
 	return rls[limit]
 }
 
+func getBlocklist(cfg configService) ([]string, []*net.IPNet) {
+	blockIPs := []string{}
+	blockCIDRs := []*net.IPNet{}
+	if cfg.Get().Blocklist == nil || len(cfg.Get().Blocklist.IPs) == 0 {
+		return blockIPs, blockCIDRs
+	}
+
+	for _, ip := range cfg.Get().Blocklist.IPs {
+		if _, ipnet, err := net.ParseCIDR(ip); err == nil {
+			blockCIDRs = append(blockCIDRs, ipnet)
+		} else {
+			blockIPs = append(blockIPs, ip)
+		}
+	}
+
+	return blockIPs, blockCIDRs
+}
+
 func withBlocklist(cfg configService) echo.MiddlewareFunc {
+	blockIPs, blockCIDRs := getBlocklist(cfg)
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			if cfg.Get().Blocklist == nil || len(cfg.Get().Blocklist.IPs) == 0 {
+			ip := c.RealIP()
+			if ip == "" {
 				return next(c)
 			}
-			ip := c.RealIP()
-			if slices.Contains(cfg.Get().Blocklist.IPs, ip) {
+
+			if slices.Contains(blockIPs, ip) {
 				return c.JSONBlob(http.StatusForbidden, mForbidden)
 			}
+
+			parsed := net.ParseIP(ip)
+			for _, ipnet := range blockCIDRs {
+				if ipnet.Contains(parsed) {
+					return c.JSONBlob(http.StatusForbidden, mForbidden)
+				}
+			}
+
 			return next(c)
 		}
 	}

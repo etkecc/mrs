@@ -26,9 +26,6 @@ func AnonymizeIP(ip string) string {
 
 	// IPv6
 	ipParts := strings.Split(parsedIP.String(), ":")
-	if len(ipParts) > 0 {
-		ipParts[len(ipParts)-1] = "0"
-		return strings.Join(ipParts, ":")
-	}
-	return ip // not an ip
+	ipParts[len(ipParts)-1] = "0"
+	return strings.Join(ipParts, ":")
 }

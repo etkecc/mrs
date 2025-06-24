@@ -11,7 +11,8 @@ require (
 	github.com/etkecc/go-echo-basic-auth v1.3.0
 	github.com/etkecc/go-fswatcher v1.0.1
 	github.com/etkecc/go-healthchecks/v2 v2.2.2
-	github.com/etkecc/go-kit v1.7.0
+	github.com/etkecc/go-kit v1.7.1
+	github.com/etkecc/go-kit/format v0.0.0-20250624085102-2d210bbce01f
 	github.com/etkecc/go-msc1929 v1.2.3
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/goccy/go-json v0.10.5
