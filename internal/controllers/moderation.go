@@ -7,6 +7,9 @@ import (
 
 	"github.com/etkecc/go-apm"
 	"github.com/labstack/echo/v4"
+
+	"github.com/etkecc/mrs/internal/model"
+	"github.com/etkecc/mrs/internal/utils"
 )
 
 type moderationService interface {
@@ -33,9 +36,26 @@ func report(svc moderationService) echo.HandlerFunc {
 			return err
 		}
 
+		if !utils.IsValidID(report.RoomID) {
+			return c.JSON(http.StatusBadRequest, &model.MatrixError{
+				Code:    "M_INVALID_PARAM",
+				Message: "Invalid room ID format.",
+			})
+		}
+
+		if report.Reason == "" || len(report.Reason) < 5 {
+			return c.JSON(http.StatusBadRequest, &model.MatrixError{
+				Code:    "M_INVALID_PARAM",
+				Message: "Report reason is too short or missing.",
+			})
+		}
+
 		if err := svc.Report(c.Request().Context(), c.RealIP(), report.RoomID, report.Reason, report.NoMSC1929); err != nil {
 			log.Error().Err(err).Msg("cannot report room")
-			return err
+			return c.JSON(http.StatusInternalServerError, &model.MatrixError{
+				Code:    "M_INTERNAL_ERROR",
+				Message: "An internal error occurred while processing your request.",
+			})
 		}
 
 		return c.NoContent(http.StatusAccepted)

@@ -15,19 +15,12 @@ import (
 	"github.com/etkecc/mrs/internal/utils"
 )
 
-var (
-	rls        = map[rate.Limit]echo.MiddlewareFunc{}
-	mForbidden = utils.MustJSON(&model.MatrixError{
-		Code:    "M_FORBIDDEN",
-		Message: "forbidden",
-	})
-)
+var mForbidden = utils.MustJSON(&model.MatrixError{
+	Code:    "M_FORBIDDEN",
+	Message: "forbidden",
+})
 
 func getRL(limit rate.Limit) echo.MiddlewareFunc {
-	rl, ok := rls[limit]
-	if ok {
-		return rl
-	}
 	cfg := middleware.DefaultRateLimiterConfig
 	cfg.Skipper = func(c echo.Context) bool {
 		return c.Request().Method == http.MethodOptions
@@ -54,8 +47,8 @@ func getRL(limit rate.Limit) echo.MiddlewareFunc {
 		Burst:     int(limit),
 		ExpiresIn: 5 * time.Minute,
 	})
-	rls[limit] = middleware.RateLimiterWithConfig(cfg)
-	return rls[limit]
+
+	return middleware.RateLimiterWithConfig(cfg)
 }
 
 func getBlocklist(cfg configService) ([]string, []*net.IPNet) {
