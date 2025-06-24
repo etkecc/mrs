@@ -63,6 +63,8 @@ github.com/etkecc/go-healthchecks/v2 v2.2.2 h1:YV7e+Ga8JY3aZX4Qf6Q1Ca+DnqbT5Drjl
 github.com/etkecc/go-healthchecks/v2 v2.2.2/go.mod h1:IowWGN4F6By6z0eh63+639OscylgtdvT9ITjfN6hnZA=
 github.com/etkecc/go-kit v1.6.0 h1:pNbIONvOuRaWuP0F4JLq2ASBxnsCEq5CFY3KeKdhaVY=
 github.com/etkecc/go-kit v1.6.0/go.mod h1:yikghi8YaYbTjRXNtx82g0LFv90YqZi2vLf5Chw0ysg=
+github.com/etkecc/go-kit v1.7.0 h1:jxJ+tWfWwYqgNgfdbZ2va/M0AHyDdKwc8lYGXrFuWsc=
+github.com/etkecc/go-kit v1.7.0/go.mod h1:yikghi8YaYbTjRXNtx82g0LFv90YqZi2vLf5Chw0ysg=
 github.com/etkecc/go-msc1929 v1.2.3 h1:MmOUC0QZjk93ch9h1IPMTpICNkQONgEFqGpw7uFvr9Q=
 github.com/etkecc/go-msc1929 v1.2.3/go.mod h1:Tf6oxDhwzd4hvP7xtALHLs6RDurPOqAM2AX+DOf6M3k=
 github.com/fsnotify/fsnotify v1.9.0 h1:2Ml+OJNzbYCTzsxtv8vKSFD9PbJjmhYF14k/jKC7S9k=
