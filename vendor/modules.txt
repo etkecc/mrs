@@ -277,7 +277,7 @@ github.com/labstack/gommon/log
 github.com/mailru/easyjson/buffer
 github.com/mailru/easyjson/jlexer
 github.com/mailru/easyjson/jwriter
-# github.com/matrix-org/gomatrixserverlib v0.0.0-20250619052822-904c8f04597e
+# github.com/matrix-org/gomatrixserverlib v0.0.0-20250704071233-a234d6df21c7
 ## explicit; go 1.23.0
 github.com/matrix-org/gomatrixserverlib
 github.com/matrix-org/gomatrixserverlib/spec
