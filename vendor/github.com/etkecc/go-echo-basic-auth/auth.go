@@ -5,6 +5,7 @@ import (
 	"net"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -28,28 +29,54 @@ func NewValidator(auths ...*Auth) middleware.BasicAuthValidator {
 	validIPs, validCIDRs := parseIPs(auths...)
 
 	return func(login, password string, c echo.Context) (bool, error) {
-		sanitizedPath := strings.ReplaceAll(c.Request().URL.Path, "\n", "")
-		sanitizedPath = strings.ReplaceAll(sanitizedPath, "\r", "")
-		anonymizedIP := anonymizeIP(c.RealIP())
+		var wasIPAllowed, wasAuthAllowed bool
 		for idx, auth := range auths {
 			allowedIP := isIPAllowed(validIPs[idx], validCIDRs[idx], c.RealIP())
+			if allowedIP {
+				wasIPAllowed = true
+			}
 			match := Equals(auth.Login, login) && Equals(auth.Password, password)
+			if match {
+				wasAuthAllowed = true
+			}
+
 			if match && allowedIP {
 				c.Set(ContextLoginKey, login)
-				c.Logger().Infof(
-					"authorization attempt from %s to %s (allowed_ip==%t and allowed_credentials==%t)",
-					anonymizedIP, sanitizedPath, allowedIP, match,
-				)
+				logAttempt(c, allowedIP, match, true)
 				return true, nil
 			}
 		}
-		c.Logger().Infof(
-			"authorization attempt from %s to %s (allowed_ip==%t or allowed_credentials==%t)",
-			anonymizedIP, sanitizedPath, false, false,
-		)
 
+		logAttempt(c, wasIPAllowed, wasAuthAllowed, false)
 		return false, nil
 	}
+}
+
+// logAttempt logs the authentication attempt
+func logAttempt(c echo.Context, wasIPAllowed, wasAuthAllowed, success bool) {
+	user := "OK"
+	status := "200"
+	logfunc := c.Logger().Infof
+	requestPath := strings.ReplaceAll(strings.ReplaceAll(c.Request().URL.Path, "\n", ""), "\r", "")
+	if !success {
+		user = "FAIL"
+		status = "401"
+		logfunc = c.Logger().Warnf
+	}
+
+	logfunc(
+		`%s - %s [%s] "%s %s %s" %s 0 "-" "Auth: %t (ip: %t; creds: %t)"`,
+		anonymizeIP(c.RealIP()),
+		user,
+		time.Now().Format("2/Jan/2006:15:04:05 -0700"),
+		c.Request().Method,
+		requestPath,
+		c.Request().Proto,
+		status,
+		success,
+		wasIPAllowed,
+		wasAuthAllowed,
+	)
 }
 
 // NewMiddleware returns a new BasicAuth middleware instance
