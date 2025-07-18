@@ -28,7 +28,7 @@ require (
 	github.com/swaggo/swag v1.16.4
 	github.com/ziflex/lecho/v3 v3.8.0
 	go.etcd.io/bbolt v1.4.2
-	golang.org/x/exp v0.0.0-20250711185948-6ae5c78190dc
+	golang.org/x/exp v0.0.0-20250718183923-645b1fa84792
 	golang.org/x/net v0.42.0
 	golang.org/x/time v0.12.0
 	gopkg.in/yaml.v3 v3.0.1
