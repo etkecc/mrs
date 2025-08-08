@@ -6,7 +6,7 @@ toolchain go1.24.5
 
 require (
 	github.com/VictoriaMetrics/metrics v1.38.0
-	github.com/blevesearch/bleve/v2 v2.5.2
+	github.com/blevesearch/bleve/v2 v2.5.3
 	github.com/etkecc/go-apm v1.3.5
 	github.com/etkecc/go-echo-basic-auth v1.3.1
 	github.com/etkecc/go-fswatcher v1.0.1
@@ -41,7 +41,7 @@ require (
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/bits-and-blooms/bitset v1.22.0 // indirect
 	github.com/blevesearch/bleve_index_api v1.2.8 // indirect
-	github.com/blevesearch/geo v0.2.3 // indirect
+	github.com/blevesearch/geo v0.2.4 // indirect
 	github.com/blevesearch/go-faiss v1.0.25 // indirect
 	github.com/blevesearch/go-porterstemmer v1.0.3 // indirect
 	github.com/blevesearch/gtreap v0.1.1 // indirect
