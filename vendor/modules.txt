@@ -187,12 +187,12 @@ github.com/etkecc/go-fswatcher
 # github.com/etkecc/go-healthchecks/v2 v2.2.2
 ## explicit; go 1.18
 github.com/etkecc/go-healthchecks/v2
-# github.com/etkecc/go-kit v1.7.1
+# github.com/etkecc/go-kit v1.7.2
 ## explicit; go 1.22
 github.com/etkecc/go-kit
 github.com/etkecc/go-kit/template
 github.com/etkecc/go-kit/workpool
-# github.com/etkecc/go-kit/format v0.0.0-20250624085102-2d210bbce01f
+# github.com/etkecc/go-kit/format v0.0.0-20250813195010-99bfae98aa2c
 ## explicit; go 1.22
 github.com/etkecc/go-kit/format
 # github.com/etkecc/go-msc1929 v1.2.3
@@ -202,7 +202,7 @@ github.com/etkecc/go-msc1929
 ## explicit; go 1.17
 github.com/fsnotify/fsnotify
 github.com/fsnotify/fsnotify/internal
-# github.com/getsentry/sentry-go v0.35.0
+# github.com/getsentry/sentry-go v0.35.1
 ## explicit; go 1.21
 github.com/getsentry/sentry-go
 github.com/getsentry/sentry-go/attribute
@@ -210,7 +210,7 @@ github.com/getsentry/sentry-go/internal/debug
 github.com/getsentry/sentry-go/internal/otel/baggage
 github.com/getsentry/sentry-go/internal/otel/baggage/internal/baggage
 github.com/getsentry/sentry-go/internal/ratelimit
-# github.com/getsentry/sentry-go/zerolog v0.35.0
+# github.com/getsentry/sentry-go/zerolog v0.35.1
 ## explicit; go 1.21
 github.com/getsentry/sentry-go/zerolog
 # github.com/ghodss/yaml v1.0.0
@@ -280,7 +280,7 @@ github.com/labstack/gommon/log
 github.com/mailru/easyjson/buffer
 github.com/mailru/easyjson/jlexer
 github.com/mailru/easyjson/jwriter
-# github.com/matrix-org/gomatrixserverlib v0.0.0-20250811195804-7a73c05d2a24
+# github.com/matrix-org/gomatrixserverlib v0.0.0-20250813150445-9f5070a65744
 ## explicit; go 1.23.0
 github.com/matrix-org/gomatrixserverlib
 github.com/matrix-org/gomatrixserverlib/spec
@@ -388,8 +388,8 @@ go.etcd.io/bbolt/internal/freelist
 golang.org/x/crypto/acme
 golang.org/x/crypto/acme/autocert
 golang.org/x/crypto/ed25519
-# golang.org/x/exp v0.0.0-20250811191247-51f88131bc50
-## explicit; go 1.23.0
+# golang.org/x/exp v0.0.0-20250813145105-42675adae3e6
+## explicit; go 1.24.0
 golang.org/x/exp/constraints
 golang.org/x/exp/maps
 golang.org/x/exp/slices

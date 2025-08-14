@@ -1,6 +1,6 @@
 module github.com/etkecc/mrs
 
-go 1.23.0
+go 1.24.0
 
 toolchain go1.24.5
 
@@ -11,14 +11,14 @@ require (
 	github.com/etkecc/go-echo-basic-auth v1.3.1
 	github.com/etkecc/go-fswatcher v1.0.1
 	github.com/etkecc/go-healthchecks/v2 v2.2.2
-	github.com/etkecc/go-kit v1.7.1
-	github.com/etkecc/go-kit/format v0.0.0-20250624085102-2d210bbce01f
+	github.com/etkecc/go-kit v1.7.2
+	github.com/etkecc/go-kit/format v0.0.0-20250813195010-99bfae98aa2c
 	github.com/etkecc/go-msc1929 v1.2.3
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/goccy/go-json v0.10.5
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/labstack/echo/v4 v4.13.4
-	github.com/matrix-org/gomatrixserverlib v0.0.0-20250811195804-7a73c05d2a24
+	github.com/matrix-org/gomatrixserverlib v0.0.0-20250813150445-9f5070a65744
 	github.com/mattevans/postmark-go v1.0.0
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/mileusna/crontab v1.2.0
@@ -28,7 +28,7 @@ require (
 	github.com/swaggo/swag v1.16.6
 	github.com/ziflex/lecho/v3 v3.8.0
 	go.etcd.io/bbolt v1.4.2
-	golang.org/x/exp v0.0.0-20250811191247-51f88131bc50
+	golang.org/x/exp v0.0.0-20250813145105-42675adae3e6
 	golang.org/x/net v0.43.0
 	golang.org/x/time v0.12.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -59,8 +59,8 @@ require (
 	github.com/blevesearch/zapx/v15 v15.4.2 // indirect
 	github.com/blevesearch/zapx/v16 v16.2.4 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
-	github.com/getsentry/sentry-go v0.35.0 // indirect
-	github.com/getsentry/sentry-go/zerolog v0.35.0 // indirect
+	github.com/getsentry/sentry-go v0.35.1 // indirect
+	github.com/getsentry/sentry-go/zerolog v0.35.1 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-openapi/jsonpointer v0.21.2 // indirect
 	github.com/go-openapi/jsonreference v0.21.0 // indirect

@@ -8,10 +8,7 @@ import (
 	"github.com/matrix-org/gomatrixserverlib"
 )
 
-var (
-	aliasRegex = regexp.MustCompile(`^#[^:\x00]+:[a-zA-Z0-9.\-]+(:\d+)?$`)
-	idRegex    = regexp.MustCompile(`^![a-zA-Z0-9_.-]+:[a-zA-Z0-9_.-]+$`)
-)
+var aliasRegex = regexp.MustCompile(`^#[^:\x00]+:[a-zA-Z0-9.\-]+(:\d+)?$`)
 
 // IsValidRoomAlias checks if the given alias is a valid matrix room alias
 func IsValidAlias(alias string) bool {
@@ -28,7 +25,10 @@ func IsValidID(id string) bool {
 		return false
 	}
 
-	return idRegex.MatchString(id)
+	// v1-v11 roomID: !opaqueID:serverName
+	// v12+ roomID: !31hneApxJ_1o-63DmFrpeqnkFfWppnzWso1JvH3ogLM
+	// ref: https://github.com/matrix-org/matrix-spec-proposals/blob/matthew/msc4291/proposals/4291-room-ids-as-hashes.md
+	return strings.HasPrefix(id, "!") && len(id) > 43 && len(id) < 256
 }
 
 // Server returns server name from the matrix ID (room id/alias, user ID, etc)
