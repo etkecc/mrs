@@ -119,6 +119,7 @@ func (d *Data) GetIndexStats(ctx context.Context) *model.IndexStats {
 		serversOnlineBytes := bucket.Get([]byte("servers_online"))
 		serversIndexableBytes := bucket.Get([]byte("servers_indexable"))
 		serversBlockedBytes := bucket.Get([]byte("servers_blocked"))
+		serversSoftwareBytes := bucket.Get([]byte("servers_software"))
 		roomsIndexedBytes := bucket.Get([]byte("rooms"))
 		roomsParsedBytes := bucket.Get([]byte("rooms_parsed"))
 		roomsBannedBytes := bucket.Get([]byte("rooms_banned"))
@@ -132,6 +133,10 @@ func (d *Data) GetIndexStats(ctx context.Context) *model.IndexStats {
 
 		indexStartedAt := bucket.Get([]byte("indexing_started_at"))
 		indexFinishedAt := bucket.Get([]byte("indexing_finished_at"))
+
+		if err := json.Unmarshal(serversSoftwareBytes, &stats.Servers.Software); err != nil {
+			stats.Servers.Software = map[string]int{}
+		}
 
 		stats.Servers.Online, _ = strconv.Atoi(string(serversOnlineBytes))
 		stats.Servers.Indexable, _ = strconv.Atoi(string(serversIndexableBytes))
@@ -176,6 +181,18 @@ func (d *Data) SetIndexBlockedServers(ctx context.Context, servers int) error {
 	return d.db.Update(func(tx *bbolt.Tx) error {
 		value := []byte(strconv.Itoa(servers))
 		return tx.Bucket(indexBucket).Put([]byte("servers_blocked"), value)
+	})
+}
+
+// SetIndexServersSoftware sets map of discovered servers software
+func (d *Data) SetIndexServersSoftware(ctx context.Context, software map[string]int) error {
+	apm.Log(ctx).Info().Int("count", len(software)).Msg("updating servers software stats")
+	return d.db.Update(func(tx *bbolt.Tx) error {
+		value, err := json.Marshal(software)
+		if err != nil {
+			return err
+		}
+		return tx.Bucket(indexBucket).Put([]byte("servers_software"), value)
 	})
 }
 

@@ -34,6 +34,15 @@ The total amount of online federatable matrix servers which publish rooms direct
 
 The amount of servers in the config (config.yml `blocklist.servers`)
 
+### Servers software
+
+* `details.servers.software` on `/stats`
+* not presented on `/-/status`
+* not presented on `/metrics`
+
+The map of server software (e.g., `synapse`) to the amount of **online** servers running it,
+included only software with at least 5% of the total amount of **online** servers
+
 ## Rooms
 
 ### Indexed rooms

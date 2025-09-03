@@ -19,9 +19,10 @@ type IndexStats struct {
 
 // IndexStatsServers structure
 type IndexStatsServers struct {
-	Online    int `json:"online"`
-	Indexable int `json:"indexable"`
-	Blocked   int `json:"blocked"`
+	Online    int            `json:"online"`
+	Indexable int            `json:"indexable"`
+	Blocked   int            `json:"blocked"`
+	Software  map[string]int `json:"software,omitempty"`
 }
 
 // IndexStatsRooms structure

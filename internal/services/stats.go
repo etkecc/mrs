@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 
@@ -25,6 +26,7 @@ type StatsRepository interface {
 	SetIndexOnlineServers(ctx context.Context, servers int) error
 	SetIndexIndexableServers(ctx context.Context, servers int) error
 	SetIndexBlockedServers(ctx context.Context, servers int) error
+	SetIndexServersSoftware(ctx context.Context, software map[string]int) error
 	SetIndexParsedRooms(ctx context.Context, rooms int) error
 	SetIndexIndexedRooms(ctx context.Context, rooms int) error
 	SetIndexBannedRooms(ctx context.Context, rooms int) error
@@ -46,6 +48,9 @@ type Stats struct {
 	stats      *model.IndexStats
 	collecting bool
 }
+
+// softwareNameRE to normalize software names
+var softwareNameRE = regexp.MustCompile(`[^a-z]+`)
 
 // NewStats service
 func NewStats(cfg ConfigService, data StatsRepository, index, blocklist Lenable) *Stats {
@@ -104,15 +109,27 @@ func (s *Stats) SetFinishedAt(ctx context.Context, process string, finishedAt ti
 // CollectServers stats only
 func (s *Stats) CollectServers(ctx context.Context, reload bool) {
 	var online, indexable int
+	software := map[string]int{}
 	s.data.FilterServers(ctx, func(server *model.MatrixServer) bool {
 		if server.Online {
 			online++
+			if server.Software != "" {
+				name := softwareNameRE.ReplaceAllString(strings.ToLower(server.Software), " ")
+				software[name]++
+			}
 		}
 		if server.Indexable {
 			indexable++
 		}
 		return false
 	})
+
+	softwareThreshold := float64(online) * 0.05 // 5% or more
+	for name, count := range software {
+		if float64(count) < softwareThreshold {
+			delete(software, name)
+		}
+	}
 
 	log := apm.Log(ctx)
 	if err := s.data.SetIndexOnlineServers(ctx, online); err != nil {
@@ -125,6 +142,10 @@ func (s *Stats) CollectServers(ctx context.Context, reload bool) {
 
 	if err := s.data.SetIndexBlockedServers(ctx, s.block.Len()); err != nil {
 		log.Error().Err(err).Msg("cannot set blocked servers count")
+	}
+
+	if err := s.data.SetIndexServersSoftware(ctx, software); err != nil {
+		log.Error().Err(err).Msg("cannot set servers software stats")
 	}
 
 	if reload {

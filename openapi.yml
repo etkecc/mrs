@@ -1222,6 +1222,10 @@ components:
                   type: integer
                   description: amount of discovered online & federatable matrix servers that public public rooms directory over federation
                   example: 23
+                software:
+                  type: object
+                  description: discovered server software
+                  example: {"synapse": 23, "dendrite": 3}
             rooms:
               type: object
               properties:

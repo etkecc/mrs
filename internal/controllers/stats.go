@@ -47,6 +47,7 @@ func statsDetails(stats *model.IndexStats) map[string]any {
 		"servers": map[string]any{
 			"online":    stats.Servers.Online,
 			"indexable": stats.Servers.Indexable,
+			"software":  stats.Servers.Software,
 		},
 		"rooms": map[string]any{
 			"indexed": stats.Rooms.Indexed,
