@@ -125,11 +125,14 @@ func (s *Stats) CollectServers(ctx context.Context, reload bool) {
 	})
 
 	softwareThreshold := float64(online) * 0.05 // 5% or more
+	belowThreshold := 0
 	for name, count := range software {
 		if float64(count) < softwareThreshold {
+			belowThreshold += count
 			delete(software, name)
 		}
 	}
+	software["other"] = belowThreshold
 
 	log := apm.Log(ctx)
 	if err := s.data.SetIndexOnlineServers(ctx, online); err != nil {
