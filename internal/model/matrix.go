@@ -168,10 +168,21 @@ func (r *MatrixRoom) Servers() []string {
 	if server := utils.ServerFrom(r.Alias); server != "" {
 		servers = append(servers, server)
 	}
-	if server := r.Server; server != "" {
-		servers = append(servers, server)
+	if r.Server == "" {
+		return kit.Uniq(servers)
 	}
 
+	// the server field can contain multiple servers separated by comma
+	if !strings.Contains(r.Server, ",") {
+		return kit.Uniq(append(servers, r.Server))
+	}
+	parts := strings.Split(r.Server, ",")
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part != "" {
+			servers = append(servers, part)
+		}
+	}
 	return kit.Uniq(servers)
 }
 

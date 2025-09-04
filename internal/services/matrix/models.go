@@ -30,11 +30,6 @@ type clientVersionResp struct {
 	UnstableFeatures map[string]bool `json:"unstable_features"`
 }
 
-type queryDirectoryResp struct {
-	RoomID  string   `json:"room_id"`
-	Servers []string `json:"servers"`
-}
-
 type matrixAuth struct {
 	Origin      string
 	Destination *string

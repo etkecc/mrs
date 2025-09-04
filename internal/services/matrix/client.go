@@ -52,7 +52,7 @@ func (s *Server) GetClientDirectory(ctx context.Context, alias string) (statusCo
 		return http.StatusNotFound, s.getErrorResp(ctx, "M_NOT_FOUND", "room not found")
 	}
 
-	resp := &queryDirectoryResp{
+	resp := &model.QueryDirectoryResponse{
 		RoomID:  room.ID,
 		Servers: room.Servers(),
 	}

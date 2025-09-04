@@ -59,7 +59,7 @@ func (s *Server) QueryDirectory(ctx context.Context, req *http.Request, alias st
 		return http.StatusNotFound, s.getErrorResp(ctx, "M_NOT_FOUND", "room not found")
 	}
 
-	resp := &queryDirectoryResp{
+	resp := &model.QueryDirectoryResponse{
 		RoomID:  room.ID,
 		Servers: room.Servers(),
 	}
@@ -70,6 +70,58 @@ func (s *Server) QueryDirectory(ctx context.Context, req *http.Request, alias st
 	}
 
 	return http.StatusOK, respb
+}
+
+// QueryDirectoryExternal queries another server's directory for a room alias
+func (s *Server) QueryDirectoryExternal(ctx context.Context, alias string) (*model.QueryDirectoryResponse, error) {
+	log := apm.Log(ctx)
+	alias = utils.Unescape(alias)
+	if alias == "" {
+		return nil, fmt.Errorf("room alias invalid")
+	}
+	log.Info().Str("alias", alias).Msg("querying external directory")
+	serverName := utils.ServerFrom(alias)
+	if serverName == "" {
+		return nil, fmt.Errorf("cannot extract server name from alias")
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, utils.DefaultTimeout)
+	defer cancel()
+	req, err := s.buildQueryDirectoryReq(ctx, serverName, alias)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := utils.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body) //nolint:errcheck // intended
+		merr := s.parseErrorResp(resp.Status, body)
+		if merr == nil {
+			bodyhint := ""
+			if len(body) > 0 {
+				bodyhint = fmt.Sprintf("; body: %s", kit.Truncate(string(body), 400))
+			}
+			return nil, fmt.Errorf("cannot query directory: %s%s", resp.Status, bodyhint)
+		}
+		return nil, merr
+	}
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var dirResp *model.QueryDirectoryResponse
+	err = json.Unmarshal(data, &dirResp)
+	if err != nil {
+		return nil, err
+	}
+	return dirResp, nil
 }
 
 // QueryVersion from /_matrix/federation/v1/version
@@ -172,6 +224,37 @@ func (s *Server) buildPublicRoomsReq(ctx context.Context, serverName, limit, sin
 	if since != "" {
 		query.Set("since", url.QueryEscape(since))
 	}
+	apiURL.RawQuery = query.Encode()
+
+	path := "/" + apiURL.Path
+	if apiURL.RawQuery != "" {
+		path += "?" + apiURL.RawQuery
+	}
+	authHeaders, err := s.Authorize(serverName, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiURL.String(), http.NoBody)
+	if err != nil {
+		return nil, err
+	}
+	for _, h := range authHeaders {
+		req.Header.Add("Authorization", h)
+	}
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", version.UserAgent)
+	return req, nil
+}
+
+func (s *Server) buildQueryDirectoryReq(ctx context.Context, serverName, alias string) (*http.Request, error) {
+	apiURLStr := s.getURL(ctx, serverName, false)
+	apiURL, err := url.Parse(apiURLStr)
+	if err != nil {
+		return nil, err
+	}
+	apiURL = apiURL.JoinPath("/_matrix/federation/v1/query/directory")
+	query := apiURL.Query()
+	query.Set("room_alias", alias)
 	apiURL.RawQuery = query.Encode()
 
 	path := "/" + apiURL.Path

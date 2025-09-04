@@ -2,6 +2,12 @@ package model
 
 import "github.com/etkecc/mrs/internal/utils"
 
+// QueryDirectoryResponse of /_matrix/client/v3/directory/room/{roomAlias}
+type QueryDirectoryResponse struct {
+	RoomID  string   `json:"room_id"`
+	Servers []string `json:"servers"`
+}
+
 // RoomDirectoryRequest sent when calling POST /_matrix/federation/v1/publicRooms
 type RoomDirectoryRequest struct {
 	Filter RoomDirectoryFilter `json:"filter"`

@@ -75,6 +75,7 @@ type ValidatorService interface {
 
 type FederationService interface {
 	QueryPublicRooms(ctx context.Context, serverName, limit, since string) (*model.RoomDirectoryResponse, error)
+	QueryDirectoryExternal(ctx context.Context, roomAlias string) (*model.QueryDirectoryResponse, error)
 	QueryServerName(ctx context.Context, serverName string) (string, error)
 	QueryVersion(ctx context.Context, serverName string) (string, string, error)
 	QueryCSURL(ctx context.Context, serverName string) string
@@ -425,6 +426,8 @@ func (m *Crawler) getServerContacts(ctx context.Context, name string) model.Matr
 
 // getPublicRooms reads public rooms of the given server from the matrix client-server api
 // and sends them into channel
+//
+//nolint:gocognit // TODO: refactor
 func (m *Crawler) getPublicRooms(ctx context.Context, name string) *kit.List[string, string] {
 	var since string
 	var added int
@@ -455,6 +458,14 @@ func (m *Crawler) getPublicRooms(ctx context.Context, name string) *kit.List[str
 			if !room.Parse(m.detector, m.media, m.cfg.Get().Matrix.ServerName) {
 				added--
 				continue
+			}
+
+			qDir, err := m.fed.QueryDirectoryExternal(ctx, room.Alias)
+			if err != nil {
+				log.Warn().Err(err).Str("server", name).Str("room", room.ID).Str("alias", room.Alias).Msg("cannot query client directory")
+			}
+			if qDir != nil && len(qDir.Servers) > 0 {
+				room.Server = strings.Join(kit.Uniq(append(room.Servers(), qDir.Servers...)), ",")
 			}
 
 			servers.AddSlice(room.Servers())
