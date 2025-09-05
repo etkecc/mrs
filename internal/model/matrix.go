@@ -159,6 +159,20 @@ func (r *MatrixRoom) Parse(detector lingua.LanguageDetector, media mediaURLServi
 	return true
 }
 
+// GetOwnServer returns the most relevant server for the room
+func (r *MatrixRoom) GetOwnServer() string {
+	if r.Server != "" && !strings.Contains(r.Server, ",") {
+		return r.Server
+	}
+	if server := utils.ServerFrom(r.ID); server != "" {
+		return server
+	}
+	if server := utils.ServerFrom(r.Alias); server != "" {
+		return server
+	}
+	return ""
+}
+
 // Servers returns all servers from the room object
 func (r *MatrixRoom) Servers() []string {
 	servers := []string{}

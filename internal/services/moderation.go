@@ -103,8 +103,8 @@ func (m *Moderation) getReportText(ctx context.Context, roomID, reason, fromIP s
 	text.WriteString(apiURL.JoinPath("/mod/unban", roomID).String())
 	text.WriteString(") | [list banned (all)](")
 	text.WriteString(apiURL.JoinPath("/mod/list").String())
-	text.WriteString(") | [list banned (" + room.Server + ")](")
-	text.WriteString(apiURL.JoinPath("/mod/list/" + room.Server).String())
+	text.WriteString(") | [list banned (" + server.Name + ")](")
+	text.WriteString(apiURL.JoinPath("/mod/list/" + server.Name).String())
 	text.WriteString(")")
 
 	return text.String()
@@ -199,16 +199,13 @@ func (m *Moderation) Report(ctx context.Context, fromIP, roomID, reason string, 
 		room = entry.Convert()
 	}
 
-	if room.Server == "" {
-		room.Server = utils.ServerFrom(roomID)
-	}
-
-	server, err := m.data.GetServerInfo(ctx, room.Server)
+	serverName := room.GetOwnServer()
+	server, err := m.data.GetServerInfo(ctx, serverName)
 	if err != nil {
 		log.Error().Err(err).Msg("cannot get server info")
 	}
 	if server == nil {
-		server = &model.MatrixServer{Name: room.Server}
+		server = &model.MatrixServer{Name: serverName}
 	}
 
 	if err := m.sendWebhook(ctx, room, server, reason, fromIP); err != nil {
