@@ -31,7 +31,9 @@ func (d *Data) SetIndexStatsTL(ctx context.Context, calculatedAt time.Time, stat
 func (d *Data) getIndexStatsFullTL(ctx context.Context) (map[time.Time]*model.IndexStats, error) {
 	apm.Log(ctx).Debug().Msg("getting index stats")
 	months := map[string]struct{}{}
+	weeks := map[int]struct{}{}
 	currentYear := []byte(time.Now().UTC().Format("2006"))
+	currentMonth := []byte(time.Now().UTC().Format("2006-01"))
 	statsTL := make(map[time.Time]*model.IndexStats)
 	err := d.db.View(func(tx *bbolt.Tx) error {
 		var prev *model.IndexStats
@@ -52,6 +54,17 @@ func (d *Data) getIndexStatsFullTL(ctx context.Context) (map[time.Time]*model.In
 				}
 				months[month] = struct{}{}
 			}
+
+			// if the result is for the current year, but not for the current month,
+			// keep only one result per week
+			if bytes.HasPrefix(k, currentYear) && !bytes.HasPrefix(k, currentMonth) {
+				_, week := t.ISOWeek()
+				if _, ok := weeks[week]; ok {
+					return nil
+				}
+				weeks[week] = struct{}{}
+			}
+
 			var stats *model.IndexStats
 			if err := json.Unmarshal(v, &stats); err != nil {
 				return err
