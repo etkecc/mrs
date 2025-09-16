@@ -192,7 +192,7 @@ github.com/etkecc/go-healthchecks/v2
 github.com/etkecc/go-kit
 github.com/etkecc/go-kit/template
 github.com/etkecc/go-kit/workpool
-# github.com/etkecc/go-kit/format v0.0.0-20250902132657-87557e1efa95
+# github.com/etkecc/go-kit/format v0.0.0-20250916115846-36181341554f
 ## explicit; go 1.22
 github.com/etkecc/go-kit/format
 # github.com/etkecc/go-msc1929 v1.2.3
