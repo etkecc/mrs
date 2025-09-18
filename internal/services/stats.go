@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -107,16 +108,23 @@ func (s *Stats) SetFinishedAt(ctx context.Context, process string, finishedAt ti
 }
 
 // CollectServers stats only
+//
+//nolint:gocognit // refactor software stats collection
 func (s *Stats) CollectServers(ctx context.Context, reload bool) {
-	var online, indexable int
+	var online, indexable, unknown int
 	software := map[string]int{}
 	s.data.FilterServers(ctx, func(server *model.MatrixServer) bool {
 		if server.Online {
 			online++
-			if server.Software != "" {
-				name := softwareNameRE.ReplaceAllString(strings.ToLower(server.Software), " ")
+			name := strings.ToLower(server.Software)
+			name = softwareNameRE.ReplaceAllString(name, " ")
+			name = strings.Join(strings.Fields(name), " ")
+			if name != "" {
 				software[name]++
+			} else {
+				unknown++
 			}
+
 		}
 		if server.Indexable {
 			indexable++
@@ -124,15 +132,15 @@ func (s *Stats) CollectServers(ctx context.Context, reload bool) {
 		return false
 	})
 
-	softwareThreshold := float64(online) * 0.01 // 1% or more
+	softwareThreshold := int(math.Ceil(float64(online) * 0.01)) // 1% or more
 	belowThreshold := 0
 	for name, count := range software {
-		if float64(count) < softwareThreshold {
+		if count < softwareThreshold {
 			belowThreshold += count
 			delete(software, name)
 		}
 	}
-	software["other"] = belowThreshold
+	software["other"] = belowThreshold + unknown
 
 	log := apm.Log(ctx)
 	if err := s.data.SetIndexOnlineServers(ctx, online); err != nil {
