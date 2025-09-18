@@ -65,6 +65,7 @@ func ConfigureRouter(
 	e.GET("/room/:room_id_or_alias", catalogRoom(dataSvc, matrixSvc, plausibleSvc), cacheSvc.Middleware(), getRL(3))
 	e.GET("/catalog/rooms", rooms(dataSvc), echobasicauth.NewMiddleware(&cfg.Get().Auth.Catalog))
 	e.GET("/catalog/servers", servers(crawlerSvc), echobasicauth.NewMiddleware(&cfg.Get().Auth.Catalog))
+	e.GET("/catalog/servers/objects", serversObjects(crawlerSvc), echobasicauth.NewMiddleware(&cfg.Get().Auth.Catalog))
 
 	rl := getRL(3)
 	searchCache := cacheSvc.MiddlewareSearch()

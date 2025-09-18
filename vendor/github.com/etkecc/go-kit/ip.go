@@ -29,3 +29,15 @@ func AnonymizeIP(ip string) string {
 	ipParts[len(ipParts)-1] = "0"
 	return strings.Join(ipParts, ":")
 }
+
+// IsValidIP checks if the given string is a valid IPv4 or IPv6 address by:
+// - ensuring the format is correct
+// - ensuring the IP is not an unspecified, loopback, private, multicast, or link-local address
+func IsValidIP(ipStr string) bool {
+	ip := net.ParseIP(ipStr)
+	if ip == nil {
+		return false
+	}
+
+	return !ip.IsUnspecified() && !ip.IsPrivate() && !ip.IsLoopback() && !ip.IsMulticast() && !ip.IsLinkLocalUnicast() && !ip.IsLinkLocalMulticast()
+}

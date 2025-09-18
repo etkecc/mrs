@@ -12,6 +12,7 @@ import (
 
 type crawlerService interface {
 	OnlineServers(context.Context) []string
+	OnlineServersObjects(context.Context) map[string]*model.MatrixServer
 }
 
 // catalogRoom returns the room data for the given room ID or alias.
@@ -85,6 +86,14 @@ func rooms(data dataService) echo.HandlerFunc {
 func servers(crawler crawlerService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		servers := crawler.OnlineServers(c.Request().Context())
+		return c.JSON(http.StatusOK, servers)
+	}
+}
+
+// serversObjects returns a list of all servers that the crawler is aware of, with their details.
+func serversObjects(crawler crawlerService) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		servers := crawler.OnlineServersObjects(c.Request().Context())
 		return c.JSON(http.StatusOK, servers)
 	}
 }

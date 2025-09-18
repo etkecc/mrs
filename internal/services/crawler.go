@@ -219,9 +219,14 @@ func (m *Crawler) EachRoom(ctx context.Context, handler func(roomID string, data
 
 // OnlineServers returns all known online servers
 func (m *Crawler) OnlineServers(ctx context.Context) []string {
-	return kit.MapKeys(m.data.FilterServers(ctx, func(server *model.MatrixServer) bool {
+	return kit.MapKeys(m.OnlineServersObjects(ctx))
+}
+
+// OnlineServersObjects returns all online servers
+func (m *Crawler) OnlineServersObjects(ctx context.Context) map[string]*model.MatrixServer {
+	return m.data.FilterServers(ctx, func(server *model.MatrixServer) bool {
 		return server.Online
-	}))
+	})
 }
 
 // IndexableServers returns all known indexable servers
