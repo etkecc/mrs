@@ -279,7 +279,7 @@ func (m *Crawler) discoverServer(ctx context.Context, name string) *model.Matrix
 	}
 	name, software, version, ok := m.v.IsOnline(ctx, name)
 	if name == "" {
-		return nil
+		return &model.MatrixServer{Name: name, Online: false}
 	}
 
 	server := &model.MatrixServer{
@@ -340,6 +340,22 @@ func (m *Crawler) discoverServers(ctx context.Context, servers *kit.List[string,
 	return offline
 }
 
+func (m *Crawler) removeOldOfflineServers(ctx context.Context) {
+	log := apm.Log(ctx)
+	threshold := time.Now().UTC().AddDate(0, 1, 0)
+	servers := m.data.FilterServers(ctx, func(server *model.MatrixServer) bool {
+		return !server.Online && server.OnlineAt.Before(threshold)
+	})
+	if len(servers) == 0 {
+		log.Info().Msg("no old offline servers to remove")
+		return
+	}
+
+	toRemove := kit.MapKeys(servers)
+	log.Info().Int("servers", len(toRemove)).Msg("removing old offline servers")
+	m.data.RemoveServers(ctx, toRemove)
+}
+
 //nolint:gocognit // TODO: refactor
 func (m *Crawler) afterRoomParsing(ctx context.Context) {
 	type roomCount struct {
@@ -397,6 +413,9 @@ func (m *Crawler) afterRoomParsing(ctx context.Context) {
 			log.Error().Err(err).Msg("cannot recreate room mappings")
 		}
 	}
+
+	// we put it here to ensure it will run only once in the full cycle
+	m.removeOldOfflineServers(ctx)
 }
 
 // getServerContacts as per MSC1929
