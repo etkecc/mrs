@@ -342,7 +342,7 @@ func (m *Crawler) discoverServers(ctx context.Context, servers *kit.List[string,
 
 func (m *Crawler) removeOldOfflineServers(ctx context.Context) {
 	log := apm.Log(ctx)
-	threshold := time.Now().UTC().AddDate(0, 1, 0)
+	threshold := time.Now().UTC().AddDate(0, -1, 0)
 	servers := m.data.FilterServers(ctx, func(server *model.MatrixServer) bool {
 		return !server.Online && server.OnlineAt.Before(threshold)
 	})
