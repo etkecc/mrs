@@ -139,6 +139,10 @@ func (d *Data) MarkServersOffline(ctx context.Context, keys []string) {
 	d.db.Batch(func(tx *bbolt.Tx) error { //nolint:errcheck // that's ok
 		bucket := tx.Bucket(serversInfoBucket)
 		for _, k := range keys {
+			if k == "" {
+				continue
+			}
+
 			d.markServerOffline(ctx, bucket, k)
 		}
 		return nil

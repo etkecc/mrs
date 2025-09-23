@@ -272,14 +272,14 @@ func (m *Crawler) loadServers(ctx context.Context) *kit.List[string, string] {
 }
 
 // discoverServer parses server information
-func (m *Crawler) discoverServer(ctx context.Context, name string) *model.MatrixServer {
-	if m.block.ByServer(name) {
-		apm.Log(ctx).Info().Str("server", name).Msg("server is blocked, skipping")
-		return nil
+func (m *Crawler) discoverServer(ctx context.Context, rawName string) *model.MatrixServer {
+	if m.block.ByServer(rawName) {
+		apm.Log(ctx).Info().Str("server", rawName).Msg("server is blocked, skipping")
+		return &model.MatrixServer{Name: rawName, Online: false}
 	}
-	name, software, version, ok := m.v.IsOnline(ctx, name)
+	name, software, version, ok := m.v.IsOnline(ctx, rawName)
 	if name == "" {
-		return &model.MatrixServer{Name: name, Online: false}
+		return &model.MatrixServer{Name: rawName, Online: false}
 	}
 
 	server := &model.MatrixServer{
@@ -316,16 +316,18 @@ func (m *Crawler) discoverServers(ctx context.Context, servers *kit.List[string,
 		srvName := server
 		wp.Do(func() {
 			server := m.discoverServer(ctx, srvName)
-			if server == nil {
-				return
+			serverName := srvName
+			if server.Name != "" {
+				serverName = server.Name
 			}
+
 			if server.Online {
-				online.Add(server.Name)
+				online.Add(serverName)
 			} else {
-				offline.Add(server.Name)
+				offline.Add(serverName)
 			}
 			if server.Indexable {
-				indexable.Add(server.Name)
+				indexable.Add(serverName)
 			}
 		})
 	}
