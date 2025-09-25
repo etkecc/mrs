@@ -26,7 +26,7 @@ require (
 	github.com/rs/zerolog v1.34.0
 	github.com/swaggo/echo-swagger v1.4.1
 	github.com/swaggo/swag v1.16.6
-	github.com/ziflex/lecho/v3 v3.8.1
+	github.com/ziflex/lecho/v3 v3.9.0
 	go.etcd.io/bbolt v1.4.3
 	golang.org/x/exp v0.0.0-20250911091902-df9299821621
 	golang.org/x/net v0.44.0
