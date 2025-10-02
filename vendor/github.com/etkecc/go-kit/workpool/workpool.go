@@ -69,7 +69,7 @@ func (wp *WorkPool) IsRunning() bool {
 
 // startWorkers initializes the workers and starts processing tasks
 func (wp *WorkPool) startWorkers() {
-	for i := 0; i < wp.workers; i++ {
+	for range wp.workers {
 		go wp.worker()
 	}
 }
