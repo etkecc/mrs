@@ -14,7 +14,7 @@ type configService interface {
 }
 
 type searchService interface {
-	Search(ctx context.Context, req *http.Request, query, sortBy string, limit, offset int) ([]*model.Entry, int, error)
+	Search(ctx context.Context, req *http.Request, query, sortBy string, roomTypes []string, limit, offset int) ([]*model.Entry, int, error)
 }
 
 type mediaService interface {

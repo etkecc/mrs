@@ -856,6 +856,12 @@ paths:
           schema:
             type: string
             default: -members,-_score
+        - name: rt
+          in: query
+          description: room type, e.g., m.space
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: successful operation
@@ -869,7 +875,7 @@ paths:
           description: no results found.
         '401':
           description: unauthorized (if optional search auth is enabled)
-  /search/{q}/{l}/{o}/{s}:
+  /search/{q}/{l}/{o}/{s}/{rt}:
     get:
       tags:
         - public
@@ -904,6 +910,12 @@ paths:
           schema:
             type: string
             default: -_score,-members
+        - name: rt
+          in: path
+          description: room type, e.g., m.space
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: successful operation

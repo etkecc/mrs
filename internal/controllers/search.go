@@ -13,7 +13,7 @@ import (
 )
 
 type searchService interface {
-	Search(ctx context.Context, req *http.Request, query, sortBy string, limit, offset int) ([]*model.Entry, int, error)
+	Search(ctx context.Context, req *http.Request, query, sortBy string, roomTypes []string, limit, offset int) ([]*model.Entry, int, error)
 }
 
 func search(svc searchService, cfg configService, path bool) echo.HandlerFunc {
@@ -30,7 +30,12 @@ func search(svc searchService, cfg configService, path bool) echo.HandlerFunc {
 		limit := kit.StringToInt(paramfunc("l"))
 		offset := kit.StringToInt(paramfunc("o"))
 		sortBy := paramfunc("s")
-		entries, _, err := svc.Search(c.Request().Context(), c.Request(), query, sortBy, limit, offset)
+		roomType := utils.Unescape(paramfunc("rt"))
+		var roomTypes []string
+		if roomType != "" {
+			roomTypes = []string{roomType}
+		}
+		entries, _, err := svc.Search(c.Request().Context(), c.Request(), query, sortBy, roomTypes, limit, offset)
 		if err != nil {
 			return err
 		}

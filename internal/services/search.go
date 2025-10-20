@@ -64,7 +64,7 @@ func NewSearch(cfg ConfigService, data searchDataRepository, repo SearchReposito
 
 // Search things
 // ref: https://blevesearch.com/docs/Query-String-Query/
-func (s *Search) Search(ctx context.Context, req *http.Request, q, sortBy string, limit, offset int) ([]*model.Entry, int, error) {
+func (s *Search) Search(ctx context.Context, req *http.Request, q, sortBy string, roomTypes []string, limit, offset int) ([]*model.Entry, int, error) {
 	log := apm.Log(ctx)
 	originServer := mcontext.GetOrigin(ctx)
 	highlights := s.availableHighlights(originServer)
@@ -85,7 +85,7 @@ func (s *Search) Search(ctx context.Context, req *http.Request, q, sortBy string
 
 	var builtQuery query.Query
 	if q == "" {
-		entries, length := s.getEmptyQueryResults(ctx, limit, offset)
+		entries, length := s.getEmptyQueryResults(ctx, roomTypes, limit, offset)
 		entries = s.addHighlights(originServer, entries)
 		return entries, length, nil
 	}
@@ -100,7 +100,7 @@ func (s *Search) Search(ctx context.Context, req *http.Request, q, sortBy string
 		}(ctx, evt)
 	}
 
-	builtQuery = s.getSearchQuery(q, fields, fuzzy)
+	builtQuery = s.getSearchQuery(q, fields, roomTypes, fuzzy)
 	if builtQuery == nil {
 		return []*model.Entry{}, 0, nil
 	}
@@ -162,11 +162,37 @@ func (s *Search) addHighlights(originServer string, entries []*model.Entry) []*m
 	return entries
 }
 
-func (s *Search) getEmptyQueryResults(ctx context.Context, limit, offset int) (entries []*model.Entry, length int) {
+func (s *Search) getEmptyQueryResults(ctx context.Context, roomTypes []string, limit, offset int) (entries []*model.Entry, length int) {
 	rooms := s.data.GetBiggestRooms(ctx, limit, offset)
 	entries = make([]*model.Entry, 0, len(rooms))
+
+	// If no filter provided, return both rooms and spaces as-is.
+	if len(roomTypes) == 0 {
+		for _, room := range rooms {
+			entries = append(entries, room.Entry())
+		}
+		return entries, len(entries)
+	}
+
+	includeRegular := false
+	allowed := make(map[string]struct{}, len(roomTypes))
+	for _, rt := range roomTypes {
+		if rt == "" {
+			includeRegular = true
+			continue
+		}
+		allowed[rt] = struct{}{}
+	}
+
 	for _, room := range rooms {
-		entries = append(entries, room.Entry())
+		// regular rooms have empty RoomType
+		if room.RoomType == "" && includeRegular {
+			entries = append(entries, room.Entry())
+			continue
+		}
+		if _, ok := allowed[room.RoomType]; ok {
+			entries = append(entries, room.Entry())
+		}
 	}
 
 	return entries, len(entries)
@@ -222,7 +248,7 @@ func (s *Search) matchFields(queryStr string) (sanitizedQuery string, fields map
 	return queryStr, fields, isFuzzy
 }
 
-func (s *Search) getSearchQuery(q string, fields map[string]string, fuzzy bool) query.Query {
+func (s *Search) getSearchQuery(q string, fields map[string]string, roomTypes []string, fuzzy bool) query.Query {
 	// base/standard query
 	if s.shouldReject(q, fields) {
 		return nil
@@ -248,7 +274,13 @@ func (s *Search) getSearchQuery(q string, fields map[string]string, fuzzy bool) 
 		)
 	}
 
-	mainQ := bleve.NewDisjunctionQuery(queries...)
+	var mainQ query.Query
+	mainQ = bleve.NewDisjunctionQuery(queries...)
+	// optional room types
+	roomTypeQ := s.newRoomTypeQuery(roomTypes)
+	if roomTypeQ != nil {
+		mainQ = bleve.NewConjunctionQuery(mainQ, roomTypeQ)
+	}
 	// optional fields, like "language:EN"
 	fieldsQ := s.getFieldsQuery(fields)
 	if fieldsQ == nil {
@@ -313,6 +345,47 @@ func (s *Search) newMatchQuery(match, field string, phrase bool) bleveQuery {
 	searchQuery.SetBoost(SearchFieldsBoost[field])
 
 	return searchQuery
+}
+
+// newRoomTypeQuery creates a query that behaves like room_type IN(roomTypes),
+// with a special case: "" means "regular rooms" (documents that are NOT m.space).
+func (s *Search) newRoomTypeQuery(roomTypes []string) query.Query {
+	if len(roomTypes) == 0 {
+		return nil
+	}
+
+	includeRegular := false
+	typed := make([]query.Query, 0, len(roomTypes))
+
+	for _, rt := range roomTypes {
+		if rt == "" {
+			includeRegular = true
+			continue
+		}
+		// keep using the helper to set field and (optional) boost policy
+		typed = append(typed, s.newTermQuery(rt, "room_type"))
+	}
+
+	if includeRegular {
+		// regular rooms = NOT room_type:"m.space"
+		notSpace := bleve.NewBooleanQuery()
+		notSpace.AddMust(bleve.NewMatchAllQuery())
+		sp := bleve.NewTermQuery("m.space")
+		sp.SetField("room_type")
+		notSpace.AddMustNot(sp)
+
+		if len(typed) == 0 {
+			// Only "" requested -> just regular rooms
+			return notSpace
+		}
+		// "" plus explicit types -> union of (NOT m.space) OR (room_type in typed)
+		return bleve.NewDisjunctionQuery(append(typed, notSpace)...)
+	}
+
+	if len(typed) == 1 {
+		return typed[0]
+	}
+	return bleve.NewDisjunctionQuery(typed...)
 }
 
 func (s *Search) newTermQuery(match, field string) bleveQuery {

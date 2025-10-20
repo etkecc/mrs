@@ -102,8 +102,8 @@ func getIndexMapping(ctx context.Context) mapping.IndexMapping {
 	r.AddFieldMappingsAt("server", bleve.NewKeywordFieldMapping())
 	r.AddFieldMappingsAt("members", numericFM)
 	r.AddFieldMappingsAt("language", bleve.NewKeywordFieldMapping())
-	r.AddFieldMappingsAt("room_type", textFM) // e.g., "m.space" for spaces, empty for rooms
-	r.AddFieldMappingsAt("join_rule", textFM) // e.g., "public"
+	r.AddFieldMappingsAt("room_type", bleve.NewKeywordFieldMapping()) // e.g., "m.space" for spaces, empty for rooms
+	r.AddFieldMappingsAt("join_rule", textFM)                         // e.g., "public"
 	r.AddFieldMappingsAt("guest_can_join", noindexFM)
 	r.AddFieldMappingsAt("world_readable", noindexFM)
 	m.AddDocumentMapping("room", r)

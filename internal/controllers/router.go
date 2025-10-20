@@ -74,6 +74,7 @@ func ConfigureRouter(
 	e.GET("/search/:q/:l", search(searchSvc, cfg, true), searchCache, rl)
 	e.GET("/search/:q/:l/:o", search(searchSvc, cfg, true), searchCache, rl)
 	e.GET("/search/:q/:l/:o/:s", search(searchSvc, cfg, true), searchCache, rl)
+	e.GET("/search/:q/:l/:o/:s/:rt", search(searchSvc, cfg, true), searchCache, rl)
 
 	e.POST("/discover/bulk", addServers(dataSvc, cfg), echobasicauth.NewMiddleware(&cfg.Get().Auth.Discovery))
 	e.POST("/discover/:name", addServer(dataSvc), discoveryProtection(rl, cfg))
