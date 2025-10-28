@@ -165,7 +165,7 @@ paths:
             example: 'example.com'
         - name: minimum_valid_until_ts
           in: query
-          description: minumum validity of the keys being requested, as a POSIX timestamp in milliseconds
+          description: minimum validity of the keys being requested, as a POSIX timestamp in milliseconds
           required: false
           schema:
             type: integer
@@ -205,7 +205,7 @@ paths:
       parameters:
         - name: minimum_valid_until_ts
           in: query
-          description: minumum validity of the keys being requested, as a POSIX timestamp in milliseconds
+          description: minimum validity of the keys being requested, as a POSIX timestamp in milliseconds
           required: false
           schema:
             type: integer
