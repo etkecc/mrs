@@ -28,6 +28,8 @@ type matrixService interface {
 	GetMediaThumbnail(ctx context.Context, serverName, mediaID string, params url.Values) (io.Reader, string)
 	PublicRooms(context.Context, *http.Request, *model.RoomDirectoryRequest) (int, []byte)
 	QueryDirectory(ctx context.Context, req *http.Request, alias string) (int, []byte)
+	QueryServerKeys(ctx context.Context, serverName string) []byte
+	QueryServersKeys(ctx context.Context, req *model.QueryServerKeysRequest) []byte
 }
 
 func configureMatrixS2SEndpoints(e *echo.Echo, matrixSvc matrixService, cacheSvc cacheService) {
@@ -39,6 +41,17 @@ func configureMatrixS2SEndpoints(e *echo.Echo, matrixSvc matrixService, cacheSvc
 	}, cacheSvc.MiddlewareImmutable())
 	e.GET("/_matrix/key/v2/server", func(c echo.Context) error {
 		return c.JSONBlob(http.StatusOK, matrixSvc.GetKeyServer(c.Request().Context()))
+	})
+	e.GET("/_matrix/key/v2/query/:serverName", func(c echo.Context) error {
+		return c.JSONBlob(http.StatusOK, matrixSvc.QueryServerKeys(c.Request().Context(), c.Param("serverName")))
+	})
+	e.POST("/_matrix/key/v2/query", func(c echo.Context) error {
+		var req *model.QueryServerKeysRequest
+		if err := c.Bind(&req); err != nil {
+			apm.Log(c.Request().Context()).Warn().Err(err).Msg("failed to bind query server keys request")
+			return c.JSONBlob(http.StatusOK, []byte(model.EmptyServerKeysResp))
+		}
+		return c.JSONBlob(http.StatusOK, matrixSvc.QueryServersKeys(c.Request().Context(), req))
 	})
 	e.GET("/_matrix/federation/v1/query/directory", func(c echo.Context) error {
 		return c.JSONBlob(matrixSvc.QueryDirectory(c.Request().Context(), c.Request(), c.QueryParam("room_alias")))

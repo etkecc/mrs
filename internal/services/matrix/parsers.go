@@ -139,6 +139,7 @@ func (s *Server) dcrURL(ctx context.Context, serverName, serverURL string, disco
 	s.surlsCache.Add(serverName, serverURL)
 
 	if s.discoverFunc != nil && discover {
+		ctx = context.WithoutCancel(ctx) // prevent timeout cancellation for background discovery
 		go s.discoverFunc(ctx, serverName)
 	}
 
@@ -199,6 +200,32 @@ func (s *Server) lookupKeys(ctx context.Context, serverName string, discover boo
 		return nil, err
 	}
 	return keysResp, nil
+}
+
+// notaryLookupKeys returns signed serverName's keys for notary use
+func (s *Server) notaryLookupKeys(ctx context.Context, serverName string) []byte {
+	log := apm.Log(ctx).With().Str("server", serverName).Logger()
+	ctx, cancel := context.WithTimeout(ctx, utils.DefaultTimeout)
+	defer cancel()
+	keysResp, err := s.lookupKeys(ctx, serverName, true)
+	if err != nil {
+		log.Warn().Err(err).Msg("cannot lookup server keys")
+		return nil
+	}
+	if keysResp == nil {
+		log.Warn().Msg("no server keys found")
+		return nil
+	}
+	if keysResp.ServerName != serverName {
+		log.Warn().Str("discovered", keysResp.ServerName).Msg("server name mismatch in keys response")
+		return nil
+	}
+	keyPayload, err := s.signJSON(keysResp)
+	if err != nil {
+		log.Error().Err(err).Msg("cannot sign key payload")
+		return nil
+	}
+	return keyPayload
 }
 
 // queryKeys returns serverName's keys

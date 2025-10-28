@@ -1,5 +1,7 @@
 package matrix
 
+import "encoding/json"
+
 // matrixKeyResp is response of /_matrix/key/v2/server
 type matrixKeyResp struct {
 	ServerName    string                       `json:"server_name"`
@@ -7,6 +9,11 @@ type matrixKeyResp struct {
 	VerifyKeys    map[string]map[string]string `json:"verify_keys"`
 	OldVerifyKeys map[string]map[string]any    `json:"old_verify_keys"`
 	Signatures    map[string]map[string]string `json:"signatures,omitempty"`
+}
+
+// matrixKeyQueryResp is response of /_matrix/key/v2/query
+type matrixKeyQueryResp struct {
+	ServerKeys []json.RawMessage `json:"server_keys"` // each is a signed matrixKeyResp JSON blob
 }
 
 type wellKnownServerResp struct {

@@ -310,3 +310,13 @@ func (r *MatrixRoom) parseAvatar(media mediaURLService) {
 	}
 	r.AvatarURL = media.GetURL(parts[0], parts[1])
 }
+
+// QueryServerKeysRequest is used in POST /_matrix/key/v2/query
+// Current naive implementation cares only about server names, and attempts to return all keys,
+// even when request specifies particular key IDs.
+type QueryServerKeysRequest struct {
+	ServerKeys map[string]any `json:"server_keys"`
+}
+
+// EmptyKeyQueryResp is empty response for /_matrix/key/v2/query and /_matrix/key/v2/query/{serverName}
+const EmptyServerKeysResp = `{"server_keys":[]}`

@@ -148,6 +148,75 @@ paths:
                         type: string
                         description: The server implementation's version
                         example: 'v0.0.0'
+  /_matrix/key/v2/query/{serverName}:
+    get:
+      tags:
+        - Matrix S2S API
+      summary: query another matrix server's signing keys
+      description: Queries another homeserver’s signing keys
+      operationId: matrix_server_key_query
+      parameters:
+        - name: serverName
+          in: path
+          description: server name to query keys from
+          required: true
+          schema:
+            type: string
+            example: 'example.com'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  server_name:
+                    type: string
+                    description: DNS name of the homeserver.
+                    example: 'example.com'
+                  valid_until_ts:
+                    type: integer
+                    description: POSIX timestamp in milliseconds when the list of valid keys should be refreshed
+                    example: 1698164427133
+                  verify_keys:
+                    type: object
+                    additionalProperties: { }
+                  old_verify_keys:
+                    type: object
+                    additionalProperties: { }
+                  signatures:
+                    type: object
+                    additionalProperties: { }
+  /_matrix/key/v2/query:
+    post:
+      tags:
+        - Matrix S2S API
+      summary: query another matrix server's signing keys (bulk)
+      description: Queries another homeserver’s signing keys in bulk
+      operationId: matrix_server_key_query_bulk
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                server_keys:
+                  type: object
+                  additionalProperties:
+                    type: object
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  server_keys:
+                    type: object
+                    additionalProperties:
+                      type: object
   /_matrix/key/v2/server:
     get:
       tags:

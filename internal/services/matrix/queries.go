@@ -6,9 +6,11 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sync"
 
 	"github.com/etkecc/go-apm"
 	"github.com/etkecc/go-kit"
+	"github.com/etkecc/go-kit/workpool"
 	"github.com/goccy/go-json"
 
 	"github.com/etkecc/mrs/internal/model"
@@ -191,6 +193,53 @@ func (s *Server) QueryPublicRooms(ctx context.Context, serverName, limit, since 
 		return nil, err
 	}
 	return roomsResp, nil
+}
+
+// QueryServerKeys is /_matrix/key/v2/query/{serverName}
+func (s *Server) QueryServerKeys(ctx context.Context, serverName string) []byte {
+	log := apm.Log(ctx).With().Str("server", serverName).Logger()
+	keyPayload := s.notaryLookupKeys(ctx, serverName)
+	if keyPayload == nil {
+		return []byte(model.EmptyServerKeysResp)
+	}
+	payload, err := utils.JSON(matrixKeyQueryResp{
+		ServerKeys: []json.RawMessage{keyPayload},
+	})
+	if err != nil {
+		log.Error().Err(err).Msg("cannot marshal key query response")
+		return []byte(model.EmptyServerKeysResp)
+	}
+	return payload
+}
+
+// QueryServersKeys is /_matrix/key/v2/query for multiple servers
+// Current naive implementation returns all keys, even when request is for specific key IDs
+func (s *Server) QueryServersKeys(ctx context.Context, req *model.QueryServerKeysRequest) []byte {
+	serverNames := kit.MapKeys(req.ServerKeys)
+	log := apm.Log(ctx).With().Strs("servers", serverNames).Logger()
+	keyPayloads := make([]json.RawMessage, 0, len(serverNames))
+	var mu sync.Mutex
+	wp := workpool.New(s.cfg.Get().Workers.Discovery)
+	for _, serverName := range serverNames {
+		wp.Do(func() {
+			ctx = context.WithoutCancel(ctx) // cancellation is controlled inside the notaryLookupKeys
+			keyPayload := s.notaryLookupKeys(ctx, serverName)
+			if keyPayload != nil {
+				mu.Lock()
+				keyPayloads = append(keyPayloads, keyPayload)
+				mu.Unlock()
+			}
+		})
+	}
+	wp.Run()
+	payload, err := utils.JSON(matrixKeyQueryResp{
+		ServerKeys: keyPayloads,
+	})
+	if err != nil {
+		log.Error().Err(err).Msg("cannot marshal keys query response")
+		return []byte(model.EmptyServerKeysResp)
+	}
+	return payload
 }
 
 // QueryCSURL returns URL of Matrix CS API server
