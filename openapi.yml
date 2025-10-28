@@ -163,6 +163,13 @@ paths:
           schema:
             type: string
             example: 'example.com'
+        - name: minimum_valid_until_ts
+          in: query
+          description: minumum validity of the keys being requested, as a POSIX timestamp in milliseconds
+          required: false
+          schema:
+            type: integer
+            example: 1698164427133
       responses:
         '200':
           description: successful operation
@@ -195,6 +202,14 @@ paths:
       summary: query another matrix server's signing keys (bulk)
       description: Queries another homeserver’s signing keys in bulk
       operationId: matrix_server_key_query_bulk
+      parameters:
+        - name: minimum_valid_until_ts
+          in: query
+          description: minumum validity of the keys being requested, as a POSIX timestamp in milliseconds
+          required: false
+          schema:
+            type: integer
+            example: 1698164427133
       requestBody:
         content:
           application/json:

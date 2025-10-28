@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	"github.com/etkecc/go-apm"
 	"github.com/labstack/echo/v4"
@@ -28,8 +29,8 @@ type matrixService interface {
 	GetMediaThumbnail(ctx context.Context, serverName, mediaID string, params url.Values) (io.Reader, string)
 	PublicRooms(context.Context, *http.Request, *model.RoomDirectoryRequest) (int, []byte)
 	QueryDirectory(ctx context.Context, req *http.Request, alias string) (int, []byte)
-	QueryServerKeys(ctx context.Context, serverName string) []byte
-	QueryServersKeys(ctx context.Context, req *model.QueryServerKeysRequest) []byte
+	QueryServerKeys(ctx context.Context, serverName string, validUntilTS int64) []byte
+	QueryServersKeys(ctx context.Context, req *model.QueryServerKeysRequest, validUntilTS int64) []byte
 }
 
 func configureMatrixS2SEndpoints(e *echo.Echo, matrixSvc matrixService, cacheSvc cacheService) {
@@ -43,7 +44,13 @@ func configureMatrixS2SEndpoints(e *echo.Echo, matrixSvc matrixService, cacheSvc
 		return c.JSONBlob(http.StatusOK, matrixSvc.GetKeyServer(c.Request().Context()))
 	})
 	e.GET("/_matrix/key/v2/query/:serverName", func(c echo.Context) error {
-		return c.JSONBlob(http.StatusOK, matrixSvc.QueryServerKeys(c.Request().Context(), c.Param("serverName")))
+		validUntilTStr := c.QueryParam("minimum_valid_until_ts")
+		var validUntilTS int64
+		if validUntilTStr != "" {
+			validUntilTS, _ = strconv.ParseInt(validUntilTStr, 10, 64) //nolint:errcheck // 0 is handled properly
+		}
+
+		return c.JSONBlob(http.StatusOK, matrixSvc.QueryServerKeys(c.Request().Context(), c.Param("serverName"), validUntilTS))
 	})
 	e.POST("/_matrix/key/v2/query", func(c echo.Context) error {
 		var req *model.QueryServerKeysRequest
@@ -51,7 +58,14 @@ func configureMatrixS2SEndpoints(e *echo.Echo, matrixSvc matrixService, cacheSvc
 			apm.Log(c.Request().Context()).Warn().Err(err).Msg("failed to bind query server keys request")
 			return c.JSONBlob(http.StatusOK, []byte(model.EmptyServerKeysResp))
 		}
-		return c.JSONBlob(http.StatusOK, matrixSvc.QueryServersKeys(c.Request().Context(), req))
+
+		validUntilTStr := c.QueryParam("minimum_valid_until_ts")
+		var validUntilTS int64
+		if validUntilTStr != "" {
+			validUntilTS, _ = strconv.ParseInt(validUntilTStr, 10, 64) //nolint:errcheck // 0 is handled properly
+		}
+
+		return c.JSONBlob(http.StatusOK, matrixSvc.QueryServersKeys(c.Request().Context(), req, validUntilTS))
 	})
 	e.GET("/_matrix/federation/v1/query/directory", func(c echo.Context) error {
 		return c.JSONBlob(matrixSvc.QueryDirectory(c.Request().Context(), c.Request(), c.QueryParam("room_alias")))

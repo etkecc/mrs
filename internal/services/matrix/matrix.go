@@ -2,7 +2,6 @@ package matrix
 
 import (
 	"context"
-	"crypto/ed25519"
 
 	lru "github.com/hashicorp/golang-lru/v2"
 
@@ -31,13 +30,13 @@ type Server struct {
 	discoverFunc     func(context.Context, string) int
 	surlsCache       *lru.Cache[string, string]
 	curlsCache       *lru.Cache[string, string]
-	keysCache        *lru.Cache[string, map[string]ed25519.PublicKey]
+	keysCache        *lru.Cache[string, matrixKeyResp]
 	namesCache       *lru.Cache[string, string]
 }
 
 // NewServer creates new matrix server
 func NewServer(cfg configService, data dataRepository, media mediaService, search searchService, blocklist blocklistService) (*Server, error) {
-	keysCache, err := lru.New[string, map[string]ed25519.PublicKey](100000)
+	keysCache, err := lru.New[string, matrixKeyResp](100000)
 	if err != nil {
 		return nil, err
 	}

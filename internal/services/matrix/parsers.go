@@ -203,11 +203,21 @@ func (s *Server) lookupKeys(ctx context.Context, serverName string, discover boo
 }
 
 // notaryLookupKeys returns signed serverName's keys for notary use
-func (s *Server) notaryLookupKeys(ctx context.Context, serverName string) []byte {
+func (s *Server) notaryLookupKeys(ctx context.Context, serverName string, validUntilTS int64) []byte {
 	log := apm.Log(ctx).With().Str("server", serverName).Logger()
 	ctx, cancel := context.WithTimeout(ctx, utils.DefaultTimeout)
 	defer cancel()
-	keysResp, err := s.lookupKeys(ctx, serverName, true)
+
+	var keysResp *matrixKeyResp
+	var err error
+	cached, isCached := s.keysCache.Get(serverName)
+	if isCached {
+		keysResp = &cached
+	}
+	if keysResp == nil || keysResp.ValidUntilTS <= validUntilTS {
+		isCached = false
+		keysResp, err = s.lookupKeys(ctx, serverName, true)
+	}
 	if err != nil {
 		log.Warn().Err(err).Msg("cannot lookup server keys")
 		return nil
@@ -225,6 +235,11 @@ func (s *Server) notaryLookupKeys(ctx context.Context, serverName string) []byte
 		log.Error().Err(err).Msg("cannot sign key payload")
 		return nil
 	}
+
+	if !isCached {
+		// TODO: validate signatures
+		s.keysCache.Add(serverName, *keysResp)
+	}
 	return keyPayload
 }
 
@@ -232,7 +247,15 @@ func (s *Server) notaryLookupKeys(ctx context.Context, serverName string) []byte
 func (s *Server) queryKeys(ctx context.Context, serverName string) map[string]ed25519.PublicKey {
 	cached, ok := s.keysCache.Get(serverName)
 	if ok {
-		return cached
+		keys := map[string]ed25519.PublicKey{}
+		for id, data := range cached.VerifyKeys {
+			pub, err := base64.RawStdEncoding.DecodeString(data["key"])
+			if err != nil {
+				continue
+			}
+			keys[id] = pub
+		}
+		return keys
 	}
 	log := apm.Log(ctx)
 	resp, err := s.lookupKeys(ctx, serverName, true)
@@ -247,6 +270,9 @@ func (s *Server) queryKeys(ctx context.Context, serverName string) map[string]ed
 	if resp.ValidUntilTS <= time.Now().UnixMilli() {
 		log.Warn().Msg("server keys are expired")
 	}
+	// TODO: validate signatures
+	s.keysCache.Add(serverName, *resp)
+
 	keys := map[string]ed25519.PublicKey{}
 	for id, data := range resp.VerifyKeys {
 		pub, err := base64.RawStdEncoding.DecodeString(data["key"])
@@ -256,7 +282,5 @@ func (s *Server) queryKeys(ctx context.Context, serverName string) map[string]ed
 		}
 		keys[id] = pub
 	}
-	// TODO: verify signatures
-	s.keysCache.Add(serverName, keys)
 	return keys
 }

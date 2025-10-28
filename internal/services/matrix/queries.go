@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"sync"
+	"time"
 
 	"github.com/etkecc/go-apm"
 	"github.com/etkecc/go-kit"
@@ -196,9 +197,12 @@ func (s *Server) QueryPublicRooms(ctx context.Context, serverName, limit, since 
 }
 
 // QueryServerKeys is /_matrix/key/v2/query/{serverName}
-func (s *Server) QueryServerKeys(ctx context.Context, serverName string) []byte {
+func (s *Server) QueryServerKeys(ctx context.Context, serverName string, validUntilTS int64) []byte {
 	log := apm.Log(ctx).With().Str("server", serverName).Logger()
-	keyPayload := s.notaryLookupKeys(ctx, serverName)
+	if validUntilTS == 0 {
+		validUntilTS = time.Now().UnixMilli()
+	}
+	keyPayload := s.notaryLookupKeys(ctx, serverName, validUntilTS)
 	if keyPayload == nil {
 		return []byte(model.EmptyServerKeysResp)
 	}
@@ -214,16 +218,19 @@ func (s *Server) QueryServerKeys(ctx context.Context, serverName string) []byte 
 
 // QueryServersKeys is /_matrix/key/v2/query for multiple servers
 // Current naive implementation returns all keys, even when request is for specific key IDs
-func (s *Server) QueryServersKeys(ctx context.Context, req *model.QueryServerKeysRequest) []byte {
+func (s *Server) QueryServersKeys(ctx context.Context, req *model.QueryServerKeysRequest, validUntilTS int64) []byte {
 	serverNames := kit.MapKeys(req.ServerKeys)
 	log := apm.Log(ctx).With().Strs("servers", serverNames).Logger()
+	if validUntilTS == 0 {
+		validUntilTS = time.Now().UnixMilli()
+	}
 	keyPayloads := make([]json.RawMessage, 0, len(serverNames))
 	var mu sync.Mutex
 	wp := workpool.New(s.cfg.Get().Workers.Discovery)
 	for _, serverName := range serverNames {
 		wp.Do(func() {
 			ctx = context.WithoutCancel(ctx) // cancellation is controlled inside the notaryLookupKeys
-			keyPayload := s.notaryLookupKeys(ctx, serverName)
+			keyPayload := s.notaryLookupKeys(ctx, serverName, validUntilTS)
 			if keyPayload != nil {
 				mu.Lock()
 				keyPayloads = append(keyPayloads, keyPayload)
