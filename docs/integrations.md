@@ -14,15 +14,15 @@ Matrix Rooms Search (short: MRS) provides integrations for Matrix clients and ot
 <!-- vim-markdown-toc GitLab -->
 
 * [Matrix Federation API](#matrix-federation-api)
-  * [Cinny / Extera](#cinny--extera)
-  * [FluffyChat](#fluffychat)
-  * [Element Web / Desktop](#element-web--desktop)
-  * [Element Android / SchildiChat Android](#element-android--schildichat-android)
-  * [Fractal](#fractal)
+    * [Cinny / Extera](#cinny-extera)
+    * [FluffyChat](#fluffychat)
+    * [Element Web / Desktop](#element-web-desktop)
+    * [Element Android / SchildiChat Android](#element-android-schildichat-android)
+    * [Fractal](#fractal)
 * [SearXNG](#searxng)
 * [MSCs](#mscs)
-  * [MSC1929](#msc1929)
-  * [MSC3266](#msc3266)
+    * [MSC1929](#msc1929)
+    * [MSC3266](#msc3266)
 
 <!-- vim-markdown-toc -->
 
@@ -79,6 +79,18 @@ matrix_client_cinny_config_featuredCommunities_servers: ['matrixrooms.info']
 **For all app users** (for all users of the Element Web/Desktop app instance)
 
 Add the following to Element's `config.json`:
+
+**Clean config** - if you don't have anything else in your `config.json`:
+
+```json
+{
+    "room_directory": {
+        "servers": ["matrixrooms.info"]
+    }
+}
+```
+
+**Existing config** - if you already have a `config.json`, just add the following section inside the main object:
 
 ```json
 "room_directory": {
