@@ -23,8 +23,8 @@ and via own [REST API](../openapi.yml) for applications.
         * [Element Classic Android and SchildiChat Android](#element-classic-android-and-schildichat-android)
     * [Notary Key Server](#notary-key-server)
         * [Synapse](#synapse)
-        * [Conduit, Tuwunel, Continuwuity, Conduwuit, Grapevine, etc.](#conduit-tuwunel-continuwuity-conduwuit-grapevine-etc)
-        * [Dendrite, Harmony, etc.](#dendrite-harmony-etc)
+        * [Conduit, Tuwunel, Continuwuity, Conduwuit, Grapevine, etc](#conduit-tuwunel-continuwuity-conduwuit-grapevine-etc)
+        * [Dendrite, Harmony, etc](#dendrite-harmony-etc)
     * [MSCs](#mscs)
         * [MSC1929](#msc1929)
         * [MSC3266](#msc3266)
@@ -157,7 +157,7 @@ matrix_synapse_trusted_key_servers:
   - server_name: matrixrooms.info
 ```
 
-#### Conduit, Tuwunel, Continuwuity, Conduwuit, Grapevine, etc.
+#### Conduit, Tuwunel, Continuwuity, Conduwuit, Grapevine, etc
 
 To configure Conduit and its forks to use MRS as a notary key server, add the following to your `config.toml` configuration file:
 
@@ -179,7 +179,7 @@ matrix_continuwuity_config_trusted_servers: ['matrixrooms.info']
 ## Other forks are not yet supported in the playbooks at the moment of writing
 ```
 
-#### Dendrite, Harmony, etc.
+#### Dendrite, Harmony, etc
 
 To configure Dendrite and its forks to use MRS as a notary key server, add the following to your `dendrite.yaml` configuration file,
 inside the `federation_api` section:
