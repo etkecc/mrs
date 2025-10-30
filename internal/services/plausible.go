@@ -51,6 +51,7 @@ func (p *Plausible) Track(ctx context.Context, evt *model.AnalyticsEvent) {
 		"referrer": evt.Referrer,
 		"props":    evt.Props,
 	}
+
 	datab, err := json.Marshal(data)
 	if err != nil {
 		log.Error().Err(err).Msg("cannot marshal plausible event")

@@ -6,8 +6,8 @@ github.com/VictoriaMetrics/metrics v1.40.2 h1:OVSjKcQEx6JAwGeu8/KQm9Su5qJ72TMEW4
 github.com/VictoriaMetrics/metrics v1.40.2/go.mod h1:XE4uudAAIRaJE614Tl5HMrtoEU6+GDZO4QTnNSsZRuA=
 github.com/aymerick/douceur v0.2.0 h1:Mv+mAeH1Q+n9Fr+oyamOlAkUNPWPlA8PPGR0QAaYuPk=
 github.com/aymerick/douceur v0.2.0/go.mod h1:wlT5vV2O3h55X9m7iVYN0TBM0NH/MmbLnd30/FjWUq4=
-github.com/bits-and-blooms/bitset v1.24.2 h1:M7/NzVbsytmtfHbumG+K2bremQPMJuqv1JD3vOaFxp0=
-github.com/bits-and-blooms/bitset v1.24.2/go.mod h1:7hO7Gc7Pp1vODcmWvKMRA9BNmbv6a/7QIWpPxHddWR8=
+github.com/bits-and-blooms/bitset v1.24.3 h1:Bte86SlO3lwPQqww+7BE9ZuUCKIjfqnG5jtEyqA9y9Y=
+github.com/bits-and-blooms/bitset v1.24.3/go.mod h1:7hO7Gc7Pp1vODcmWvKMRA9BNmbv6a/7QIWpPxHddWR8=
 github.com/blevesearch/bleve/v2 v2.5.4 h1:1iur8e+PHsxtncV2xIVuqlQme/V8guEDO2uV6Wll3lQ=
 github.com/blevesearch/bleve/v2 v2.5.4/go.mod h1:yB4PnV4N2q5rTEpB2ndG8N2ISexBQEFIYgwx4ztfvoo=
 github.com/blevesearch/bleve_index_api v1.2.10 h1:FMFmZCmTX6PdoLLvwUnKF2RsmILFFwO3h0WPevXY9fE=
@@ -68,10 +68,10 @@ github.com/etkecc/go-msc1929 v1.2.3 h1:MmOUC0QZjk93ch9h1IPMTpICNkQONgEFqGpw7uFvr
 github.com/etkecc/go-msc1929 v1.2.3/go.mod h1:Tf6oxDhwzd4hvP7xtALHLs6RDurPOqAM2AX+DOf6M3k=
 github.com/fsnotify/fsnotify v1.9.0 h1:2Ml+OJNzbYCTzsxtv8vKSFD9PbJjmhYF14k/jKC7S9k=
 github.com/fsnotify/fsnotify v1.9.0/go.mod h1:8jBTzvmWwFyi3Pb8djgCCO5IBqzKJ/Jwo8TRcHyHii0=
-github.com/getsentry/sentry-go v0.36.1 h1:kMJt0WWsxWATUxkvFgVBZdIeHSk/Oiv5P0jZ9e5m/Lw=
-github.com/getsentry/sentry-go v0.36.1/go.mod h1:p5Im24mJBeruET8Q4bbcMfCQ+F+Iadc4L48tB1apo2c=
-github.com/getsentry/sentry-go/zerolog v0.36.1 h1:WRo0eTEp4PDfqBt672iob/M6wL221MnkY8a+QWsGz2k=
-github.com/getsentry/sentry-go/zerolog v0.36.1/go.mod h1:W75aXp4is8cczXTK8LmP/0aPAbL3Na7Z5dU0XK5Bzns=
+github.com/getsentry/sentry-go v0.36.2 h1:uhuxRPTrUy0dnSzTd0LrYXlBYygLkKY0hhlG5LXarzM=
+github.com/getsentry/sentry-go v0.36.2/go.mod h1:p5Im24mJBeruET8Q4bbcMfCQ+F+Iadc4L48tB1apo2c=
+github.com/getsentry/sentry-go/zerolog v0.36.2 h1:LPAphG48qHKjS6K4gyKVR5uWE3KCby4q+lYp3buDKms=
+github.com/getsentry/sentry-go/zerolog v0.36.2/go.mod h1:E9ziF7JR8QB0uHU2b0X/EWqN032V8WemhhvpqTEec+g=
 github.com/ghodss/yaml v1.0.0 h1:wQHKEahhL6wmXdzwWG11gIVCkOv05bNOh+Rxn0yngAk=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/go-errors/errors v1.4.2 h1:J6MZopCL4uSllY1OfXM374weqZFFItUbrImctkmUxIA=

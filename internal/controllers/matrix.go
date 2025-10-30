@@ -33,7 +33,7 @@ type matrixService interface {
 	QueryServersKeys(ctx context.Context, req *model.QueryServerKeysRequest, validUntilTS int64) []byte
 }
 
-func configureMatrixS2SEndpoints(e *echo.Echo, matrixSvc matrixService, cacheSvc cacheService) {
+func configureMatrixS2SEndpoints(e *echo.Echo, matrixSvc matrixService, plausible plausibleService, cacheSvc cacheService) {
 	e.GET("/.well-known/matrix/server", func(c echo.Context) error {
 		return c.JSONBlob(http.StatusOK, matrixSvc.GetServerWellKnown())
 	}, cacheSvc.MiddlewareImmutable())
@@ -44,13 +44,24 @@ func configureMatrixS2SEndpoints(e *echo.Echo, matrixSvc matrixService, cacheSvc
 		return c.JSONBlob(http.StatusOK, matrixSvc.GetKeyServer(c.Request().Context()))
 	})
 	e.GET("/_matrix/key/v2/query/:serverName", func(c echo.Context) error {
+		serverName := c.Param("serverName")
+		if serverName == "" {
+			return c.JSONBlob(http.StatusOK, []byte(model.EmptyServerKeysResp))
+		}
+
 		validUntilTStr := c.QueryParam("minimum_valid_until_ts")
 		var validUntilTS int64
 		if validUntilTStr != "" {
 			validUntilTS, _ = strconv.ParseInt(validUntilTStr, 10, 64) //nolint:errcheck // 0 is handled properly
 		}
 
-		return c.JSONBlob(http.StatusOK, matrixSvc.QueryServerKeys(c.Request().Context(), c.Param("serverName"), validUntilTS))
+		evt := model.NewAnalyticsEvent(c.Request().Context(), "Get Key", map[string]string{"server": serverName}, c.Request())
+		go func(ctx context.Context, evt *model.AnalyticsEvent) {
+			ctx = context.WithoutCancel(ctx)
+			plausible.Track(ctx, evt)
+		}(c.Request().Context(), evt)
+
+		return c.JSONBlob(http.StatusOK, matrixSvc.QueryServerKeys(c.Request().Context(), serverName, validUntilTS))
 	})
 	e.POST("/_matrix/key/v2/query", func(c echo.Context) error {
 		var req *model.QueryServerKeysRequest
@@ -63,6 +74,21 @@ func configureMatrixS2SEndpoints(e *echo.Echo, matrixSvc matrixService, cacheSvc
 		var validUntilTS int64
 		if validUntilTStr != "" {
 			validUntilTS, _ = strconv.ParseInt(validUntilTStr, 10, 64) //nolint:errcheck // 0 is handled properly
+		}
+
+		if len(req.ServerKeys) == 0 {
+			return c.JSONBlob(http.StatusOK, []byte(model.EmptyServerKeysResp))
+		}
+
+		for srv := range req.ServerKeys {
+			if srv == "" {
+				continue
+			}
+			evt := model.NewAnalyticsEvent(c.Request().Context(), "Get Key", map[string]string{"server": srv}, c.Request())
+			go func(ctx context.Context, evt *model.AnalyticsEvent) {
+				ctx = context.WithoutCancel(ctx)
+				plausible.Track(ctx, evt)
+			}(c.Request().Context(), evt)
 		}
 
 		return c.JSONBlob(http.StatusOK, matrixSvc.QueryServersKeys(c.Request().Context(), req, validUntilTS))
