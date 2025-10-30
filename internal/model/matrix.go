@@ -211,6 +211,7 @@ func (r *MatrixRoom) parseServer() {
 // parseContact tries to parse contact info from room topic
 // the contact should be in the form of "<matrix.server_name from MRS config>:<field>:<value>" string, example:
 // "example.com:email:admin@example.com"
+//
 // Deprecated: use ParseRoomConfig instead
 func (r *MatrixRoom) parseContact(mrsServerName, field string) string {
 	if r.Topic == "" {
@@ -261,6 +262,7 @@ func (r *MatrixRoom) parseLanguage(detector lingua.LanguageDetector, mrsServerNa
 }
 
 // parseLanguageOption tries to parse language option from room topic
+//
 // Deprecated: use ParseRoomConfig instead
 func (r *MatrixRoom) parseLanguageOption(mrsServerName string) string {
 	if r.Topic == "" {

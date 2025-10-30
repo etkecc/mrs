@@ -75,6 +75,7 @@ func (s *Server) GetMediaThumbnail(ctx context.Context, serverName, mediaID stri
 }
 
 // GetClientMediaThumbnail is /_matrix/media/v3/thumbnail/{serverName}/{mediaID}
+//
 // Deprecated: use GetMediaThumbnail() instead, ref: https://spec.matrix.org/v1.11/server-server-api/#get_matrixfederationv1mediathumbnailmediaid
 func (s *Server) GetClientMediaThumbnail(ctx context.Context, serverName, mediaID string, params url.Values) (content io.Reader, contentType string) {
 	params = utils.ValuesOrDefault(params, s.getDefaultThumbnailParams())
