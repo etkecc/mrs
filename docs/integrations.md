@@ -195,10 +195,10 @@ If you use [etke.cc/ansible](https://github.com/etkecc/ansible) or [matrix-docke
 ```yaml
 # NOTE: you should have multiple notary key servers for redundancy, usually matrix.org is listed by default
 ## Dendrite
-matrix_dendrite_configuration_extension_yaml:
-    federation_api:
-        key_perspectives:
-        - server_name: matrixrooms.info
+matrix_dendrite_configuration_extension_yaml: |
+  federation_api:
+    key_perspectives:
+      - server_name: matrixrooms.info
 ## Other forks are not yet supported in the playbooks at the moment of writing
 ```
 
