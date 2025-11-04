@@ -8,6 +8,7 @@ require (
 	github.com/VictoriaMetrics/metrics v1.40.2
 	github.com/blevesearch/bleve/v2 v2.5.4
 	github.com/etkecc/go-apm v1.3.5
+	github.com/etkecc/go-crontab v1.2.1
 	github.com/etkecc/go-echo-basic-auth v1.3.1
 	github.com/etkecc/go-fswatcher v1.0.1
 	github.com/etkecc/go-healthchecks/v2 v2.2.2
@@ -18,10 +19,9 @@ require (
 	github.com/goccy/go-json v0.10.5
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/labstack/echo/v4 v4.13.4
-	github.com/matrix-org/gomatrixserverlib v0.0.0-20250815065806-6697d93cbcba
+	github.com/matrix-org/gomatrixserverlib v0.0.0-20251103190139-eb14008fe6d1
 	github.com/mattevans/postmark-go v1.0.0
 	github.com/microcosm-cc/bluemonday v1.0.27
-	github.com/mileusna/crontab v1.2.0
 	github.com/pemistahl/lingua-go v1.4.0
 	github.com/rs/zerolog v1.34.0
 	github.com/swaggo/echo-swagger v1.4.1

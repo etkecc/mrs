@@ -16,10 +16,10 @@ import (
 	"time"
 
 	"github.com/etkecc/go-apm"
+	"github.com/etkecc/go-crontab"
 	"github.com/etkecc/go-healthchecks/v2"
 	"github.com/etkecc/go-msc1929"
 	"github.com/labstack/echo/v4"
-	"github.com/mileusna/crontab"
 	"github.com/pemistahl/lingua-go"
 	"github.com/rs/zerolog"
 	"github.com/ziflex/lecho/v3"
@@ -175,6 +175,10 @@ func initShutdown(quit chan struct{}) {
 func initCron(cfg *services.Config, dataSvc *services.DataFacade) {
 	ctx := apm.NewContext()
 	cron = crontab.New()
+	cron.SetPanicLogger(func(r any) {
+		log.Error().Any("recover", r).Msg("cron job panicked")
+	})
+
 	if schedule := cfg.Get().Cron.Discovery; schedule != "" {
 		log.Info().Str("job", "discovery").Msg("cron job enabled")
 		cron.MustAddJob(schedule, dataSvc.DiscoverServers, ctx, cfg.Get().Workers.Discovery)

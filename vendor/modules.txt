@@ -179,6 +179,9 @@ github.com/buger/jsonparser
 # github.com/etkecc/go-apm v1.3.5
 ## explicit; go 1.23.0
 github.com/etkecc/go-apm
+# github.com/etkecc/go-crontab v1.2.1
+## explicit; go 1.22
+github.com/etkecc/go-crontab
 # github.com/etkecc/go-echo-basic-auth v1.3.1
 ## explicit; go 1.23.0
 github.com/etkecc/go-echo-basic-auth
@@ -294,7 +297,7 @@ github.com/labstack/echo/v4/middleware
 github.com/labstack/gommon/bytes
 github.com/labstack/gommon/color
 github.com/labstack/gommon/log
-# github.com/matrix-org/gomatrixserverlib v0.0.0-20250815065806-6697d93cbcba
+# github.com/matrix-org/gomatrixserverlib v0.0.0-20251103190139-eb14008fe6d1
 ## explicit; go 1.23.0
 github.com/matrix-org/gomatrixserverlib
 github.com/matrix-org/gomatrixserverlib/spec
@@ -314,9 +317,6 @@ github.com/mattn/go-isatty
 ## explicit; go 1.19
 github.com/microcosm-cc/bluemonday
 github.com/microcosm-cc/bluemonday/css
-# github.com/mileusna/crontab v1.2.0
-## explicit; go 1.14
-github.com/mileusna/crontab
 # github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
 ## explicit
 github.com/modern-go/concurrent
