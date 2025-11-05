@@ -13,7 +13,7 @@ require (
 	github.com/etkecc/go-fswatcher v1.0.1
 	github.com/etkecc/go-healthchecks/v2 v2.2.2
 	github.com/etkecc/go-kit v1.7.5
-	github.com/etkecc/go-kit/format v0.0.0-20251001223546-24185c63e1a2
+	github.com/etkecc/go-kit/format v0.0.0-20251105163318-01b0981158f1
 	github.com/etkecc/go-msc1929 v1.2.3
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/goccy/go-json v0.10.5
