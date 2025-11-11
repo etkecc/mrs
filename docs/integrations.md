@@ -9,8 +9,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # Integrations
 
-Matrix Rooms Search (short: MRS) provides various integrations both via [Matrix protocol](https://spec.matrix.org/) APIs,
-and via own [REST API](../openapi.yml) for applications.
+Matrix Rooms Search (short: MRS) provides various integrations both via [Matrix protocol](https://spec.matrix.org/) APIs, and via own [REST API](../openapi.yml) for applications.
 
 <!-- vim-markdown-toc GFM -->
 
@@ -45,14 +44,16 @@ MRS implements the mandatory subset of Matrix Federation API to provide the Publ
 
 **Just for you**:
 
+You can follow the process below to enable MRS integration for your account only.
+
 1. Click on the **Explore Community** button on the left sidebar
 2. Click on the **Add Server** button
 3. Enter `matrixrooms.info` to the "Server Name" input area
 4. Click the **View** button
 
-**For all app users** (for all users of the Cinny app instance):
+**For all app users**:
 
-Add the following to Cinny's `config.json`:
+To enable MRS integration for all users of the Cinny app instance, add the following to Cinny's `config.json`:
 
 ```json
 {
@@ -70,13 +71,15 @@ matrix_client_cinny_config_featuredCommunities_servers: ['matrixrooms.info']
 
 #### FluffyChat
 
+To integrate MRS to FluffyChat, please follow the process below.
+
 1. Click on the search bar on the top of the screen and enter anything
 2. In the search field a pencil icon and your homeserver domain will appear
 3. Click on the pencil icon and enter `https://matrixrooms.info` in the input field
 
 #### Fractal
 
-[Fractal](https://gitlab.gnome.org/World/fractal/) is a Matrix application written in Rust, optimized for GNOME desktop environment.
+[Fractal](https://gitlab.gnome.org/World/fractal/) is a Matrix application written in Rust, optimized for GNOME desktop environment. You can follow the process below to integrate MRS to Fractal.
 
 1. Click on the **Explore** on the left sidebar
 2. Click the dropdown menu next to the search bar
@@ -88,7 +91,9 @@ matrix_client_cinny_config_featuredCommunities_servers: ['matrixrooms.info']
 
 💡 *This also applies to forks such as [SchildiChat Web / Desktop](https://schildi.chat/).*
 
-**Just for you** (just for your account)
+**Just for you**:
+
+You can follow the process below to enable MRS integration to your account only.
 
 1. Click on `Search` (Ctrl+K) at the top-left corner
 2. Scroll down the modal window
@@ -97,27 +102,27 @@ matrix_client_cinny_config_featuredCommunities_servers: ['matrixrooms.info']
 5. On the opened modal window, enter the server name set to the config.yml (`matrix.server_name` value). In case of the demo instance, it is `matrixrooms.info`
 6. Click on `Add`
 
-**For all app users** (for all users of the Element Web/Desktop app instance)
+**For all app users**:
 
-Add the following to Element's `config.json`:
+To enable MRS integration for all users of the Element Web/Desktop app instance, add the following to Element's `config.json`:
 
-**Clean config** - if you don't have anything else in your `config.json`:
+* **Clean config** — if you don't have anything else in your `config.json`:
 
-```json
-{
+    ```json
+    {
+        "room_directory": {
+            "servers": ["matrixrooms.info"]
+        }
+    }
+    ```
+
+* **Existing config** — if you already have a `config.json`, just add the following section inside the main object:
+
+    ```json
     "room_directory": {
         "servers": ["matrixrooms.info"]
     }
-}
-```
-
-**Existing config** - if you already have a `config.json`, just add the following section inside the main object:
-
-```json
-"room_directory": {
-    "servers": ["matrixrooms.info"]
-}
-```
+    ```
 
 If you use [etke.cc/ansible](https://github.com/etkecc/ansible) or [matrix-docker-ansible-deploy](https://github.com/spantaleev/matrix-docker-ansible-deploy), add the following to your `vars.yml` configuration file:
 
@@ -126,6 +131,8 @@ matrix_client_element_room_directory_servers: ['matrixrooms.info']
 ```
 
 #### Element Classic Android and SchildiChat Android
+
+To integrate MRS to Element Classic Android and SchildiChat Android, please follow the process below.
 
 1. From the room list, click on the floating action button at the bottom right (left for RTL) of the screen
 2. Select "Explore Rooms"
@@ -204,7 +211,7 @@ matrix_dendrite_configuration_extension_yaml: |
 
 ### MSCs
 
-MSC stands for Matrix Spec Change — a proposed changes to the matrix protocol, but not yet included within it. Below is the MSCs relevant to MRS.
+MSC stands for Matrix Spec Change — a proposed changes to the matrix protocol, but not yet included within it. Below are the MSCs relevant to MRS.
 
 #### MSC1929
 
