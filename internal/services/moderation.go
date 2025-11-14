@@ -192,7 +192,7 @@ func (m *Moderation) Report(ctx context.Context, fromIP, roomID, reason string, 
 		_, entry := m.matrix.GetClientRoomSummary(ctx, roomID, "", true)
 		if entry == nil {
 			log.Warn().Msg("room not found in data store, MSC3266 summary not available")
-			return fmt.Errorf("room not found")
+			return nil
 		}
 
 		log.Warn().Msg("room not found in data store, using MSC3266 summary")
