@@ -2,7 +2,7 @@
 
 MRS collects stats and metrics and exposes them on the following endpoints:
 
-* `/stats` - publicly available stats, contains only basic stats
+* `/stats` - publicly available stats, contains only basic stats, see [stats.md](stats.md) for details
 * `/-/status` - private admin endpoint, contains full stats about discovered, parsed and indexed servers and rooms
 * `/metrics` - private metrics endpoint, using the Prometheus metrics format
 
