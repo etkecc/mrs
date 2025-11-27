@@ -6,7 +6,6 @@ it collects various technical details about the Matrix servers that publish thes
 While that information is primarily used for Matrix protocol communication purposes,
 it is also may be interesting to see some aggregated statistics about the Matrix Federation observed by this MRS instance.
 
-
 <!-- vim-markdown-toc GFM -->
 
 * [WARNING](#warning)
@@ -66,6 +65,7 @@ Here is the list of available stats:
 Apart from the current stats (`details` top-level field), MRS also exposes historical timeline of the same stats,
 using the `timeline` top-level field.
 The timeline contains the stats snapshot for each full reindexing cycle, but with the following limitations:
+
 * Current month: daily snapshots
 * Previous months of the current year: weekly snapshots
 * Previous years: monthly snapshots
