@@ -36,7 +36,7 @@ func (s *Server) initWellKnown(apiURL string) error {
 	}
 
 	serverValue, err := utils.JSON(map[string]string{
-		"s.server": uri.Hostname() + ":" + port,
+		"m.server": uri.Hostname() + ":" + port,
 	})
 	if err != nil {
 		return err
@@ -44,7 +44,7 @@ func (s *Server) initWellKnown(apiURL string) error {
 	s.wellknownServer = serverValue
 
 	clientValue, err := utils.JSON(map[string]map[string]string{
-		"s.homeserver": {
+		"m.homeserver": {
 			"base_url": "https://" + uri.Host,
 		},
 	})

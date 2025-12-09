@@ -9,7 +9,7 @@ info:
 
 externalDocs:
   description: Git repo
-  url: https://gitlab.com/etke.cc/mrs/api
+  url: https://gihub.com/etkecc/mrs
 servers:
   - url: http://localhost:8080
     description: local
