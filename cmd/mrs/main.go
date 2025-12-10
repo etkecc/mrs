@@ -117,7 +117,7 @@ func main() {
 	initCron(cfg, dataSvc)
 	initShutdown(quit)
 
-	if err := e.Start(":" + cfg.Get().Port); err != nil && !errors.Is(err, http.ErrServerClosed) {
+	if err := e.Start(cfg.Get().Address + ":" + cfg.Get().Port); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatal().Err(err).Msg("http server failed")
 	}
 
