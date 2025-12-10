@@ -114,12 +114,8 @@ func (s *Server) parseServerWellKnown(ctx context.Context, serverName string) (s
 		log.Warn().Msg("/.well-known/matrix/server is invalid")
 		return "", fmt.Errorf("/.well-known/matrix/server is invalid")
 	}
-	host := parts[0]
-	port := "8448"
-	if len(parts) == 2 {
-		port = parts[1]
-	}
-	return host + ":" + port, err
+
+	return wellknown.Host, err
 }
 
 // parseSRV returns Federation API host:port
@@ -135,50 +131,106 @@ func (s *Server) parseSRV(ctx context.Context, service, serverName string) (stri
 }
 
 // dcrURL stands for discover-cache-and-return URL, shortcut for s.getURL
-func (s *Server) dcrURL(ctx context.Context, serverName, serverURL string, discover bool) string {
-	s.surlsCache.Add(serverName, serverURL)
+func (s *Server) dcrURL(ctx context.Context, serverName, serverURL, serverHost string, discover bool) (sURL, sHost string) {
+	justHost, _, err := net.SplitHostPort(serverHost)
+	if err == nil {
+		serverHost = justHost
+	}
+
+	s.surlsCache.Add(serverName, serverURL+"||"+serverHost)
 
 	if s.discoverFunc != nil && discover {
 		ctx = context.WithoutCancel(ctx) // prevent timeout cancellation for background discovery
 		go s.discoverFunc(ctx, serverName)
 	}
 
-	return serverURL
+	return serverURL, serverHost
 }
 
 // getURL returns Federation API URL
-func (s *Server) getURL(ctx context.Context, serverName string, discover bool) string {
+func (s *Server) getURL(ctx context.Context, serverName string, discover bool) (ssURL, ssHost string) {
 	cached, ok := s.surlsCache.Get(serverName)
 	if ok {
-		return cached
+		parts := strings.Split(cached, "||")
+		return parts[0], parts[1]
 	}
 
 	log := apm.Log(ctx).With().Str("server", serverName).Logger()
-	fromWellKnown, err := s.parseServerWellKnown(ctx, serverName)
-	if err == nil {
-		return s.dcrURL(ctx, serverName, "https://"+fromWellKnown, discover)
+
+	ssURL, ssHost = s.getURLFromWK(ctx, serverName, discover)
+	if ssURL != "" {
+		return ssURL, ssHost
 	}
-	log.Warn().Err(err).Msg("failed to parse /.well-known/matrix/server")
 
 	fromSRV, err := s.parseSRV(ctx, "matrix-fed", serverName)
 	if err == nil {
-		return s.dcrURL(ctx, serverName, "https://"+fromSRV, discover)
+		return s.dcrURL(ctx, serverName, "https://"+fromSRV, fromSRV, discover)
 	}
 	log.Warn().Err(err).Msg("failed to parse SRV matrix-fed")
 
-	return s.dcrURL(ctx, serverName, "https://"+serverName+":8448", discover)
+	return s.dcrURL(ctx, serverName, "https://"+serverName+":8448", serverName, discover)
+}
+
+// getURLFromWK tries to get Federation API URL from /.well-known/matrix/server
+func (s *Server) getURLFromWK(ctx context.Context, serverName string, discover bool) (ssURL, ssHost string) {
+	log := apm.Log(ctx).With().Str("server", serverName).Logger()
+	fromWellKnown, err := s.parseServerWellKnown(ctx, serverName)
+	if err != nil {
+		log.Warn().Err(err).Msg("failed to parse /.well-known/matrix/server")
+		return "", ""
+	}
+
+	// if fromWellKnown contains colon, it already has port
+	if strings.Contains(fromWellKnown, ":") {
+		return s.dcrURL(ctx, serverName, "https://"+fromWellKnown, fromWellKnown, discover)
+	}
+
+	// if it doesn't, try discovering port via SRV
+	fromSRV, err := s.parseSRV(ctx, "matrix-fed", fromWellKnown)
+	if err != nil {
+		// if SRV fails, assume default port 8448
+		return s.dcrURL(ctx, serverName, "https://"+fromWellKnown+":8448", fromWellKnown, discover)
+	}
+
+	fromSRVHost := strings.Split(fromSRV, ":")[0]
+	// if SRV target matches well-known host, use SRV port as-is
+	if fromSRVHost == fromWellKnown {
+		return s.dcrURL(ctx, serverName, "https://"+fromSRV, fromWellKnown, discover)
+	}
+	// else, lookup A/AAAA for SRV target and use that IP with SRV port
+	ips, err := net.DefaultResolver.LookupHost(ctx, fromSRVHost)
+	if err != nil || len(ips) == 0 {
+		return s.dcrURL(ctx, serverName, "https://"+fromWellKnown+":8448", fromWellKnown, discover)
+	}
+	// use first resolved IP
+	_, port, err := net.SplitHostPort(fromSRV)
+	if err != nil {
+		log.Warn().Err(err).Str("srv", fromSRV).Msg("failed to parse SRV host:port, using default port 8448")
+		port = "8448"
+	}
+	parsedIP := net.ParseIP(ips[0])
+	if parsedIP == nil {
+		log.Warn().Str("ip", ips[0]).Msg("resolved SRV target is not a valid IP")
+		return s.dcrURL(ctx, serverName, "https://"+fromWellKnown+":8448", fromWellKnown, discover)
+	}
+	if parsedIP.To4() == nil {
+		// IPv6 needs to be enclosed in brackets
+		ips[0] = "[" + ips[0] + "]"
+	}
+	return s.dcrURL(ctx, serverName, "https://"+ips[0]+":"+port, fromWellKnown, discover)
 }
 
 // lookupKeys requests /_matrix/key/v2/server by serverName
 func (s *Server) lookupKeys(ctx context.Context, serverName string, discover bool) (*matrixKeyResp, error) {
 	log := apm.Log(ctx).With().Str("server", serverName).Logger()
 
-	keysURL, err := url.Parse(s.getURL(ctx, serverName, discover) + "/_matrix/key/v2/server")
+	serverURL, serverHost := s.getURL(ctx, serverName, discover)
+	keysURL, err := url.Parse(serverURL + "/_matrix/key/v2/server")
 	if err != nil {
 		log.Warn().Err(err).Msg("failed to parse keys URL")
 		return nil, err
 	}
-	resp, err := utils.Get(ctx, keysURL.String())
+	resp, err := utils.Get(ctx, keysURL.String(), serverHost)
 	if err != nil {
 		log.Warn().Err(err).Msg("failed to get keys")
 		return nil, err

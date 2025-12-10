@@ -207,7 +207,7 @@ func (m *Crawler) EachRoom(ctx context.Context, handler func(roomID string, data
 
 	toRemove := []string{}
 	m.data.EachRoom(ctx, func(id string, room *model.MatrixRoom) bool {
-		if !m.v.IsRoomAllowed(room.Server, room) {
+		if !m.v.IsRoomAllowed("", room) {
 			toRemove = append(toRemove, id)
 			return false
 		}

@@ -129,7 +129,8 @@ func (s *Server) QueryDirectoryExternal(ctx context.Context, alias string) (*mod
 
 // QueryVersion from /_matrix/federation/v1/version
 func (s *Server) QueryVersion(ctx context.Context, serverName string) (server, serverVersion string, err error) {
-	resp, err := utils.Get(ctx, s.getURL(ctx, serverName, false)+"/_matrix/federation/v1/version")
+	serverURL, serverHost := s.getURL(ctx, serverName, false)
+	resp, err := utils.Get(ctx, serverURL+"/_matrix/federation/v1/version", serverHost)
 	if err != nil {
 		return "", "", err
 	}
@@ -267,7 +268,7 @@ func (s *Server) QueryCSURL(ctx context.Context, serverName string) string {
 }
 
 func (s *Server) buildPublicRoomsReq(ctx context.Context, serverName, limit, since string) (*http.Request, error) {
-	apiURLStr := s.getURL(ctx, serverName, false)
+	apiURLStr, apiURLHost := s.getURL(ctx, serverName, false)
 	apiURL, err := url.Parse(apiURLStr)
 	if err != nil {
 		return nil, err
@@ -294,6 +295,9 @@ func (s *Server) buildPublicRoomsReq(ctx context.Context, serverName, limit, sin
 	if err != nil {
 		return nil, err
 	}
+	if apiURLHost != "" {
+		req.Host = apiURLHost
+	}
 	for _, h := range authHeaders {
 		req.Header.Add("Authorization", h)
 	}
@@ -303,7 +307,7 @@ func (s *Server) buildPublicRoomsReq(ctx context.Context, serverName, limit, sin
 }
 
 func (s *Server) buildQueryDirectoryReq(ctx context.Context, serverName, alias string) (*http.Request, error) {
-	apiURLStr := s.getURL(ctx, serverName, false)
+	apiURLStr, apiURLHost := s.getURL(ctx, serverName, false)
 	apiURL, err := url.Parse(apiURLStr)
 	if err != nil {
 		return nil, err
@@ -324,6 +328,9 @@ func (s *Server) buildQueryDirectoryReq(ctx context.Context, serverName, alias s
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiURL.String(), http.NoBody)
 	if err != nil {
 		return nil, err
+	}
+	if apiURLHost != "" {
+		req.Host = apiURLHost
 	}
 	for _, h := range authHeaders {
 		req.Header.Add("Authorization", h)

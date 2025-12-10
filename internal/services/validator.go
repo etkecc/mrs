@@ -118,9 +118,6 @@ func (v *Validator) IsRoomAllowed(server string, room *model.MatrixRoom) bool {
 	if v.block.ByID(room.Alias) {
 		return false
 	}
-	if v.block.ByServer(room.Server) {
-		return false
-	}
 	if v.block.ByServer(server) {
 		return false
 	}

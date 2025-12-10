@@ -2,6 +2,7 @@ package utils
 
 import (
 	"context"
+	"crypto/tls"
 	"net/http"
 	"time"
 
@@ -23,10 +24,13 @@ const (
 var httpClient = apm.WrapClient(&http.Client{Timeout: DefaultTimeout}, apm.WithHealthchecks(false))
 
 // Get performs HTTP GET request with timeout, User-Agent, and retrier
-func Get(ctx context.Context, uri string) (*http.Response, error) {
+func Get(ctx context.Context, uri string, host ...string) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri, http.NoBody)
 	if err != nil {
 		return nil, err
+	}
+	if len(host) > 0 && host[0] != "" {
+		req.Host = host[0]
 	}
 	return Do(req)
 }
@@ -47,6 +51,20 @@ func Do(req *http.Request) (*http.Response, error) {
 
 	req = req.WithContext(ctx)
 	req.Header.Set("User-Agent", version.UserAgent)
-	resp, err = httpClient.Do(req)
+	client := httpClient
+	// edge case: custom Host header is set, need to create custom Transport with ServerName
+	if req.URL.Hostname() != req.Host && req.Host != "" {
+		client = apm.WrapClient(&http.Client{
+			Timeout: DefaultTimeout,
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{ //nolint:gosec // there are _very_ different servers in the federation, so stick to defaults
+					ServerName: req.Host,
+				},
+			},
+		}, apm.WithHealthchecks(false))
+		defer client.CloseIdleConnections()
+	}
+
+	resp, err = client.Do(req)
 	return resp, err
 }

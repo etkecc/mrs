@@ -25,7 +25,7 @@ func (s *Server) GetMediaThumbnail(ctx context.Context, serverName, mediaID stri
 		return content, contentType
 	}
 
-	serverURL := s.getURL(ctx, serverName, false)
+	serverURL, serverHost := s.getURL(ctx, serverName, false)
 	if serverURL == "" {
 		log.Warn().Str("server", serverName).Msg("cannot get server URL")
 		return nil, ""
@@ -46,6 +46,9 @@ func (s *Server) GetMediaThumbnail(ctx context.Context, serverName, mediaID stri
 	if err != nil {
 		log.Warn().Err(err).Str("server", serverName).Str("mediaID", mediaID).Msg("cannot create request")
 		return nil, ""
+	}
+	if serverHost != "" {
+		req.Host = serverHost
 	}
 	for _, h := range authHeaders {
 		req.Header.Add("Authorization", h)
