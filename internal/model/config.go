@@ -7,6 +7,7 @@ import (
 
 // Config is MRS configuration model
 type Config struct {
+	Address      string              `yaml:"address"`
 	Port         string              `yaml:"port"`
 	SentryDSN    string              `yaml:"sentry_dsn"`
 	Healthchecks *ConfigHealthchecks `yaml:"healthchecks"`
