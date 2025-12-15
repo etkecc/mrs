@@ -298,7 +298,7 @@ github.com/labstack/echo/v4/middleware
 github.com/labstack/gommon/bytes
 github.com/labstack/gommon/color
 github.com/labstack/gommon/log
-# github.com/matrix-org/gomatrixserverlib v0.0.0-20251103190139-eb14008fe6d1
+# github.com/matrix-org/gomatrixserverlib v0.0.0-20251210211621-ffcbbd38fba6
 ## explicit; go 1.23.0
 github.com/matrix-org/gomatrixserverlib
 github.com/matrix-org/gomatrixserverlib/spec
