@@ -10,6 +10,7 @@ import (
 	"github.com/blevesearch/bleve/v2/analysis/lang/en"
 	"github.com/blevesearch/bleve/v2/analysis/tokenizer/letter"
 	"github.com/blevesearch/bleve/v2/analysis/tokenizer/unicode"
+	"github.com/blevesearch/bleve/v2/analysis/tokenizer/whitespace"
 	"github.com/blevesearch/bleve/v2/mapping"
 	"github.com/etkecc/go-apm"
 	"github.com/pemistahl/lingua-go"
@@ -29,6 +30,21 @@ var (
 		"regexp":  `(#|!|:)`,
 		"replace": ` `,
 		"type":    regexp_char_filter.Name,
+	}
+	commaSeparatedCharFilter = map[string]any{
+		"regexp":  `[,;]`,
+		"replace": ` `,
+		"type":    regexp_char_filter.Name,
+	}
+	analyzerServer = map[string]any{
+		"type": custom.Name,
+		"char_filters": []any{
+			`comma_separated`,
+		},
+		"tokenizer": whitespace.Name,
+		"token_filters": []any{
+			`to_lower`,
+		},
 	}
 	analyzerID = map[string]any{
 		"type": custom.Name,
@@ -62,6 +78,15 @@ func getIndexMapping(ctx context.Context) mapping.IndexMapping {
 	if err != nil {
 		log.Error().Err(err).Msg("cannot create custom char filter")
 	}
+	err = m.AddCustomCharFilter("comma_separated", commaSeparatedCharFilter)
+	if err != nil {
+		log.Error().Err(err).Msg("cannot create comma_separated char filter")
+	}
+
+	err = m.AddCustomAnalyzer("server", analyzerServer)
+	if err != nil {
+		log.Error().Err(err).Msg("cannot create server analyzer")
+	}
 
 	err = m.AddCustomAnalyzer("matrix_id", analyzerID)
 	if err != nil {
@@ -85,6 +110,9 @@ func getIndexMapping(ctx context.Context) mapping.IndexMapping {
 
 	numericFM := bleve.NewNumericFieldMapping()
 
+	serverFM := bleve.NewKeywordFieldMapping()
+	serverFM.Analyzer = "server"
+
 	matrixIDFM := bleve.NewTextFieldMapping()
 	matrixIDFM.Analyzer = "matrix_id"
 
@@ -99,7 +127,7 @@ func getIndexMapping(ctx context.Context) mapping.IndexMapping {
 	r.AddFieldMappingsAt("topic", textFM)
 	r.AddFieldMappingsAt("avatar", noindexFM)
 	r.AddFieldMappingsAt("avatar_url", noindexFM)
-	r.AddFieldMappingsAt("server", bleve.NewKeywordFieldMapping())
+	r.AddFieldMappingsAt("server", serverFM)
 	r.AddFieldMappingsAt("members", numericFM)
 	r.AddFieldMappingsAt("language", bleve.NewKeywordFieldMapping())
 	r.AddFieldMappingsAt("room_type", bleve.NewKeywordFieldMapping()) // e.g., "m.space" for spaces, empty for rooms

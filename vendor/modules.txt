@@ -16,7 +16,7 @@ github.com/aymerick/douceur/parser
 # github.com/bits-and-blooms/bitset v1.24.4
 ## explicit; go 1.16
 github.com/bits-and-blooms/bitset
-# github.com/blevesearch/bleve/v2 v2.5.6
+# github.com/blevesearch/bleve/v2 v2.5.7
 ## explicit; go 1.23
 github.com/blevesearch/bleve/v2
 github.com/blevesearch/bleve/v2/analysis
@@ -73,6 +73,7 @@ github.com/blevesearch/bleve/v2/analysis/tokenizer/character
 github.com/blevesearch/bleve/v2/analysis/tokenizer/letter
 github.com/blevesearch/bleve/v2/analysis/tokenizer/single
 github.com/blevesearch/bleve/v2/analysis/tokenizer/unicode
+github.com/blevesearch/bleve/v2/analysis/tokenizer/whitespace
 github.com/blevesearch/bleve/v2/document
 github.com/blevesearch/bleve/v2/fusion
 github.com/blevesearch/bleve/v2/geo
@@ -231,7 +232,7 @@ github.com/go-openapi/jsonpointer
 ## explicit; go 1.24.0
 github.com/go-openapi/jsonreference
 github.com/go-openapi/jsonreference/internal
-# github.com/go-openapi/spec v0.22.2
+# github.com/go-openapi/spec v0.22.3
 ## explicit; go 1.24.0
 github.com/go-openapi/spec
 # github.com/go-openapi/swag/conv v0.25.4
@@ -406,7 +407,7 @@ go.yaml.in/yaml/v3
 golang.org/x/crypto/acme
 golang.org/x/crypto/acme/autocert
 golang.org/x/crypto/ed25519
-# golang.org/x/exp v0.0.0-20251209150349-8475f28825e9
+# golang.org/x/exp v0.0.0-20251219203646-944ab1f22d93
 ## explicit; go 1.24.0
 golang.org/x/exp/constraints
 golang.org/x/exp/maps
