@@ -40,6 +40,7 @@ func parseSearchResults(result []*search.DocumentMatch) []*model.Entry {
 			Topic:         parseHitField[string](hit, "topic"),
 			Avatar:        parseHitField[string](hit, "avatar"),
 			Server:        parseHitField[string](hit, "server"),
+			Servers:       parseHitField[string](hit, "servers"),
 			Members:       int(parseHitField[float64](hit, "members")),
 			Language:      parseHitField[string](hit, "language"),
 			AvatarURL:     parseHitField[string](hit, "avatar_url"),

@@ -1,7 +1,5 @@
 package model
 
-import "github.com/etkecc/mrs/internal/utils"
-
 // QueryDirectoryResponse of /_matrix/client/v3/directory/room/{roomAlias}
 type QueryDirectoryResponse struct {
 	RoomID  string   `json:"room_id"`
@@ -49,7 +47,7 @@ type RoomDirectoryRoom struct {
 }
 
 // Convert room directory's room to matrix room
-func (r *RoomDirectoryRoom) Convert() *MatrixRoom {
+func (r *RoomDirectoryRoom) Convert(originServerName string) *MatrixRoom {
 	return &MatrixRoom{
 		ID:            r.ID,
 		Alias:         r.Alias,
@@ -61,6 +59,6 @@ func (r *RoomDirectoryRoom) Convert() *MatrixRoom {
 		JoinRule:      r.JoinRule,
 		GuestJoinable: r.GuestJoinable,
 		WorldReadable: r.WorldReadable,
-		Server:        utils.ServerFrom(r.ID),
+		Server:        originServerName,
 	}
 }

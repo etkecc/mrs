@@ -9,7 +9,8 @@ type Entry struct {
 	Topic         string `json:"topic" yaml:"topic"`
 	Avatar        string `json:"avatar" yaml:"avatar"`
 	AvatarURL     string `json:"avatar_url" yaml:"avatar_url"`
-	Server        string `json:"server" yaml:"server"`
+	Server        string `json:"server" yaml:"server"`   // server of origin
+	Servers       string `json:"servers" yaml:"servers"` // comma-separated list of servers
 	Members       int    `json:"members" yaml:"members"`
 	Language      string `json:"language" yaml:"language"`
 	RoomType      string `json:"room_type" yaml:"room_type"`

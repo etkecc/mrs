@@ -54,7 +54,7 @@ func (s *Server) GetClientDirectory(ctx context.Context, alias string) (statusCo
 
 	resp := &model.QueryDirectoryResponse{
 		RoomID:  room.ID,
-		Servers: room.Servers(),
+		Servers: room.AllServers(),
 	}
 	respb, err = utils.JSON(resp)
 	if err != nil {

@@ -67,7 +67,8 @@ type MatrixRoom struct {
 	WorldReadable bool   `json:"world_readable"`
 
 	// Parsed (custom) fields
-	Server    string    `json:"server"`
+	Server    string    `json:"server"` // Server of origin
+	Servers   []string  `json:"servers"`
 	Email     string    `json:"email"`
 	Language  string    `json:"language"`
 	AvatarURL string    `json:"avatar_url_http"`
@@ -84,6 +85,7 @@ func (r *MatrixRoom) Entry() *Entry {
 		Topic:         r.Topic,
 		Avatar:        r.Avatar,
 		Server:        r.Server,
+		Servers:       strings.Join(r.Servers, ","),
 		Members:       r.Members,
 		Language:      r.Language,
 		AvatarURL:     r.AvatarURL,
@@ -150,11 +152,6 @@ func (r *MatrixRoom) Parse(detector lingua.LanguageDetector, media mediaURLServi
 		return true
 	}
 
-	r.parseServer()
-	if ctx.Err() != nil {
-		return true
-	}
-
 	r.parseAvatar(media)
 	return true
 }
@@ -174,38 +171,15 @@ func (r *MatrixRoom) GetOwnServer() string {
 }
 
 // Servers returns all servers from the room object
-func (r *MatrixRoom) Servers() []string {
+func (r *MatrixRoom) AllServers() []string {
 	servers := []string{}
-	if server := utils.ServerFrom(r.ID); server != "" {
+	if server := r.GetOwnServer(); server != "" {
 		servers = append(servers, server)
 	}
-	if server := utils.ServerFrom(r.Alias); server != "" {
-		servers = append(servers, server)
-	}
-	if r.Server == "" {
-		return kit.Uniq(servers)
-	}
-
-	// the server field can contain multiple servers separated by comma
-	if !strings.Contains(r.Server, ",") {
-		return kit.Uniq(append(servers, r.Server))
-	}
-	parts := strings.Split(r.Server, ",")
-	for _, part := range parts {
-		part = strings.TrimSpace(part)
-		if part != "" {
-			servers = append(servers, part)
-		}
+	if len(r.Servers) > 0 {
+		servers = append(servers, r.Servers...)
 	}
 	return kit.Uniq(servers)
-}
-
-// parseServer from room ID
-func (r *MatrixRoom) parseServer() {
-	parts := strings.SplitN(r.ID, ":", 2)
-	if len(parts) > 1 {
-		r.Server = parts[1]
-	}
 }
 
 // parseContact tries to parse contact info from room topic

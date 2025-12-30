@@ -38,7 +38,7 @@ func catalogRoom(dataSvc dataService, matrixSvc matrixService, plausible plausib
 		if room == nil {
 			_, entry := matrixSvc.GetClientRoomSummary(c.Request().Context(), roomIDorAlias, c.QueryParam("via"), true)
 			if entry != nil {
-				room = entry.Convert()
+				room = entry.Convert("")
 				c.Response().Header().Set("X-MRS-MSC3266", "true")
 			}
 		}

@@ -108,7 +108,7 @@ func (v *Validator) isBlockedByTopic(topic string) bool {
 }
 
 // IsRoomAllowed checks if room is allowed
-func (v *Validator) IsRoomAllowed(server string, room *model.MatrixRoom) bool {
+func (v *Validator) IsRoomAllowed(room *model.MatrixRoom) bool {
 	if room.ID == "" || room.Alias == "" {
 		return false
 	}
@@ -118,7 +118,7 @@ func (v *Validator) IsRoomAllowed(server string, room *model.MatrixRoom) bool {
 	if v.block.ByID(room.Alias) {
 		return false
 	}
-	if v.block.ByServer(server) {
+	if v.block.ByServer(room.GetOwnServer()) {
 		return false
 	}
 	if v.isBlockedByTopic(room.Topic) {

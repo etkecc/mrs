@@ -196,7 +196,7 @@ func (m *Moderation) Report(ctx context.Context, fromIP, roomID, reason string, 
 		}
 
 		log.Warn().Msg("room not found in data store, using MSC3266 summary")
-		room = entry.Convert()
+		room = entry.Convert("")
 	}
 
 	serverName := room.GetOwnServer()
@@ -271,7 +271,7 @@ func (m *Moderation) Ban(ctx context.Context, roomID string) error {
 		_, entry := m.matrix.GetClientRoomSummary(ctx, roomID, "", true)
 		if entry != nil {
 			log.Warn().Msg("room not found in data store, using MSC3266 summary")
-			room = entry.Convert()
+			room = entry.Convert("")
 		}
 	}
 

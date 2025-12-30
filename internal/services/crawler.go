@@ -70,7 +70,7 @@ type ValidatorService interface {
 	Domain(server string) bool
 	IsOnline(ctx context.Context, server string) (serverName, serverSoftware, serverVersion string, isOnline bool)
 	IsIndexable(ctx context.Context, server string) bool
-	IsRoomAllowed(server string, room *model.MatrixRoom) bool
+	IsRoomAllowed(room *model.MatrixRoom) bool
 }
 
 type FederationService interface {
@@ -207,7 +207,7 @@ func (m *Crawler) EachRoom(ctx context.Context, handler func(roomID string, data
 
 	toRemove := []string{}
 	m.data.EachRoom(ctx, func(id string, room *model.MatrixRoom) bool {
-		if !m.v.IsRoomAllowed("", room) {
+		if !m.v.IsRoomAllowed(room) {
 			toRemove = append(toRemove, id)
 			return false
 		}
@@ -251,7 +251,7 @@ func (m *Crawler) GetRoom(ctx context.Context, roomIDorAlias string) (*model.Mat
 	if room == nil {
 		return nil, nil
 	}
-	if !m.v.IsRoomAllowed(room.Server, room) {
+	if !m.v.IsRoomAllowed(room) {
 		return nil, nil
 	}
 	return room, nil
@@ -475,8 +475,8 @@ func (m *Crawler) getPublicRooms(ctx context.Context, name string) *kit.List[str
 
 		added += len(resp.Chunk)
 		for _, rdRoom := range resp.Chunk {
-			room := rdRoom.Convert()
-			if !m.v.IsRoomAllowed(name, room) {
+			room := rdRoom.Convert(name)
+			if !m.v.IsRoomAllowed(room) {
 				added--
 				continue
 			}
@@ -491,10 +491,10 @@ func (m *Crawler) getPublicRooms(ctx context.Context, name string) *kit.List[str
 				log.Warn().Err(err).Str("server", name).Str("room", room.ID).Str("alias", room.Alias).Msg("cannot query client directory")
 			}
 			if qDir != nil && len(qDir.Servers) > 0 {
-				room.Server = strings.Join(kit.Uniq(append(room.Servers(), qDir.Servers...)), ",")
+				room.Servers = kit.Uniq(append(room.AllServers(), qDir.Servers...))
 			}
 
-			servers.AddSlice(room.Servers())
+			servers.AddSlice(room.AllServers())
 
 			m.data.AddRoomBatch(ctx, room)
 			m.data.AddRoomMapping(ctx, room.ID, room.Alias) //nolint:errcheck // ignore error
