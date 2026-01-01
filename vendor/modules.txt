@@ -73,7 +73,6 @@ github.com/blevesearch/bleve/v2/analysis/tokenizer/character
 github.com/blevesearch/bleve/v2/analysis/tokenizer/letter
 github.com/blevesearch/bleve/v2/analysis/tokenizer/single
 github.com/blevesearch/bleve/v2/analysis/tokenizer/unicode
-github.com/blevesearch/bleve/v2/analysis/tokenizer/whitespace
 github.com/blevesearch/bleve/v2/document
 github.com/blevesearch/bleve/v2/fusion
 github.com/blevesearch/bleve/v2/geo
@@ -290,7 +289,7 @@ github.com/hashicorp/golang-lru/v2/simplelru
 # github.com/json-iterator/go v1.1.12
 ## explicit; go 1.12
 github.com/json-iterator/go
-# github.com/labstack/echo/v4 v4.14.0
+# github.com/labstack/echo/v4 v4.15.0
 ## explicit; go 1.24.0
 github.com/labstack/echo/v4
 github.com/labstack/echo/v4/middleware
