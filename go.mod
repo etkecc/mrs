@@ -19,7 +19,7 @@ require (
 	github.com/goccy/go-json v0.10.5
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/labstack/echo/v4 v4.14.0
-	github.com/matrix-org/gomatrixserverlib v0.0.0-20251210211621-ffcbbd38fba6
+	github.com/matrix-org/gomatrixserverlib v0.0.0-20260202113659-20c9de33969e
 	github.com/mattevans/postmark-go v1.0.0
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/pemistahl/lingua-go v1.4.0
