@@ -73,7 +73,6 @@ github.com/blevesearch/bleve/v2/analysis/tokenizer/character
 github.com/blevesearch/bleve/v2/analysis/tokenizer/letter
 github.com/blevesearch/bleve/v2/analysis/tokenizer/single
 github.com/blevesearch/bleve/v2/analysis/tokenizer/unicode
-github.com/blevesearch/bleve/v2/analysis/tokenizer/whitespace
 github.com/blevesearch/bleve/v2/document
 github.com/blevesearch/bleve/v2/fusion
 github.com/blevesearch/bleve/v2/geo
@@ -197,7 +196,7 @@ github.com/etkecc/go-healthchecks/v2
 github.com/etkecc/go-kit
 github.com/etkecc/go-kit/template
 github.com/etkecc/go-kit/workpool
-# github.com/etkecc/go-kit/format v0.0.0-20251105163318-01b0981158f1
+# github.com/etkecc/go-kit/format v0.0.0-20260118204309-811567bf450c
 ## explicit; go 1.22
 github.com/etkecc/go-kit/format
 # github.com/etkecc/go-msc1929 v1.2.3
