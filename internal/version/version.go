@@ -1,4 +1,4 @@
-package version
+package version //nolint:var-naming // Package version provides version information for the application.
 
 const (
 	// Version of MRS

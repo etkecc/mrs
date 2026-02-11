@@ -73,7 +73,6 @@ github.com/blevesearch/bleve/v2/analysis/tokenizer/character
 github.com/blevesearch/bleve/v2/analysis/tokenizer/letter
 github.com/blevesearch/bleve/v2/analysis/tokenizer/single
 github.com/blevesearch/bleve/v2/analysis/tokenizer/unicode
-github.com/blevesearch/bleve/v2/analysis/tokenizer/whitespace
 github.com/blevesearch/bleve/v2/document
 github.com/blevesearch/bleve/v2/fusion
 github.com/blevesearch/bleve/v2/geo
@@ -98,8 +97,8 @@ github.com/blevesearch/bleve/v2/search/scorer
 github.com/blevesearch/bleve/v2/search/searcher
 github.com/blevesearch/bleve/v2/size
 github.com/blevesearch/bleve/v2/util
-# github.com/blevesearch/bleve_index_api v1.2.11
-## explicit; go 1.21
+# github.com/blevesearch/bleve_index_api v1.3.1
+## explicit; go 1.24
 github.com/blevesearch/bleve_index_api
 # github.com/blevesearch/geo v0.2.4
 ## explicit; go 1.21.0
@@ -109,7 +108,7 @@ github.com/blevesearch/geo/r2
 github.com/blevesearch/geo/r3
 github.com/blevesearch/geo/s1
 github.com/blevesearch/geo/s2
-# github.com/blevesearch/go-faiss v1.0.26
+# github.com/blevesearch/go-faiss v1.0.27
 ## explicit; go 1.21
 github.com/blevesearch/go-faiss
 # github.com/blevesearch/go-porterstemmer v1.0.3
@@ -118,11 +117,11 @@ github.com/blevesearch/go-porterstemmer
 # github.com/blevesearch/gtreap v0.1.1
 ## explicit; go 1.13
 github.com/blevesearch/gtreap
-# github.com/blevesearch/mmap-go v1.0.4
-## explicit; go 1.13
+# github.com/blevesearch/mmap-go v1.2.0
+## explicit; go 1.24.0
 github.com/blevesearch/mmap-go
-# github.com/blevesearch/scorch_segment_api/v2 v2.3.13
-## explicit; go 1.21
+# github.com/blevesearch/scorch_segment_api/v2 v2.4.1
+## explicit; go 1.24.0
 github.com/blevesearch/scorch_segment_api/v2
 # github.com/blevesearch/segment v0.9.1
 ## explicit; go 1.18
@@ -150,29 +149,29 @@ github.com/blevesearch/stempel/javadata
 # github.com/blevesearch/upsidedown_store_api v1.0.2
 ## explicit; go 1.18
 github.com/blevesearch/upsidedown_store_api
-# github.com/blevesearch/vellum v1.1.0
-## explicit; go 1.21
+# github.com/blevesearch/vellum v1.2.0
+## explicit; go 1.24.0
 github.com/blevesearch/vellum
 github.com/blevesearch/vellum/levenshtein
 github.com/blevesearch/vellum/regexp
 github.com/blevesearch/vellum/utf8
-# github.com/blevesearch/zapx/v11 v11.4.2
+# github.com/blevesearch/zapx/v11 v11.4.3
 ## explicit; go 1.21
 github.com/blevesearch/zapx/v11
-# github.com/blevesearch/zapx/v12 v12.4.2
+# github.com/blevesearch/zapx/v12 v12.4.3
 ## explicit; go 1.21
 github.com/blevesearch/zapx/v12
-# github.com/blevesearch/zapx/v13 v13.4.2
+# github.com/blevesearch/zapx/v13 v13.4.3
 ## explicit; go 1.21
 github.com/blevesearch/zapx/v13
-# github.com/blevesearch/zapx/v14 v14.4.2
+# github.com/blevesearch/zapx/v14 v14.4.3
 ## explicit; go 1.21
 github.com/blevesearch/zapx/v14
-# github.com/blevesearch/zapx/v15 v15.4.2
+# github.com/blevesearch/zapx/v15 v15.4.3
 ## explicit; go 1.21
 github.com/blevesearch/zapx/v15
-# github.com/blevesearch/zapx/v16 v16.2.8
-## explicit; go 1.23
+# github.com/blevesearch/zapx/v16 v16.3.1
+## explicit; go 1.24
 github.com/blevesearch/zapx/v16
 # github.com/buger/jsonparser v1.1.1
 ## explicit; go 1.13
@@ -192,12 +191,12 @@ github.com/etkecc/go-fswatcher
 # github.com/etkecc/go-healthchecks/v2 v2.2.2
 ## explicit; go 1.18
 github.com/etkecc/go-healthchecks/v2
-# github.com/etkecc/go-kit v1.7.6
+# github.com/etkecc/go-kit v1.7.7
 ## explicit; go 1.22
 github.com/etkecc/go-kit
 github.com/etkecc/go-kit/template
 github.com/etkecc/go-kit/workpool
-# github.com/etkecc/go-kit/format v0.0.0-20251105163318-01b0981158f1
+# github.com/etkecc/go-kit/format v0.0.0-20260118204309-811567bf450c
 ## explicit; go 1.22
 github.com/etkecc/go-kit/format
 # github.com/etkecc/go-msc1929 v1.2.3
@@ -207,7 +206,7 @@ github.com/etkecc/go-msc1929
 ## explicit; go 1.17
 github.com/fsnotify/fsnotify
 github.com/fsnotify/fsnotify/internal
-# github.com/getsentry/sentry-go v0.40.0
+# github.com/getsentry/sentry-go v0.42.0
 ## explicit; go 1.23.0
 github.com/getsentry/sentry-go
 github.com/getsentry/sentry-go/attribute
@@ -219,7 +218,7 @@ github.com/getsentry/sentry-go/internal/otel/baggage/internal/baggage
 github.com/getsentry/sentry-go/internal/protocol
 github.com/getsentry/sentry-go/internal/ratelimit
 github.com/getsentry/sentry-go/internal/telemetry
-# github.com/getsentry/sentry-go/zerolog v0.40.0
+# github.com/getsentry/sentry-go/zerolog v0.42.0
 ## explicit; go 1.23.0
 github.com/getsentry/sentry-go/zerolog
 # github.com/ghodss/yaml v1.0.0
@@ -290,7 +289,7 @@ github.com/hashicorp/golang-lru/v2/simplelru
 # github.com/json-iterator/go v1.1.12
 ## explicit; go 1.12
 github.com/json-iterator/go
-# github.com/labstack/echo/v4 v4.14.0
+# github.com/labstack/echo/v4 v4.15.0
 ## explicit; go 1.24.0
 github.com/labstack/echo/v4
 github.com/labstack/echo/v4/middleware
@@ -299,7 +298,7 @@ github.com/labstack/echo/v4/middleware
 github.com/labstack/gommon/bytes
 github.com/labstack/gommon/color
 github.com/labstack/gommon/log
-# github.com/matrix-org/gomatrixserverlib v0.0.0-20251210211621-ffcbbd38fba6
+# github.com/matrix-org/gomatrixserverlib v0.0.0-20260202113659-20c9de33969e
 ## explicit; go 1.23.0
 github.com/matrix-org/gomatrixserverlib
 github.com/matrix-org/gomatrixserverlib/spec
@@ -343,8 +342,8 @@ github.com/rs/zerolog/internal/json
 # github.com/shopspring/decimal v1.4.0
 ## explicit; go 1.10
 github.com/shopspring/decimal
-# github.com/sirupsen/logrus v1.9.3
-## explicit; go 1.13
+# github.com/sirupsen/logrus v1.9.4
+## explicit; go 1.17
 github.com/sirupsen/logrus
 # github.com/swaggo/echo-swagger v1.4.1
 ## explicit; go 1.17
@@ -379,7 +378,7 @@ github.com/valyala/fasttemplate
 # github.com/valyala/histogram v1.2.0
 ## explicit; go 1.12
 github.com/valyala/histogram
-# github.com/yuin/goldmark v1.7.13
+# github.com/yuin/goldmark v1.7.16
 ## explicit; go 1.22
 github.com/yuin/goldmark
 github.com/yuin/goldmark/ast
@@ -402,22 +401,22 @@ go.etcd.io/bbolt/internal/freelist
 # go.yaml.in/yaml/v3 v3.0.4
 ## explicit; go 1.16
 go.yaml.in/yaml/v3
-# golang.org/x/crypto v0.46.0
+# golang.org/x/crypto v0.48.0
 ## explicit; go 1.24.0
 golang.org/x/crypto/acme
 golang.org/x/crypto/acme/autocert
 golang.org/x/crypto/ed25519
-# golang.org/x/exp v0.0.0-20251219203646-944ab1f22d93
+# golang.org/x/exp v0.0.0-20260209203927-2842357ff358
 ## explicit; go 1.24.0
 golang.org/x/exp/constraints
 golang.org/x/exp/maps
 golang.org/x/exp/slices
-# golang.org/x/mod v0.31.0
+# golang.org/x/mod v0.33.0
 ## explicit; go 1.24.0
 golang.org/x/mod/internal/lazyregexp
 golang.org/x/mod/module
 golang.org/x/mod/semver
-# golang.org/x/net v0.48.0
+# golang.org/x/net v0.50.0
 ## explicit; go 1.24.0
 golang.org/x/net/html
 golang.org/x/net/html/atom
@@ -427,15 +426,16 @@ golang.org/x/net/http2/h2c
 golang.org/x/net/http2/hpack
 golang.org/x/net/idna
 golang.org/x/net/internal/httpcommon
+golang.org/x/net/internal/httpsfv
 # golang.org/x/sync v0.19.0
 ## explicit; go 1.24.0
 golang.org/x/sync/errgroup
-# golang.org/x/sys v0.39.0
+# golang.org/x/sys v0.41.0
 ## explicit; go 1.24.0
 golang.org/x/sys/execabs
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/text v0.32.0
+# golang.org/x/text v0.34.0
 ## explicit; go 1.24.0
 golang.org/x/text/cases
 golang.org/x/text/internal
@@ -450,7 +450,7 @@ golang.org/x/text/unicode/norm
 # golang.org/x/time v0.14.0
 ## explicit; go 1.24.0
 golang.org/x/time/rate
-# golang.org/x/tools v0.40.0
+# golang.org/x/tools v0.42.0
 ## explicit; go 1.24.0
 golang.org/x/tools/go/ast/astutil
 golang.org/x/tools/go/buildutil

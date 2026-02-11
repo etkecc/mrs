@@ -27,7 +27,7 @@ func stats(stats statsService) echo.HandlerFunc {
 		sort.Slice(keys, func(i, j int) bool {
 			return keys[i].Before(keys[j])
 		})
-		timeline := []map[string]any{}
+		timeline := make([]map[string]any, 0, len(keys))
 		for _, k := range keys {
 			timeline = append(timeline, map[string]any{
 				"date":    k.Format(time.DateOnly),
