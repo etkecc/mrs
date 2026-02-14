@@ -223,7 +223,6 @@ github.com/getsentry/sentry-go/internal/telemetry
 github.com/getsentry/sentry-go/zerolog
 # github.com/ghodss/yaml v1.0.0
 ## explicit
-github.com/ghodss/yaml
 # github.com/go-openapi/jsonpointer v0.22.4
 ## explicit; go 1.24.0
 github.com/go-openapi/jsonpointer
@@ -293,6 +292,9 @@ github.com/json-iterator/go
 ## explicit; go 1.24.0
 github.com/labstack/echo/v4
 github.com/labstack/echo/v4/middleware
+# github.com/labstack/echo/v5 v5.0.0
+## explicit; go 1.25.0
+github.com/labstack/echo/v5
 # github.com/labstack/gommon v0.4.2
 ## explicit; go 1.18
 github.com/labstack/gommon/bytes
@@ -334,6 +336,9 @@ github.com/oleiade/lane/v2
 ## explicit; go 1.18
 github.com/pemistahl/lingua-go
 github.com/pemistahl/lingua-go/serialization
+# github.com/pkg/errors v0.9.1
+## explicit
+github.com/pkg/errors
 # github.com/rs/zerolog v1.34.0
 ## explicit; go 1.15
 github.com/rs/zerolog
@@ -345,8 +350,11 @@ github.com/shopspring/decimal
 # github.com/sirupsen/logrus v1.9.4
 ## explicit; go 1.17
 github.com/sirupsen/logrus
-# github.com/swaggo/echo-swagger v1.4.1
-## explicit; go 1.17
+# github.com/sv-tools/openapi v0.2.1
+## explicit; go 1.18
+github.com/sv-tools/openapi/spec
+# github.com/swaggo/echo-swagger v1.5.0
+## explicit; go 1.25.0
 github.com/swaggo/echo-swagger
 # github.com/swaggo/files/v2 v2.0.2
 ## explicit; go 1.16
@@ -354,6 +362,9 @@ github.com/swaggo/files/v2
 # github.com/swaggo/swag v1.16.6
 ## explicit; go 1.18
 github.com/swaggo/swag
+# github.com/swaggo/swag/v2 v2.0.0-rc4
+## explicit; go 1.18
+github.com/swaggo/swag/v2
 # github.com/tidwall/gjson v1.18.0
 ## explicit; go 1.12
 github.com/tidwall/gjson
@@ -504,3 +515,6 @@ gopkg.in/yaml.v3
 # mvdan.cc/xurls/v2 v2.6.0
 ## explicit; go 1.22.0
 mvdan.cc/xurls/v2
+# sigs.k8s.io/yaml v1.3.0
+## explicit; go 1.12
+sigs.k8s.io/yaml
