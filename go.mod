@@ -1,8 +1,6 @@
 module github.com/etkecc/mrs
 
-go 1.24.0
-
-toolchain go1.24.5
+go 1.25.0
 
 require (
 	github.com/VictoriaMetrics/metrics v1.40.2
@@ -18,7 +16,8 @@ require (
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/goccy/go-json v0.10.5
 	github.com/hashicorp/golang-lru/v2 v2.0.7
-	github.com/labstack/echo/v4 v4.15.0
+	github.com/labstack/echo/v4 v4.13.4
+	github.com/labstack/echo/v5 v5.0.4
 	github.com/matrix-org/gomatrixserverlib v0.0.0-20260202113659-20c9de33969e
 	github.com/mattevans/postmark-go v1.0.0
 	github.com/microcosm-cc/bluemonday v1.0.27
