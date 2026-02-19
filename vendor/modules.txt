@@ -406,8 +406,8 @@ go.yaml.in/yaml/v3
 golang.org/x/crypto/acme
 golang.org/x/crypto/acme/autocert
 golang.org/x/crypto/ed25519
-# golang.org/x/exp v0.0.0-20260209203927-2842357ff358
-## explicit; go 1.24.0
+# golang.org/x/exp v0.0.0-20260218203240-3dfff04db8fa
+## explicit; go 1.25.0
 golang.org/x/exp/constraints
 golang.org/x/exp/maps
 golang.org/x/exp/slices
