@@ -1,8 +1,6 @@
 module github.com/etkecc/mrs
 
-go 1.24.0
-
-toolchain go1.24.5
+go 1.25.0
 
 require (
 	github.com/VictoriaMetrics/metrics v1.40.2
@@ -28,7 +26,7 @@ require (
 	github.com/swaggo/swag v1.16.6
 	github.com/ziflex/lecho/v3 v3.9.0
 	go.etcd.io/bbolt v1.4.3
-	golang.org/x/exp v0.0.0-20260209203927-2842357ff358
+	golang.org/x/exp v0.0.0-20260218203240-3dfff04db8fa
 	golang.org/x/net v0.50.0
 	golang.org/x/time v0.14.0
 	gopkg.in/yaml.v3 v3.0.1
