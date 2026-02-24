@@ -2,7 +2,7 @@ module github.com/etkecc/mrs
 
 go 1.24.0
 
-toolchain go1.24.5
+toolchain go1.26.0
 
 require (
 	github.com/VictoriaMetrics/metrics v1.40.2
