@@ -57,7 +57,7 @@ func Do(req *http.Request) (*http.Response, error) {
 		client = apm.WrapClient(&http.Client{
 			Timeout: DefaultTimeout,
 			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{ //nolint:gosec // there are _very_ different servers in the federation, so stick to defaults
+				TLSClientConfig: &tls.Config{
 					ServerName: req.Host,
 				},
 			},
@@ -65,6 +65,6 @@ func Do(req *http.Request) (*http.Response, error) {
 		defer client.CloseIdleConnections()
 	}
 
-	resp, err = client.Do(req)
+	resp, err = client.Do(req) //nolint:gosec // the url is verified by caller, no user input
 	return resp, err
 }

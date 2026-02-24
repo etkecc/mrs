@@ -1,4 +1,4 @@
-package metrics //nolint:var-naming // Package metrics provides Prometheus metrics for the application.
+package metrics //nolint:all // Package metrics provides Prometheus metrics for the application.
 
 import (
 	"fmt"

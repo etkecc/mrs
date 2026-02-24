@@ -238,7 +238,7 @@ func (s *Stats) sendWebhook(ctx context.Context) {
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := http.DefaultClient.Do(req) //nolint:gosec // the url is from config, no user input
 	if err != nil {
 		log.Error().Err(err).Msg("webhook sending failed")
 		return
@@ -254,8 +254,8 @@ func (s *Stats) getWebhookText() string {
 	var text strings.Builder
 	text.WriteString("**stats have been collected**\n\n")
 
-	text.WriteString(fmt.Sprintf("* `%d` servers online (`%d` blocked)\n", s.stats.Servers.Online, s.stats.Servers.Blocked))
-	text.WriteString(fmt.Sprintf("* `%d` rooms (`%d` blocked, `%d` reported)\n", s.stats.Rooms.Indexed, s.stats.Rooms.Banned, s.stats.Rooms.Reported))
+	fmt.Fprintf(&text, "* `%d` servers online (`%d` blocked)\n", s.stats.Servers.Online, s.stats.Servers.Blocked)
+	fmt.Fprintf(&text, "* `%d` rooms (`%d` blocked, `%d` reported)\n", s.stats.Rooms.Indexed, s.stats.Rooms.Banned, s.stats.Rooms.Reported)
 	text.WriteString("\n---\n\n")
 
 	discovery := s.stats.Discovery.FinishedAt.Sub(s.stats.Discovery.StartedAt)
@@ -263,10 +263,10 @@ func (s *Stats) getWebhookText() string {
 	indexing := s.stats.Indexing.FinishedAt.Sub(s.stats.Indexing.StartedAt)
 	total := discovery + parsing + indexing
 
-	text.WriteString(fmt.Sprintf("* `%s` took discovery process\n", discovery.String()))
-	text.WriteString(fmt.Sprintf("* `%s` took parsing process\n", parsing.String()))
-	text.WriteString(fmt.Sprintf("* `%s` took indexing process\n", indexing.String()))
-	text.WriteString(fmt.Sprintf("* `%s` total\n", total.String()))
+	fmt.Fprintf(&text, "* `%s` took discovery process\n", discovery.String())
+	fmt.Fprintf(&text, "* `%s` took parsing process\n", parsing.String())
+	fmt.Fprintf(&text, "* `%s` took indexing process\n", indexing.String())
+	fmt.Fprintf(&text, "* `%s` total\n", total.String())
 
 	return text.String()
 }
