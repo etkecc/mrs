@@ -77,11 +77,7 @@ func (s *Server) PublicRooms(ctx context.Context, req *http.Request, rdReq *mode
 		next = offset + len(chunk)
 	}
 
-	var prevBatch string
-	if prev > 0 {
-		prevBatch = strconv.Itoa(prev)
-	}
-
+	prevBatch := strconv.Itoa(prev)
 	var nextBatch string
 	if next > 0 {
 		nextBatch = strconv.Itoa(next)
