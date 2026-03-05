@@ -16,7 +16,8 @@ require (
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/goccy/go-json v0.10.5
 	github.com/hashicorp/golang-lru/v2 v2.0.7
-	github.com/labstack/echo/v4 v4.15.1
+	github.com/labstack/echo/v4 v4.13.4
+	github.com/labstack/echo/v5 v5.0.4
 	github.com/matrix-org/gomatrixserverlib v0.0.0-20260202113659-20c9de33969e
 	github.com/mattevans/postmark-go v1.0.0
 	github.com/microcosm-cc/bluemonday v1.0.27
@@ -75,7 +76,6 @@ require (
 	github.com/gorilla/css v1.0.1 // indirect
 	github.com/hashicorp/go-set/v3 v3.0.1 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/labstack/echo/v5 v5.0.4 // indirect
 	github.com/labstack/gommon v0.4.2 // indirect
 	github.com/matrix-org/util v0.0.0-20221111132719-399730281e66 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
