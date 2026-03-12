@@ -14,7 +14,7 @@ require (
 	github.com/etkecc/go-kit/format v0.0.0-20260118204309-811567bf450c
 	github.com/etkecc/go-msc1929 v1.2.3
 	github.com/fsnotify/fsnotify v1.9.0
-	github.com/goccy/go-json v0.10.5
+	github.com/goccy/go-json v0.10.6
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/labstack/echo/v4 v4.15.1
 	github.com/matrix-org/gomatrixserverlib v0.0.0-20260202113659-20c9de33969e
