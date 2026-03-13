@@ -1,15 +1,19 @@
 package echoSwagger
 
 import (
+	"errors"
 	"html/template"
+	"io"
 	"net/http"
+	"os"
 	"path/filepath"
 	"regexp"
 
-	"github.com/ghodss/yaml"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	swaggerFiles "github.com/swaggo/files/v2"
 	"github.com/swaggo/swag"
+	swagV2 "github.com/swaggo/swag/v2"
+	"sigs.k8s.io/yaml"
 )
 
 // Config stores echoSwagger configuration variables.
@@ -119,7 +123,10 @@ func newConfig(configFns ...func(*Config)) *Config {
 }
 
 // WrapHandler wraps swaggerFiles.Handler and returns echo.HandlerFunc
-var WrapHandler = EchoWrapHandler()
+var (
+	WrapHandler   = EchoWrapHandler()
+	WrapHandlerV3 = EchoWrapHandlerV3()
+)
 
 // EchoWrapHandler wraps `http.Handler` into `echo.HandlerFunc`.
 func EchoWrapHandler(options ...func(*Config)) echo.HandlerFunc {
@@ -130,7 +137,81 @@ func EchoWrapHandler(options ...func(*Config)) echo.HandlerFunc {
 
 	var re = regexp.MustCompile(`^(.*/)([^?].*)?[?|.]*$`)
 
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
+		if c.Request().Method != http.MethodGet {
+			return c.String(http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed))
+		}
+
+		matches := re.FindStringSubmatch(c.Request().RequestURI)
+		path := matches[2]
+
+		switch filepath.Ext(path) {
+		case ".html":
+			c.Response().Header().Set("Content-Type", "text/html; charset=utf-8")
+		case ".css":
+			c.Response().Header().Set("Content-Type", "text/css; charset=utf-8")
+		case ".js":
+			c.Response().Header().Set("Content-Type", "application/javascript")
+		case ".json":
+			c.Response().Header().Set("Content-Type", "application/json; charset=utf-8")
+		case ".yaml":
+			c.Response().Header().Set("Content-Type", "text/plain; charset=utf-8")
+		case ".png":
+			c.Response().Header().Set("Content-Type", "image/png")
+		}
+
+		switch path {
+		case "":
+			return c.Redirect(http.StatusMovedPermanently, matches[1]+"/"+"index.html")
+		case "index.html":
+			pr, pw := io.Pipe()
+			go func() {
+				defer pw.Close()
+				_ = index.Execute(pw, config)
+			}()
+			return c.Stream(http.StatusOK, "text/html; charset=utf-8", pr)
+		case "doc.json":
+			doc, err := swag.ReadDoc(config.InstanceName)
+			if err != nil {
+				return c.String(http.StatusInternalServerError, err.Error())
+			}
+			return c.String(http.StatusOK, doc)
+		case "doc.yaml":
+			jsonString, err := swag.ReadDoc(config.InstanceName)
+			if err != nil {
+				return c.String(http.StatusInternalServerError, err.Error())
+			}
+			doc, err := yaml.JSONToYAML([]byte(jsonString))
+			if err != nil {
+				return c.String(http.StatusInternalServerError, err.Error())
+			}
+			return c.String(http.StatusOK, string(doc))
+		}
+		c.Request().URL.Path = matches[2]
+
+		f, err := swaggerFiles.FS.Open(matches[2])
+		if errors.Is(err, os.ErrNotExist) {
+			// If the file is not found, return 404
+			return c.String(http.StatusNotFound, http.StatusText(http.StatusNotFound))
+		} else if err != nil {
+			return c.String(http.StatusNotFound, err.Error())
+		}
+		defer f.Close()
+
+		return c.Stream(http.StatusOK, c.Response().Header().Get("Content-Type"), f)
+	}
+}
+
+// EchoWrapHandler wraps `http.Handler` into `echo.HandlerFunc`.
+func EchoWrapHandlerV3(options ...func(*Config)) echo.HandlerFunc {
+	config := newConfig(options...)
+
+	// create a template with name
+	index, _ := template.New("swagger_index.html").Parse(indexTemplate)
+
+	var re = regexp.MustCompile(`^(.*/)([^?].*)?[?|.]*$`)
+
+	return func(c *echo.Context) error {
 		if c.Request().Method != http.MethodGet {
 			return echo.NewHTTPError(http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed))
 		}
@@ -155,38 +236,32 @@ func EchoWrapHandler(options ...func(*Config)) echo.HandlerFunc {
 
 		response := c.Response()
 		// This check fixes an error introduced here: https://github.com/labstack/echo/blob/8da8e161380fd926d4341721f0328f1e94d6d0a2/response.go#L86-L88
-		if _, ok := response.Writer.(http.Flusher); ok {
-			defer response.Flush()
+		if flusher, ok := response.(http.Flusher); ok {
+			defer flusher.Flush()
 		}
 
 		switch path {
 		case "":
 			_ = c.Redirect(http.StatusMovedPermanently, matches[1]+"/"+"index.html")
 		case "index.html":
-			_ = index.Execute(c.Response().Writer, config)
+			_ = index.Execute(c.Response(), config)
 		case "doc.json":
-			doc, err := swag.ReadDoc(config.InstanceName)
+			doc, err := swagV2.ReadDoc(config.InstanceName)
 			if err != nil {
-				c.Error(err)
-
-				return nil
+				return c.String(http.StatusInternalServerError, err.Error())
 			}
 
-			_, _ = c.Response().Writer.Write([]byte(doc))
+			_, _ = c.Response().Write([]byte(doc))
 		case "doc.yaml":
-			jsonString, err := swag.ReadDoc(config.InstanceName)
+			jsonString, err := swagV2.ReadDoc(config.InstanceName)
 			if err != nil {
-				c.Error(err)
-
-				return nil
+				return c.String(http.StatusInternalServerError, err.Error())
 			}
 			doc, err := yaml.JSONToYAML([]byte(jsonString))
 			if err != nil {
-				c.Error(err)
-
-				return nil
+				return c.String(http.StatusInternalServerError, err.Error())
 			}
-			_, _ = c.Response().Writer.Write(doc)
+			_, _ = c.Response().Write(doc)
 		default:
 			c.Request().URL.Path = matches[2]
 			http.FileServer(http.FS(swaggerFiles.FS)).ServeHTTP(c.Response(), c.Request())
