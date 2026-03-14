@@ -22,7 +22,7 @@ require (
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/pemistahl/lingua-go v1.4.0
 	github.com/rs/zerolog v1.34.0
-	github.com/swaggo/echo-swagger v1.4.1
+	github.com/swaggo/echo-swagger v1.5.2
 	github.com/swaggo/swag v1.16.6
 	github.com/ziflex/lecho/v3 v3.10.0
 	go.etcd.io/bbolt v1.4.3
