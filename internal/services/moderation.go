@@ -154,7 +154,7 @@ func (m *Moderation) sendWebhook(ctx context.Context, room *model.MatrixRoom, se
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	resp, err := http.DefaultClient.Do(req) //nolint:gosec // the url is from config, no user input
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}

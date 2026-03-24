@@ -87,6 +87,9 @@ type Index interface {
 	// Returns all vectors with distance < radius.
 	RangeSearch(x []float32, radius float32) (*RangeSearchResult, error)
 
+	// DistCompute computes the distance between the query vector and the vectors specified by ids.
+	DistCompute(x []float32, labels []int64) ([]float32, error)
+
 	// Reset removes all vectors from the index.
 	Reset() error
 
@@ -167,7 +170,7 @@ func (idx *faissIndex) ObtainClusterVectorCountsFromIVFIndex(includedVectors Sel
 	// Calling the C function to populate listCount
 	// with the count of vectors per cluster, considering only
 	// the vectors specified in the include selector.
-	if c := C.faiss_ivf_list_vector_count(
+	if c := C.faiss_IndexIVF_list_vector_count(
 		ivfPtr,
 		(*C.idx_t)(unsafe.Pointer(&listCount[0])),
 		C.size_t(nlist),
@@ -204,7 +207,7 @@ func (idx *faissIndex) ObtainClustersWithDistancesFromIVFIndex(x []float32, incl
 
 	n := len(x) / idx.D()
 
-	if c := C.faiss_Search_closest_eligible_centroids(
+	if c := C.faiss_IndexIVF_search_closest_eligible_centroids(
 		ivfPtr,
 		(C.idx_t)(n),
 		(*C.float)(&x[0]),
@@ -490,6 +493,16 @@ func (idx *faissIndex) RangeSearch(x []float32, radius float32) (
 		return nil, getLastError()
 	}
 	return &RangeSearchResult{rsr}, nil
+}
+
+func (idx *faissIndex) DistCompute(queryData []float32, ids []int64) ([]float32, error) {
+	distances := make([]float32, len(ids))
+	if c := C.faiss_Index_dist_compute(idx.idx, (*C.float)(&queryData[0]),
+		(*C.idx_t)(&ids[0]), (C.size_t)(len(ids)), (*C.float)(&distances[0])); c != 0 {
+		return nil, getLastError()
+	}
+
+	return distances, nil
 }
 
 func (idx *faissIndex) Reset() error {

@@ -238,7 +238,7 @@ func (s *Stats) sendWebhook(ctx context.Context) {
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
-	resp, err := http.DefaultClient.Do(req) //nolint:gosec // the url is from config, no user input
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Error().Err(err).Msg("webhook sending failed")
 		return

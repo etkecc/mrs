@@ -1,4 +1,4 @@
-package version //nolint:all // Package version provides version information for the application.
+package version
 
 const (
 	// Version of MRS
