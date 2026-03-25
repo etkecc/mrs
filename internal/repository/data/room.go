@@ -55,8 +55,8 @@ func (d *Data) SetBiggestRooms(ctx context.Context, ids []string) error {
 func (d *Data) GetBiggestRooms(ctx context.Context, limit, offset int) []*model.MatrixRoom {
 	log := apm.Log(ctx)
 
-	start := []byte(fmt.Sprintf("%06d", offset))
-	end := []byte(fmt.Sprintf("%06d", limit))
+	start := []byte(fmt.Sprintf("%06d", offset+1))
+	end := []byte(fmt.Sprintf("%06d", offset+limit))
 	rooms := []*model.MatrixRoom{}
 
 	d.db.View(func(tx *bbolt.Tx) error { //nolint:errcheck // that's ok

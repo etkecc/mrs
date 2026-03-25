@@ -55,7 +55,7 @@ func (s *Server) PublicRooms(ctx context.Context, req *http.Request, rdReq *mode
 		limit = MatrixSearchLimit
 	}
 	if limit > MatrixSearchLimit {
-		limit = s.cfg.Get().Search.Defaults.Limit
+		limit = MatrixSearchLimit
 	}
 	offset := kit.StringToInt(rdReq.Since)
 	entries, total, err := s.search.Search(ctx, req, rdReq.Filter.GenericSearchTerm, "", rdReq.Filter.RoomTypes, limit, offset)

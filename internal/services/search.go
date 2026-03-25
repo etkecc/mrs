@@ -165,13 +165,14 @@ func (s *Search) addHighlights(originServer string, entries []*model.Entry) []*m
 func (s *Search) getEmptyQueryResults(ctx context.Context, roomTypes []string, limit, offset int) (entries []*model.Entry, length int) {
 	rooms := s.data.GetBiggestRooms(ctx, limit, offset)
 	entries = make([]*model.Entry, 0, len(rooms))
+	total := s.stats.Get().Rooms.Indexed
 
 	// If no filter provided, return both rooms and spaces as-is.
 	if len(roomTypes) == 0 {
 		for _, room := range rooms {
 			entries = append(entries, room.Entry())
 		}
-		return entries, len(entries)
+		return entries, total
 	}
 
 	includeRegular := false
@@ -195,7 +196,7 @@ func (s *Search) getEmptyQueryResults(ctx context.Context, roomTypes []string, l
 		}
 	}
 
-	return entries, len(entries)
+	return entries, total
 }
 
 // removeBlocked removes results from blocked servers from the search results
