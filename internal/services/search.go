@@ -45,6 +45,7 @@ var SearchFieldsBoost = map[string]float64{
 	"name":     10,
 	"server":   10,
 	"alias":    5,
+	"topic":    3,
 }
 
 // NewSearch creates new search service
@@ -104,7 +105,14 @@ func (s *Search) Search(ctx context.Context, req *http.Request, q, sortBy string
 	if builtQuery == nil {
 		return []*model.Entry{}, 0, nil
 	}
-	results, total, err := s.repo.Search(ctx, builtQuery, limit, offset, kit.StringToSlice(sortBy, s.cfg.Get().Search.Defaults.SortBy))
+	sort := kit.StringToSlice(sortBy, s.cfg.Get().Search.Defaults.SortBy)
+	if q == "" {
+		// Filter-only queries (e.g. "language:EN") have equal _score for all
+		// matches. Append -members as a deterministic tiebreaker so pagination
+		// stays stable.
+		sort = append(sort, "-members")
+	}
+	results, total, err := s.repo.Search(ctx, builtQuery, limit, offset, sort)
 	results = s.addHighlights(originServer, s.removeBlocked(results))
 	log.Info().
 		Err(err).
@@ -163,20 +171,37 @@ func (s *Search) addHighlights(originServer string, entries []*model.Entry) []*m
 }
 
 func (s *Search) getEmptyQueryResults(ctx context.Context, roomTypes []string, limit, offset int) (entries []*model.Entry, length int) {
-	rooms := s.data.GetBiggestRooms(ctx, limit, offset)
-	entries = make([]*model.Entry, 0, len(rooms))
 	total := s.stats.Get().Rooms.Indexed
 
-	// If no filter provided, return both rooms and spaces as-is.
 	if len(roomTypes) == 0 {
-		for _, room := range rooms {
-			entries = append(entries, room.Entry())
-		}
-		return entries, total
+		return s.biggestRoomsEntries(ctx, limit, offset), total
 	}
 
-	includeRegular := false
-	allowed := make(map[string]struct{}, len(roomTypes))
+	includeRegular, allowed := parseRoomTypeFilter(roomTypes)
+	return s.filteredBiggestRoomsEntries(ctx, includeRegular, allowed, limit, offset), total
+}
+
+func (s *Search) roomTypeMatches(roomType string, includeRegular bool, allowed map[string]struct{}) bool {
+	if roomType == "" {
+		return includeRegular
+	}
+	_, ok := allowed[roomType]
+	return ok
+}
+
+// biggestRoomsEntries converts the paginated biggest-rooms slice into search entries.
+func (s *Search) biggestRoomsEntries(ctx context.Context, limit, offset int) []*model.Entry {
+	rooms := s.data.GetBiggestRooms(ctx, limit, offset)
+	entries := make([]*model.Entry, 0, len(rooms))
+	for _, room := range rooms {
+		entries = append(entries, room.Entry())
+	}
+	return entries
+}
+
+// parseRoomTypeFilter splits the requested room types into regular-room and typed-room filters.
+func parseRoomTypeFilter(roomTypes []string) (includeRegular bool, allowed map[string]struct{}) {
+	allowed = make(map[string]struct{}, len(roomTypes))
 	for _, rt := range roomTypes {
 		if rt == "" {
 			includeRegular = true
@@ -184,19 +209,61 @@ func (s *Search) getEmptyQueryResults(ctx context.Context, roomTypes []string, l
 		}
 		allowed[rt] = struct{}{}
 	}
+	return includeRegular, allowed
+}
 
+// filteredBiggestRoomsEntries paginates the biggest-rooms list and keeps only rooms matching the room type filter.
+func (s *Search) filteredBiggestRoomsEntries(
+	ctx context.Context,
+	includeRegular bool,
+	allowed map[string]struct{},
+	limit, offset int,
+) []*model.Entry {
+	entries := make([]*model.Entry, 0, limit)
+	skipped := 0
+	for fetchOffset := 0; len(entries) < limit; fetchOffset += emptyQueryBatchSize(limit) {
+		rooms := s.data.GetBiggestRooms(ctx, emptyQueryBatchSize(limit), fetchOffset)
+		if len(rooms) == 0 {
+			break
+		}
+		entries, skipped = s.appendFilteredRoomEntries(entries, rooms, includeRegular, allowed, limit, offset, skipped)
+	}
+	return entries
+}
+
+// emptyQueryBatchSize expands filtered empty-query scans to reduce repeated data fetches.
+func emptyQueryBatchSize(limit int) int {
+	batchSize := limit * 5
+	if batchSize < 50 {
+		return 50
+	}
+	return batchSize
+}
+
+// appendFilteredRoomEntries applies room-type filtering and offset skipping to a fetched room batch.
+func (s *Search) appendFilteredRoomEntries(
+	entries []*model.Entry,
+	rooms []*model.MatrixRoom,
+	includeRegular bool,
+	allowed map[string]struct{},
+	limit, offset, skipped int,
+) (updatedEntries []*model.Entry, updatedSkipped int) {
+	updatedEntries = entries
+	updatedSkipped = skipped
 	for _, room := range rooms {
-		// regular rooms have empty RoomType
-		if room.RoomType == "" && includeRegular {
-			entries = append(entries, room.Entry())
+		if !s.roomTypeMatches(room.RoomType, includeRegular, allowed) {
 			continue
 		}
-		if _, ok := allowed[room.RoomType]; ok {
-			entries = append(entries, room.Entry())
+		if updatedSkipped < offset {
+			updatedSkipped++
+			continue
+		}
+		updatedEntries = append(updatedEntries, room.Entry())
+		if len(updatedEntries) >= limit {
+			break
 		}
 	}
-
-	return entries, total
+	return updatedEntries, updatedSkipped
 }
 
 // removeBlocked removes results from blocked servers from the search results
@@ -250,44 +317,70 @@ func (s *Search) matchFields(queryStr string) (sanitizedQuery string, fields map
 }
 
 func (s *Search) getSearchQuery(q string, fields map[string]string, roomTypes []string, fuzzy bool) query.Query {
-	// base/standard query
 	if s.shouldReject(q, fields) {
 		return nil
 	}
 	if q == "" {
-		return s.getFieldsQuery(fields)
+		return combineQueries(s.getFieldsQuery(fields), s.newRoomTypeQuery(roomTypes))
 	}
 
+	mainQuery := query.Query(bleve.NewDisjunctionQuery(s.buildTextSearchQueries(q, fuzzy)...))
+	mainQuery = combineQueries(mainQuery, s.newRoomTypeQuery(roomTypes))
+	return combineQueries(mainQuery, s.getFieldsQuery(fields))
+}
+
+// combineQueries joins optional query fragments without wrapping nil operands.
+func combineQueries(left, right query.Query) query.Query {
+	switch {
+	case left == nil:
+		return right
+	case right == nil:
+		return left
+	default:
+		return bleve.NewConjunctionQuery(left, right)
+	}
+}
+
+// buildTextSearchQueries assembles match, prefix, and fuzzy clauses for free-text search.
+func (s *Search) buildTextSearchQueries(q string, fuzzy bool) []query.Query {
 	phrase := strings.Contains(q, " ")
-	queries := []query.Query{
-		s.newMatchQuery(q, "name", phrase),
-		s.newMatchQuery(q, "alias", phrase),
-		s.newMatchQuery(q, "topic", phrase),
-		s.newMatchQuery(q, "server", phrase),
+	words := strings.Fields(q)
+	searchFields := []string{"name", "alias", "topic", "server"}
+	queries := make([]query.Query, 0, len(searchFields)*(2+len(words)*2))
+
+	for _, field := range searchFields {
+		queries = append(queries, s.newMatchQuery(q, field, false))
+		if phrase {
+			queries = append(queries, s.newMatchQuery(q, field, true))
+		}
 	}
 
+	queries = s.appendPrefixQueries(queries, words, searchFields)
 	if fuzzy {
-		queries = append(queries,
-			s.newFuzzyQuery(q, "name"),
-			s.newFuzzyQuery(q, "alias"),
-			s.newFuzzyQuery(q, "topic"),
-			s.newFuzzyQuery(q, "server"),
-		)
+		queries = s.appendFuzzyQueries(queries, words, searchFields)
 	}
 
-	var mainQ query.Query
-	mainQ = bleve.NewDisjunctionQuery(queries...)
-	// optional room types
-	roomTypeQ := s.newRoomTypeQuery(roomTypes)
-	if roomTypeQ != nil {
-		mainQ = bleve.NewConjunctionQuery(mainQ, roomTypeQ)
+	return queries
+}
+
+// appendPrefixQueries adds prefix clauses for each token/field combination.
+func (s *Search) appendPrefixQueries(queries []query.Query, words, searchFields []string) []query.Query {
+	for _, word := range words {
+		for _, field := range searchFields {
+			queries = append(queries, s.newPrefixQuery(word, field))
+		}
 	}
-	// optional fields, like "language:EN"
-	fieldsQ := s.getFieldsQuery(fields)
-	if fieldsQ == nil {
-		return mainQ
+	return queries
+}
+
+// appendFuzzyQueries adds fuzzy clauses for each token/field combination.
+func (s *Search) appendFuzzyQueries(queries []query.Query, words, searchFields []string) []query.Query {
+	for _, word := range words {
+		for _, field := range searchFields {
+			queries = append(queries, s.newFuzzyQuery(word, field))
+		}
 	}
-	return bleve.NewConjunctionQuery(mainQ, fieldsQ)
+	return queries
 }
 
 func (s *Search) getFieldsQuery(fields map[string]string) query.Query {
@@ -343,7 +436,11 @@ func (s *Search) newMatchQuery(match, field string, phrase bool) bleveQuery {
 		searchQuery = bleve.NewMatchQuery(match)
 	}
 	searchQuery.SetField(field)
-	searchQuery.SetBoost(SearchFieldsBoost[field])
+	boost := SearchFieldsBoost[field]
+	if phrase {
+		boost *= 2 // reward exact phrase ordering
+	}
+	searchQuery.SetBoost(boost)
 
 	return searchQuery
 }
@@ -399,6 +496,14 @@ func (s *Search) newTermQuery(match, field string) bleveQuery {
 
 func (s *Search) newFuzzyQuery(match, field string) bleveQuery {
 	searchQuery := bleve.NewFuzzyQuery(match)
+	searchQuery.SetField(field)
+	searchQuery.SetBoost(SearchFieldsBoost[field])
+
+	return searchQuery
+}
+
+func (s *Search) newPrefixQuery(match, field string) bleveQuery {
+	searchQuery := bleve.NewPrefixQuery(strings.ToLower(match))
 	searchQuery.SetField(field)
 	searchQuery.SetBoost(SearchFieldsBoost[field])
 
