@@ -76,6 +76,6 @@ func (p *Plausible) Track(ctx context.Context, evt *model.AnalyticsEvent) {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusAccepted {
-		log.Error().Int("status", resp.StatusCode).Msg("unexpected plausible response")
+		log.Warn().Int("status", resp.StatusCode).Msg("unexpected plausible response")
 	}
 }
