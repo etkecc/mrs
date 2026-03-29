@@ -163,12 +163,15 @@ func (s *Server) getURL(ctx context.Context, serverName string, discover bool) (
 	}
 
 	fromSRV, err := s.parseSRV(ctx, "matrix-fed", serverName)
-	if err == nil {
-		return s.dcrURL(ctx, serverName, "https://"+fromSRV, fromSRV, discover)
+	if err != nil {
+		log.Warn().Err(err).Msg("failed to parse SRV matrix-fed, trying SRV matrix")
+		fromSRV, err := s.parseSRV(ctx, "matrix", serverName)
+		if err != nil {
+			log.Warn().Err(err).Msg("failed to parse SRV matrix, falling back to port 8448")
+			return s.dcrURL(ctx, serverName, "https://"+serverName+":8448", serverName, discover)
+		}
 	}
-	log.Warn().Err(err).Msg("failed to parse SRV matrix-fed")
-
-	return s.dcrURL(ctx, serverName, "https://"+serverName+":8448", serverName, discover)
+	return s.dcrURL(ctx, serverName, "https://"+fromSRV, fromSRV, discover)
 }
 
 // getURLFromWK tries to get Federation API URL from /.well-known/matrix/server
@@ -188,8 +191,12 @@ func (s *Server) getURLFromWK(ctx context.Context, serverName string, discover b
 	// if it doesn't, try discovering port via SRV
 	fromSRV, err := s.parseSRV(ctx, "matrix-fed", fromWellKnown)
 	if err != nil {
-		// if SRV fails, assume default port 8448
-		return s.dcrURL(ctx, serverName, "https://"+fromWellKnown+":8448", fromWellKnown, discover)
+		// if modern SRV is unavailable, try legacy SRV
+		fromSRV, err = s.parseSRV(ctx, "matrix", fromWellKnown)
+		if err != nil {
+			// if legacy SRV fails, assume default port 8448
+			return s.dcrURL(ctx, serverName, "https://"+fromWellKnown+":8448", fromWellKnown, discover)
+		}
 	}
 
 	fromSRVHost := strings.Split(fromSRV, ":")[0]
