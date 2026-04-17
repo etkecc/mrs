@@ -3,7 +3,7 @@ module github.com/etkecc/mrs
 go 1.25.0
 
 require (
-	github.com/VictoriaMetrics/metrics v1.42.0
+	github.com/VictoriaMetrics/metrics v1.43.2
 	github.com/blevesearch/bleve/v2 v2.5.7
 	github.com/blevesearch/bleve_index_api v1.3.4
 	github.com/etkecc/go-apm v1.3.5
