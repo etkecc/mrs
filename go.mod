@@ -26,7 +26,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/swaggo/echo-swagger v1.4.1
 	github.com/swaggo/swag v1.16.6
-	github.com/ziflex/lecho/v3 v3.10.0
+	github.com/ziflex/lecho/v3 v3.11.0
 	go.etcd.io/bbolt v1.4.3
 	golang.org/x/exp v0.0.0-20260312153236-7ab1446f8b90
 	golang.org/x/net v0.52.0
