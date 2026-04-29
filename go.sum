@@ -62,6 +62,8 @@ github.com/etkecc/go-fswatcher v1.0.1 h1:n9hqtjzTS3ETb9hcZe1EqYA1lkkhlzZlztu3hXw
 github.com/etkecc/go-fswatcher v1.0.1/go.mod h1:O5TODJ9z6Qb7X+snqHbB+F0Pah6G497Wdg0SFE/UYpE=
 github.com/etkecc/go-healthchecks/v2 v2.2.2 h1:YV7e+Ga8JY3aZX4Qf6Q1Ca+DnqbT5Drjli3PufB4J1g=
 github.com/etkecc/go-healthchecks/v2 v2.2.2/go.mod h1:IowWGN4F6By6z0eh63+639OscylgtdvT9ITjfN6hnZA=
+github.com/etkecc/go-healthchecks/v2 v2.3.0 h1:k64M9ECZcsvaXyHsl27GLOx5rbKd7AU4s1HhDT8bKVg=
+github.com/etkecc/go-healthchecks/v2 v2.3.0/go.mod h1:AUmYQYLo8f43aZlx6/4LKk747E9/qHN99vH6HputFFo=
 github.com/etkecc/go-kit v1.7.7 h1:O8tMh3TIMZ/alAlBQckfPnzPonqR94xErQdpidzN1kc=
 github.com/etkecc/go-kit v1.7.7/go.mod h1:ZFeQrvlMIV6OeZ4XJ090kkyNYRRN4+5wcg1vjnOKEGI=
 github.com/etkecc/go-kit/format v0.0.0-20260118204309-811567bf450c h1:DAbA4ny0d7Y0hnsFKB0bD+pDGgRaL+86QTDacGFckuc=

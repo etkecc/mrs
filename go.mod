@@ -10,7 +10,7 @@ require (
 	github.com/etkecc/go-crontab v1.2.1
 	github.com/etkecc/go-echo-basic-auth v1.4.0
 	github.com/etkecc/go-fswatcher v1.0.1
-	github.com/etkecc/go-healthchecks/v2 v2.2.2
+	github.com/etkecc/go-healthchecks/v2 v2.3.0
 	github.com/etkecc/go-kit v1.7.7
 	github.com/etkecc/go-kit/format v0.0.0-20260118204309-811567bf450c
 	github.com/etkecc/go-msc1929 v1.2.3
