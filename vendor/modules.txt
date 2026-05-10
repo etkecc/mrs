@@ -194,8 +194,8 @@ github.com/etkecc/go-fswatcher
 # github.com/etkecc/go-healthchecks/v2 v2.2.2
 ## explicit; go 1.18
 github.com/etkecc/go-healthchecks/v2
-# github.com/etkecc/go-kit v1.7.7
-## explicit; go 1.22
+# github.com/etkecc/go-kit v1.9.4
+## explicit; go 1.25.0
 github.com/etkecc/go-kit
 github.com/etkecc/go-kit/template
 github.com/etkecc/go-kit/workpool
