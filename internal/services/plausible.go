@@ -71,7 +71,7 @@ func (p *Plausible) Track(ctx context.Context, evt *model.AnalyticsEvent) {
 
 	resp, err := utils.Do(req)
 	if err != nil {
-		log.Error().Err(err).Msg("cannot send plausible request")
+		log.Warn().Err(err).Msg("cannot send plausible request")
 		return
 	}
 	defer resp.Body.Close()

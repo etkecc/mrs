@@ -2,11 +2,12 @@ package msc1929
 
 import (
 	"net/mail"
+	"net/url"
 	"regexp"
 )
 
-// regexMXID is a regex to validate Matrix IDs, according to the https://spec.matrix.org/v1.14/appendices/#user-identifiers
-var regexMXID = regexp.MustCompile(`^@[a-z0-9._=\/+\-]+:[^:]+$`)
+// regexMXID is a regex to validate Matrix IDs, according to the https://spec.matrix.org/v1.18/appendices/#user-identifiers
+var regexMXID = regexp.MustCompile(`^@[a-z0-9._=/+\-]+:[^:]+$`)
 
 // uniq removes duplicates from slice
 func uniq(slice []string) []string {
@@ -22,6 +23,29 @@ func uniq(slice []string) []string {
 	return result
 }
 
+// sanitizeContact sanitizes a single contact in-place
+func sanitizeContact(c *Contact) {
+	if c.Email != "" {
+		email, err := mail.ParseAddress(c.Email)
+		if err == nil && email != nil {
+			c.Email = email.Address
+		} else {
+			c.Email = ""
+		}
+	}
+	if c.MatrixID != "" {
+		if !regexMXID.MatchString(c.MatrixID) {
+			c.MatrixID = ""
+		}
+	}
+	if c.PGPKey != "" {
+		u, err := url.Parse(c.PGPKey)
+		if err != nil || u.Scheme == "" {
+			c.PGPKey = ""
+		}
+	}
+}
+
 // sanitizeContacts sanitizes a list of contacts by removing invalid email addresses and matrix IDs
 func sanitizeContacts(rawContacts []*Contact) []*Contact {
 	if len(rawContacts) == 0 {
@@ -30,18 +54,7 @@ func sanitizeContacts(rawContacts []*Contact) []*Contact {
 
 	contacts := []*Contact{}
 	for _, contact := range rawContacts {
-		if contact.Email != "" {
-			if email, _ := mail.ParseAddress(contact.Email); email != nil {
-				contact.Email = email.Address
-			} else {
-				contact.Email = ""
-			}
-		}
-		if contact.MatrixID != "" {
-			if !regexMXID.MatchString(contact.MatrixID) {
-				contact.MatrixID = ""
-			}
-		}
+		sanitizeContact(contact)
 		if !contact.IsEmpty() {
 			contacts = append(contacts, contact)
 		}

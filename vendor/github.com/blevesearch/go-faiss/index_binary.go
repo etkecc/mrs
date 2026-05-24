@@ -6,18 +6,33 @@ package faiss
 #include <faiss/c_api/Index_c_ex.h>
 #include <faiss/c_api/IndexBinary_c_ex.h>
 #include <faiss/c_api/IndexBinaryIVF_c_ex.h>
+#include <faiss/c_api/IndexBinaryIVF_c.h>
 #include <faiss/c_api/index_factory_c.h>
 */
 import "C"
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"unsafe"
 )
+
+var reflectStaticSizeFaissBinaryIndex uint64
+
+func init() {
+	var b faissBinaryIndex
+	reflectStaticSizeFaissBinaryIndex = uint64(reflect.TypeOf(b).Size())
+}
 
 type BinaryIndex interface {
 	// D returns the dimension of the indexed vectors.
 	D() int
+
+	// MetricType returns the metric type of the index.
+	MetricType() int
+
+	// Ntotal returns the total number of vectors currently stored in the index.
+	Ntotal() int64
 
 	// set the direct map type for IVF indexes.
 	// 0 for No Map
@@ -40,16 +55,23 @@ type BinaryIndex interface {
 	// adds vectors to the index
 	Add(xb []uint8) error
 
+	// sets the qunatizers from the source index, supposed to be used only for
+	// BIVF indexes and returns error otherwise
+	SetQuantizers(srcIndex BinaryIndex) error
+
+	// merges another binary index into this one, currently applicable only for
+	// IVF indexes returns an error
+	MergeFrom(other BinaryIndex, add_id int64) error
+
 	// queries the index with the vectors in xb
 	// returns the IDs of the k nearest neighbors for each query vector and
 	// their corresponding distances
 	Search(xb []uint8, k int64) (distances []int32, labels []int64, err error)
 
-	SearchWithoutIDs(xb []uint8, k int64, exclude Selector,
-		params json.RawMessage) (distances []int32, labels []int64, err error)
-
-	SearchWithIDs(xb []uint8, k int64, include Selector,
-		params json.RawMessage) (distances []int32, labels []int64, err error)
+	// SearchWithOptions performs a search with additional optional constraints.
+	// - Selector can be used to restrict the search to a subset of the indexed vectors based on their IDs.
+	// - params is a JSON object that can contain additional search parameters specific to the index type, such as IVF search parameters.
+	SearchWithOptions(xb []uint8, k int64, sel Selector, params json.RawMessage) (distances []int32, labels []int64, err error)
 
 	// returns a slice where each index corresponds to a cluster in an IVF
 	// index, and the value at each index is the count of vectors in that
@@ -74,12 +96,14 @@ type BinaryIndex interface {
 		centroidsToProbe int, xb []uint8, k int64, include Selector,
 		params json.RawMessage) ([]int32, []int64, error)
 
-	// returns the total size of the index in bytes
+	// Size estimates the memory footprint of the index in bytes
+	// if the underlying faiss index is memory-mapped and not fully loaded into memory.
 	Size() uint64
 
 	// frees the memory associated with the index
 	Close()
 
+	// bPtr returns a pointer to the underlying C index struct.
 	bPtr() *C.FaissIndexBinary
 }
 
@@ -95,11 +119,19 @@ func (b *faissBinaryIndex) D() int {
 	return int(C.faiss_IndexBinary_d(b.bIdx))
 }
 
+func (b *faissBinaryIndex) MetricType() int {
+	return int(C.faiss_IndexBinary_metric_type(b.bIdx))
+}
+
+func (b *faissBinaryIndex) Ntotal() int64 {
+	return int64(C.faiss_IndexBinary_ntotal(b.bIdx))
+}
+
 func (b *faissBinaryIndex) SetDirectMap(mapType int) (err error) {
 	// Applicable only to IVF indexes
 	ivfPtrBinary := C.faiss_IndexBinaryIVF_cast(b.bIdx)
 	if ivfPtrBinary == nil {
-		return fmt.Errorf("index is not of ivf type")
+		return errNotBIVFIndex
 	}
 	if c := C.faiss_IndexBinaryIVF_set_direct_map(
 		ivfPtrBinary,
@@ -172,33 +204,16 @@ func (b *faissBinaryIndex) Search(xb []uint8, k int64) (
 	return distances, labels, nil
 }
 
-func (b *faissBinaryIndex) SearchWithoutIDs(xb []uint8, k int64, exclude Selector,
-	params json.RawMessage) ([]int32, []int64, error) {
-
-	// If no exclude selector and no additional parameters are provided,
-	// perform a standard search.
-	if params == nil && exclude == nil {
+func (b *faissBinaryIndex) SearchWithOptions(xb []uint8, k int64, sel Selector, params json.RawMessage) ([]int32, []int64, error) {
+	if sel == nil && params == nil {
 		return b.Search(xb, k)
 	}
-
-	return b.searchWithParams(xb, k, exclude, params)
+	return b.searchWithOptions(xb, k, sel, params)
 }
 
-func (b *faissBinaryIndex) SearchWithIDs(xb []uint8, k int64, include Selector,
+func (b *faissBinaryIndex) searchWithOptions(xb []uint8, k int64, selector Selector,
 	params json.RawMessage) ([]int32, []int64, error) {
-
-	// If no include selector is provided, we have no results to return.
-	// return an error indicating that the SearchWithIDs requires a valid selector.
-	if include == nil {
-		return nil, nil, fmt.Errorf("SearchWithIDs requires a valid include selector")
-	}
-
-	return b.searchWithParams(xb, k, include, params)
-}
-
-func (b *faissBinaryIndex) searchWithParams(xb []uint8, k int64, selector Selector,
-	params json.RawMessage) ([]int32, []int64, error) {
-
+	// Build a binary search params object to contain either the selector, the additional params, or both.
 	searchParams, err := NewBinarySearchParams(b, params, selector, nil)
 	if err != nil {
 		return nil, nil, err
@@ -227,7 +242,7 @@ func (b *faissBinaryIndex) ObtainClusterVectorCountsFromIVFIndex(includedVectors
 	// Applicable only to IVF indexes
 	ivfPtrBinary := C.faiss_IndexBinaryIVF_cast(b.bIdx)
 	if ivfPtrBinary == nil {
-		return nil, fmt.Errorf("index is not of ivf type")
+		return nil, errNotBIVFIndex
 	}
 	// Creating a slice to hold the count of vectors per cluster
 	// Since we have nlist clusters, we create a slice of size nlist
@@ -257,7 +272,7 @@ func (b *faissBinaryIndex) ObtainClustersWithDistancesFromIVFIndex(xb []uint8, i
 	// Applicable only to IVF indexes
 	ivfPtrBinary := C.faiss_IndexBinaryIVF_cast(b.bIdx)
 	if ivfPtrBinary == nil {
-		return nil, nil, fmt.Errorf("index is not of ivf type")
+		return nil, nil, errNotBIVFIndex
 	}
 	params, err := NewStandardSearchParams(includedCentroids)
 	if err != nil {
@@ -295,7 +310,7 @@ func (b *faissBinaryIndex) ObtainKCentroidCardinalitiesFromIVFIndex(limit int, d
 	// Applicable only to IVF indexes
 	ivfPtrBinary := C.faiss_IndexBinaryIVF_cast(b.bIdx)
 	if ivfPtrBinary == nil {
-		return nil, nil, fmt.Errorf("index is not of ivf type")
+		return nil, nil, errNotBIVFIndex
 	}
 
 	nlist := int(C.faiss_IndexBinaryIVF_nlist(ivfPtrBinary))
@@ -342,7 +357,7 @@ func (b *faissBinaryIndex) SearchClustersFromIVFIndex(eligibleCentroidIDs []int6
 	// Applicable only to IVF indexes
 	ivfPtrBinary := C.faiss_IndexBinaryIVF_cast(b.bIdx)
 	if ivfPtrBinary == nil {
-		return nil, nil, fmt.Errorf("index is not of ivf type")
+		return nil, nil, errNotBIVFIndex
 	}
 	// If no include selector is provided, we have no results to return.
 	// return an error indicating that the SearchClustersFromIVFIndex requires a valid selector.
@@ -398,8 +413,12 @@ func (b *faissBinaryIndex) SearchClustersFromIVFIndex(eligibleCentroidIDs []int6
 }
 
 func (b *faissBinaryIndex) Size() uint64 {
-	size := C.faiss_IndexBinary_size(b.bIdx)
-	return uint64(size)
+	rv := reflectStaticSizeFaissBinaryIndex
+	var size C.size_t
+	if code := C.faiss_IndexBinary_size(b.bIdx, &size); code == 0 {
+		rv += uint64(size)
+	}
+	return rv
 }
 
 func (idx *faissBinaryIndex) Close() {
@@ -422,4 +441,39 @@ func BinaryIndexFactory(dims int, description string) (*BinaryIndexImpl, error) 
 	}
 
 	return &BinaryIndexImpl{&idx}, nil
+}
+
+func (idx *faissBinaryIndex) SetQuantizers(srcIndex BinaryIndex) error {
+	bivf := C.faiss_IndexBinaryIVF_cast(idx.bPtr())
+	if bivf == nil {
+		return errNotBIVFIndex
+	}
+
+	srcIndexPtr := srcIndex.bPtr()
+	if srcIndexPtr == nil {
+		return fmt.Errorf("coarse quantizer is not valid")
+	}
+
+	err := C.faiss_Set_quantizers_binary(idx.bIdx, srcIndexPtr)
+	if err != 0 {
+		return fmt.Errorf("faissBinaryIndex err: %w", errFailedToSetQuantizers)
+	}
+
+	return nil
+}
+
+func (idx *faissBinaryIndex) MergeFrom(other BinaryIndex, add_id int64) (err error) {
+	if !idx.IsIVFIndex() && !other.IsIVFIndex() {
+		return fmt.Errorf("faissBinaryIndex err: %w", errNotBIVFIndex)
+	}
+
+	if c := C.faiss_IndexBinaryIVF_merge_from(
+		idx.bPtr(),
+		other.bPtr(),
+		(C.idx_t)(add_id),
+	); c != 0 {
+		err = getLastError()
+	}
+
+	return err
 }

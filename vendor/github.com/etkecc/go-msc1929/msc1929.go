@@ -11,7 +11,7 @@ import (
 
 var (
 	// UserAgent is the default user agent for the client
-	UserAgent = "Go-MSC1929-client/1.0 (+https://github.com/etkecc/go-msc1929)"
+	UserAgent = "Go-MSC1929-client/1.3 (+https://github.com/etkecc/go-msc1929)"
 	// Client will be used to request MSC1929 support file
 	Client        *http.Client
 	defaultDialer = &net.Dialer{
@@ -48,7 +48,7 @@ func GetWithContext(ctx context.Context, serverName string) (*Response, error) {
 	endpoint := "https://" + serverName + "/.well-known/matrix/support"
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, http.NoBody)
 	if err != nil {
 		return nil, err
 	}

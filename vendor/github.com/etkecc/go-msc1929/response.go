@@ -59,26 +59,17 @@ func (r *Response) IsEmpty() bool {
 
 // Clone returns a deep copy of the response
 func (r *Response) Clone() *Response {
-	clone := &Response{}
+	clone := &Response{SupportPage: r.SupportPage}
 	clone.Contacts = make([]*Contact, len(r.Contacts))
 	for i, contact := range r.Contacts {
-		clone.Contacts[i] = &Contact{
-			Email:    contact.Email,
-			MatrixID: contact.MatrixID,
-			Role:     contact.Role,
-		}
+		clone.Contacts[i] = contact.Clone()
 	}
 	if r.Admins != nil {
 		clone.Admins = make([]*Contact, len(r.Admins))
 		for i, contact := range r.Admins {
-			clone.Admins[i] = &Contact{
-				Email:    contact.Email,
-				MatrixID: contact.MatrixID,
-				Role:     contact.Role,
-			}
+			clone.Admins[i] = contact.Clone()
 		}
 	}
-	clone.SupportPage = r.SupportPage
 	return clone
 }
 

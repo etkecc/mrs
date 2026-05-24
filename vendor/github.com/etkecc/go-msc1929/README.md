@@ -7,6 +7,7 @@ The following MSCs are supported:
 * [MSC1929](https://github.com/matrix-org/matrix-spec-proposals/pull/1929) - the `/.well-known/matrix/support` endpoint
 * [MSC4121](https://github.com/matrix-org/matrix-spec-proposals/pull/4121) - the moderator role
 * [MSC4265](https://github.com/matrix-org/matrix-spec-proposals/pull/4265) - the DPO role
+* [MSC4439](https://github.com/matrix-org/matrix-spec-proposals/pull/4439) - the PGP key field
 
 Initially it was developed to be used in the [Matrix Rooms Search](https://github.com/etkecc/mrs) project, but it can be used in any other project that needs to interact with the admin contact API.
 
