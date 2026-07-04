@@ -27,7 +27,7 @@ require (
 	github.com/swaggo/echo-swagger v1.5.2
 	github.com/swaggo/swag v1.16.6
 	github.com/ziflex/lecho/v3 v3.11.0
-	go.etcd.io/bbolt v1.4.3
+	go.etcd.io/bbolt v1.5.0
 	golang.org/x/exp v0.0.0-20260508232706-74f9aab9d74a
 	golang.org/x/net v0.55.0
 	golang.org/x/time v0.15.0
