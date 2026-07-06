@@ -66,6 +66,8 @@ github.com/etkecc/go-healthchecks/v2 v2.3.0 h1:k64M9ECZcsvaXyHsl27GLOx5rbKd7AU4s
 github.com/etkecc/go-healthchecks/v2 v2.3.0/go.mod h1:AUmYQYLo8f43aZlx6/4LKk747E9/qHN99vH6HputFFo=
 github.com/etkecc/go-kit v1.9.4 h1:p/pYvykMaGEmfJvn3r94469sDgI1AcDqBIPBv8KU2wk=
 github.com/etkecc/go-kit v1.9.4/go.mod h1:waxT8l/IBLawXzTnf324qeUz2L521sbtUFh9ydYhLcM=
+github.com/etkecc/go-kit v1.12.2 h1:1PdXutb77wPqWrtu8WQNYSGIHXiHeaoAbKVIDlj6/KU=
+github.com/etkecc/go-kit v1.12.2/go.mod h1:Mj5wxe1ntD+yxAxxozIb/F9ns4sLEeRTzHjFiNdNP9g=
 github.com/etkecc/go-kit/format v0.0.0-20260523181134-a26282481fce h1:KxVbfDT5otzWngqfAyvXUN8MXYynsjksllUzaenvc5o=
 github.com/etkecc/go-kit/format v0.0.0-20260523181134-a26282481fce/go.mod h1:Ab0OhszRxP4pUecLz4N8/9oVp8njsV1vGDDP5XBbr8s=
 github.com/etkecc/go-msc1929 v1.3.0 h1:Jgy7XGvNDBWuNZBdYdmPFeSdU7Y5ic7jw0b/CBep++Q=
