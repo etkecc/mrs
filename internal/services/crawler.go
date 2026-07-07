@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/etkecc/go-apm"
@@ -20,9 +21,9 @@ import (
 type Crawler struct {
 	v           ValidatorService
 	cfg         ConfigService
-	parsing     bool
-	discovering bool
-	eachrooming bool
+	parsing     atomic.Bool
+	discovering atomic.Bool
+	eachrooming atomic.Bool
 	fed         FederationService
 	block       BlocklistService
 	media       MediaService
@@ -97,12 +98,11 @@ func NewCrawler(cfg ConfigService, fedSvc FederationService, v ValidatorService,
 // DiscoverServers across federation and remove invalid ones
 func (m *Crawler) DiscoverServers(ctx context.Context, workers int, overrideList ...*kit.List[string, string]) {
 	log := apm.Log(ctx)
-	if m.discovering {
+	if !m.discovering.CompareAndSwap(false, true) {
 		log.Info().Msg("servers discovery already in progress, ignoring request")
 		return
 	}
-	m.discovering = true
-	defer func() { m.discovering = false }()
+	defer m.discovering.Store(false)
 
 	var servers *kit.List[string, string]
 	if len(overrideList) > 0 {
@@ -148,13 +148,11 @@ func (m *Crawler) AddServer(ctx context.Context, name string) int {
 // ParseRooms across all discovered servers
 func (m *Crawler) ParseRooms(ctx context.Context, workers int) {
 	log := apm.Log(ctx)
-	if m.parsing {
+	if !m.parsing.CompareAndSwap(false, true) {
 		log.Info().Msg("room parsing already in progress, ignoring request")
 		return
 	}
-
-	m.parsing = true
-	defer func() { m.parsing = false }()
+	defer m.parsing.Store(false)
 
 	servers := kit.NewList[string, string]()
 	indexable := m.IndexableServers(ctx)
@@ -190,7 +188,9 @@ func (m *Crawler) ParseRooms(ctx context.Context, workers int) {
 		Int("discovered_servers", discoveredServers.Len()).
 		Msg("parsing rooms has been finished")
 
-	m.DiscoverServers(ctx, m.cfg.Get().Workers.Discovery, discoveredServers)
+	if err := m.data.BatchServers(ctx, discoveredServers.Slice()); err != nil {
+		log.Warn().Err(err).Msg("cannot persist discovered servers for next cycle")
+	}
 
 	m.afterRoomParsing(ctx)
 }
@@ -198,12 +198,11 @@ func (m *Crawler) ParseRooms(ctx context.Context, workers int) {
 // EachRoom allows to work with each known room
 func (m *Crawler) EachRoom(ctx context.Context, handler func(roomID string, data *model.MatrixRoom) bool) {
 	log := apm.Log(ctx)
-	if m.eachrooming {
+	if !m.eachrooming.CompareAndSwap(false, true) {
 		log.Info().Msg("iterating over each room is already in progress, ignoring request")
 		return
 	}
-	m.eachrooming = true
-	defer func() { m.eachrooming = false }()
+	defer m.eachrooming.Store(false)
 
 	toRemove := []string{}
 	m.data.EachRoom(ctx, func(id string, room *model.MatrixRoom) bool {

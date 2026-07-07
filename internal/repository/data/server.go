@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"time"
 
 	"github.com/etkecc/go-apm"
 	"github.com/goccy/go-json"
@@ -32,7 +33,8 @@ func (d *Data) BatchServers(ctx context.Context, servers []string) error {
 		bucket := tx.Bucket(serversInfoBucket)
 		for _, server := range servers {
 			if v := bucket.Get([]byte(server)); v == nil {
-				v, merr := json.Marshal(&model.MatrixServer{Name: server})
+				// stamp OnlineAt, or the stub is year-1 and the same-run prune eats it on arrival.
+				v, merr := json.Marshal(&model.MatrixServer{Name: server, OnlineAt: time.Now().UTC()})
 				if merr != nil {
 					log.Error().Err(merr).Msg("cannot marshal server")
 					continue
