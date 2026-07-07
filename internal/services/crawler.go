@@ -138,8 +138,11 @@ func (m *Crawler) AddServer(ctx context.Context, name string) int {
 	}
 
 	server := m.discoverServer(ctx, name)
-	if server == nil {
-		return http.StatusUnprocessableEntity
+	if !server.Online {
+		// remember the dead one, or this anonymous endpoint is a free federation-dial vending machine:
+		// no row means HasServer never trips, so every repeat POST re-dials a host of the caller's choosing.
+		m.data.MarkServersOffline(ctx, []string{server.Name})
+		return http.StatusUnprocessableEntity // added nothing that federates; don't pretend we did
 	}
 
 	return http.StatusCreated
@@ -262,12 +265,32 @@ func (m *Crawler) loadServers(ctx context.Context) *kit.List[string, string] {
 	servers := kit.NewList[string, string]()
 	servers.AddSlice(m.cfg.Get().Servers)
 	log.Info().Int("servers", servers.Len()).Msg("loaded servers from config")
-	servers.AddSlice(kit.MapKeys(m.data.FilterServers(ctx, func(_ *model.MatrixServer) bool {
-		return true
+	now := time.Now().UTC()
+	servers.AddSlice(kit.MapKeys(m.data.FilterServers(ctx, func(server *model.MatrixServer) bool {
+		if server.Online || server.CheckedAt.IsZero() {
+			return true // online servers always; never-dialed stubs (harvested / pre-backoff rows) are due
+		}
+		return now.Sub(server.CheckedAt) >= offlineBackoff(now.Sub(server.OnlineAt))
 	})))
 	log.Info().Int("servers", servers.Len()).Msg("loaded servers from config and db")
 
 	return servers
+}
+
+// offlineBackoff is the minimum gap between dials of an offline server, widening the longer it's been dead.
+// age <7d: 0, dial every run to catch a quick recovery; <14d: every 4d; older: weekly. >30d never reaches here, removeOldOfflineServers deleted it.
+func offlineBackoff(age time.Duration) time.Duration {
+	if age < 0 {
+		age = 0 // a backwards clock step is not an invitation to resurrect the whole graveyard for a redial. floor it.
+	}
+	switch {
+	case age < 7*24*time.Hour:
+		return 0
+	case age < 14*24*time.Hour:
+		return 4 * 24 * time.Hour
+	default:
+		return 7 * 24 * time.Hour
+	}
 }
 
 // discoverServer parses server information
@@ -280,15 +303,21 @@ func (m *Crawler) discoverServer(ctx context.Context, rawName string) *model.Mat
 	if name == "" {
 		return &model.MatrixServer{Name: rawName, Online: false}
 	}
+	if !ok {
+		// resolves but dead. don't AddServer it: the blind Put would stamp OnlineAt=now and make the corpse
+		// immortal. MarkServersOffline is the only offline writer, and it keeps the real OnlineAt.
+		return &model.MatrixServer{Name: name, Online: false}
+	}
 
 	server := &model.MatrixServer{
-		Name:     name,
-		Software: software,
-		Version:  version,
-		URL:      m.fed.QueryCSURL(ctx, name),
-		Contacts: m.getServerContacts(ctx, name),
-		Online:   ok,
-		OnlineAt: time.Now().UTC(),
+		Name:      name,
+		Software:  software,
+		Version:   version,
+		URL:       m.fed.QueryCSURL(ctx, name),
+		Contacts:  m.getServerContacts(ctx, name),
+		Online:    true,
+		OnlineAt:  time.Now().UTC(),
+		CheckedAt: time.Now().UTC(),
 	}
 
 	if m.v.IsIndexable(ctx, name) {

@@ -114,11 +114,13 @@ func (d *Data) markServerOffline(ctx context.Context, bucket *bbolt.Bucket, name
 		}
 	}
 	if server == nil {
-		server = &model.MatrixServer{Name: name}
+		// dead on arrival: stamp OnlineAt now, or the stub lands in year-1 and this same run's prune buries it on sight.
+		server = &model.MatrixServer{Name: name, OnlineAt: time.Now().UTC()}
 	}
 
 	server.Online = false
 	server.Indexable = false
+	server.CheckedAt = time.Now().UTC() // backoff clock; OnlineAt stays put or the 30d prune never fires and dead servers go immortal
 
 	datab, merr := json.Marshal(server)
 	if merr != nil {

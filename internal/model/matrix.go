@@ -39,7 +39,10 @@ type MatrixServer struct {
 	Online    bool                 `json:"online"`    // Is the server online and federating?
 	Indexable bool                 `json:"indexable"` // Is the server published the public room directory over federation?
 	Contacts  MatrixServerContacts `json:"contacts"`  // Contacts as per MSC1929
-	OnlineAt  time.Time            `json:"online_at"`
+	// OnlineAt is the prune clock: last seen online, the sole basis for the 30d offline delete. Never bumped on an offline dial.
+	// CheckedAt is the backoff clock: last dial attempt, bumped every dial. Merge them and dead servers reset the prune clock and go immortal.
+	OnlineAt  time.Time `json:"online_at"`
+	CheckedAt time.Time `json:"checked_at"`
 }
 
 // MatrixServerContacts - MSC1929
