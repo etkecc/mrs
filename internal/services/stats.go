@@ -19,6 +19,9 @@ import (
 	"github.com/etkecc/mrs/internal/model"
 )
 
+// webhookClient is fast-fail and retry-free: a webhook POST must not be replayed (double-notify) or hoard the federation pool, so it stays off the federation client.
+var webhookClient = &http.Client{Timeout: 10 * time.Second}
+
 type StatsRepository interface {
 	DataRepository
 	GetIndexStatsTL(ctx context.Context, prefix string) (map[time.Time]*model.IndexStats, error)
@@ -232,13 +235,13 @@ func (s *Stats) sendWebhook(ctx context.Context) {
 		return
 	}
 
-	req, err := http.NewRequest(http.MethodPost, s.cfg.Get().Webhooks.Stats, bytes.NewReader(payload))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.cfg.Get().Webhooks.Stats, bytes.NewReader(payload))
 	if err != nil {
 		log.Error().Err(err).Msg("webhook request failed")
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := webhookClient.Do(req)
 	if err != nil {
 		log.Error().Err(err).Msg("webhook sending failed")
 		return

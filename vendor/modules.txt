@@ -194,12 +194,14 @@ github.com/etkecc/go-echo-basic-auth
 # github.com/etkecc/go-fswatcher v1.0.1
 ## explicit; go 1.20
 github.com/etkecc/go-fswatcher
-# github.com/etkecc/go-healthchecks/v2 v2.3.0
-## explicit; go 1.22
+# github.com/etkecc/go-healthchecks/v2 v2.4.1
+## explicit; go 1.26
 github.com/etkecc/go-healthchecks/v2
-# github.com/etkecc/go-kit v1.9.4
-## explicit; go 1.25.0
+# github.com/etkecc/go-kit v1.12.3
+## explicit; go 1.26
 github.com/etkecc/go-kit
+github.com/etkecc/go-kit/httpclient
+github.com/etkecc/go-kit/retry
 github.com/etkecc/go-kit/template
 github.com/etkecc/go-kit/workpool
 # github.com/etkecc/go-kit/format v0.0.0-20260523181134-a26282481fce
@@ -288,9 +290,8 @@ github.com/gorilla/css/scanner
 github.com/hashicorp/go-set/v3
 # github.com/hashicorp/golang-lru/v2 v2.0.7
 ## explicit; go 1.18
-github.com/hashicorp/golang-lru/v2
+github.com/hashicorp/golang-lru/v2/expirable
 github.com/hashicorp/golang-lru/v2/internal
-github.com/hashicorp/golang-lru/v2/simplelru
 # github.com/json-iterator/go v1.1.12
 ## explicit; go 1.12
 github.com/json-iterator/go

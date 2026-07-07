@@ -1,6 +1,6 @@
 module github.com/etkecc/mrs
 
-go 1.25.0
+go 1.26
 
 require (
 	github.com/VictoriaMetrics/metrics v1.43.2
@@ -10,8 +10,8 @@ require (
 	github.com/etkecc/go-crontab v1.2.1
 	github.com/etkecc/go-echo-basic-auth v1.4.0
 	github.com/etkecc/go-fswatcher v1.0.1
-	github.com/etkecc/go-healthchecks/v2 v2.3.0
-	github.com/etkecc/go-kit v1.9.4
+	github.com/etkecc/go-healthchecks/v2 v2.4.1
+	github.com/etkecc/go-kit v1.12.3
 	github.com/etkecc/go-kit/format v0.0.0-20260523181134-a26282481fce
 	github.com/etkecc/go-msc1929 v1.3.0
 	github.com/fsnotify/fsnotify v1.10.1

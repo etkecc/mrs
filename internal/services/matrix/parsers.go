@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/etkecc/go-apm"
+	"github.com/etkecc/go-kit/httpclient"
 	"github.com/goccy/go-json"
 
 	"github.com/etkecc/mrs/internal/model"
@@ -130,36 +131,50 @@ func (s *Server) parseSRV(ctx context.Context, service, serverName string) (stri
 	return strings.Trim(addrs[0].Target, ".") + ":" + strconv.Itoa(int(addrs[0].Port)), nil
 }
 
-// dcrURL stands for discover-cache-and-return URL, shortcut for s.getURL
-func (s *Server) dcrURL(ctx context.Context, serverName, serverURL, serverHost string, discover bool) (sURL, sHost string) {
+// dcrURL stands for discover-cache-and-return URL, shortcut for s.getURL. dialIP is the pre-resolved
+// TCP target for a delegated host whose SRV target differs from its name; empty on every other branch.
+func (s *Server) dcrURL(ctx context.Context, serverName, serverURL, serverHost, dialIP string, discover bool) (sURL, sHost, sDialIP string) {
 	justHost, _, err := net.SplitHostPort(serverHost)
 	if err == nil {
 		serverHost = justHost
 	}
 
-	s.surlsCache.Add(serverName, serverURL+"||"+serverHost)
+	s.surlsCache.Add(serverName, serverURL+"||"+serverHost+"||"+dialIP)
 
+	// fire-and-forget discovery, bounded by the semaphore: a full pool skips (best-effort, re-triggers later).
+	// the ctx detaches from the request so discovery survives it (a pass runs for hours); per-call 120s ceilings bound each hop.
 	if s.discoverFunc != nil && discover {
-		ctx = context.WithoutCancel(ctx) // prevent timeout cancellation for background discovery
-		go s.discoverFunc(ctx, serverName)
+		select {
+		case s.discoverSem <- struct{}{}:
+			dctx := context.WithoutCancel(ctx)
+			go func() {
+				defer func() { <-s.discoverSem }()
+				s.discoverFunc(dctx, serverName)
+			}()
+		default:
+		}
 	}
 
-	return serverURL, serverHost
+	return serverURL, serverHost, dialIP
 }
 
-// getURL returns Federation API URL.
+// getURL returns the Federation API URL, the delegated Host, and a context pinned to the dial IP when
+// the resolved SRV target differs from the delegated host (the sole IP-pin branch).
 // Resolution follows https://spec.matrix.org/v1.18/server-server-api/#resolving-server-names
-func (s *Server) getURL(ctx context.Context, serverName string, discover bool) (ssURL, ssHost string) {
-	cached, ok := s.surlsCache.Get(serverName)
-	if ok {
+func (s *Server) getURL(ctx context.Context, serverName string, discover bool) (pinnedCtx context.Context, ssURL, ssHost string) {
+	if cached, ok := s.surlsCache.Get(serverName); ok {
 		parts := strings.Split(cached, "||")
-		return parts[0], parts[1]
+		if len(parts) == 3 {
+			return httpclient.WithDialIP(ctx, parts[2]), parts[0], parts[1]
+		}
+		s.surlsCache.Remove(serverName) // pre-3-part or corrupt entry, drop and re-resolve
 	}
 
 	// Step 2: serverName has explicit port, skip well-known and SRV and connect directly.
 	// Also covers step 1 (IP literal with port) since net.SplitHostPort handles "[::1]:port".
 	if _, _, err := net.SplitHostPort(serverName); err == nil {
-		return s.dcrURL(ctx, serverName, "https://"+serverName, serverName, discover)
+		ssURL, ssHost, _ = s.dcrURL(ctx, serverName, "https://"+serverName, serverName, "", discover)
+		return ctx, ssURL, ssHost
 	}
 
 	// Step 1: bare IP literal with no port, skip well-known and SRV and default to 8448.
@@ -168,21 +183,21 @@ func (s *Server) getURL(ctx context.Context, serverName string, discover bool) (
 		if ip.To4() == nil {
 			host = "[" + serverName + "]"
 		}
-		return s.dcrURL(ctx, serverName, "https://"+host+":8448", serverName, discover)
+		ssURL, ssHost, _ = s.dcrURL(ctx, serverName, "https://"+host+":8448", serverName, "", discover)
+		return ctx, ssURL, ssHost
 	}
 
-	ssURL, ssHost = s.getURLFromWK(ctx, serverName, discover)
-	if ssURL != "" {
-		return ssURL, ssHost
+	ssURL, ssHost, dialIP := s.getURLFromWK(ctx, serverName, discover)
+	if ssURL == "" {
+		ssURL, ssHost, dialIP = s.getURLFromSRV(ctx, serverName, discover)
 	}
-
-	return s.getURLFromSRV(ctx, serverName, discover)
+	return httpclient.WithDialIP(ctx, dialIP), ssURL, ssHost
 }
 
 // getURLFromSRV tries to get Federation API URL via SRV records.
 // It tries _matrix-fed._tcp first, then falls back to legacy _matrix._tcp,
 // and finally defaults to port 8448.
-func (s *Server) getURLFromSRV(ctx context.Context, serverName string, discover bool) (ssURL, ssHost string) {
+func (s *Server) getURLFromSRV(ctx context.Context, serverName string, discover bool) (ssURL, ssHost, dialIP string) {
 	log := apm.Log(ctx).With().Str("server", serverName).Logger()
 	fromSRV, err := s.parseSRV(ctx, "matrix-fed", serverName)
 	if err != nil {
@@ -191,24 +206,24 @@ func (s *Server) getURLFromSRV(ctx context.Context, serverName string, discover 
 	}
 	if err != nil {
 		log.Warn().Err(err).Msg("failed to parse SRV matrix, falling back to port 8448")
-		return s.dcrURL(ctx, serverName, "https://"+serverName+":8448", serverName, discover)
+		return s.dcrURL(ctx, serverName, "https://"+serverName+":8448", serverName, "", discover)
 	}
-	return s.dcrURL(ctx, serverName, "https://"+fromSRV, fromSRV, discover)
+	return s.dcrURL(ctx, serverName, "https://"+fromSRV, fromSRV, "", discover)
 }
 
 // getURLFromWK tries to get Federation API URL from /.well-known/matrix/server (step 3).
 // Resolution follows https://spec.matrix.org/v1.18/server-server-api/#resolving-server-names
-func (s *Server) getURLFromWK(ctx context.Context, serverName string, discover bool) (ssURL, ssHost string) {
+func (s *Server) getURLFromWK(ctx context.Context, serverName string, discover bool) (ssURL, ssHost, dialIP string) {
 	log := apm.Log(ctx).With().Str("server", serverName).Logger()
 	fromWellKnown, err := s.parseServerWellKnown(ctx, serverName)
 	if err != nil {
 		log.Warn().Err(err).Msg("failed to parse /.well-known/matrix/server")
-		return "", ""
+		return "", "", ""
 	}
 
 	// Steps 3.1 / 3.2: delegated value has explicit port (covers "[ipv6]:port" and "host:port").
 	if _, _, err := net.SplitHostPort(fromWellKnown); err == nil {
-		return s.dcrURL(ctx, serverName, "https://"+fromWellKnown, fromWellKnown, discover)
+		return s.dcrURL(ctx, serverName, "https://"+fromWellKnown, fromWellKnown, "", discover)
 	}
 
 	// Step 3.1: bare IP literal with no port, default to 8448 without SRV lookup.
@@ -217,7 +232,7 @@ func (s *Server) getURLFromWK(ctx context.Context, serverName string, discover b
 		if ip.To4() == nil {
 			host = "[" + fromWellKnown + "]"
 		}
-		return s.dcrURL(ctx, serverName, "https://"+host+":8448", fromWellKnown, discover)
+		return s.dcrURL(ctx, serverName, "https://"+host+":8448", fromWellKnown, "", discover)
 	}
 
 	// Steps 3.3 / 3.4 / 3.5: try discovering port via SRV (matrix-fed first, then legacy matrix)
@@ -227,42 +242,37 @@ func (s *Server) getURLFromWK(ctx context.Context, serverName string, discover b
 	}
 	if err != nil {
 		// if all SRV lookups fail, assume default port 8448
-		return s.dcrURL(ctx, serverName, "https://"+fromWellKnown+":8448", fromWellKnown, discover)
+		return s.dcrURL(ctx, serverName, "https://"+fromWellKnown+":8448", fromWellKnown, "", discover)
 	}
 
 	fromSRVHost := strings.Split(fromSRV, ":")[0]
 	// if SRV target matches well-known host, use SRV port as-is
 	if fromSRVHost == fromWellKnown {
-		return s.dcrURL(ctx, serverName, "https://"+fromSRV, fromWellKnown, discover)
+		return s.dcrURL(ctx, serverName, "https://"+fromSRV, fromWellKnown, "", discover)
 	}
-	// else, lookup A/AAAA for SRV target and use that IP with SRV port
+	// else, lookup A/AAAA for SRV target and pin the dial to that IP
 	ips, err := net.DefaultResolver.LookupHost(ctx, fromSRVHost)
 	if err != nil || len(ips) == 0 {
-		return s.dcrURL(ctx, serverName, "https://"+fromWellKnown+":8448", fromWellKnown, discover)
+		return s.dcrURL(ctx, serverName, "https://"+fromWellKnown+":8448", fromWellKnown, "", discover)
 	}
-	// use first resolved IP
 	_, port, err := net.SplitHostPort(fromSRV)
 	if err != nil {
 		log.Warn().Err(err).Str("srv", fromSRV).Msg("failed to parse SRV host:port, using default port 8448")
 		port = "8448"
 	}
-	parsedIP := net.ParseIP(ips[0])
-	if parsedIP == nil {
+	if net.ParseIP(ips[0]) == nil {
 		log.Warn().Str("ip", ips[0]).Msg("resolved SRV target is not a valid IP")
-		return s.dcrURL(ctx, serverName, "https://"+fromWellKnown+":8448", fromWellKnown, discover)
+		return s.dcrURL(ctx, serverName, "https://"+fromWellKnown+":8448", fromWellKnown, "", discover)
 	}
-	if parsedIP.To4() == nil {
-		// IPv6 needs to be enclosed in brackets
-		ips[0] = "[" + ips[0] + "]"
-	}
-	return s.dcrURL(ctx, serverName, "https://"+ips[0]+":"+port, fromWellKnown, discover)
+	// SRV target differs from the delegated host: keep fromWellKnown in the URL (Host + SNI + cert), pin the dial to the resolved IP. dialContext brackets IPv6 via net.JoinHostPort.
+	return s.dcrURL(ctx, serverName, "https://"+fromWellKnown+":"+port, fromWellKnown, ips[0], discover)
 }
 
 // lookupKeys requests /_matrix/key/v2/server by serverName
 func (s *Server) lookupKeys(ctx context.Context, serverName string, discover bool) (*matrixKeyResp, error) {
 	log := apm.Log(ctx).With().Str("server", serverName).Logger()
 
-	serverURL, serverHost := s.getURL(ctx, serverName, discover)
+	ctx, serverURL, serverHost := s.getURL(ctx, serverName, discover)
 	keysURL, err := url.Parse(serverURL + "/_matrix/key/v2/server")
 	if err != nil {
 		log.Warn().Err(err).Msg("failed to parse keys URL")

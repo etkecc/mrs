@@ -27,12 +27,17 @@ func (s *Server) QueryServerName(ctx context.Context, serverName string) (string
 	if ok {
 		return cached, nil
 	}
+	// failed recently, so don't re-knock: without this a repeat /discover for a dead name probes the net every call.
+	if _, dead := s.namesNegativeCache.Get(serverName); dead {
+		return "", nil
+	}
 	discovered := ""
 	resp, err := s.lookupKeys(ctx, serverName, false)
 	if err == nil && resp != nil {
 		discovered = resp.ServerName
 		s.namesCache.Add(serverName, discovered)
 	} else {
+		s.namesNegativeCache.Add(serverName, struct{}{})
 		log.Warn().Err(err).Str("server", serverName).Msg("cannot query server name")
 	}
 
@@ -129,7 +134,7 @@ func (s *Server) QueryDirectoryExternal(ctx context.Context, alias string) (*mod
 
 // QueryVersion from /_matrix/federation/v1/version
 func (s *Server) QueryVersion(ctx context.Context, serverName string) (server, serverVersion string, err error) {
-	serverURL, serverHost := s.getURL(ctx, serverName, false)
+	ctx, serverURL, serverHost := s.getURL(ctx, serverName, false)
 	resp, err := utils.Get(ctx, serverURL+"/_matrix/federation/v1/version", serverHost)
 	if err != nil {
 		return "", "", err
@@ -157,7 +162,7 @@ func (s *Server) QueryVersion(ctx context.Context, serverName string) (server, s
 	return vResp.Server["name"], vResp.Server["version"], nil
 }
 
-// QueryPublicRooms over federation
+// QueryPublicRooms over federation. Uses SlowHTTPClient for heavy queries.
 func (s *Server) QueryPublicRooms(ctx context.Context, serverName, limit, since string) (*model.RoomDirectoryResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, utils.DefaultTimeout)
 	defer cancel()
@@ -166,7 +171,8 @@ func (s *Server) QueryPublicRooms(ctx context.Context, serverName, limit, since 
 		return nil, err
 	}
 
-	resp, err := utils.Do(req)
+	req.Header.Set("User-Agent", version.UserAgent)
+	resp, err := utils.SlowHTTPClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -227,10 +233,12 @@ func (s *Server) QueryServersKeys(ctx context.Context, req *model.QueryServerKey
 	}
 	keyPayloads := make([]json.RawMessage, 0, len(serverNames))
 	var mu sync.Mutex
+	// notaryLookupKeys carries its own deadline, so we cut the parent cancel loose once up here: reassign this
+	// shared ctx inside each worker instead and the goroutines scribble over each other, -race reads you your rights.
+	ctx = context.WithoutCancel(ctx)
 	wp := workpool.New(s.cfg.Get().Workers.Discovery)
 	for _, serverName := range serverNames {
 		wp.Do(func() {
-			ctx = context.WithoutCancel(ctx) // cancellation is controlled inside the notaryLookupKeys
 			keyPayload := s.notaryLookupKeys(ctx, serverName, validUntilTS)
 			if keyPayload != nil {
 				mu.Lock()
@@ -250,25 +258,29 @@ func (s *Server) QueryServersKeys(ctx context.Context, req *model.QueryServerKey
 	return payload
 }
 
-// QueryCSURL returns URL of Matrix CS API server
+// QueryCSURL returns the cached Matrix CS API base URL for serverName, resolving and caching on miss.
 func (s *Server) QueryCSURL(ctx context.Context, serverName string) string {
-	cached, ok := s.curlsCache.Get(serverName)
-	if ok {
+	if cached, ok := s.curlsCache.Get(serverName); ok {
 		return cached
 	}
-
-	csurl := "https://" + serverName
-	fromWellKnown, err := s.parseClientWellKnown(ctx, serverName)
-	if err == nil {
-		csurl = fromWellKnown
-	}
-
+	csurl := s.resolveCSURL(ctx, serverName)
 	s.curlsCache.Add(serverName, csurl)
 	return csurl
 }
 
+// resolveCSURL resolves the Matrix CS API base URL via /.well-known/matrix/client, falling back to
+// https://serverName. Uncached on purpose: the via path calls this so an attacker-supplied serverName
+// never poisons curlsCache.
+func (s *Server) resolveCSURL(ctx context.Context, serverName string) string {
+	csurl := "https://" + serverName
+	if fromWellKnown, err := s.parseClientWellKnown(ctx, serverName); err == nil {
+		csurl = fromWellKnown
+	}
+	return csurl
+}
+
 func (s *Server) buildPublicRoomsReq(ctx context.Context, serverName, limit, since string) (*http.Request, error) {
-	apiURLStr, apiURLHost := s.getURL(ctx, serverName, false)
+	ctx, apiURLStr, apiURLHost := s.getURL(ctx, serverName, false)
 	apiURL, err := url.Parse(apiURLStr)
 	if err != nil {
 		return nil, err
@@ -279,7 +291,7 @@ func (s *Server) buildPublicRoomsReq(ctx context.Context, serverName, limit, sin
 		query.Set("limit", limit)
 	}
 	if since != "" {
-		query.Set("since", url.QueryEscape(since))
+		query.Set("since", since)
 	}
 	apiURL.RawQuery = query.Encode()
 
@@ -307,7 +319,7 @@ func (s *Server) buildPublicRoomsReq(ctx context.Context, serverName, limit, sin
 }
 
 func (s *Server) buildQueryDirectoryReq(ctx context.Context, serverName, alias string) (*http.Request, error) {
-	apiURLStr, apiURLHost := s.getURL(ctx, serverName, false)
+	ctx, apiURLStr, apiURLHost := s.getURL(ctx, serverName, false)
 	apiURL, err := url.Parse(apiURLStr)
 	if err != nil {
 		return nil, err

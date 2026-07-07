@@ -2,9 +2,11 @@ package matrix
 
 import (
 	"context"
-	"fmt"
+	"net"
 	"net/http"
 	"net/url"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/etkecc/go-apm"
@@ -12,6 +14,12 @@ import (
 	"github.com/etkecc/mrs/internal/model"
 	"github.com/etkecc/mrs/internal/utils"
 	"github.com/goccy/go-json"
+)
+
+const (
+	// roomSummaryTimeout bounds one MSC3266 fallback fetch. 5s: a homeserver that can't produce a room summary
+	// in five seconds isn't shy, it's dead, and we're not holding the whole request hostage while it decomposes.
+	roomSummaryTimeout = 5 * time.Second
 )
 
 var (
@@ -100,10 +108,8 @@ func (s *Server) GetClientRoomSummary(ctx context.Context, aliasOrID, via string
 		utils.ServerFrom(entry.Alias),
 	})
 
-	for _, server := range servers {
-		if s.blocklist.ByServer(server) {
-			return http.StatusNotFound, nil
-		}
+	if slices.ContainsFunc(servers, s.blocklist.ByServer) {
+		return http.StatusNotFound, nil
 	}
 
 	return http.StatusOK, entry
@@ -150,7 +156,20 @@ func (s *Server) roomSummaryFallback(ctx context.Context, aliasOrID, via string)
 		return nil
 	}
 
-	csURL := s.QueryCSURL(ctx, via)
+	// via must be a Matrix server name, not an IP (spec); reject the canonical IP forms early to skip a
+	// pointless resolve. This is not the security boundary: the shared dial guard is the authority, refusing
+	// any private IP post-resolution, including the decimal/octal/zone-disguised forms this early check misses.
+	host := via
+	if h, _, err := net.SplitHostPort(via); err == nil {
+		host = h
+	}
+	if net.ParseIP(strings.Trim(host, "[]")) != nil {
+		log.Warn().Msg("via must be a server name, not an IP literal; refusing")
+		return nil
+	}
+
+	// resolveCSURL, not QueryCSURL: an attacker-supplied via must never land in the shared curlsCache.
+	csURL := s.resolveCSURL(ctx, via)
 	if csURL == "" {
 		log.Warn().Msg("no CS URL found for user-defined via")
 		return nil
@@ -163,18 +182,33 @@ func (s *Server) roomSummaryFallback(ctx context.Context, aliasOrID, via string)
 	return nil
 }
 
+// summaryEndpoint joins the MSC3266 summary path onto the CS base URL through url, not string concat, so a
+// base_url carrying a stray path, query, or #fragment (a hostile well-known can return any) cannot swallow the
+// appended path and turn mrs into a GET-relay. It also collapses the spec-legal trailing slash and keeps a
+// legitimate path prefix.
+func (s *Server) summaryEndpoint(csBaseURL, aliasOrID string) (string, error) {
+	base, err := url.Parse(csBaseURL)
+	if err != nil {
+		return "", err
+	}
+	base.RawQuery = ""
+	base.Fragment = ""
+	endpoint := base.JoinPath("_matrix", "client", "unstable", "im.nheko.summary", "summary", aliasOrID)
+	endpoint.RawQuery = url.Values{"via": {utils.ServerFrom(aliasOrID)}}.Encode()
+	return endpoint.String(), nil
+}
+
 func (s *Server) roomSummaryVia(ctx context.Context, aliasOrID, via string) *model.RoomDirectoryRoom {
 	log := apm.Log(ctx).With().Str("room", aliasOrID).Str("via", via).Logger()
 	var cancel context.CancelFunc
-	ctx, cancel = context.WithTimeout(ctx, 5*time.Second)
+	ctx, cancel = context.WithTimeout(ctx, roomSummaryTimeout)
 	defer cancel()
 
-	endpoint := fmt.Sprintf(
-		"%s/_matrix/client/unstable/im.nheko.summary/summary/%s?via=%s",
-		via,
-		url.PathEscape(aliasOrID),
-		utils.ServerFrom(aliasOrID),
-	)
+	endpoint, err := s.summaryEndpoint(via, aliasOrID)
+	if err != nil {
+		log.Warn().Err(err).Msg("cannot build room summary endpoint")
+		return nil
+	}
 	log.Info().Str("endpoint", endpoint).Msg("querying room summary from fallback")
 	resp, err := utils.Get(ctx, endpoint)
 	if err != nil {

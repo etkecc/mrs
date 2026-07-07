@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/etkecc/go-apm"
 	"github.com/etkecc/go-kit/template"
@@ -35,6 +36,7 @@ func (e *Email) getClient() *postmark.EmailService {
 		return nil
 	}
 	return postmark.NewClient(postmark.WithClient(&http.Client{
+		Timeout: 30 * time.Second,
 		Transport: &postmark.AuthTransport{
 			Token: e.cfg.Get().Email.Postmark.Token,
 		},

@@ -16,6 +16,8 @@ import (
 	"github.com/etkecc/mrs/internal/version"
 )
 
+const maxThumbnailBytes = 1 << 20 // 1 MiB cap on a buffered fallback body: thumbnails are small, so a hostile oversized response can't balloon memory
+
 // GetMediaThumbnail is /_matrix/federation/v1/media/thumbnail/{mediaId}
 func (s *Server) GetMediaThumbnail(ctx context.Context, serverName, mediaID string, params url.Values) (content io.Reader, contentType string) {
 	log := apm.Log(ctx)
@@ -25,7 +27,7 @@ func (s *Server) GetMediaThumbnail(ctx context.Context, serverName, mediaID stri
 		return content, contentType
 	}
 
-	serverURL, serverHost := s.getURL(ctx, serverName, false)
+	ctx, serverURL, serverHost := s.getURL(ctx, serverName, false)
 	if serverURL == "" {
 		log.Warn().Str("server", serverName).Msg("cannot get server URL")
 		return nil, ""
@@ -111,7 +113,13 @@ func (s *Server) GetClientMediaThumbnail(ctx context.Context, serverName, mediaI
 			s.media.Add(ctx, serverName, mediaID, params, contents)
 			return reader, contentType
 		}
-		return resp.Body, resp.Header.Get("Content-Type")
+		// non-image fallback: buffer a bounded body then close it so the connection pools instead of leaking (caller gets an io.Reader and can't Close the original)
+		buf, err := io.ReadAll(io.LimitReader(resp.Body, maxThumbnailBytes))
+		resp.Body.Close()
+		if err != nil {
+			continue
+		}
+		return bytes.NewReader(buf), contentType
 	}
 
 	return nil, ""
