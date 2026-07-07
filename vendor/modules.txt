@@ -1,19 +1,19 @@
 # github.com/KyleBanks/depth v1.2.1
 ## explicit
 github.com/KyleBanks/depth
-# github.com/RoaringBitmap/roaring/v2 v2.18.1
+# github.com/RoaringBitmap/roaring/v2 v2.19.0
 ## explicit; go 1.24.0
 github.com/RoaringBitmap/roaring/v2
 github.com/RoaringBitmap/roaring/v2/internal
 github.com/RoaringBitmap/roaring/v2/roaring64
-# github.com/VictoriaMetrics/metrics v1.43.2
+# github.com/VictoriaMetrics/metrics v1.44.0
 ## explicit; go 1.24.0
 github.com/VictoriaMetrics/metrics
 # github.com/aymerick/douceur v0.2.0
 ## explicit
 github.com/aymerick/douceur/css
 github.com/aymerick/douceur/parser
-# github.com/bits-and-blooms/bitset v1.24.4
+# github.com/bits-and-blooms/bitset v1.24.5
 ## explicit; go 1.16
 github.com/bits-and-blooms/bitset
 # github.com/blevesearch/bleve/v2 v2.6.0
@@ -97,7 +97,7 @@ github.com/blevesearch/bleve/v2/search/scorer
 github.com/blevesearch/bleve/v2/search/searcher
 github.com/blevesearch/bleve/v2/size
 github.com/blevesearch/bleve/v2/util
-# github.com/blevesearch/bleve_index_api v1.3.11
+# github.com/blevesearch/bleve_index_api v1.3.12
 ## explicit; go 1.24
 github.com/blevesearch/bleve_index_api
 # github.com/blevesearch/geo v0.2.5
@@ -108,8 +108,8 @@ github.com/blevesearch/geo/r2
 github.com/blevesearch/geo/r3
 github.com/blevesearch/geo/s1
 github.com/blevesearch/geo/s2
-# github.com/blevesearch/go-faiss v1.1.2
-## explicit; go 1.21
+# github.com/blevesearch/go-faiss v1.1.5
+## explicit; go 1.25.0
 github.com/blevesearch/go-faiss
 # github.com/blevesearch/go-porterstemmer v1.0.3
 ## explicit; go 1.13
@@ -173,13 +173,13 @@ github.com/blevesearch/zapx/v15
 # github.com/blevesearch/zapx/v16 v16.3.4
 ## explicit; go 1.24
 github.com/blevesearch/zapx/v16
-# github.com/blevesearch/zapx/v17 v17.1.3
+# github.com/blevesearch/zapx/v17 v17.1.9
 ## explicit; go 1.25.0
 github.com/blevesearch/zapx/v17
 # github.com/buger/jsonparser v1.2.0
 ## explicit; go 1.13
 github.com/buger/jsonparser
-# github.com/davecgh/go-spew v1.1.1
+# github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 ## explicit
 github.com/davecgh/go-spew/spew
 # github.com/etkecc/go-apm v1.3.5
@@ -204,7 +204,7 @@ github.com/etkecc/go-kit/httpclient
 github.com/etkecc/go-kit/retry
 github.com/etkecc/go-kit/template
 github.com/etkecc/go-kit/workpool
-# github.com/etkecc/go-kit/format v0.0.0-20260523181134-a26282481fce
+# github.com/etkecc/go-kit/format v0.0.0-20260706214856-bb194e996cfd
 ## explicit; go 1.22
 github.com/etkecc/go-kit/format
 # github.com/etkecc/go-msc1929 v1.3.0
@@ -214,7 +214,7 @@ github.com/etkecc/go-msc1929
 ## explicit; go 1.23
 github.com/fsnotify/fsnotify
 github.com/fsnotify/fsnotify/internal
-# github.com/getsentry/sentry-go v0.46.2
+# github.com/getsentry/sentry-go v0.47.0
 ## explicit; go 1.25.0
 github.com/getsentry/sentry-go
 github.com/getsentry/sentry-go/attribute
@@ -228,41 +228,42 @@ github.com/getsentry/sentry-go/internal/ratelimit
 github.com/getsentry/sentry-go/internal/telemetry
 github.com/getsentry/sentry-go/internal/util
 github.com/getsentry/sentry-go/report
-# github.com/getsentry/sentry-go/zerolog v0.46.2
+# github.com/getsentry/sentry-go/zerolog v0.47.0
 ## explicit; go 1.25.0
 github.com/getsentry/sentry-go/zerolog
-# github.com/go-openapi/jsonpointer v0.23.1
+# github.com/go-openapi/jsonpointer v0.24.0
 ## explicit; go 1.25.0
 github.com/go-openapi/jsonpointer
-# github.com/go-openapi/jsonreference v0.21.5
-## explicit; go 1.24.0
+github.com/go-openapi/jsonpointer/jsonname
+# github.com/go-openapi/jsonreference v0.21.6
+## explicit; go 1.25.0
 github.com/go-openapi/jsonreference
 github.com/go-openapi/jsonreference/internal
-# github.com/go-openapi/spec v0.22.4
-## explicit; go 1.24.0
+# github.com/go-openapi/spec v0.22.6
+## explicit; go 1.25.0
 github.com/go-openapi/spec
-# github.com/go-openapi/swag/conv v0.26.0
+# github.com/go-openapi/swag/conv v0.27.0
 ## explicit; go 1.25.0
 github.com/go-openapi/swag/conv
-# github.com/go-openapi/swag/jsonname v0.26.0
+# github.com/go-openapi/swag/jsonname v0.27.0
 ## explicit; go 1.25.0
 github.com/go-openapi/swag/jsonname
-# github.com/go-openapi/swag/jsonutils v0.26.0
+# github.com/go-openapi/swag/jsonutils v0.27.0
 ## explicit; go 1.25.0
 github.com/go-openapi/swag/jsonutils
 github.com/go-openapi/swag/jsonutils/adapters
 github.com/go-openapi/swag/jsonutils/adapters/ifaces
 github.com/go-openapi/swag/jsonutils/adapters/stdlib/json
-# github.com/go-openapi/swag/loading v0.26.0
+# github.com/go-openapi/swag/loading v0.27.0
 ## explicit; go 1.25.0
 github.com/go-openapi/swag/loading
-# github.com/go-openapi/swag/stringutils v0.26.0
+# github.com/go-openapi/swag/stringutils v0.27.0
 ## explicit; go 1.25.0
 github.com/go-openapi/swag/stringutils
-# github.com/go-openapi/swag/typeutils v0.26.0
+# github.com/go-openapi/swag/typeutils v0.27.0
 ## explicit; go 1.25.0
 github.com/go-openapi/swag/typeutils
-# github.com/go-openapi/swag/yamlutils v0.26.0
+# github.com/go-openapi/swag/yamlutils v0.27.0
 ## explicit; go 1.25.0
 github.com/go-openapi/swag/yamlutils
 # github.com/goccy/go-json v0.10.6
@@ -295,9 +296,7 @@ github.com/hashicorp/golang-lru/v2/internal
 # github.com/json-iterator/go v1.1.12
 ## explicit; go 1.12
 github.com/json-iterator/go
-# github.com/kr/pretty v0.3.1
-## explicit; go 1.12
-# github.com/labstack/echo/v4 v4.15.2
+# github.com/labstack/echo/v4 v4.15.4
 ## explicit; go 1.25.0
 github.com/labstack/echo/v4
 github.com/labstack/echo/v4/middleware
@@ -316,7 +315,7 @@ github.com/matrix-org/util
 # github.com/mattevans/postmark-go v1.0.0
 ## explicit; go 1.17
 github.com/mattevans/postmark-go
-# github.com/mattn/go-colorable v0.1.14
+# github.com/mattn/go-colorable v0.1.15
 ## explicit; go 1.18
 github.com/mattn/go-colorable
 # github.com/mattn/go-isatty v0.0.22
@@ -342,11 +341,9 @@ github.com/oleiade/lane/v2
 ## explicit; go 1.18
 github.com/pemistahl/lingua-go
 github.com/pemistahl/lingua-go/serialization
-# github.com/pmezard/go-difflib v1.0.0
+# github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2
 ## explicit
 github.com/pmezard/go-difflib/difflib
-# github.com/rogpeppe/go-internal v1.14.1
-## explicit; go 1.23
 # github.com/rs/zerolog v1.35.1
 ## explicit; go 1.23
 github.com/rs/zerolog
@@ -419,8 +416,8 @@ github.com/yuin/goldmark/util
 # github.com/ziflex/lecho/v3 v3.11.0
 ## explicit; go 1.24.0
 github.com/ziflex/lecho/v3
-# go.etcd.io/bbolt v1.4.3
-## explicit; go 1.23
+# go.etcd.io/bbolt v1.5.0
+## explicit; go 1.25.0
 go.etcd.io/bbolt
 go.etcd.io/bbolt/errors
 go.etcd.io/bbolt/internal/common
@@ -431,22 +428,22 @@ go.yaml.in/yaml/v2
 # go.yaml.in/yaml/v3 v3.0.4
 ## explicit; go 1.16
 go.yaml.in/yaml/v3
-# golang.org/x/crypto v0.52.0
+# golang.org/x/crypto v0.53.0
 ## explicit; go 1.25.0
 golang.org/x/crypto/acme
 golang.org/x/crypto/acme/autocert
 golang.org/x/crypto/ed25519
-# golang.org/x/exp v0.0.0-20260508232706-74f9aab9d74a
+# golang.org/x/exp v0.0.0-20260611194520-c48552f49976
 ## explicit; go 1.25.0
 golang.org/x/exp/constraints
 golang.org/x/exp/maps
 golang.org/x/exp/slices
-# golang.org/x/mod v0.36.0
+# golang.org/x/mod v0.37.0
 ## explicit; go 1.25.0
 golang.org/x/mod/internal/lazyregexp
 golang.org/x/mod/module
 golang.org/x/mod/semver
-# golang.org/x/net v0.55.0
+# golang.org/x/net v0.56.0
 ## explicit; go 1.25.0
 golang.org/x/net/html
 golang.org/x/net/html/atom
@@ -457,15 +454,15 @@ golang.org/x/net/http2/hpack
 golang.org/x/net/idna
 golang.org/x/net/internal/httpcommon
 golang.org/x/net/internal/httpsfv
-# golang.org/x/sync v0.20.0
+# golang.org/x/sync v0.21.0
 ## explicit; go 1.25.0
 golang.org/x/sync/errgroup
-# golang.org/x/sys v0.45.0
+# golang.org/x/sys v0.46.0
 ## explicit; go 1.25.0
 golang.org/x/sys/execabs
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/text v0.37.0
+# golang.org/x/text v0.39.0
 ## explicit; go 1.25.0
 golang.org/x/text/cases
 golang.org/x/text/internal
@@ -480,7 +477,7 @@ golang.org/x/text/unicode/norm
 # golang.org/x/time v0.15.0
 ## explicit; go 1.25.0
 golang.org/x/time/rate
-# golang.org/x/tools v0.45.0
+# golang.org/x/tools v0.47.0
 ## explicit; go 1.25.0
 golang.org/x/tools/go/ast/astutil
 golang.org/x/tools/go/buildutil
