@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"time"
 
@@ -74,23 +75,22 @@ type StatsTimelineEntry struct {
 
 // AnalyticsEvent structure
 type AnalyticsEvent struct {
-	Name          string            // Event name
-	URL           string            // URL of the page where the event occurred
-	Props         map[string]string // Event properties
-	Referrer      string            // Referrer URL
-	UserAgent     string            // User-Agent header of the incoming request
-	XForwardedFor string            // X-Forwarded-For header of the incoming request
+	Name      string            // Event name
+	URL       string            // URL of the page where the event occurred
+	Props     map[string]string // Event properties
+	Referrer  string            // Referrer URL
+	UserAgent string            // User-Agent header of the incoming request
+	ClientIP  string            // resolved client IP, sent to Plausible as X-Plausible-IP
 }
 
 // NewAnalyticsEvent creates a new AnalyticsEvent
 func NewAnalyticsEvent(cxt context.Context, name string, props map[string]string, req *http.Request) *AnalyticsEvent {
 	evt := &AnalyticsEvent{
-		Name:          name,
-		URL:           req.URL.String(),
-		Props:         props,
-		Referrer:      req.Referer(),
-		UserAgent:     req.UserAgent(),
-		XForwardedFor: req.Header.Get("X-Forwarded-For"),
+		Name:      name,
+		URL:       req.URL.String(),
+		Props:     props,
+		Referrer:  req.Referer(),
+		UserAgent: req.UserAgent(),
 	}
 
 	if evt.Referrer == "" {
@@ -102,8 +102,9 @@ func NewAnalyticsEvent(cxt context.Context, name string, props map[string]string
 	if evt.UserAgent == "" {
 		evt.UserAgent = "Synapse" // workaround
 	}
-	if evt.XForwardedFor == "" {
-		evt.XForwardedFor = mcontext.GetIP(cxt)
+	// the single resolved client IP withMContext extracted; validate so garbage never rots into Plausible's visitor hash.
+	if ip := mcontext.GetIP(cxt); net.ParseIP(ip) != nil {
+		evt.ClientIP = ip
 	}
 
 	return evt

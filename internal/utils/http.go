@@ -88,7 +88,10 @@ func Get(ctx context.Context, uri string, host ...string) (*http.Response, error
 func Do(req *http.Request) (*http.Response, error) {
 	ctx, cancel := context.WithTimeout(req.Context(), DefaultTimeout)
 	req = req.WithContext(ctx)
-	req.Header.Set("User-Agent", version.UserAgent)
+	// don't clobber a caller-set UA (the analytics path forwards the client's real one); default only when blank.
+	if req.Header.Get("User-Agent") == "" {
+		req.Header.Set("User-Agent", version.UserAgent)
+	}
 	resp, err := httpClient.Do(req) //nolint:gosec // via is user input; the dial guard, not the URL string, is what refuses a private/metadata target
 	if err != nil {
 		cancel()

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/blevesearch/bleve/v2/search/query"
 	"github.com/stretchr/testify/mock"
@@ -602,5 +603,69 @@ func TestSearchFieldsBoost(t *testing.T) {
 	}
 	if SearchFieldsBoost["topic"] == 0 {
 		t.Error("topic boost must not be zero")
+	}
+}
+
+// TestSearch_TracksExactlyOneEvent pins the event-path invariant: one Search call fires exactly one
+// Search analytics event, never zero and never two. The empty-query branch was invisible before, and
+// the shared trackSearch now runs both branches, so this is the guard against a double-fire regression.
+func TestSearch_TracksExactlyOneEvent(t *testing.T) {
+	cases := []struct {
+		name      string
+		query     string
+		wantQuery string
+	}{
+		{"empty query is tracked as a directory listing", "", ""},
+		{"non-empty query is tracked with the term", "matrix", "matrix"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			cfgMock := NewMockConfigService(t)
+			dataMock := newMocksearchDataRepository(t)
+			repoMock := NewMockSearchRepository(t)
+			blockMock := NewMockBlocklistService(t)
+			statsMock := NewMockStatsService(t)
+			plausibleMock := NewMockPlausibleService(t)
+
+			cfgMock.EXPECT().Get().Return(defaultConfig()).Maybe()
+			statsMock.EXPECT().Get().Return(&model.IndexStats{
+				Rooms: model.IndexStatsRooms{Indexed: len(testRooms)},
+			}).Maybe()
+			dataMock.EXPECT().GetBiggestRooms(mock.Anything, mock.AnythingOfType("int"), mock.AnythingOfType("int")).
+				Return(biggestRoomsPage(5, 0)).Maybe()
+			repoMock.EXPECT().Search(mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+				Return(nil, 0, nil).Maybe()
+
+			// Track fires in a goroutine; the channel is the synchronization, no sleep.
+			fired := make(chan *model.AnalyticsEvent, 4)
+			plausibleMock.EXPECT().Track(mock.Anything, mock.Anything).Run(func(_ context.Context, evt *model.AnalyticsEvent) {
+				fired <- evt
+			}).Return()
+
+			svc := NewSearch(cfgMock, dataMock, repoMock, blockMock, statsMock, plausibleMock)
+			if _, _, err := svc.Search(context.Background(), newReq(), tc.query, "", nil, 5, 0); err != nil {
+				t.Fatalf("Search returned error: %v", err)
+			}
+
+			var evt *model.AnalyticsEvent
+			select {
+			case evt = <-fired:
+			case <-time.After(time.Second):
+				t.Fatal("no analytics event fired within 1s")
+			}
+			if evt.Name != "Search" {
+				t.Errorf("event name = %q, want 'Search'", evt.Name)
+			}
+			if got := evt.Props["query"]; got != tc.wantQuery {
+				t.Errorf("query prop = %q, want %q", got, tc.wantQuery)
+			}
+
+			// no second event: the two branches must not both fire.
+			select {
+			case extra := <-fired:
+				t.Fatalf("a second analytics event fired: %+v", extra)
+			case <-time.After(50 * time.Millisecond):
+			}
+		})
 	}
 }

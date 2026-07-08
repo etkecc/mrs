@@ -86,6 +86,9 @@ func (s *Search) Search(ctx context.Context, req *http.Request, q, sortBy string
 
 	var builtQuery query.Query
 	if q == "" {
+		// empty query is a directory listing (biggest rooms); track it as a Search too, or federation
+		// publicRooms browsing without a filter stays invisible, which is most of the directory traffic.
+		s.trackSearch(ctx, req, "")
 		entries, length := s.getEmptyQueryResults(ctx, roomTypes, limit, offset)
 		entries = s.addHighlights(originServer, entries)
 		return entries, length, nil
@@ -94,11 +97,7 @@ func (s *Search) Search(ctx context.Context, req *http.Request, q, sortBy string
 	q = strings.TrimPrefix(strings.TrimSpace(q), "#")
 	qTrack := strings.TrimSpace(strings.ToLower(q))
 	if qTrack != "" {
-		evt := model.NewAnalyticsEvent(ctx, "Search", map[string]string{"query": qTrack}, req)
-		go func(ctx context.Context, evt *model.AnalyticsEvent) {
-			ctx = context.WithoutCancel(ctx)
-			s.plausible.Track(ctx, evt)
-		}(ctx, evt)
+		s.trackSearch(ctx, req, qTrack)
 	}
 
 	builtQuery = s.getSearchQuery(q, fields, roomTypes, fuzzy)
@@ -128,6 +127,15 @@ func (s *Search) Search(ctx context.Context, req *http.Request, q, sortBy string
 	}
 
 	return results, total, nil
+}
+
+// trackSearch fires a fire-and-forget Search analytics event; WithoutCancel so the request finishing doesn't kill the send.
+func (s *Search) trackSearch(ctx context.Context, req *http.Request, term string) {
+	evt := model.NewAnalyticsEvent(ctx, "Search", map[string]string{"query": term}, req)
+	go func(ctx context.Context, evt *model.AnalyticsEvent) {
+		ctx = context.WithoutCancel(ctx)
+		s.plausible.Track(ctx, evt)
+	}(ctx, evt)
 }
 
 func (s *Search) availableHighlights(originServer string) int {
