@@ -5,26 +5,2120 @@ import "github.com/swaggo/swag"
 
 const docTemplate = `{
     "schemes": {{ marshal .Schemes }},
+    "consumes": [
+        "application/json"
+    ],
+    "produces": [
+        "application/json"
+    ],
     "swagger": "2.0",
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
         "contact": {},
+        "license": {
+            "name": "AGPL-3.0",
+            "url": "https://www.gnu.org/licenses/agpl-3.0"
+        },
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
-    "paths": {}
+    "paths": {
+        "/-/discover": {
+            "post": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "Kicks off a discovery pass and returns 201 immediately. Fire-and-forget: the crawl runs in the background, this does not wait for it.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Trigger discovery",
+                "responses": {
+                    "201": {
+                        "description": "Discovery started in the background"
+                    }
+                }
+            }
+        },
+        "/-/full": {
+            "post": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "Runs a full cycle (discovery, then parsing) in one go and returns 201 immediately. Fire-and-forget, runs in the background. This is what a periodic cron/timer should hit to keep the index fresh.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Trigger a full cycle",
+                "responses": {
+                    "201": {
+                        "description": "Full cycle started in the background"
+                    }
+                }
+            }
+        },
+        "/-/parse": {
+            "post": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "Kicks off a room-parsing pass and returns 201 immediately. Fire-and-forget, runs in the background.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Trigger parsing",
+                "responses": {
+                    "201": {
+                        "description": "Parsing started in the background"
+                    }
+                }
+            }
+        },
+        "/-/reindex": {
+            "post": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "Rebuilds the search index from what is already crawled and returns 201 immediately. Fire-and-forget, runs in the background.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Trigger reindex",
+                "responses": {
+                    "201": {
+                        "description": "Reindex started in the background"
+                    }
+                }
+            }
+        },
+        "/-/status": {
+            "get": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "Full crawler and index statistics: server and room counts, plus the timing of the last discovery, parsing, and indexing passes. The admin-side twin of the public /stats, with more detail.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Index status",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.IndexStats"
+                        }
+                    }
+                }
+            }
+        },
+        "/.well-known/matrix/client": {
+            "get": {
+                "description": "The client well-known: the breadcrumb a Matrix client follows to find our homeserver base URL, because SRV records never quite caught on with clients. We only publish m.homeserver; no identity server, we are not that kind of server.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "matrix-cs"
+                ],
+                "summary": "Client well-known",
+                "responses": {
+                    "200": {
+                        "description": "Where a client should point its homeserver base URL",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.WellKnownClient"
+                        }
+                    }
+                }
+            }
+        },
+        "/.well-known/matrix/server": {
+            "get": {
+                "description": "Our federation delegation, one line: the ` + "`" + `m.server` + "`" + ` record telling other homeservers \"do not knock here, our federation API answers over there.\" One redirect the whole federation agrees to honor.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "matrix-s2s"
+                ],
+                "summary": "Server well-known",
+                "responses": {
+                    "200": {
+                        "description": "Where our federation API actually answers",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.WellKnownServer"
+                        }
+                    }
+                }
+            }
+        },
+        "/.well-known/matrix/support": {
+            "get": {
+                "description": "The MSC1929 support well-known: who to yell at when this server misbehaves, admin and support contacts plus an optional support page. Straight from config, so if it is empty, someone forgot to fill it in.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "matrix-cs"
+                ],
+                "summary": "Support contacts",
+                "responses": {
+                    "200": {
+                        "description": "Admin and support contacts",
+                        "schema": {
+                            "$ref": "#/definitions/msc1929.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/_matrix/client/r0/directory/list/room/{room_id}": {
+            "get": {
+                "description": "Whether a room is listed in the public directory. MRS only indexes public rooms, so if we hold the room the answer is \"public\"; if we have never crawled it (or it is banned) you get a 404, same as any homeserver would. This is a search engine, not a speakeasy: there is no \"private\" to report, only \"we have it\" or \"we don't\". r0 and v3 share one handler; r0 is the legacy alias.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "matrix-cs"
+                ],
+                "summary": "Room visibility in the directory",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Room ID to check",
+                        "name": "room_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The room is indexed, and therefore public",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.RoomVisibility"
+                        }
+                    },
+                    "404": {
+                        "description": "We have never crawled that room",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.MatrixError"
+                        }
+                    }
+                }
+            }
+        },
+        "/_matrix/client/r0/directory/room/{room_alias}": {
+            "get": {
+                "description": "Turns a human-friendly room alias like #coffee:example.com into the actual room ID plus a list of servers that might know where it lives, because nobody memorizes a !opaque:id and clients still have to route the join somewhere. The r0 and v3 paths are the same handler; r0 is the legacy alias we keep alive for clients that never upgraded.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "matrix-cs"
+                ],
+                "summary": "Resolve a room alias (client)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Room alias to resolve, e.g. #room:server",
+                        "name": "room_alias",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Room ID and the servers that can help you join",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.QueryDirectoryResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "We could not resolve that alias",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.MatrixError"
+                        }
+                    }
+                }
+            }
+        },
+        "/_matrix/client/unstable/im.nheko.summary/rooms/{room_id_alias}/summary": {
+            "get": {
+                "description": "Room summary (name, topic, member count, join rules) for a room ID or alias, per MSC3266. We answer this for rooms we have crawled, so it works even though we are a search index and not the room's homeserver. Registered at the stable v1 path plus the two unstable im.nheko.summary paths, because matrix.to and older clients still call those.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "matrix-cs"
+                ],
+                "summary": "Room summary",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Room ID or alias to summarize",
+                        "name": "room_id_alias",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "A server to try for the summary if we do not hold the room locally. Only the first value is used.",
+                        "name": "via",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Room summary",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.RoomDirectoryRoom"
+                        }
+                    },
+                    "404": {
+                        "description": "Room not found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.MatrixError"
+                        }
+                    }
+                }
+            }
+        },
+        "/_matrix/client/unstable/im.nheko.summary/summary/{room_id_alias}": {
+            "get": {
+                "description": "Room summary (name, topic, member count, join rules) for a room ID or alias, per MSC3266. We answer this for rooms we have crawled, so it works even though we are a search index and not the room's homeserver. Registered at the stable v1 path plus the two unstable im.nheko.summary paths, because matrix.to and older clients still call those.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "matrix-cs"
+                ],
+                "summary": "Room summary",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Room ID or alias to summarize",
+                        "name": "room_id_alias",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "A server to try for the summary if we do not hold the room locally. Only the first value is used.",
+                        "name": "via",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Room summary",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.RoomDirectoryRoom"
+                        }
+                    },
+                    "404": {
+                        "description": "Room not found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.MatrixError"
+                        }
+                    }
+                }
+            }
+        },
+        "/_matrix/client/v1/room_summary/{room_id_alias}": {
+            "get": {
+                "description": "Room summary (name, topic, member count, join rules) for a room ID or alias, per MSC3266. We answer this for rooms we have crawled, so it works even though we are a search index and not the room's homeserver. Registered at the stable v1 path plus the two unstable im.nheko.summary paths, because matrix.to and older clients still call those.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "matrix-cs"
+                ],
+                "summary": "Room summary",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Room ID or alias to summarize",
+                        "name": "room_id_alias",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "A server to try for the summary if we do not hold the room locally. Only the first value is used.",
+                        "name": "via",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Room summary",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.RoomDirectoryRoom"
+                        }
+                    },
+                    "404": {
+                        "description": "Room not found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.MatrixError"
+                        }
+                    }
+                }
+            }
+        },
+        "/_matrix/client/v3/directory/list/room/{room_id}": {
+            "get": {
+                "description": "Whether a room is listed in the public directory. MRS only indexes public rooms, so if we hold the room the answer is \"public\"; if we have never crawled it (or it is banned) you get a 404, same as any homeserver would. This is a search engine, not a speakeasy: there is no \"private\" to report, only \"we have it\" or \"we don't\". r0 and v3 share one handler; r0 is the legacy alias.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "matrix-cs"
+                ],
+                "summary": "Room visibility in the directory",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Room ID to check",
+                        "name": "room_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The room is indexed, and therefore public",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.RoomVisibility"
+                        }
+                    },
+                    "404": {
+                        "description": "We have never crawled that room",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.MatrixError"
+                        }
+                    }
+                }
+            }
+        },
+        "/_matrix/client/v3/directory/room/{room_alias}": {
+            "get": {
+                "description": "Turns a human-friendly room alias like #coffee:example.com into the actual room ID plus a list of servers that might know where it lives, because nobody memorizes a !opaque:id and clients still have to route the join somewhere. The r0 and v3 paths are the same handler; r0 is the legacy alias we keep alive for clients that never upgraded.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "matrix-cs"
+                ],
+                "summary": "Resolve a room alias (client)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Room alias to resolve, e.g. #room:server",
+                        "name": "room_alias",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Room ID and the servers that can help you join",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.QueryDirectoryResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "We could not resolve that alias",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.MatrixError"
+                        }
+                    }
+                }
+            }
+        },
+        "/_matrix/client/versions": {
+            "get": {
+                "description": "The client-server spec versions and unstable features we claim to speak. Mostly polite fiction: a hardcoded list of versions we do not really implement, kept only because matrix.to and older clients refuse to talk to anything that will not recite them. We are a search index wearing a homeserver's coat for a handful of read endpoints, not a real homeserver.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "matrix-cs"
+                ],
+                "summary": "Client-server versions",
+                "responses": {
+                    "200": {
+                        "description": "The spec versions we pretend to support so clients stop sulking",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.ClientVersions"
+                        }
+                    }
+                }
+            }
+        },
+        "/_matrix/federation/v1/publicRooms": {
+            "get": {
+                "security": [
+                    {
+                        "FederationAuth": []
+                    }
+                ],
+                "description": "Our slice of the federation public-rooms directory: the rooms we have crawled and indexed. Authenticated federation endpoint, so a missing or invalid X-Matrix signature is a 401. GET (query params) and POST (JSON filter body) share one handler, and a malformed POST body is logged then ignored, so you get the unfiltered listing rather than an error.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "matrix-s2s"
+                ],
+                "summary": "Public rooms directory",
+                "parameters": [
+                    {
+                        "description": "Filter and pagination, POST only",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.RoomDirectoryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Our indexed slice of the public-rooms directory",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.RoomDirectoryResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Federation auth failed (missing or invalid X-Matrix signature)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.MatrixError"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "FederationAuth": []
+                    }
+                ],
+                "description": "Our slice of the federation public-rooms directory: the rooms we have crawled and indexed. Authenticated federation endpoint, so a missing or invalid X-Matrix signature is a 401. GET (query params) and POST (JSON filter body) share one handler, and a malformed POST body is logged then ignored, so you get the unfiltered listing rather than an error.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "matrix-s2s"
+                ],
+                "summary": "Public rooms directory",
+                "parameters": [
+                    {
+                        "description": "Filter and pagination, POST only",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.RoomDirectoryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Our indexed slice of the public-rooms directory",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.RoomDirectoryResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Federation auth failed (missing or invalid X-Matrix signature)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.MatrixError"
+                        }
+                    }
+                }
+            }
+        },
+        "/_matrix/federation/v1/query/directory": {
+            "get": {
+                "security": [
+                    {
+                        "FederationAuth": []
+                    }
+                ],
+                "description": "Resolves a room alias to a room ID and the servers that can help you join. This is an authenticated federation endpoint: we check the incoming X-Matrix signature first, so a missing or bad one is a 401 before any resolution happens. Past that we pass back whatever status the lookup produced, so a 404 means we genuinely could not resolve it, not that the endpoint is missing.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "matrix-s2s"
+                ],
+                "summary": "Resolve a room alias",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Room alias to resolve, e.g. #room:server",
+                        "name": "room_alias",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Room ID and the servers that can help you join",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.QueryDirectoryResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Federation auth failed (missing or invalid X-Matrix signature)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.MatrixError"
+                        }
+                    },
+                    "404": {
+                        "description": "Alias could not be resolved",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.MatrixError"
+                        }
+                    }
+                }
+            }
+        },
+        "/_matrix/federation/v1/version": {
+            "get": {
+                "description": "Our federation server name and build. Static, cached, boring in the good way. The one endpoint here that has never once caused an incident, and we would like to keep it that way.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "matrix-s2s"
+                ],
+                "summary": "Server version",
+                "responses": {
+                    "200": {
+                        "description": "Server software name and version",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.ServerVersion"
+                        }
+                    }
+                }
+            }
+        },
+        "/_matrix/key/v2/query": {
+            "post": {
+                "description": "Notary lookup for a batch of servers, each returned verbatim as its origin signed it. Malformed JSON gets a 400. An empty batch (valid body, no server_keys) gets a 200 with an empty key set: you asked for nothing, you got nothing.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "matrix-s2s"
+                ],
+                "summary": "Batch query server keys",
+                "parameters": [
+                    {
+                        "description": "Servers and key IDs to look up",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.QueryServerKeysRequest"
+                        }
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Only return keys valid until at least this timestamp (ms). A malformed value is treated as 0.",
+                        "name": "minimum_valid_until_ts",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Signed server keys, or an empty key set for an empty batch",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.ServerKeysQueryResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Request body is not valid JSON",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.MatrixError"
+                        }
+                    }
+                }
+            }
+        },
+        "/_matrix/key/v2/query/{serverName}": {
+            "get": {
+                "description": "Notary lookup of one remote server's signing keys, handed back verbatim as the server signed them (we do not re-wrap or re-sign). A server we cannot reach or verify yields an empty key set, not a 5xx tantrum.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "matrix-s2s"
+                ],
+                "summary": "Query one server's keys",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Server name to look up keys for",
+                        "name": "serverName",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Only return keys valid until at least this timestamp (ms). A malformed value is treated as 0.",
+                        "name": "minimum_valid_until_ts",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Signed server keys, or an empty key set",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.ServerKeysQueryResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/_matrix/key/v2/server": {
+            "get": {
+                "description": "Our own published ed25519 signing keys, signed by us, so federation can check that the requests we send are actually ours. It is a naive notary. verify_keys is a map because the spec key set is dynamic, keyed by key ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "matrix-s2s"
+                ],
+                "summary": "Our signing keys",
+                "responses": {
+                    "200": {
+                        "description": "Our signed public signing keys",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.ServerKeys"
+                        }
+                    }
+                }
+            }
+        },
+        "/_matrix/media/r0/thumbnail/{name}/{id}": {
+            "get": {
+                "description": "Serves a media thumbnail. Tries the unauthenticated client-server media API first (faster), then falls back to the authenticated federation media API. Streams the image on a hit, or 204 when there is nothing to serve. Standard Matrix thumbnail query params (width, height, method) are passed straight through.",
+                "produces": [
+                    "image/jpeg",
+                    "image/png"
+                ],
+                "tags": [
+                    "media"
+                ],
+                "summary": "Media thumbnail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Media origin server name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Media ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Thumbnail width",
+                        "name": "width",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Thumbnail height",
+                        "name": "height",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Resize method: crop or scale",
+                        "name": "method",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thumbnail image",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "204": {
+                        "description": "No thumbnail available"
+                    }
+                }
+            }
+        },
+        "/_matrix/media/v3/thumbnail/{name}/{id}": {
+            "get": {
+                "description": "Serves a media thumbnail. Tries the unauthenticated client-server media API first (faster), then falls back to the authenticated federation media API. Streams the image on a hit, or 204 when there is nothing to serve. Standard Matrix thumbnail query params (width, height, method) are passed straight through.",
+                "produces": [
+                    "image/jpeg",
+                    "image/png"
+                ],
+                "tags": [
+                    "media"
+                ],
+                "summary": "Media thumbnail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Media origin server name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Media ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Thumbnail width",
+                        "name": "width",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Thumbnail height",
+                        "name": "height",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Resize method: crop or scale",
+                        "name": "method",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thumbnail image",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "204": {
+                        "description": "No thumbnail available"
+                    }
+                }
+            }
+        },
+        "/avatar/{name}/{id}": {
+            "get": {
+                "description": "Serves a media thumbnail. Tries the unauthenticated client-server media API first (faster), then falls back to the authenticated federation media API. Streams the image on a hit, or 204 when there is nothing to serve. Standard Matrix thumbnail query params (width, height, method) are passed straight through.",
+                "produces": [
+                    "image/jpeg",
+                    "image/png"
+                ],
+                "tags": [
+                    "media"
+                ],
+                "summary": "Media thumbnail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Media origin server name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Media ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Thumbnail width",
+                        "name": "width",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Thumbnail height",
+                        "name": "height",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Resize method: crop or scale",
+                        "name": "method",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thumbnail image",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "204": {
+                        "description": "No thumbnail available"
+                    }
+                }
+            }
+        },
+        "/catalog/rooms": {
+            "get": {
+                "security": [
+                    {
+                        "CatalogAuth": []
+                    }
+                ],
+                "description": "Every indexed room as a room-ID to alias map. Big, authenticated, and exactly as heavy as it sounds.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "catalog"
+                ],
+                "summary": "All rooms",
+                "responses": {
+                    "200": {
+                        "description": "Room ID to alias",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/catalog/servers": {
+            "get": {
+                "security": [
+                    {
+                        "CatalogAuth": []
+                    }
+                ],
+                "description": "The servers the crawler currently considers online.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "catalog"
+                ],
+                "summary": "Online servers",
+                "responses": {
+                    "200": {
+                        "description": "Online server names",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/catalog/servers/objects": {
+            "get": {
+                "security": [
+                    {
+                        "CatalogAuth": []
+                    }
+                ],
+                "description": "Online servers with their full crawl records, keyed by server name.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "catalog"
+                ],
+                "summary": "Online servers with details",
+                "responses": {
+                    "200": {
+                        "description": "Server name to crawl record",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.MatrixServer"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/discover/bulk": {
+            "post": {
+                "security": [
+                    {
+                        "DiscoveryAuth": []
+                    }
+                ],
+                "description": "Queues a batch of servers for discovery. Requires Discovery credentials. Fire-and-forget: we take the JSON array, return 202 immediately, and discover them in the background.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discovery"
+                ],
+                "summary": "Add servers in bulk",
+                "parameters": [
+                    {
+                        "description": "Server names to add",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Batch accepted for background discovery"
+                    },
+                    "400": {
+                        "description": "Malformed request body (not a JSON array of server names)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.MatrixError"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid Discovery credentials"
+                    }
+                }
+            }
+        },
+        "/discover/msc1929/{name}": {
+            "post": {
+                "description": "Fetches and validates a server's MSC1929 support file (the contacts in /.well-known/matrix/support). Returns 204 when it is valid, or 400 with a list of the specific problems: empty file, a contact missing a role, an unsupported role, no contacts at all, or the deprecated 'admins' field. A handy pre-flight before relying on a server's support contacts.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discovery"
+                ],
+                "summary": "Check a server's MSC1929 support file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Server name to check",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Support file is valid"
+                    },
+                    "400": {
+                        "description": "Support file is missing, unreachable, or invalid",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.MatrixError"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/discover/{name}": {
+            "post": {
+                "description": "Queues a single server for discovery. Auth is optional: send Discovery credentials to skip the rate limit, or call anonymously and take the limit. We dial the server before answering, so the status code tells you what actually happened: 201 if it is reachable and freshly added, 208 if we already knew it, 422 if it would not answer (we record it offline rather than re-dial it on every retry).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discovery"
+                ],
+                "summary": "Add a server",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Server name to add",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Server was reachable and queued"
+                    },
+                    "208": {
+                        "description": "Server already known, nothing to do"
+                    },
+                    "401": {
+                        "description": "Invalid Discovery credentials (only if you send them)"
+                    },
+                    "422": {
+                        "description": "Server could not be reached, nothing added"
+                    },
+                    "429": {
+                        "description": "Rate limited (anonymous callers)"
+                    }
+                }
+            }
+        },
+        "/mod/ban/{room_id}": {
+            "get": {
+                "security": [
+                    {
+                        "ModerationAuth": []
+                    }
+                ],
+                "description": "Bans a room from the index. Yes, it is a GET that mutates state, we know, and no, we are not proud of it. And a User-Agent containing \"bot\" gets a 403 even with valid credentials, a scar from crawlers tripping this, not a feature. Both are real behavior, documented on purpose so they surprise you here and not in production.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "moderation"
+                ],
+                "summary": "Ban a room",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Room ID to ban",
+                        "name": "room_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Confirmation message",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "User-Agent contains 'bot'"
+                    }
+                }
+            }
+        },
+        "/mod/list": {
+            "get": {
+                "security": [
+                    {
+                        "ModerationAuth": []
+                    }
+                ],
+                "description": "Lists banned room IDs. Append /{server_name} to filter to a single server. An empty list is a 204, not an empty 200. As with the rest of the mod group, a \"bot\" User-Agent gets a 403 even authenticated.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "moderation"
+                ],
+                "summary": "List banned rooms",
+                "responses": {
+                    "200": {
+                        "description": "Banned room IDs",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "204": {
+                        "description": "No banned rooms"
+                    },
+                    "403": {
+                        "description": "User-Agent contains 'bot'"
+                    }
+                }
+            }
+        },
+        "/mod/list-reported": {
+            "get": {
+                "security": [
+                    {
+                        "ModerationAuth": []
+                    }
+                ],
+                "description": "Lists reported rooms as a room-ID to reason map. Append /{server_name} to filter to a single server. Empty is a 204. A \"bot\" User-Agent gets a 403 even authenticated.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "moderation"
+                ],
+                "summary": "List reported rooms",
+                "responses": {
+                    "200": {
+                        "description": "Room ID to report reason",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "204": {
+                        "description": "No reported rooms"
+                    },
+                    "403": {
+                        "description": "User-Agent contains 'bot'"
+                    }
+                }
+            }
+        },
+        "/mod/report/{room_id}": {
+            "post": {
+                "description": "Report a room for moderation. Open on purpose, no auth: anyone can flag a room, that is the whole point. The JSON body carries ` + "`" + `reason` + "`" + ` (5 chars minimum, or you get a 400) and an optional ` + "`" + `no_msc1929` + "`" + ` flag. This is the one honest, no-auth POST in the moderation set.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "moderation"
+                ],
+                "summary": "Report a room",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Room ID being reported",
+                        "name": "room_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Report reason (5 chars minimum) and options",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_controllers.reportSubmission"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Report accepted"
+                    },
+                    "400": {
+                        "description": "Invalid room ID, or reason too short or missing",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.MatrixError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error while processing the report",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.MatrixError"
+                        }
+                    }
+                }
+            }
+        },
+        "/mod/unban/{room_id}": {
+            "get": {
+                "security": [
+                    {
+                        "ModerationAuth": []
+                    }
+                ],
+                "description": "Lifts a room ban. Same shape as ban: a state-changing GET, and a \"bot\" User-Agent gets a 403 even authenticated. Real behavior, owned.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "moderation"
+                ],
+                "summary": "Unban a room",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Room ID to unban",
+                        "name": "room_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Confirmation message",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "User-Agent contains 'bot'"
+                    }
+                }
+            }
+        },
+        "/mod/unreport/{room_id}": {
+            "get": {
+                "security": [
+                    {
+                        "ModerationAuth": []
+                    }
+                ],
+                "description": "Clears reports on a room. Two warts, both owned: it is a state-changing GET, and a User-Agent containing \"bot\" gets a 403 even with valid moderation credentials, a scar from crawlers tripping these endpoints, not a feature. There is also a no-room-id form (GET /mod/unreport) that hits the same handler with an empty ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "moderation"
+                ],
+                "summary": "Clear a room's reports",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Room ID to clear reports for",
+                        "name": "room_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Reports cleared"
+                    },
+                    "403": {
+                        "description": "User-Agent contains 'bot'"
+                    }
+                }
+            }
+        },
+        "/room/{room_id_or_alias}": {
+            "get": {
+                "description": "Room preview by ID or alias: like the Matrix client-server room preview, but enriched with everything MRS knows about a room (language and so on). We try our own index first, then fall back to a live MSC3266 summary, and when that fallback fires we set the ` + "`" + `X-MRS-MSC3266: true` + "`" + ` response header so you can tell. Marked EXPERIMENT in the source, so treat the shape as not yet frozen.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "catalog"
+                ],
+                "summary": "Room preview",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Room ID or alias",
+                        "name": "room_id_or_alias",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Server to try for the MSC3266 fallback if we do not have the room indexed",
+                        "name": "via",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Room data",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.MatrixRoom"
+                        }
+                    },
+                    "404": {
+                        "description": "Room not found anywhere we looked",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.MatrixError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error reading the room",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.MatrixError"
+                        }
+                    }
+                }
+            }
+        },
+        "/search": {
+            "get": {
+                "description": "Full-text room search. Pass the query and options as query params here: ?q= (query), ?l= (limit), ?o= (offset), ?s= (sort), ?rt= (room type). The same handler also answers a positional path form for convenience, /search/{q}, /search/{q}/{l}, and so on up to /search/{q}/{l}/{o}/{s}/{rt}, filling those five slots left to right. An empty result set is a 204, not an empty 200.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "search"
+                ],
+                "summary": "Search rooms",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "l",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset",
+                        "name": "o",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort field",
+                        "name": "s",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Room type filter",
+                        "name": "rt",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Matching rooms",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.Entry"
+                            }
+                        }
+                    },
+                    "204": {
+                        "description": "No matches"
+                    }
+                }
+            }
+        },
+        "/stats": {
+            "get": {
+                "description": "Live index counts: servers found online and indexable, rooms indexed and parsed, plus the server software breakdown (how much of the federation is Synapse, basically). Timeline is present only once we have history behind us; on a fresh index the key is absent, not an empty array.",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Crawler statistics",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.StatsResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "github_com_etkecc_mrs_internal_model.ClientVersions": {
+            "type": "object",
+            "properties": {
+                "unstable_features": {
+                    "description": "unstable MSCs we actually honor",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "boolean"
+                    }
+                },
+                "versions": {
+                    "description": "advertised client-server spec versions",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "github_com_etkecc_mrs_internal_model.Entry": {
+            "type": "object",
+            "properties": {
+                "alias": {
+                    "type": "string"
+                },
+                "avatar": {
+                    "type": "string"
+                },
+                "avatar_url": {
+                    "type": "string"
+                },
+                "guest_can_join": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "join_rule": {
+                    "type": "string"
+                },
+                "language": {
+                    "type": "string"
+                },
+                "members": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "room_type": {
+                    "type": "string"
+                },
+                "server": {
+                    "description": "server of origin",
+                    "type": "string"
+                },
+                "servers": {
+                    "description": "comma-separated list of servers",
+                    "type": "string"
+                },
+                "topic": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "world_readable": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_etkecc_mrs_internal_model.IndexStats": {
+            "type": "object",
+            "properties": {
+                "discovery": {
+                    "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.IndexStatsTime"
+                },
+                "indexing": {
+                    "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.IndexStatsTime"
+                },
+                "parsing": {
+                    "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.IndexStatsTime"
+                },
+                "rooms": {
+                    "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.IndexStatsRooms"
+                },
+                "servers": {
+                    "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.IndexStatsServers"
+                }
+            }
+        },
+        "github_com_etkecc_mrs_internal_model.IndexStatsRooms": {
+            "type": "object",
+            "properties": {
+                "banned": {
+                    "type": "integer"
+                },
+                "indexed": {
+                    "type": "integer"
+                },
+                "parsed": {
+                    "type": "integer"
+                },
+                "reported": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_etkecc_mrs_internal_model.IndexStatsServers": {
+            "type": "object",
+            "properties": {
+                "blocked": {
+                    "type": "integer"
+                },
+                "indexable": {
+                    "type": "integer"
+                },
+                "online": {
+                    "type": "integer"
+                },
+                "software": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "github_com_etkecc_mrs_internal_model.IndexStatsTime": {
+            "type": "object",
+            "properties": {
+                "finished_at": {
+                    "type": "string"
+                },
+                "started_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_etkecc_mrs_internal_model.MatrixError": {
+            "type": "object",
+            "properties": {
+                "errcode": {
+                    "description": "Matrix error code, e.g M_UNAUTHORIZED",
+                    "type": "string"
+                },
+                "error": {
+                    "description": "Matrix error message",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_etkecc_mrs_internal_model.MatrixRoom": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
+                "avatar_url_http": {
+                    "type": "string"
+                },
+                "canonical_alias": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "guest_can_join": {
+                    "type": "boolean"
+                },
+                "join_rule": {
+                    "type": "string"
+                },
+                "language": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "num_joined_members": {
+                    "type": "integer"
+                },
+                "parsed_at": {
+                    "type": "string"
+                },
+                "room_id": {
+                    "type": "string"
+                },
+                "room_type": {
+                    "type": "string"
+                },
+                "server": {
+                    "description": "Parsed (custom) fields",
+                    "type": "string"
+                },
+                "servers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "topic": {
+                    "type": "string"
+                },
+                "world_readable": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_etkecc_mrs_internal_model.MatrixServer": {
+            "type": "object",
+            "properties": {
+                "checked_at": {
+                    "type": "string"
+                },
+                "contacts": {
+                    "description": "Contacts as per MSC1929",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.MatrixServerContacts"
+                        }
+                    ]
+                },
+                "indexable": {
+                    "description": "Is the server published the public room directory over federation?",
+                    "type": "boolean"
+                },
+                "name": {
+                    "description": "ServerName, as per spec, e.g., \"example.com\"",
+                    "type": "string"
+                },
+                "online": {
+                    "description": "Is the server online and federating?",
+                    "type": "boolean"
+                },
+                "online_at": {
+                    "description": "OnlineAt is the prune clock: last seen online, the sole basis for the 30d offline delete. Never bumped on an offline dial.\nCheckedAt is the backoff clock: last dial attempt, bumped every dial. Merge them and dead servers reset the prune clock and go immortal.",
+                    "type": "string"
+                },
+                "software": {
+                    "description": "Software running on the server, e.g., Synapse, Dendrite",
+                    "type": "string"
+                },
+                "url": {
+                    "description": "Server-Server API URL, e.g., \"https://example.com:8448\"",
+                    "type": "string"
+                },
+                "version": {
+                    "description": "Version of the software, e.g., 1.0.0",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_etkecc_mrs_internal_model.MatrixServerContacts": {
+            "type": "object",
+            "properties": {
+                "emails": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "mxids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_etkecc_mrs_internal_model.QueryDirectoryResponse": {
+            "type": "object",
+            "properties": {
+                "room_id": {
+                    "type": "string"
+                },
+                "servers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "github_com_etkecc_mrs_internal_model.QueryServerKeysRequest": {
+            "type": "object",
+            "properties": {
+                "server_keys": {
+                    "type": "object",
+                    "additionalProperties": {}
+                }
+            }
+        },
+        "github_com_etkecc_mrs_internal_model.RoomDirectoryFilter": {
+            "type": "object",
+            "properties": {
+                "generic_search_term": {
+                    "type": "string"
+                },
+                "room_types": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "github_com_etkecc_mrs_internal_model.RoomDirectoryRequest": {
+            "type": "object",
+            "properties": {
+                "filter": {
+                    "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.RoomDirectoryFilter"
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "since": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_etkecc_mrs_internal_model.RoomDirectoryResponse": {
+            "type": "object",
+            "properties": {
+                "chunk": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.RoomDirectoryRoom"
+                    }
+                },
+                "next_batch": {
+                    "type": "string"
+                },
+                "prev_batch": {
+                    "type": "string"
+                },
+                "total_room_count_estimate": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_etkecc_mrs_internal_model.RoomDirectoryRoom": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
+                "canonical_alias": {
+                    "type": "string"
+                },
+                "guest_can_join": {
+                    "type": "boolean"
+                },
+                "join_rule": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "num_joined_members": {
+                    "type": "integer"
+                },
+                "room_id": {
+                    "type": "string"
+                },
+                "room_type": {
+                    "type": "string"
+                },
+                "topic": {
+                    "type": "string"
+                },
+                "world_readable": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_etkecc_mrs_internal_model.RoomVisibility": {
+            "type": "object",
+            "properties": {
+                "visibility": {
+                    "description": "always \"public\"",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_etkecc_mrs_internal_model.ServerKeys": {
+            "type": "object",
+            "properties": {
+                "old_verify_keys": {
+                    "description": "rotated-out keys, kept so old signatures still verify",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "object",
+                        "additionalProperties": {}
+                    }
+                },
+                "server_name": {
+                    "description": "the server these keys belong to",
+                    "type": "string"
+                },
+                "signatures": {
+                    "description": "server -\u003e keyID -\u003e signature over this object",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "valid_until_ts": {
+                    "description": "keys are trustworthy until this ms timestamp",
+                    "type": "integer"
+                },
+                "verify_keys": {
+                    "description": "keyID -\u003e {\"key\": base64 ed25519 public key}",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "github_com_etkecc_mrs_internal_model.ServerKeysQueryResponse": {
+            "type": "object",
+            "properties": {
+                "server_keys": {
+                    "description": "each element is a signed ServerKeys object",
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "format": "int32"
+                        }
+                    }
+                }
+            }
+        },
+        "github_com_etkecc_mrs_internal_model.ServerVersion": {
+            "type": "object",
+            "properties": {
+                "server": {
+                    "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.ServerVersionInfo"
+                }
+            }
+        },
+        "github_com_etkecc_mrs_internal_model.ServerVersionInfo": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "description": "server software name",
+                    "type": "string"
+                },
+                "version": {
+                    "description": "server software version",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_etkecc_mrs_internal_model.StatsDetails": {
+            "type": "object",
+            "properties": {
+                "rooms": {
+                    "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.StatsDetailsRooms"
+                },
+                "servers": {
+                    "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.StatsDetailsServers"
+                }
+            }
+        },
+        "github_com_etkecc_mrs_internal_model.StatsDetailsRooms": {
+            "type": "object",
+            "properties": {
+                "indexed": {
+                    "type": "integer"
+                },
+                "parsed": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_etkecc_mrs_internal_model.StatsDetailsServers": {
+            "type": "object",
+            "properties": {
+                "indexable": {
+                    "type": "integer"
+                },
+                "online": {
+                    "type": "integer"
+                },
+                "software": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "github_com_etkecc_mrs_internal_model.StatsResponse": {
+            "type": "object",
+            "properties": {
+                "details": {
+                    "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.StatsDetails"
+                },
+                "rooms": {
+                    "type": "integer"
+                },
+                "servers": {
+                    "type": "integer"
+                },
+                "timeline": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.StatsTimelineEntry"
+                    }
+                }
+            }
+        },
+        "github_com_etkecc_mrs_internal_model.StatsTimelineEntry": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string"
+                },
+                "details": {
+                    "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.StatsDetails"
+                }
+            }
+        },
+        "github_com_etkecc_mrs_internal_model.WellKnownClient": {
+            "type": "object",
+            "properties": {
+                "m.homeserver": {
+                    "$ref": "#/definitions/github_com_etkecc_mrs_internal_model.WellKnownHomeserver"
+                }
+            }
+        },
+        "github_com_etkecc_mrs_internal_model.WellKnownHomeserver": {
+            "type": "object",
+            "properties": {
+                "base_url": {
+                    "description": "e.g. https://matrix.example.com",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_etkecc_mrs_internal_model.WellKnownServer": {
+            "type": "object",
+            "properties": {
+                "m.server": {
+                    "description": "host:port, e.g. matrix.example.com:443",
+                    "type": "string"
+                }
+            }
+        },
+        "internal_controllers.reportSubmission": {
+            "type": "object",
+            "properties": {
+                "no_msc1929": {
+                    "type": "boolean"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "roomID": {
+                    "type": "string"
+                }
+            }
+        },
+        "msc1929.Contact": {
+            "type": "object",
+            "properties": {
+                "dev.zirco.msc4439.pgp_key": {
+                    "type": "string"
+                },
+                "email_address": {
+                    "type": "string"
+                },
+                "matrix_id": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                }
+            }
+        },
+        "msc1929.Response": {
+            "type": "object",
+            "properties": {
+                "admins": {
+                    "description": "Admins list, deprecated since Nov 15, 2023, but still used by some servers",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/msc1929.Contact"
+                    }
+                },
+                "contacts": {
+                    "description": "Contacts list",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/msc1929.Contact"
+                    }
+                },
+                "support_page": {
+                    "description": "SupportPage URL",
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "AdminAuth": {
+            "type": "basic"
+        },
+        "CatalogAuth": {
+            "type": "basic"
+        },
+        "DiscoveryAuth": {
+            "type": "basic"
+        },
+        "FederationAuth": {
+            "description": "Matrix federation signature auth: an ` + "`" + `Authorization: X-Matrix origin=...,key=...,sig=...` + "`" + ` header carrying an ed25519 signature over the request, which we verify against the origin server's published keys.",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        },
+        "MetricsAuth": {
+            "type": "basic"
+        },
+        "ModerationAuth": {
+            "type": "basic"
+        }
+    }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "",
+	Version:          "0.0.0",
 	Host:             "",
 	BasePath:         "",
-	Schemes:          []string{},
-	Title:            "",
-	Description:      "",
+	Schemes:          []string{"https"},
+	Title:            "Matrix Rooms Search API",
+	Description:      "Matrix Rooms Search crawls the Matrix federation and serves public-room search. It also answers part of the Matrix federation and client-server APIs for the rooms it has indexed. Where our implementation diverges from the spec, that divergence is documented here on purpose, not hidden. matrixrooms.info is a public demo running MRS.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

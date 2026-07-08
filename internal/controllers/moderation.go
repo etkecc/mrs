@@ -27,6 +27,17 @@ type reportSubmission struct {
 	NoMSC1929 bool   `json:"no_msc1929"`
 }
 
+// @Summary		Report a room
+// @Description	Report a room for moderation. Open on purpose, no auth: anyone can flag a room, that is the whole point. The JSON body carries `reason` (5 chars minimum, or you get a 400) and an optional `no_msc1929` flag. This is the one honest, no-auth POST in the moderation set.
+// @Tags			moderation
+// @Accept			json
+// @Produce		json
+// @Param			room_id	path	string				true	"Room ID being reported"
+// @Param			request	body	reportSubmission	true	"Report reason (5 chars minimum) and options"
+// @Success		202		"Report accepted"
+// @Failure		400		{object}	model.MatrixError	"Invalid room ID, or reason too short or missing"
+// @Failure		500		{object}	model.MatrixError	"Internal error while processing the report"
+// @Router			/mod/report/{room_id} [post]
 func report(svc moderationService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		log := apm.Log(c.Request().Context())
@@ -62,6 +73,15 @@ func report(svc moderationService) echo.HandlerFunc {
 	}
 }
 
+// @Summary		Clear a room's reports
+// @Description	Clears reports on a room. Two warts, both owned: it is a state-changing GET, and a User-Agent containing "bot" gets a 403 even with valid moderation credentials, a scar from crawlers tripping these endpoints, not a feature. There is also a no-room-id form (GET /mod/unreport) that hits the same handler with an empty ID.
+// @Tags			moderation
+// @Produce		json
+// @Security		ModerationAuth
+// @Param			room_id	path	string	true	"Room ID to clear reports for"
+// @Success		204		"Reports cleared"
+// @Failure		403		"User-Agent contains 'bot'"
+// @Router			/mod/unreport/{room_id} [get]
 func unreport(svc moderationService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		if strings.Contains(c.Request().UserAgent(), "bot") {
@@ -77,6 +97,15 @@ func unreport(svc moderationService) echo.HandlerFunc {
 	}
 }
 
+// @Summary		List banned rooms
+// @Description	Lists banned room IDs. Append /{server_name} to filter to a single server. An empty list is a 204, not an empty 200. As with the rest of the mod group, a "bot" User-Agent gets a 403 even authenticated.
+// @Tags			moderation
+// @Produce		json
+// @Security		ModerationAuth
+// @Success		200	{array}	string	"Banned room IDs"
+// @Success		204	"No banned rooms"
+// @Failure		403	"User-Agent contains 'bot'"
+// @Router			/mod/list [get]
 func listBanned(svc moderationService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		if strings.Contains(c.Request().UserAgent(), "bot") {
@@ -102,6 +131,15 @@ func listBanned(svc moderationService) echo.HandlerFunc {
 	}
 }
 
+// @Summary		List reported rooms
+// @Description	Lists reported rooms as a room-ID to reason map. Append /{server_name} to filter to a single server. Empty is a 204. A "bot" User-Agent gets a 403 even authenticated.
+// @Tags			moderation
+// @Produce		json
+// @Security		ModerationAuth
+// @Success		200	{object}	map[string]string	"Room ID to report reason"
+// @Success		204	"No reported rooms"
+// @Failure		403	"User-Agent contains 'bot'"
+// @Router			/mod/list-reported [get]
 func listReported(svc moderationService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		if strings.Contains(c.Request().UserAgent(), "bot") {
@@ -127,6 +165,15 @@ func listReported(svc moderationService) echo.HandlerFunc {
 	}
 }
 
+// @Summary		Ban a room
+// @Description	Bans a room from the index. Yes, it is a GET that mutates state, we know, and no, we are not proud of it. And a User-Agent containing "bot" gets a 403 even with valid credentials, a scar from crawlers tripping this, not a feature. Both are real behavior, documented on purpose so they surprise you here and not in production.
+// @Tags			moderation
+// @Produce		json
+// @Security		ModerationAuth
+// @Param			room_id	path		string				true	"Room ID to ban"
+// @Success		200		{object}	map[string]string	"Confirmation message"
+// @Failure		403		"User-Agent contains 'bot'"
+// @Router			/mod/ban/{room_id} [get]
 func ban(svc moderationService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		if strings.Contains(c.Request().UserAgent(), "bot") {
@@ -142,6 +189,15 @@ func ban(svc moderationService) echo.HandlerFunc {
 	}
 }
 
+// @Summary		Unban a room
+// @Description	Lifts a room ban. Same shape as ban: a state-changing GET, and a "bot" User-Agent gets a 403 even authenticated. Real behavior, owned.
+// @Tags			moderation
+// @Produce		json
+// @Security		ModerationAuth
+// @Param			room_id	path		string				true	"Room ID to unban"
+// @Success		200		{object}	map[string]string	"Confirmation message"
+// @Failure		403		"User-Agent contains 'bot'"
+// @Router			/mod/unban/{room_id} [get]
 func unban(svc moderationService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		if strings.Contains(c.Request().UserAgent(), "bot") {

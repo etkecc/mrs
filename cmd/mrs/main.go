@@ -46,6 +46,27 @@ var (
 	e          *echo.Echo
 )
 
+//	@title			Matrix Rooms Search API
+//	@version		0.0.0
+//	@description	Matrix Rooms Search crawls the Matrix federation and serves public-room search. It also answers part of the Matrix federation and client-server APIs for the rooms it has indexed. Where our implementation diverges from the spec, that divergence is documented here on purpose, not hidden. matrixrooms.info is a public demo running MRS.
+
+//	@accept		json
+//	@produce	json
+//	@schemes	https
+
+//	@license.name	AGPL-3.0
+//	@license.url	https://www.gnu.org/licenses/agpl-3.0
+
+//	@securityDefinitions.basic	MetricsAuth
+//	@securityDefinitions.basic	CatalogAuth
+//	@securityDefinitions.basic	DiscoveryAuth
+//	@securityDefinitions.basic	ModerationAuth
+//	@securityDefinitions.basic	AdminAuth
+
+// @securityDefinitions.apikey	FederationAuth
+// @in							header
+// @name						Authorization
+// @description				Matrix federation signature auth: an `Authorization: X-Matrix origin=...,key=...,sig=...` header carrying an ed25519 signature over the request, which we verify against the origin server's published keys.
 func main() {
 	quit := make(chan struct{})
 	flag.StringVar(&configPath, "c", "config.yml", "Path to the config file")

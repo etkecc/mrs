@@ -10,14 +10,19 @@ import (
 	"github.com/etkecc/mrs/internal/model"
 )
 
+// @Summary		Crawler statistics
+// @Description	Live index counts: servers found online and indexable, rooms indexed and parsed, plus the server software breakdown (how much of the federation is Synapse, basically). Timeline is present only once we have history behind us; on a fresh index the key is absent, not an empty array.
+// @Produce		json
+// @Success		200	{object}	model.StatsResponse
+// @Router			/stats [get]
 func stats(stats statsService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		info := stats.Get()
-		resp := map[string]any{
-			"servers": info.Servers.Online,
-			"rooms":   info.Rooms.Indexed,
+		resp := model.StatsResponse{
+			Servers: info.Servers.Online,
+			Rooms:   info.Rooms.Indexed,
+			Details: statsDetails(info),
 		}
-		resp["details"] = statsDetails(info)
 
 		tl := stats.GetTL(c.Request().Context())
 		keys := make([]time.Time, 0, len(tl))
@@ -27,31 +32,27 @@ func stats(stats statsService) echo.HandlerFunc {
 		sort.Slice(keys, func(i, j int) bool {
 			return keys[i].Before(keys[j])
 		})
-		timeline := make([]map[string]any, 0, len(keys))
 		for _, k := range keys {
-			timeline = append(timeline, map[string]any{
-				"date":    k.Format(time.DateOnly),
-				"details": statsDetails(tl[k]),
+			resp.Timeline = append(resp.Timeline, model.StatsTimelineEntry{
+				Date:    k.Format(time.DateOnly),
+				Details: statsDetails(tl[k]),
 			})
 		}
 
-		if len(keys) > 0 {
-			resp["timeline"] = timeline
-		}
 		return c.JSON(http.StatusOK, resp)
 	}
 }
 
-func statsDetails(stats *model.IndexStats) map[string]any {
-	return map[string]any{
-		"servers": map[string]any{
-			"online":    stats.Servers.Online,
-			"indexable": stats.Servers.Indexable,
-			"software":  stats.Servers.Software,
+func statsDetails(stats *model.IndexStats) model.StatsDetails {
+	return model.StatsDetails{
+		Servers: model.StatsDetailsServers{
+			Online:    stats.Servers.Online,
+			Indexable: stats.Servers.Indexable,
+			Software:  stats.Servers.Software,
 		},
-		"rooms": map[string]any{
-			"indexed": stats.Rooms.Indexed,
-			"parsed":  stats.Rooms.Parsed,
+		Rooms: model.StatsDetailsRooms{
+			Indexed: stats.Rooms.Indexed,
+			Parsed:  stats.Rooms.Parsed,
 		},
 	}
 }

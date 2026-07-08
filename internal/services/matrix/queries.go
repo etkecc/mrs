@@ -148,18 +148,18 @@ func (s *Server) QueryVersion(ctx context.Context, serverName string) (server, s
 	if err != nil {
 		return "", "", err
 	}
-	var vResp *serverVersionResp
+	var vResp *model.ServerVersion
 	if jerr := json.Unmarshal(datab, &vResp); jerr != nil {
 		return "", "", jerr
 	}
-	if len(vResp.Server) == 0 {
+	if vResp == nil {
 		return "", "", fmt.Errorf("invalid version response")
 	}
-	if vResp.Server["name"] == "" || vResp.Server["version"] == "" {
+	if vResp.Server.Name == "" || vResp.Server.Version == "" {
 		return "", "", fmt.Errorf("invalid version contents")
 	}
 
-	return vResp.Server["name"], vResp.Server["version"], nil
+	return vResp.Server.Name, vResp.Server.Version, nil
 }
 
 // QueryPublicRooms over federation. Uses SlowHTTPClient for heavy queries.
@@ -213,7 +213,7 @@ func (s *Server) QueryServerKeys(ctx context.Context, serverName string, validUn
 	if keyPayload == nil {
 		return []byte(model.EmptyServerKeysResp)
 	}
-	payload, err := utils.JSON(matrixKeyQueryResp{
+	payload, err := utils.JSON(model.ServerKeysQueryResponse{
 		ServerKeys: []json.RawMessage{keyPayload},
 	})
 	if err != nil {
@@ -248,7 +248,7 @@ func (s *Server) QueryServersKeys(ctx context.Context, req *model.QueryServerKey
 		})
 	}
 	wp.Run()
-	payload, err := utils.JSON(matrixKeyQueryResp{
+	payload, err := utils.JSON(model.ServerKeysQueryResponse{
 		ServerKeys: keyPayloads,
 	})
 	if err != nil {

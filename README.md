@@ -7,7 +7,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # Matrix Rooms Search
 
-**Matrix Rooms Search** (short: MRS) is a fully-featured, standalone, Matrix rooms search service, available both in web (via [HTTP API](./openapi.yml)) and natively in Matrix (via [Matrix Federation API](./docs/integrations.md)).
+**Matrix Rooms Search** (short: MRS) is a fully-featured, standalone, Matrix rooms search service, available both in web (via [HTTP API](./docs/swagger.yaml)) and natively in Matrix (via [Matrix Federation API](./docs/integrations.md)).
 
 No dependencies are required to run a Matrix Rooms Search instance.
 
@@ -16,6 +16,7 @@ At **[MatrixRooms.info](https://matrixrooms.info)** is a public demo instance av
 <!-- vim-markdown-toc GFM -->
 
 * [📌 What MRS Does](#-what-mrs-does)
+    * [What MRS does *not* do](#what-mrs-does-not-do)
 * [🔍 Why This Exists](#-why-this-exists)
 * [🔐 Privacy and Respect](#-privacy-and-respect)
 * [❌ Opting Out / Deindexing](#-opting-out--deindexing)
@@ -101,7 +102,7 @@ MRS integrates [MSC1929](https://github.com/matrix-org/matrix-spec-proposals/pul
 
 ### API
 
-See [openapi.yml](./openapi.yml) for details about the API.
+See [docs/swagger.yaml](./docs/swagger.yaml) for details about the API.
 
 ## Quick Start
 

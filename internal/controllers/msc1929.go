@@ -63,7 +63,14 @@ func validateMSC1929(resp *msc1929.Response) []*model.MatrixError {
 	return errs
 }
 
-// checkMSC1929 is a simple tool to check if a server has a valid MSC1929 support file.
+// @Summary		Check a server's MSC1929 support file
+// @Description	Fetches and validates a server's MSC1929 support file (the contacts in /.well-known/matrix/support). Returns 204 when it is valid, or 400 with a list of the specific problems: empty file, a contact missing a role, an unsupported role, no contacts at all, or the deprecated 'admins' field. A handy pre-flight before relying on a server's support contacts.
+// @Tags			discovery
+// @Produce		json
+// @Param			name	path	string	true	"Server name to check"
+// @Success		204		"Support file is valid"
+// @Failure		400		{array}	model.MatrixError	"Support file is missing, unreachable, or invalid"
+// @Router			/discover/msc1929/{name} [post]
 func checkMSC1929() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		name := c.Param("name")

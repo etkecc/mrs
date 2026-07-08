@@ -1,18 +1,12 @@
 package controllers
 
 import (
-	"bytes"
 	"context"
 	"io"
 	"net/http"
 	"net/url"
-	"strconv"
-
-	"github.com/etkecc/go-apm"
-	"github.com/labstack/echo/v4"
 
 	"github.com/etkecc/mrs/internal/model"
-	"github.com/etkecc/mrs/internal/utils"
 )
 
 type matrixService interface {
@@ -31,155 +25,4 @@ type matrixService interface {
 	QueryDirectory(ctx context.Context, req *http.Request, alias string) (int, []byte)
 	QueryServerKeys(ctx context.Context, serverName string, validUntilTS int64) []byte
 	QueryServersKeys(ctx context.Context, req *model.QueryServerKeysRequest, validUntilTS int64) []byte
-}
-
-func configureMatrixS2SEndpoints(e *echo.Echo, matrixSvc matrixService, plausible plausibleService, cacheSvc cacheService) {
-	e.GET("/.well-known/matrix/server", func(c echo.Context) error {
-		return c.JSONBlob(http.StatusOK, matrixSvc.GetServerWellKnown())
-	}, cacheSvc.MiddlewareImmutable())
-	e.GET("/_matrix/federation/v1/version", func(c echo.Context) error {
-		return c.JSONBlob(http.StatusOK, matrixSvc.GetServerVersion())
-	}, cacheSvc.MiddlewareImmutable())
-	e.GET("/_matrix/key/v2/server", func(c echo.Context) error {
-		return c.JSONBlob(http.StatusOK, matrixSvc.GetKeyServer(c.Request().Context()))
-	})
-	e.GET("/_matrix/key/v2/query/:serverName", func(c echo.Context) error {
-		serverName := c.Param("serverName")
-		if serverName == "" {
-			return c.JSONBlob(http.StatusOK, []byte(model.EmptyServerKeysResp))
-		}
-
-		validUntilTStr := c.QueryParam("minimum_valid_until_ts")
-		var validUntilTS int64
-		if validUntilTStr != "" {
-			validUntilTS, _ = strconv.ParseInt(validUntilTStr, 10, 64) //nolint:errcheck // 0 is handled properly
-		}
-
-		evt := model.NewAnalyticsEvent(c.Request().Context(), "Get Key", map[string]string{"server": serverName}, c.Request())
-		go func(ctx context.Context, evt *model.AnalyticsEvent) {
-			ctx = context.WithoutCancel(ctx)
-			plausible.Track(ctx, evt)
-		}(c.Request().Context(), evt)
-
-		return c.JSONBlob(http.StatusOK, matrixSvc.QueryServerKeys(c.Request().Context(), serverName, validUntilTS))
-	})
-	e.POST("/_matrix/key/v2/query", func(c echo.Context) error {
-		var req *model.QueryServerKeysRequest
-		if err := c.Bind(&req); err != nil {
-			apm.Log(c.Request().Context()).Warn().Err(err).Msg("failed to bind query server keys request")
-			return c.JSONBlob(http.StatusOK, []byte(model.EmptyServerKeysResp))
-		}
-
-		validUntilTStr := c.QueryParam("minimum_valid_until_ts")
-		var validUntilTS int64
-		if validUntilTStr != "" {
-			validUntilTS, _ = strconv.ParseInt(validUntilTStr, 10, 64) //nolint:errcheck // 0 is handled properly
-		}
-
-		if len(req.ServerKeys) == 0 {
-			return c.JSONBlob(http.StatusOK, []byte(model.EmptyServerKeysResp))
-		}
-
-		for srv := range req.ServerKeys {
-			if srv == "" {
-				continue
-			}
-			evt := model.NewAnalyticsEvent(c.Request().Context(), "Get Key", map[string]string{"server": srv}, c.Request())
-			go func(ctx context.Context, evt *model.AnalyticsEvent) {
-				ctx = context.WithoutCancel(ctx)
-				plausible.Track(ctx, evt)
-			}(c.Request().Context(), evt)
-		}
-
-		return c.JSONBlob(http.StatusOK, matrixSvc.QueryServersKeys(c.Request().Context(), req, validUntilTS))
-	})
-	e.GET("/_matrix/federation/v1/query/directory", func(c echo.Context) error {
-		return c.JSONBlob(matrixSvc.QueryDirectory(c.Request().Context(), c.Request(), c.QueryParam("room_alias")))
-	})
-	e.GET("/_matrix/federation/v1/publicRooms", matrixRoomDirectory(matrixSvc), cacheSvc.MiddlewareSearch())
-	e.POST("/_matrix/federation/v1/publicRooms", matrixRoomDirectory(matrixSvc), cacheSvc.MiddlewareSearch())
-}
-
-func configureMatrixCSEndpoints(e *echo.Echo, matrixSvc matrixService, cacheSvc cacheService) {
-	rl := getRL(30)
-	e.GET("/.well-known/matrix/client", func(c echo.Context) error {
-		return c.JSONBlob(http.StatusOK, matrixSvc.GetClientWellKnown())
-	}, cacheSvc.MiddlewareImmutable())
-	e.GET("/.well-known/matrix/support", func(c echo.Context) error {
-		return c.JSONBlob(http.StatusOK, matrixSvc.GetSupportWellKnown())
-	}, cacheSvc.MiddlewareImmutable())
-	e.GET("/_matrix/client/versions", func(c echo.Context) error {
-		return c.JSONBlob(http.StatusOK, matrixSvc.GetClientVersion())
-	}, cacheSvc.MiddlewareImmutable())
-	e.GET("/_matrix/media/r0/thumbnail/:name/:id", avatar(matrixSvc), rl, cacheSvc.MiddlewareImmutable())
-	e.GET("/_matrix/media/v3/thumbnail/:name/:id", avatar(matrixSvc), rl, cacheSvc.MiddlewareImmutable())
-	e.GET("/_matrix/client/r0/directory/room/:room_alias", func(c echo.Context) error {
-		return c.JSONBlob(matrixSvc.GetClientDirectory(c.Request().Context(), c.Param("room_alias")))
-	}, rl)
-	e.GET("/_matrix/client/v3/directory/room/:room_alias", func(c echo.Context) error {
-		return c.JSONBlob(matrixSvc.GetClientDirectory(c.Request().Context(), c.Param("room_alias")))
-	}, rl)
-	e.GET("/_matrix/client/r0/directory/list/room/:room_id", func(c echo.Context) error {
-		return c.JSONBlob(matrixSvc.GetClientRoomVisibility(c.Request().Context(), c.Param("room_id")))
-	}, rl, cacheSvc.MiddlewareImmutable())
-	e.GET("/_matrix/client/v3/directory/list/room/:room_id", func(c echo.Context) error {
-		return c.JSONBlob(matrixSvc.GetClientRoomVisibility(c.Request().Context(), c.Param("room_id")))
-	}, rl, cacheSvc.MiddlewareImmutable())
-
-	// MSC3326 (stable) endpoint, ref: https://github.com/matrix-org/matrix-spec/pull/2125
-	e.GET("/_matrix/client/v1/room_summary/:room_id_alias", func(c echo.Context) error {
-		code, room := matrixSvc.GetClientRoomSummary(c.Request().Context(), c.Param("room_id_alias"), c.QueryParam("via"), false)
-		if code != http.StatusOK {
-			return c.JSONBlob(code, utils.MustJSON(model.MatrixError{
-				Code:    "M_NOT_FOUND",
-				Message: "room not found",
-			}))
-		}
-		return c.JSONBlob(code, utils.MustJSON(room))
-	}, rl)
-	// MSC3326 (unstable) - correct and incorrect (but implemented by matrix.to) endpoints
-	e.GET("/_matrix/client/unstable/im.nheko.summary/summary/:room_id_alias", func(c echo.Context) error {
-		code, room := matrixSvc.GetClientRoomSummary(c.Request().Context(), c.Param("room_id_alias"), c.QueryParam("via"), false)
-		if code != http.StatusOK {
-			return c.JSONBlob(code, utils.MustJSON(model.MatrixError{
-				Code:    "M_NOT_FOUND",
-				Message: "room not found",
-			}))
-		}
-		return c.JSONBlob(code, utils.MustJSON(room))
-	}, rl)
-	e.GET("_matrix/client/unstable/im.nheko.summary/rooms/:room_id_alias/summary", func(c echo.Context) error {
-		code, room := matrixSvc.GetClientRoomSummary(c.Request().Context(), c.Param("room_id_alias"), c.QueryParam("via"), false)
-		if code != http.StatusOK {
-			return c.JSONBlob(code, utils.MustJSON(model.MatrixError{
-				Code:    "M_NOT_FOUND",
-				Message: "room not found",
-			}))
-		}
-		return c.JSONBlob(code, utils.MustJSON(room))
-	}, rl)
-}
-
-// /_matrix/federation/v1/publicRooms
-func matrixRoomDirectory(matrixSvc matrixService) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		log := apm.Log(c.Request().Context())
-		r := c.Request()
-		body, err := io.ReadAll(r.Body)
-		if err != nil {
-			return err
-		}
-		r.Body = io.NopCloser(bytes.NewBuffer(body))
-		c.SetRequest(r)
-
-		var req model.RoomDirectoryRequest
-		if err := c.Bind(&req); err != nil {
-			log.Error().Err(err).Msg("POST directory request binding failed")
-		}
-		req.IP = c.RealIP()
-		r.Body = io.NopCloser(bytes.NewBuffer(body))
-		c.SetRequest(r)
-
-		return c.JSONBlob(matrixSvc.PublicRooms(c.Request().Context(), c.Request(), &req))
-	}
 }

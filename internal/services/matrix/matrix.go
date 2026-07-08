@@ -26,24 +26,24 @@ type Server struct {
 	media              mediaService
 	search             searchService
 	blocklist          blocklistService
-	wellknownServer    []byte        // /.well-known/matrix/server contents
-	wellknownClient    []byte        // /.well-known/matrix/client contents
-	wellknownSupport   []byte        // /.well-known/matrix/support contents
-	versionServer      []byte        // /_matrix/federation/v1/version contents
-	versionClient      []byte        // /_matrix/client/versions contents
-	keyServer          matrixKeyResp // /_matrix/key/v2/server template
+	wellknownServer    []byte           // /.well-known/matrix/server contents
+	wellknownClient    []byte           // /.well-known/matrix/client contents
+	wellknownSupport   []byte           // /.well-known/matrix/support contents
+	versionServer      []byte           // /_matrix/federation/v1/version contents
+	versionClient      []byte           // /_matrix/client/versions contents
+	keyServer          model.ServerKeys // /_matrix/key/v2/server template
 	discoverFunc       func(context.Context, string) int
 	discoverSem        chan struct{}
 	surlsCache         *expirable.LRU[string, string]
 	curlsCache         *expirable.LRU[string, string]
-	keysCache          *expirable.LRU[string, matrixKeyResp]
+	keysCache          *expirable.LRU[string, model.ServerKeys]
 	namesCache         *expirable.LRU[string, string]
 	namesNegativeCache *expirable.LRU[string, struct{}] // recently-failed name lookups, short-TTL'd
 }
 
 // NewServer creates new matrix server
 func NewServer(cfg configService, data dataRepository, media mediaService, search searchService, blocklist blocklistService) (*Server, error) {
-	keysCache := expirable.NewLRU[string, matrixKeyResp](100000, nil, cacheTTL)
+	keysCache := expirable.NewLRU[string, model.ServerKeys](100000, nil, cacheTTL)
 	namesCache := expirable.NewLRU[string, string](100000, nil, cacheTTL)
 	surlsCache := expirable.NewLRU[string, string](100000, nil, cacheTTL)
 	curlsCache := expirable.NewLRU[string, string](100000, nil, cacheTTL)

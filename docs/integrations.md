@@ -9,7 +9,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # Integrations
 
-Matrix Rooms Search (short: MRS) provides various integrations both via [Matrix protocol](https://spec.matrix.org/) APIs, and via own [REST API](../openapi.yml) for applications.
+Matrix Rooms Search (short: MRS) provides various integrations both via [Matrix protocol](https://spec.matrix.org/) APIs, and via own [REST API](./swagger.yaml).
 
 <!-- vim-markdown-toc GFM -->
 

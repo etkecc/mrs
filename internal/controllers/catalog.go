@@ -15,9 +15,16 @@ type crawlerService interface {
 	OnlineServersObjects(context.Context) map[string]*model.MatrixServer
 }
 
-// catalogRoom returns the room data for the given room ID or alias.
-// EXPERIMENT! This endpoint returns the room data for the given room ID or alias.
-// similar to the room preview endpoint from Matrix CS API, but using all MRS' room properties (like language, etc)
+// @Summary		Room preview
+// @Description	Room preview by ID or alias: like the Matrix client-server room preview, but enriched with everything MRS knows about a room (language and so on). We try our own index first, then fall back to a live MSC3266 summary, and when that fallback fires we set the `X-MRS-MSC3266: true` response header so you can tell. Marked EXPERIMENT in the source, so treat the shape as not yet frozen.
+// @Tags			catalog
+// @Produce		json
+// @Param			room_id_or_alias	path		string				true	"Room ID or alias"
+// @Param			via					query		string				false	"Server to try for the MSC3266 fallback if we do not have the room indexed"
+// @Success		200					{object}	model.MatrixRoom	"Room data"
+// @Failure		404					{object}	model.MatrixError	"Room not found anywhere we looked"
+// @Failure		500					{object}	model.MatrixError	"Internal error reading the room"
+// @Router			/room/{room_id_or_alias} [get]
 func catalogRoom(dataSvc dataService, matrixSvc matrixService, plausible plausibleService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		roomIDorAlias := utils.Unescape(c.Param("room_id_or_alias"))
@@ -67,7 +74,13 @@ func catalogRoom(dataSvc dataService, matrixSvc matrixService, plausible plausib
 	}
 }
 
-// rooms returns a list of all rooms in the database.
+// @Summary		All rooms
+// @Description	Every indexed room as a room-ID to alias map. Big, authenticated, and exactly as heavy as it sounds.
+// @Tags			catalog
+// @Produce		json
+// @Security		CatalogAuth
+// @Success		200	{object}	map[string]string	"Room ID to alias"
+// @Router			/catalog/rooms [get]
 func rooms(data dataService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		rooms := map[string]string{}
@@ -82,7 +95,13 @@ func rooms(data dataService) echo.HandlerFunc {
 	}
 }
 
-// servers returns a list of online servers that the crawler is aware of.
+// @Summary		Online servers
+// @Description	The servers the crawler currently considers online.
+// @Tags			catalog
+// @Produce		json
+// @Security		CatalogAuth
+// @Success		200	{array}	string	"Online server names"
+// @Router			/catalog/servers [get]
 func servers(crawler crawlerService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		servers := crawler.OnlineServers(c.Request().Context())
@@ -90,7 +109,13 @@ func servers(crawler crawlerService) echo.HandlerFunc {
 	}
 }
 
-// serversObjects returns a list of all servers that the crawler is aware of, with their details.
+// @Summary		Online servers with details
+// @Description	Online servers with their full crawl records, keyed by server name.
+// @Tags			catalog
+// @Produce		json
+// @Security		CatalogAuth
+// @Success		200	{object}	map[string]model.MatrixServer	"Server name to crawl record"
+// @Router			/catalog/servers/objects [get]
 func serversObjects(crawler crawlerService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		servers := crawler.OnlineServersObjects(c.Request().Context())

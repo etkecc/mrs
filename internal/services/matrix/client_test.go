@@ -2,13 +2,55 @@ package matrix
 
 import (
 	"context"
+	"net/http"
 	"net/url"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/hashicorp/golang-lru/v2/expirable"
+
+	"github.com/etkecc/mrs/internal/model"
 )
+
+// fakeVisibilityData is a minimal dataRepository: enough to drive GetClientRoomVisibility's
+// found / not-found / banned branches without dragging in a real store.
+type fakeVisibilityData struct {
+	room   *model.MatrixRoom
+	banned bool
+}
+
+func (f *fakeVisibilityData) GetRoom(context.Context, string) (*model.MatrixRoom, error) {
+	return f.room, nil
+}
+func (f *fakeVisibilityData) GetRoomMapping(context.Context, string) string { return "" }
+func (f *fakeVisibilityData) IsBanned(context.Context, string) bool         { return f.banned }
+
+// TestGetClientRoomVisibility pins the spec fix: MRS holds only public rooms, so a room we have is
+// "public" (200), and anything we never crawled or have banned is a 404, not a blanket "public".
+func TestGetClientRoomVisibility(t *testing.T) {
+	const roomID = "!room:example.org"
+	cases := []struct {
+		name       string
+		id         string
+		data       *fakeVisibilityData
+		wantStatus int
+	}{
+		{"empty id", "", &fakeVisibilityData{}, http.StatusBadRequest},
+		{"unknown room", roomID, &fakeVisibilityData{room: nil}, http.StatusNotFound},
+		{"banned room", roomID, &fakeVisibilityData{room: &model.MatrixRoom{ID: roomID}, banned: true}, http.StatusNotFound},
+		{"indexed public room", roomID, &fakeVisibilityData{room: &model.MatrixRoom{ID: roomID}}, http.StatusOK},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			s := &Server{data: tc.data}
+			status, _ := s.GetClientRoomVisibility(context.Background(), tc.id)
+			if status != tc.wantStatus {
+				t.Errorf("status = %d, want %d", status, tc.wantStatus)
+			}
+		})
+	}
+}
 
 // TestRoomSummaryFallback_rejectsIPLiteralVia checks the early reject catches the canonical IP-literal forms
 // of via before any resolve or dial, and never caches them. Disguised forms (decimal/octal/zone) pass this

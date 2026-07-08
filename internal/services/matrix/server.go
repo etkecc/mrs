@@ -44,7 +44,7 @@ func (s *Server) PublicRooms(ctx context.Context, req *http.Request, rdReq *mode
 	origin, err := s.ValidateAuth(ctx, req)
 	if err != nil {
 		log.Warn().Err(err).Str("header", req.Header.Get("Authorization")).Msg("matrix auth failed")
-		return http.StatusUnauthorized, nil
+		return http.StatusUnauthorized, s.getErrorResp(ctx, "M_UNAUTHORIZED", "authorization failed")
 	}
 	ctx = mcontext.WithOrigin(ctx, origin)
 	req.Header.Set("Referer", "https://"+origin+"/_matrix/client/v3/publicRooms") // workaround to set correct referer for this endpoint

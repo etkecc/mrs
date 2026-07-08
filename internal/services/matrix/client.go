@@ -24,7 +24,7 @@ const (
 
 var (
 	fallbacks      = []string{"https://matrix-client.matrix.org"}
-	roomVisibility = utils.MustJSON(map[string]string{"visibility": "public"})
+	roomVisibility = utils.MustJSON(model.RoomVisibility{Visibility: "public"})
 )
 
 // GetClientWellKnown returns json-eligible response for /.well-known/matrix/client
@@ -116,11 +116,22 @@ func (s *Server) GetClientRoomSummary(ctx context.Context, aliasOrID, via string
 }
 
 // GetClientRoomVisibility is /_matrix/client/v3/directory/list/room/{roomID}
-// this is a stub endpoint, because MRS works only with public rooms,
-// so we always return public visibility.
-// That may change in the future (e.g., if protocol adds more visibility types),
-// but for now we just return public visibility.
-func (s *Server) GetClientRoomVisibility(_ context.Context, _ string) (statusCode int, resp []byte) {
+// MRS indexes only public rooms, so a room we hold is public by definition; a room we do not
+// hold (or have banned) is a 404 per spec, not a blanket "public" for the whole ID space.
+func (s *Server) GetClientRoomVisibility(ctx context.Context, roomID string) (statusCode int, resp []byte) {
+	roomID = utils.Unescape(roomID)
+	if roomID == "" {
+		return http.StatusBadRequest, s.getErrorResp(ctx, "M_INVALID_PARAM", "room ID invalid")
+	}
+
+	room, err := s.getRoom(ctx, roomID)
+	if err != nil {
+		apm.Log(ctx).Error().Err(err).Msg("cannot get room from data store")
+	}
+	if room == nil || s.data.IsBanned(ctx, room.ID) {
+		return http.StatusNotFound, s.getErrorResp(ctx, "M_NOT_FOUND", "room not found")
+	}
+
 	return http.StatusOK, roomVisibility
 }
 

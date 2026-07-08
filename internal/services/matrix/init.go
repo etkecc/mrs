@@ -35,17 +35,17 @@ func (s *Server) initWellKnown(apiURL string) error {
 		port = "443"
 	}
 
-	serverValue, err := utils.JSON(map[string]string{
-		"m.server": uri.Hostname() + ":" + port,
+	serverValue, err := utils.JSON(model.WellKnownServer{
+		Host: uri.Hostname() + ":" + port,
 	})
 	if err != nil {
 		return err
 	}
 	s.wellknownServer = serverValue
 
-	clientValue, err := utils.JSON(map[string]map[string]string{
-		"m.homeserver": {
-			"base_url": "https://" + uri.Host,
+	clientValue, err := utils.JSON(model.WellKnownClient{
+		Homeserver: model.WellKnownHomeserver{
+			BaseURL: "https://" + uri.Host,
 		},
 	})
 	if err != nil {
@@ -62,17 +62,17 @@ func (s *Server) initWellKnown(apiURL string) error {
 }
 
 func (s *Server) initVersion() error {
-	serverValue, err := utils.JSON(serverVersionResp{
-		Server: map[string]string{
-			"name":    version.Name,
-			"version": version.Version,
+	serverValue, err := utils.JSON(model.ServerVersion{
+		Server: model.ServerVersionInfo{
+			Name:    version.Name,
+			Version: version.Version,
 		},
 	})
 	if err != nil {
 		return err
 	}
 	s.versionServer = serverValue
-	clientValue, err := utils.JSON(clientVersionResp{
+	clientValue, err := utils.JSON(model.ClientVersions{
 		Versions: []string{ // copy of synapse versions with some made-up values, because MRS is not a client-facing server, but other services like matrix.to require such hacks.
 			"r0.0.1",
 			"r0.1.0",
@@ -107,7 +107,7 @@ func (s *Server) initVersion() error {
 }
 
 func (s *Server) initKeyServer() {
-	resp := matrixKeyResp{
+	resp := model.ServerKeys{
 		ServerName:    s.cfg.Get().Matrix.ServerName,
 		ValidUntilTS:  time.Now().UTC().Add(24 * time.Hour).UnixMilli(),
 		VerifyKeys:    map[string]map[string]string{},

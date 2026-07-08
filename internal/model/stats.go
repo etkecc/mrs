@@ -39,6 +39,39 @@ type IndexStatsTime struct {
 	FinishedAt time.Time `json:"finished_at"`
 }
 
+// StatsResponse is the /stats API payload.
+type StatsResponse struct {
+	Servers  int                  `json:"servers"`
+	Rooms    int                  `json:"rooms"`
+	Details  StatsDetails         `json:"details"`
+	Timeline []StatsTimelineEntry `json:"timeline,omitempty"`
+}
+
+// StatsDetails is the per-snapshot server and room breakdown.
+type StatsDetails struct {
+	Servers StatsDetailsServers `json:"servers"`
+	Rooms   StatsDetailsRooms   `json:"rooms"`
+}
+
+// StatsDetailsServers holds the server-side counts.
+type StatsDetailsServers struct {
+	Online    int            `json:"online"`
+	Indexable int            `json:"indexable"`
+	Software  map[string]int `json:"software"`
+}
+
+// StatsDetailsRooms holds the room-side counts.
+type StatsDetailsRooms struct {
+	Indexed int `json:"indexed"`
+	Parsed  int `json:"parsed"`
+}
+
+// StatsTimelineEntry is one dated point in the stats timeline.
+type StatsTimelineEntry struct {
+	Date    string       `json:"date"`
+	Details StatsDetails `json:"details"`
+}
+
 // AnalyticsEvent structure
 type AnalyticsEvent struct {
 	Name          string            // Event name

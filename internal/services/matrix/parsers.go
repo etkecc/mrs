@@ -65,9 +65,12 @@ func (s *Server) parseClientWellKnown(ctx context.Context, serverName string) (s
 	if err != nil {
 		return "", err
 	}
-	var wellknown *wellKnownClientResp
+	var wellknown *model.WellKnownClient
 	if wkerr := json.Unmarshal(datab, &wellknown); wkerr != nil {
 		return "", wkerr
+	}
+	if wellknown == nil {
+		return "", fmt.Errorf("/.well-known/matrix/client is empty")
 	}
 	if wellknown.Homeserver.BaseURL == "" {
 		return "", fmt.Errorf("/.well-known/matrix/client is empty")
@@ -101,12 +104,12 @@ func (s *Server) parseServerWellKnown(ctx context.Context, serverName string) (s
 		log.Warn().Err(err).Msg("failed to read /.well-known/matrix/server")
 		return "", err
 	}
-	var wellknown *wellKnownServerResp
+	var wellknown *model.WellKnownServer
 	if wkerr := json.Unmarshal(datab, &wellknown); wkerr != nil {
 		log.Warn().Err(wkerr).Msg("failed to parse /.well-known/matrix/server")
 		return "", wkerr
 	}
-	if wellknown.Host == "" {
+	if wellknown == nil || wellknown.Host == "" {
 		log.Warn().Msg("/.well-known/matrix/server is empty")
 		return "", fmt.Errorf("/.well-known/matrix/server is empty")
 	}
@@ -269,7 +272,7 @@ func (s *Server) getURLFromWK(ctx context.Context, serverName string, discover b
 }
 
 // lookupKeys requests /_matrix/key/v2/server by serverName
-func (s *Server) lookupKeys(ctx context.Context, serverName string, discover bool) (*matrixKeyResp, error) {
+func (s *Server) lookupKeys(ctx context.Context, serverName string, discover bool) (*model.ServerKeys, error) {
 	log := apm.Log(ctx).With().Str("server", serverName).Logger()
 
 	ctx, serverURL, serverHost := s.getURL(ctx, serverName, discover)
@@ -294,10 +297,13 @@ func (s *Server) lookupKeys(ctx context.Context, serverName string, discover boo
 		return nil, merr
 	}
 
-	var keysResp *matrixKeyResp
+	var keysResp *model.ServerKeys
 	if err := json.Unmarshal(datab, &keysResp); err != nil {
 		log.Warn().Err(err).Msg("failed to parse keys")
 		return nil, err
+	}
+	if keysResp == nil {
+		return nil, fmt.Errorf("empty server keys response")
 	}
 	return keysResp, nil
 }
@@ -308,7 +314,7 @@ func (s *Server) notaryLookupKeys(ctx context.Context, serverName string, validU
 	ctx, cancel := context.WithTimeout(ctx, utils.DefaultTimeout)
 	defer cancel()
 
-	var keysResp *matrixKeyResp
+	var keysResp *model.ServerKeys
 	var err error
 	cached, isCached := s.keysCache.Get(serverName)
 	if isCached {
