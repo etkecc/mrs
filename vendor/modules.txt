@@ -207,7 +207,7 @@ github.com/etkecc/go-kit/workpool
 # github.com/etkecc/go-kit/format v0.0.0-20260706214856-bb194e996cfd
 ## explicit; go 1.22
 github.com/etkecc/go-kit/format
-# github.com/etkecc/go-msc1929 v1.3.0
+# github.com/etkecc/go-msc1929 v1.3.1
 ## explicit; go 1.22
 github.com/etkecc/go-msc1929
 # github.com/fsnotify/fsnotify v1.10.1

@@ -13,7 +13,7 @@ require (
 	github.com/etkecc/go-healthchecks/v2 v2.4.1
 	github.com/etkecc/go-kit v1.12.3
 	github.com/etkecc/go-kit/format v0.0.0-20260706214856-bb194e996cfd
-	github.com/etkecc/go-msc1929 v1.3.0
+	github.com/etkecc/go-msc1929 v1.3.1
 	github.com/fsnotify/fsnotify v1.10.1
 	github.com/goccy/go-json v0.10.6
 	github.com/hashicorp/golang-lru/v2 v2.0.7

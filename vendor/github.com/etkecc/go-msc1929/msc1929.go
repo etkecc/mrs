@@ -20,9 +20,10 @@ var (
 	defaultClient = &http.Client{
 		Timeout: 5 * time.Second,
 		Transport: &http.Transport{
-			MaxIdleConns:        1,
-			MaxConnsPerHost:     1,
-			MaxIdleConnsPerHost: 1,
+			MaxIdleConns:        100,
+			MaxConnsPerHost:     0,
+			MaxIdleConnsPerHost: 2,
+			IdleConnTimeout:     30 * time.Second,
 			TLSHandshakeTimeout: 10 * time.Second,
 			DialContext:         defaultDialer.DialContext,
 			Dial:                defaultDialer.Dial,

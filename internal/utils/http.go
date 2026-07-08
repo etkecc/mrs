@@ -9,6 +9,7 @@ import (
 
 	"github.com/etkecc/go-apm"
 	"github.com/etkecc/go-kit/httpclient"
+	"github.com/etkecc/go-msc1929"
 
 	"github.com/etkecc/mrs/internal/version"
 )
@@ -20,6 +21,11 @@ const (
 )
 
 var httpClient = newHTTPClient()
+
+func init() {
+	// use dial-guarded client for MSC1929, say no to SSRF.
+	msc1929.Client = httpClient
+}
 
 // cancelOnClose fires the request-timeout cancel when the body closes, not when Do returns:
 // media.go streams resp.Body long after Do, so an early cancel truncates it mid-read.
