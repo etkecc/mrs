@@ -202,7 +202,7 @@ github.com/etkecc/go-kit/httpclient
 github.com/etkecc/go-kit/retry
 github.com/etkecc/go-kit/template
 github.com/etkecc/go-kit/workpool
-# github.com/etkecc/go-kit/format v0.0.0-20260706214856-bb194e996cfd
+# github.com/etkecc/go-kit/format v0.0.0-20260709185401-2a6643e3c927
 ## explicit; go 1.22
 github.com/etkecc/go-kit/format
 # github.com/etkecc/go-msc1929 v1.3.1
