@@ -16,8 +16,8 @@ import (
 	"time"
 
 	"github.com/etkecc/go-apm"
-	"github.com/etkecc/go-crontab"
 	"github.com/etkecc/go-healthchecks/v2"
+	"github.com/etkecc/go-kit/crontab"
 	"github.com/etkecc/go-msc1929"
 	"github.com/labstack/echo/v4"
 	"github.com/pemistahl/lingua-go"
@@ -195,33 +195,39 @@ func initShutdown(quit chan struct{}) {
 
 func initCron(cfg *services.Config, dataSvc *services.DataFacade) {
 	ctx := apm.NewContext()
-	cron = crontab.New()
-	cron.SetPanicLogger(func(r any) {
-		log.Error().Any("recover", r).Msg("cron job panicked")
-	})
+	cron = crontab.New(crontab.WithPanicHandler(func(spec string, recovered any) {
+		log.Error().Str("spec", spec).Any("recover", recovered).Msg("cron job panicked")
+	}))
 
 	if schedule := cfg.Get().Cron.Discovery; schedule != "" {
 		log.Info().Str("job", "discovery").Msg("cron job enabled")
-		cron.MustAddJob(schedule, dataSvc.DiscoverServers, ctx, cfg.Get().Workers.Discovery)
+		workers := cfg.Get().Workers.Discovery
+		cron.MustAddJob(schedule, func() { dataSvc.DiscoverServers(ctx, workers) })
 	}
 	if schedule := cfg.Get().Cron.Parsing; schedule != "" {
 		log.Info().Str("job", "parsing").Msg("cron job enabled")
-		cron.MustAddJob(schedule, dataSvc.ParseRooms, ctx, cfg.Get().Workers.Parsing)
+		workers := cfg.Get().Workers.Parsing
+		cron.MustAddJob(schedule, func() { dataSvc.ParseRooms(ctx, workers) })
 	}
 	if schedule := cfg.Get().Cron.Indexing; schedule != "" {
 		log.Info().Str("job", "indexing").Msg("cron job enabled")
-		cron.MustAddJob(schedule, dataSvc.Ingest, ctx)
+		cron.MustAddJob(schedule, func() { dataSvc.Ingest(ctx) })
 	}
 	if schedule := cfg.Get().Cron.Full; schedule != "" {
 		log.Info().Str("job", "full").Msg("cron job enabled")
-		cron.MustAddJob(schedule, dataSvc.Full, ctx, cfg.Get().Workers.Discovery, cfg.Get().Workers.Parsing)
+		dw, pw := cfg.Get().Workers.Discovery, cfg.Get().Workers.Parsing
+		cron.MustAddJob(schedule, func() { dataSvc.Full(ctx, dw, pw) })
 	}
 }
 
 func shutdown() {
 	log.Info().Msg("shutting down...")
 	defer apm.Flush()
-	cron.Shutdown()
+	cronCtx, cronCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cronCancel()
+	if err := cron.Shutdown(cronCtx); err != nil {
+		log.Warn().Err(err).Msg("cron shutdown did not drain cleanly")
+	}
 	if err := index.Close(); err != nil {
 		log.Error().Err(err).Msg("cannot close the index")
 	}

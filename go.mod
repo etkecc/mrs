@@ -7,11 +7,10 @@ require (
 	github.com/blevesearch/bleve/v2 v2.6.0
 	github.com/blevesearch/bleve_index_api v1.3.12
 	github.com/etkecc/go-apm v1.3.5
-	github.com/etkecc/go-crontab v1.2.1
 	github.com/etkecc/go-echo-basic-auth v1.4.0
 	github.com/etkecc/go-fswatcher v1.0.1
 	github.com/etkecc/go-healthchecks/v2 v2.4.1
-	github.com/etkecc/go-kit v1.12.3
+	github.com/etkecc/go-kit v1.12.4
 	github.com/etkecc/go-kit/format v0.0.0-20260706214856-bb194e996cfd
 	github.com/etkecc/go-msc1929 v1.3.1
 	github.com/fsnotify/fsnotify v1.10.1
