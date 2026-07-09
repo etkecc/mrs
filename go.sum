@@ -64,6 +64,8 @@ github.com/etkecc/go-healthchecks/v2 v2.4.1 h1:loXQe+wYEqCbiKgQEgjBBixcb73icas1F
 github.com/etkecc/go-healthchecks/v2 v2.4.1/go.mod h1:Cf+v4CDzPk0Zr8amEEIZYMU6wHglJ43q362BeEBcTo0=
 github.com/etkecc/go-kit v1.12.4 h1:nU73agiBl3dnc3tGfpDBqq372a7/NRWVyVvjbYNviwQ=
 github.com/etkecc/go-kit v1.12.4/go.mod h1:Mj5wxe1ntD+yxAxxozIb/F9ns4sLEeRTzHjFiNdNP9g=
+github.com/etkecc/go-kit v1.12.5 h1:M8ALwycXU5oSZ60jZqamhZiwRPd1U+p8PH/oPk3HZ04=
+github.com/etkecc/go-kit v1.12.5/go.mod h1:Mj5wxe1ntD+yxAxxozIb/F9ns4sLEeRTzHjFiNdNP9g=
 github.com/etkecc/go-kit/format v0.0.0-20260706214856-bb194e996cfd h1:F6vpbZwp0XUF0grtwcpC3ORLLKIPaTM1AYhsjOum/qA=
 github.com/etkecc/go-kit/format v0.0.0-20260706214856-bb194e996cfd/go.mod h1:Ab0OhszRxP4pUecLz4N8/9oVp8njsV1vGDDP5XBbr8s=
 github.com/etkecc/go-msc1929 v1.3.1 h1:0E9Xfs1pHfZFw7RZn4+3bMh+zNb/esCLdgLvlPktVzY=
