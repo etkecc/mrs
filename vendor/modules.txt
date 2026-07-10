@@ -411,8 +411,8 @@ github.com/yuin/goldmark/renderer
 github.com/yuin/goldmark/renderer/html
 github.com/yuin/goldmark/text
 github.com/yuin/goldmark/util
-# github.com/ziflex/lecho/v3 v3.11.0
-## explicit; go 1.24.0
+# github.com/ziflex/lecho/v3 v3.11.1
+## explicit; go 1.25.0
 github.com/ziflex/lecho/v3
 # go.etcd.io/bbolt v1.5.0
 ## explicit; go 1.25.0
