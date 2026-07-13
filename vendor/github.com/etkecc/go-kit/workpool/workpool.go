@@ -3,32 +3,37 @@ package workpool
 
 import (
 	"fmt"
+	"sync"
 	"sync/atomic"
 )
 
-// Task is a zero-argument, zero-return function that can be added to the work pool.
-// Panics inside a Task are recovered by the worker and printed to stdout; they are not propagated to the caller.
+// Task is a no-arg, no-return func you hand to the pool. A panic inside one is recovered by the
+// worker and printed to stdout; it does NOT come back to you, so a Task that can fail should
+// report its outcome some other way.
 type Task func()
 
-// WorkPool is a bounded goroutine pool for executing tasks concurrently with a fixed number of workers.
+// WorkPool runs tasks across a fixed set of workers, so a flood of work doesn't turn into a flood
+// of goroutines.
 //
-// Lifecycle: create with New, add tasks with Do (multiple times), then call Run to wait for completion.
-// After Run returns, the pool is closed and further Do calls are silently ignored.
-// Workers are started immediately upon pool creation. The zero value is not usable.
+// Lifecycle: New, then Do as many times as you need, then Run to block until the queue drains.
+// Workers start the instant New returns. After Run the pool is closed and any further Do is
+// silently dropped (see Do). The zero value is not usable.
+//
+// It's built single-producer: queue all the work, then Run. Do is fine to call concurrently with
+// other Do calls, and Run is safe to call more than once (a second Run is a no-op). The one thing
+// the single-producer rule forbids is Do racing Run: a Do that slips past the closed check exactly
+// as Run starts can still Add to a draining WaitGroup, and that's on the caller.
 type WorkPool struct {
 	queue   chan Task
-	closed  bool
+	wg      sync.WaitGroup
+	closed  atomic.Bool
 	workers int
 	running int32
 }
 
-// New creates a new WorkPool with the specified number of workers.
-//
-// The workers parameter specifies the number of concurrent workers; a minimum of 1 is enforced.
-// The default buffer size for the task queue is workers*100+1, which is large enough to keep workers busy
-// without blocking the caller on typical workloads. optionalBufferSize overrides the default buffer size;
-// use 0 or 1 for unbuffered-like behavior.
-// Workers are started immediately and begin processing tasks from the queue.
+// New starts a pool of workers (minimum 1, it clamps up) chewing through tasks right away. The
+// queue buffers workers*100+1 by default, deep enough that Do rarely blocks on normal loads; pass
+// optionalBufferSize to override it (0 or 1 for near-unbuffered).
 func New(workers int, optionalBufferSize ...int) *WorkPool {
 	if workers < 1 {
 		workers = 1
@@ -49,41 +54,35 @@ func New(workers int, optionalBufferSize ...int) *WorkPool {
 	return wp
 }
 
-// Do adds a task to the work pool for execution by a worker.
-//
-// Do blocks if the queue channel is full, causing the caller to block until a worker drains a slot.
-// The method returns the receiver to allow method chaining.
-// After Run has been called and the pool is closed, Do is a no-op and returns immediately without adding the task.
+// Do queues task and returns the receiver so calls chain. It blocks while the queue is full, until
+// a worker frees a slot. The trap: once Run has closed the pool, Do silently drops the task, no
+// error, no panic, just gone. Queue everything before you call Run.
 func (wp *WorkPool) Do(task Task) *WorkPool {
-	if wp.closed {
+	if wp.closed.Load() {
 		return wp
 	}
 
-	atomic.AddInt32(&wp.running, 1) // Increment running tasks
-	wp.queue <- task                // Add task to the queue
+	atomic.AddInt32(&wp.running, 1) // running: lock-free counter for IsRunning
+	wp.wg.Add(1)                    // wg: what Run parks on
+	wp.queue <- task
 	return wp
 }
 
-// Run waits for all tasks to complete and shuts down the pool.
-//
-// Run busy-waits until the running task counter reaches zero (intentional; see nolint:revive comment),
-// then closes the queue channel, which causes all workers to exit their range loops.
-// After Run returns, the pool cannot be reused and further Do calls will be silently ignored.
+// Run blocks until every queued task has finished, then closes the queue so the workers exit. It
+// flips the pool closed the instant it starts (via CAS), so a second or concurrent Run is a safe
+// no-op instead of a double-close panic, and a late Do is rejected rather than added to a draining
+// WaitGroup. Then it parks on the WaitGroup rather than spinning, so it won't fight your own workers
+// for a core while it waits. Single-use: once Run returns the pool is spent, build a new one.
 func (wp *WorkPool) Run() {
-	if wp.closed {
+	if !wp.closed.CompareAndSwap(false, true) {
 		return
 	}
 
-	//nolint:revive // wait until all tasks are processed
-	for atomic.LoadInt32(&wp.running) > 0 {
-	}
-	wp.closed = true
+	wp.wg.Wait()
 	close(wp.queue)
 }
 
-// IsRunning reports whether there are any tasks queued or currently executing.
-//
-// IsRunning reflects the atomic counter of running tasks; it returns true if at least one task is queued or executing.
+// IsRunning reports whether any task is still queued or in flight, straight off the atomic counter.
 func (wp *WorkPool) IsRunning() bool {
 	return atomic.LoadInt32(&wp.running) > 0
 }
@@ -107,6 +106,7 @@ func (wp *WorkPool) worker() {
 
 			task()
 		}(task)
-		atomic.AddInt32(&wp.running, -1) // Decrement running tasks when done
+		atomic.AddInt32(&wp.running, -1)
+		wp.wg.Done()
 	}
 }

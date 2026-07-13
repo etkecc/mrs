@@ -1,8 +1,9 @@
-// Package template provides a handy wrapper around the html/template package.
+// Package template is a thin wrapper over html/template for the common case: parse a string, run
+// it, get a string back. Three entry points for three tempers, Execute hands you the error, May
+// swallows it and falls back to the input, Must panics.
 //
-// Note: This package uses html/template (not text/template), which means output
-// is HTML-escaped by default. This prevents XSS vulnerabilities when rendering
-// user-supplied data into HTML templates.
+// It's html/template, not text/template, so output is HTML-escaped by default and dropping user
+// data into a page won't quietly hand you an XSS hole.
 package template
 
 import (
@@ -10,18 +11,9 @@ import (
 	"html/template"
 )
 
-// Execute parses the template string and executes it with the provided variables.
-//
-// The template string is parsed once and then executed with vars as the data
-// context (accessible as "." in the template). It returns the rendered output
-// as a string, or an empty string and an error if either parsing or execution
-// fails.
-//
-// Failure modes:
-//   - Parse error: malformed template syntax
-//   - Execute error: accessing a missing field with no default, or other runtime errors
-//
-// vars is the data passed as "." to the template and can be any value.
+// Execute parses tplString and runs it with vars as the dot ("."). Returns the rendered string,
+// or "" and an error when parsing or execution fails: a malformed template, or a reach for a
+// field that isn't there.
 func Execute(tplString string, vars any) (string, error) {
 	var result bytes.Buffer
 	tpl, err := template.New("template").Parse(tplString)
@@ -35,16 +27,9 @@ func Execute(tplString string, vars any) (string, error) {
 	return result.String(), nil
 }
 
-// May parses and executes the template string, returning the original string
-// if execution fails or produces an empty result.
-//
-// May is useful for applying templates to configuration values where a
-// non-template string (or a template that happens to be empty after rendering)
-// should pass through unchanged. If either template parsing or execution fails,
-// or if the result is empty, the original tplString is returned.
-//
-// The nolint:errcheck directive is intentional — errors are deliberately ignored
-// as part of the fallback-to-original behavior.
+// May runs the template and falls back to the original tplString when execution fails OR renders
+// empty. Handy over config values, where a plain non-template string (or one that renders to
+// nothing) should pass through untouched. The swallowed error is the whole point here, not a slip.
 func May(tplString string, vars any) string {
 	result, _ := Execute(tplString, vars) //nolint:errcheck // that's the point
 	if result == "" {
@@ -53,12 +38,8 @@ func May(tplString string, vars any) string {
 	return result
 }
 
-// Must parses and executes the template string, panicking if parsing or
-// execution fails.
-//
-// Must should only be used when the template is a compile-time constant and
-// correctness is guaranteed. It is not appropriate for user-supplied templates.
-// Any error during parsing or execution will cause a panic.
+// Must runs the template and panics if anything goes wrong. Only for compile-time-constant
+// templates you know are good, never user-supplied ones: a bad template takes the process with it.
 func Must(tplString string, vars any) string {
 	result, err := Execute(tplString, vars)
 	if err != nil {
