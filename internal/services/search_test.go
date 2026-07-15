@@ -215,6 +215,31 @@ func TestGetSearchQuery_QueryWithFields(t *testing.T) {
 	}
 }
 
+// TestGetSearchQuery_IncludesExactFields guards the real query path, not the bleve schema:
+// the exact-field fix lives or dies on these clauses reaching the disjunction, and the
+// repo-layer tests never walk getSearchQuery. Drop the loop in buildTextSearchQueries and
+// this is the only test that goes red.
+func TestGetSearchQuery_IncludesExactFields(t *testing.T) {
+	env := newTestSearchService(t)
+	q := env.svc.getSearchQuery("villingen", nil, nil, true)
+	dis, ok := q.(*query.DisjunctionQuery)
+	if !ok {
+		t.Fatalf("expected *query.DisjunctionQuery, got %T", q)
+	}
+
+	seen := map[string]bool{}
+	for _, sub := range dis.Disjuncts {
+		if f, ok := sub.(interface{ Field() string }); ok {
+			seen[f.Field()] = true
+		}
+	}
+	for _, want := range []string{"name_exact", "topic_exact"} {
+		if !seen[want] {
+			t.Errorf("query for 'villingen' is missing a %q clause; the exact-field fix fell off the service query path", want)
+		}
+	}
+}
+
 func TestGetEmptyQueryResults_NoFilter(t *testing.T) {
 	env := newTestSearchService(t)
 	env.dataMock.EXPECT().GetBiggestRooms(mock.Anything, 5, 0).Return(biggestRoomsPage(5, 0))
@@ -590,11 +615,13 @@ func TestRoomTypeMatches(t *testing.T) {
 
 func TestSearchFieldsBoost(t *testing.T) {
 	expected := map[string]float64{
-		"language": 100,
-		"name":     10,
-		"server":   10,
-		"alias":    5,
-		"topic":    3,
+		"language":    100,
+		"name":        10,
+		"name_exact":  20,
+		"server":      10,
+		"alias":       5,
+		"topic":       3,
+		"topic_exact": 6,
 	}
 	for field, want := range expected {
 		if got := SearchFieldsBoost[field]; got != want {

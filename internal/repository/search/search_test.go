@@ -8,7 +8,6 @@ import (
 
 	"github.com/blevesearch/bleve/v2"
 	"github.com/blevesearch/bleve/v2/search/query"
-	"github.com/pemistahl/lingua-go"
 
 	"github.com/etkecc/mrs/internal/model"
 )
@@ -185,11 +184,7 @@ func newTestIndex(t *testing.T) *Index {
 	}
 	t.Cleanup(func() { os.RemoveAll(dir) })
 
-	detector := lingua.NewLanguageDetectorBuilder().
-		FromLanguages(lingua.English, lingua.German).
-		Build()
-
-	idx, err := NewIndex(dir+"/index", detector, "en")
+	idx, err := NewIndex(dir+"/index", testLangDetector(), "en")
 	if err != nil {
 		t.Fatal("failed to create index:", err)
 	}

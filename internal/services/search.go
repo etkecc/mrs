@@ -41,11 +41,13 @@ type StatsService interface {
 
 // SearchFieldsBoost field name => boost
 var SearchFieldsBoost = map[string]float64{
-	"language": 100,
-	"name":     10,
-	"server":   10,
-	"alias":    5,
-	"topic":    3,
+	"language":    100,
+	"name":        10,
+	"name_exact":  20, // 2x name: bias an exact full-word hit above the stemmed hit beside it (TF-IDF still has a vote)
+	"server":      10,
+	"alias":       5,
+	"topic":       3,
+	"topic_exact": 6, // 2x topic, same reason
 }
 
 // NewSearch creates new search service
@@ -361,6 +363,13 @@ func (s *Search) buildTextSearchQueries(q string, fuzzy bool) []query.Query {
 		if phrase {
 			queries = append(queries, s.newMatchQuery(q, field, true))
 		}
+	}
+
+	// unstemmed twins of name/topic: match-only, so a full inflected query still
+	// lands when the stemmer clipped the indexed word. No prefix/fuzzy here, those
+	// already ride the stemmed fields and fuzzy across 4 fields burns CPU for nothing.
+	for _, field := range []string{"name_exact", "topic_exact"} {
+		queries = append(queries, s.newMatchQuery(q, field, false))
 	}
 
 	queries = s.appendPrefixQueries(queries, words, searchFields)

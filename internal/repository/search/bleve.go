@@ -51,6 +51,19 @@ var (
 			en.StopName,
 		},
 	}
+	// analyzerExact never stems: "villingen" stays whole instead of clipped to "villing" and missing itself.
+	// Twin of matrix_alias on purpose, not a reuse, so exact never inherits a future alias-analysis change.
+	analyzerExact = map[string]any{
+		"type": custom.Name,
+		"char_filters": []any{
+			`matrix_chars`,
+		},
+		"tokenizer": unicode.Name,
+		"token_filters": []any{
+			`to_lower`,
+			en.StopName,
+		},
+	}
 )
 
 func getIndexMapping(ctx context.Context) mapping.IndexMapping {
@@ -73,8 +86,33 @@ func getIndexMapping(ctx context.Context) mapping.IndexMapping {
 		log.Error().Err(err).Msg("cannot create matrix_alias analyzer")
 	}
 
+	err = m.AddCustomAnalyzer("exact_text", analyzerExact)
+	if err != nil {
+		log.Error().Err(err).Msg("cannot create exact_text analyzer")
+	}
+
 	textFM := bleve.NewTextFieldMapping()
 	textFM.Analyzer = multilang.Name
+
+	// name_exact / topic_exact ride alongside the stemmed fields: same source value,
+	// unstemmed, so a full-word query matches even when the stemmer ate the tail.
+	// Indexed only, nothing reads them back, so no second copy stored, no term
+	// vectors, no _all, no doc values: match is all they owe.
+	nameExactFM := bleve.NewTextFieldMapping()
+	nameExactFM.Analyzer = "exact_text"
+	nameExactFM.Name = "name_exact"
+	nameExactFM.Store = false
+	nameExactFM.IncludeTermVectors = false
+	nameExactFM.IncludeInAll = false
+	nameExactFM.DocValues = false
+
+	topicExactFM := bleve.NewTextFieldMapping()
+	topicExactFM.Analyzer = "exact_text"
+	topicExactFM.Name = "topic_exact"
+	topicExactFM.Store = false
+	topicExactFM.IncludeTermVectors = false
+	topicExactFM.IncludeInAll = false
+	topicExactFM.DocValues = false
 
 	// noindexFM is used for values that just need to be stored, but not analyzed or searched
 	noindexFM := bleve.NewKeywordFieldMapping()
@@ -95,8 +133,8 @@ func getIndexMapping(ctx context.Context) mapping.IndexMapping {
 	r.AddFieldMappingsAt("id", matrixIDFM)
 	r.AddFieldMappingsAt("type", noindexFM)
 	r.AddFieldMappingsAt("alias", matrixAliasFM)
-	r.AddFieldMappingsAt("name", textFM)
-	r.AddFieldMappingsAt("topic", textFM)
+	r.AddFieldMappingsAt("name", textFM, nameExactFM)
+	r.AddFieldMappingsAt("topic", textFM, topicExactFM)
 	r.AddFieldMappingsAt("avatar", noindexFM)
 	r.AddFieldMappingsAt("avatar_url", noindexFM)
 	r.AddFieldMappingsAt("server", bleve.NewKeywordFieldMapping())
