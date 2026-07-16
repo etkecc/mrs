@@ -18,6 +18,7 @@ Matrix Rooms Search (short: MRS) provides various integrations both via [Matrix 
         * [Cinny](#cinny)
         * [FluffyChat](#fluffychat)
         * [Fractal](#fractal)
+        * [NeoChat](#neochat)
         * [Element Web and Desktop](#element-web-and-desktop)
         * [Element Classic Android and SchildiChat Android](#element-classic-android-and-schildichat-android)
     * [Notary Key Server](#notary-key-server)
@@ -95,7 +96,6 @@ To integrate MRS to FluffyChat, please follow the process below.
 2. Tap the **Explore** button in the window
 3. Tab on the matrix server selector and click on **add server...**
 4. Enter `matrixrooms.info` and confirm.
-
 
 #### Element Web and Desktop
 
