@@ -87,6 +87,16 @@ To integrate MRS to FluffyChat, please follow the process below.
 
 ![Input area on Fractal](assets/fractal.png)
 
+#### NeoChat
+
+[NeoChat](https://apps.kde.org/neochat/) is the KDE/Plasma Matrix client, running on all supported operating systems including Android.
+
+1. Tap the search symbol and enter `matrixrooms.info` to the input area
+2. Tap the **Explore** button in the window
+3. Tab on the matrix server selector and click on **add server...**
+4. Enter `matrixrooms.info` and confirm.
+
+
 #### Element Web and Desktop
 
 💡 *This also applies to forks such as [SchildiChat Web / Desktop](https://schildi.chat/).*
