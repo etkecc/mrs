@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
-	"fmt"
 	"reflect"
 )
 
@@ -204,8 +203,9 @@ func NewIndexInternalID(buf []byte, in uint64) IndexInternalID {
 			buf = make([]byte, 8)
 		}
 	}
-	binary.BigEndian.PutUint64(buf, in)
-	return buf
+	id := IndexInternalID(buf)
+	id.SetValue(in)
+	return id
 }
 
 // NewIndexInternalIDFrom creates a new IndexInternalID by copying from `other`, reusing `buf` when possible.
@@ -225,11 +225,13 @@ func (id IndexInternalID) Compare(other IndexInternalID) int {
 }
 
 // Value returns the uint64 value encoded in the IndexInternalID.
-func (id IndexInternalID) Value() (uint64, error) {
-	if len(id) != 8 {
-		return 0, fmt.Errorf("wrong len for IndexInternalID: %q", id)
-	}
-	return binary.BigEndian.Uint64(id), nil
+func (id IndexInternalID) Value() uint64 {
+	return binary.BigEndian.Uint64(id)
+}
+
+// SetValue overwrites the encoded uint64 value in the IndexInternalID in place.
+func (id IndexInternalID) SetValue(in uint64) {
+	binary.BigEndian.PutUint64(id, in)
 }
 
 type TermFieldDoc struct {
