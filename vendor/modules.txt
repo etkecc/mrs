@@ -367,6 +367,8 @@ github.com/sv-tools/openapi/spec
 # github.com/swaggo/echo-swagger v1.5.2
 ## explicit; go 1.23.0
 github.com/swaggo/echo-swagger
+# github.com/swaggo/echo-swagger/v2 v2.0.1
+## explicit; go 1.25.0
 # github.com/swaggo/files/v2 v2.0.2
 ## explicit; go 1.16
 github.com/swaggo/files/v2
