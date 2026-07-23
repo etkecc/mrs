@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2023 - 2025 Nikita Chernyi
+SPDX-FileCopyrightText: 2023 - 2026 Nikita Chernyi
 SPDX-FileCopyrightText: 2024 Benoit Marty
 SPDX-FileCopyrightText: 2024 Slavi Pantaleev
 SPDX-FileCopyrightText: 2025 Suguru Hirahara
@@ -15,6 +15,7 @@ Matrix Rooms Search (short: MRS) provides various integrations both via [Matrix 
 
 * [Matrix integrations](#matrix-integrations)
     * [Directory Server](#directory-server)
+        * [Komai](#komai)
         * [Cinny](#cinny)
         * [FluffyChat](#fluffychat)
         * [Fractal](#fractal)
@@ -40,6 +41,10 @@ This section describes [Matrix protocol](https://spec.matrix.org/) integrations 
 ### Directory Server
 
 MRS implements the mandatory subset of Matrix Federation API to provide the Public Rooms Directory over federation, so you can use it on your matrix client apps directly.
+
+#### Komai
+
+[Komai](https://komai.chat/) is a native desktop Matrix client that ships pointed at matrixrooms.info out of the box. There's nothing to add: open the room directory and the public rooms are already there.
 
 #### Cinny
 
@@ -116,7 +121,7 @@ You can follow the process below to enable MRS integration to your account only.
 
 To enable MRS integration for all users of the Element Web/Desktop app instance, add the following to Element's `config.json`:
 
-* **Clean config** — if you don't have anything else in your `config.json`:
+* **Clean config**, if you don't have anything else in your `config.json`:
 
     ```json
     {
@@ -126,7 +131,7 @@ To enable MRS integration for all users of the Element Web/Desktop app instance,
     }
     ```
 
-* **Existing config** — if you already have a `config.json`, just add the following section inside the main object:
+* **Existing config**, if you already have a `config.json`, just add the following section inside the main object:
 
     ```json
     "room_directory": {
@@ -221,7 +226,7 @@ matrix_dendrite_configuration_extension_yaml: |
 
 ### MSCs
 
-MSC stands for Matrix Spec Change — a proposed changes to the matrix protocol, but not yet included within it. Below are the MSCs relevant to MRS.
+MSC stands for Matrix Spec Change, a proposed changes to the matrix protocol, but not yet included within it. Below are the MSCs relevant to MRS.
 
 #### MSC1929
 
