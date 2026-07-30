@@ -3,6 +3,7 @@ package services
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"net/http"
 	"net/url"
 
@@ -39,38 +40,13 @@ func (p *Plausible) Track(ctx context.Context, evt *model.AnalyticsEvent) {
 		return
 	}
 
-	uri := url.URL{
-		Scheme: "https",
-		Host:   p.cfg.Get().Plausible.Host,
-		Path:   "/api/event",
-	}
 	eventURL := p.eventURL(evt.URL)
-	data := map[string]any{
-		"name":     evt.Name,
-		"url":      eventURL,
-		"domain":   p.cfg.Get().Plausible.Domain,
-		"referrer": evt.Referrer,
-		"props":    evt.Props,
-	}
-
-	datab, err := json.Marshal(data)
-	if err != nil {
-		log.Error().Err(err).Msg("cannot marshal plausible event")
-		return
-	}
-
 	ctx, cancel := context.WithTimeout(ctx, utils.DefaultTimeout)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, uri.String(), bytes.NewReader(datab))
+	req, err := p.buildRequest(ctx, evt, eventURL)
 	if err != nil {
-		log.Error().Err(err).Msg("cannot create plausible request")
+		log.Error().Err(err).Msg("cannot build plausible request")
 		return
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", evt.UserAgent)
-	// X-Plausible-IP survives Traefik (it rewrites X-Forwarded-* but not custom headers) and Plausible reads it first, verbatim.
-	if evt.ClientIP != "" {
-		req.Header.Set("X-Plausible-IP", evt.ClientIP)
 	}
 
 	// the wire on demand: flip to debug to see what left MRS. ip + user_agent are the visitor-hash terms.
@@ -94,6 +70,41 @@ func (p *Plausible) Track(ctx context.Context, evt *model.AnalyticsEvent) {
 	if resp.Header.Get("x-plausible-dropped") == "1" {
 		log.Warn().Str("url", eventURL).Msg("plausible silently dropped the event")
 	}
+}
+
+// buildRequest assembles the event POST: the body, and every header Plausible's visitor hash reads.
+func (p *Plausible) buildRequest(ctx context.Context, evt *model.AnalyticsEvent, eventURL string) (*http.Request, error) {
+	data := map[string]any{
+		"name":     evt.Name,
+		"url":      eventURL,
+		"domain":   p.cfg.Get().Plausible.Domain,
+		"referrer": evt.Referrer,
+		"props":    evt.Props,
+	}
+	datab, err := json.Marshal(data)
+	if err != nil {
+		return nil, fmt.Errorf("cannot marshal plausible event: %w", err)
+	}
+
+	uri := url.URL{
+		Scheme: "https",
+		Host:   p.cfg.Get().Plausible.Host,
+		Path:   "/api/event",
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, uri.String(), bytes.NewReader(datab))
+	if err != nil {
+		return nil, fmt.Errorf("cannot create plausible request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", evt.UserAgent)
+	if evt.ClientIP != "" {
+		// Traefik rewrites X-Forwarded-* on the hop and leaves custom headers alone; Plausible reads all three last-wins.
+		req.Header.Set("CF-Connecting-IP", evt.ClientIP)
+		req.Header.Set("X-Forwarded-For", evt.ClientIP)
+		req.Header.Set("X-Plausible-IP", evt.ClientIP)
+	}
+
+	return req, nil
 }
 
 // eventURL resolves the bare request path against Public.API so the page lands under our domain, not Plausible's hostless "(none)" bucket.
