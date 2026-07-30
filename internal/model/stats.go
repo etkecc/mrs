@@ -99,9 +99,6 @@ func NewAnalyticsEvent(cxt context.Context, name string, props map[string]string
 			evt.Referrer = "https://" + origin + "/"
 		}
 	}
-	if evt.UserAgent == "" {
-		evt.UserAgent = "Synapse" // workaround
-	}
 	// the single resolved client IP withMContext extracted; validate so garbage never rots into Plausible's visitor hash.
 	if ip := mcontext.GetIP(cxt); net.ParseIP(ip) != nil {
 		evt.ClientIP = ip

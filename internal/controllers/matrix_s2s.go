@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"bytes"
-	"context"
 	"io"
 	"net/http"
 	"strconv"
@@ -13,12 +12,12 @@ import (
 	"github.com/etkecc/mrs/internal/model"
 )
 
-func configureMatrixS2SEndpoints(e *echo.Echo, matrixSvc matrixService, plausible plausibleService, cacheSvc cacheService) {
+func configureMatrixS2SEndpoints(e *echo.Echo, matrixSvc matrixService, cacheSvc cacheService) {
 	e.GET("/.well-known/matrix/server", wellKnownServer(matrixSvc), cacheSvc.MiddlewareImmutable())
 	e.GET("/_matrix/federation/v1/version", serverVersion(matrixSvc), cacheSvc.MiddlewareImmutable())
 	e.GET("/_matrix/key/v2/server", keyServer(matrixSvc))
-	e.GET("/_matrix/key/v2/query/:serverName", queryServerKeys(matrixSvc, plausible))
-	e.POST("/_matrix/key/v2/query", queryServersKeys(matrixSvc, plausible))
+	e.GET("/_matrix/key/v2/query/:serverName", queryServerKeys(matrixSvc))
+	e.POST("/_matrix/key/v2/query", queryServersKeys(matrixSvc))
 	e.GET("/_matrix/federation/v1/query/directory", queryDirectory(matrixSvc))
 	e.GET("/_matrix/federation/v1/publicRooms", matrixRoomDirectory(matrixSvc), cacheSvc.MiddlewareSearch())
 	e.POST("/_matrix/federation/v1/publicRooms", matrixRoomDirectory(matrixSvc), cacheSvc.MiddlewareSearch())
@@ -68,7 +67,7 @@ func keyServer(matrixSvc matrixService) echo.HandlerFunc {
 // @Param			minimum_valid_until_ts	query		int								false	"Only return keys valid until at least this timestamp (ms). A malformed value is treated as 0."
 // @Success		200						{object}	model.ServerKeysQueryResponse	"Signed server keys, or an empty key set"
 // @Router			/_matrix/key/v2/query/{serverName} [get]
-func queryServerKeys(matrixSvc matrixService, plausible plausibleService) echo.HandlerFunc {
+func queryServerKeys(matrixSvc matrixService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		serverName := c.Param("serverName")
 		if serverName == "" {
@@ -80,12 +79,6 @@ func queryServerKeys(matrixSvc matrixService, plausible plausibleService) echo.H
 		if validUntilTStr != "" {
 			validUntilTS, _ = strconv.ParseInt(validUntilTStr, 10, 64) //nolint:errcheck // 0 is handled properly
 		}
-
-		evt := model.NewAnalyticsEvent(c.Request().Context(), "Get Key", map[string]string{"server": serverName}, c.Request())
-		go func(ctx context.Context, evt *model.AnalyticsEvent) {
-			ctx = context.WithoutCancel(ctx)
-			plausible.Track(ctx, evt)
-		}(c.Request().Context(), evt)
 
 		return c.JSONBlob(http.StatusOK, matrixSvc.QueryServerKeys(c.Request().Context(), serverName, validUntilTS))
 	}
@@ -101,7 +94,7 @@ func queryServerKeys(matrixSvc matrixService, plausible plausibleService) echo.H
 // @Success		200						{object}	model.ServerKeysQueryResponse	"Signed server keys, or an empty key set for an empty batch"
 // @Failure		400						{object}	model.MatrixError				"Request body is not valid JSON"
 // @Router			/_matrix/key/v2/query [post]
-func queryServersKeys(matrixSvc matrixService, plausible plausibleService) echo.HandlerFunc {
+func queryServersKeys(matrixSvc matrixService) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		var req *model.QueryServerKeysRequest
 		if err := c.Bind(&req); err != nil {
@@ -120,17 +113,6 @@ func queryServersKeys(matrixSvc matrixService, plausible plausibleService) echo.
 
 		if len(req.ServerKeys) == 0 {
 			return c.JSONBlob(http.StatusOK, []byte(model.EmptyServerKeysResp))
-		}
-
-		for srv := range req.ServerKeys {
-			if srv == "" {
-				continue
-			}
-			evt := model.NewAnalyticsEvent(c.Request().Context(), "Get Key", map[string]string{"server": srv}, c.Request())
-			go func(ctx context.Context, evt *model.AnalyticsEvent) {
-				ctx = context.WithoutCancel(ctx)
-				plausible.Track(ctx, evt)
-			}(c.Request().Context(), evt)
 		}
 
 		return c.JSONBlob(http.StatusOK, matrixSvc.QueryServersKeys(c.Request().Context(), req, validUntilTS))

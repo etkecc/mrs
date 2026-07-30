@@ -98,7 +98,7 @@ func (p *Plausible) buildRequest(ctx context.Context, evt *model.AnalyticsEvent,
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", evt.UserAgent)
 	if evt.ClientIP != "" {
-		// Traefik rewrites X-Forwarded-* on the hop and leaves custom headers alone; Plausible reads all three last-wins.
+		// Plausible reads x-plausible-ip first and stops there; the other two are spares for the day something strips it.
 		req.Header.Set("CF-Connecting-IP", evt.ClientIP)
 		req.Header.Set("X-Forwarded-For", evt.ClientIP)
 		req.Header.Set("X-Plausible-IP", evt.ClientIP)
