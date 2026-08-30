@@ -21,6 +21,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"reflect"
+	"sync/atomic"
 
 	index "github.com/blevesearch/bleve_index_api"
 	faiss "github.com/blevesearch/go-faiss"
@@ -112,7 +113,7 @@ func (f *faissFloat32Index) write(buf []byte, w *FileWriter) error {
 		return err
 	}
 	idxBytes = w.process(idxBytes)
-
+	atomic.AddUint64(&f.params.stats.TotVecSectionFloatIndexBytesWritten, uint64(len(idxBytes)))
 	// write the length of the serialized vector index bytes
 	n := binary.PutUvarint(buf, uint64(len(idxBytes)))
 	_, err = w.Write(buf[:n])
@@ -179,7 +180,8 @@ func (f *faissFloat32Index) setNProbe(nprobe int32) {
 }
 
 func (f *faissFloat32Index) trainAndAdd(trainingData *vectorSet, vecsToAdd *vectorSet) error {
-	err := f.idx.Train(trainingData.floatData)
+	nvecsToTrain := f.params.numTrainingVecs(trainingData.nvecs)
+	err := f.idx.Train(trainingData.floatData[:nvecsToTrain*f.dim()])
 	if err != nil {
 		return err
 	}
