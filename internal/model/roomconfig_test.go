@@ -194,7 +194,7 @@ func TestRoomConfig_IsEmpty(t *testing.T) {
 	if (&RoomConfig{Noindex: true}).IsEmpty() {
 		t.Error("Should not be empty with noindex true")
 	}
-	if ((*RoomConfig)(nil)).IsEmpty() != true {
+	if (*RoomConfig)(nil).IsEmpty() != true {
 		t.Error("Nil pointer must be empty")
 	}
 }

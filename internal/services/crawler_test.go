@@ -150,7 +150,8 @@ func TestLoadServers_BackoffFilter(t *testing.T) {
 				}
 			}
 			return out
-		}).Once()
+		},
+	).Once()
 
 	m := NewCrawler(cfg, fed, v, block, media, data, nil)
 	got := m.loadServers(ctx).Slice()
