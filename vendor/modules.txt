@@ -181,7 +181,6 @@ github.com/blevesearch/zapx/v17
 github.com/buger/jsonparser
 # github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 ## explicit
-github.com/davecgh/go-spew/spew
 # github.com/etkecc/go-apm v1.3.5
 ## explicit; go 1.23.0
 github.com/etkecc/go-apm
@@ -341,7 +340,6 @@ github.com/pemistahl/lingua-go
 github.com/pemistahl/lingua-go/serialization
 # github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2
 ## explicit
-github.com/pmezard/go-difflib/difflib
 # github.com/rs/zerolog v1.35.1
 ## explicit; go 1.23
 github.com/rs/zerolog
@@ -353,13 +351,15 @@ github.com/shopspring/decimal
 # github.com/sirupsen/logrus v1.9.4
 ## explicit; go 1.17
 github.com/sirupsen/logrus
-# github.com/stretchr/objx v0.5.2
+# github.com/stretchr/objx v0.5.3
 ## explicit; go 1.20
 github.com/stretchr/objx
-# github.com/stretchr/testify v1.11.1
+# github.com/stretchr/testify v1.12.1
 ## explicit; go 1.17
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/assert/yaml
+github.com/stretchr/testify/internal/difflib
+github.com/stretchr/testify/internal/spew
 github.com/stretchr/testify/mock
 # github.com/sv-tools/openapi v0.4.0
 ## explicit; go 1.18
@@ -423,7 +423,7 @@ go.etcd.io/bbolt/internal/freelist
 # go.yaml.in/yaml/v2 v2.4.4
 ## explicit; go 1.15
 go.yaml.in/yaml/v2
-# go.yaml.in/yaml/v3 v3.0.4
+# go.yaml.in/yaml/v3 v3.0.5
 ## explicit; go 1.16
 go.yaml.in/yaml/v3
 # golang.org/x/crypto v0.54.0
