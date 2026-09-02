@@ -25,13 +25,6 @@ type (
 		BeforeNext middleware.BeforeFunc
 		// Enricher is a function that can be used to enrich the logger with additional information.
 		Enricher Enricher
-		// AfterNextEnricher is a function that can be used to enrich the logger with additional information
-		// after the next handler is called.
-		//
-		// This is typically used when you need to log values that are only available after other
-		// middleware/handlers have run, such as values stored on the echo.Context by previous
-		// middleware (for example, correlation IDs, user information, or computed response data).
-		AfterNextEnricher Enricher
 		// RequestIDHeader is the header name to use for the request ID in a log record.
 		RequestIDHeader string
 		// RequestIDKey is the key name to use for the request ID in a log record.
@@ -44,19 +37,6 @@ type (
 		RequestLatencyLimit time.Duration
 		// The level to log at if RequestLatencyLimit is exceeded
 		RequestLatencyLevel zerolog.Level
-		// SkipDefaultFields controls whether the middleware adds its built-in request fields
-		// (such as method, path, status, and latency) in addition to the attributes defined by
-		// the caller or Enricher. When set to true, those built-in request fields are not added
-		// automatically and must be supplied explicitly.
-		// Otherwise the logs won't contain any request information.
-		// This flag also affects request ID injection via RequestIDHeader/RequestIDKey, which will
-		// also be skipped if this flag is set to 'true'.
-		//
-		// If a NestKey is supplied, it will only be used if the flag is set to 'false'. So only
-		// built-in fields can be nested.
-		//
-		// This flag does not affect any fields added by AfterNextEnricher.
-		SkipDefaultFields bool
 	}
 
 	// Enricher is a function that can be used to enrich the logger with additional information.
@@ -100,10 +80,6 @@ func Middleware(config Config) echo.MiddlewareFunc {
 		config.RequestIDHeader = echo.HeaderXRequestID
 	}
 
-	if config.SkipDefaultFields && config.Enricher == nil && config.AfterNextEnricher == nil {
-		panic("lecho: SkipDefaultFields requires at least one of Enricher or AfterNextEnricher to be set")
-	}
-
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			if config.Skipper(c) {
@@ -124,7 +100,7 @@ func Middleware(config Config) echo.MiddlewareFunc {
 			cloned := false
 			logger := config.Logger
 
-			if id != "" && !config.SkipDefaultFields {
+			if id != "" {
 				logger = From(logger.log, WithField(config.RequestIDKey, id))
 				cloned = true
 			}
@@ -163,57 +139,45 @@ func Middleware(config Config) echo.MiddlewareFunc {
 				return err
 			}
 
-			afterNextLog := logger.log
-
-			if config.AfterNextEnricher != nil {
-				afterNextLog = config.AfterNextEnricher(c, logger.log.With()).Logger()
-			}
-
 			stop := time.Now()
 			latency := stop.Sub(start)
-
 			var mainEvt *zerolog.Event
 			if err != nil {
-				mainEvt = afterNextLog.Err(err)
+				mainEvt = logger.log.Err(err)
 			} else if config.RequestLatencyLimit != 0 && latency > config.RequestLatencyLimit {
-				mainEvt = afterNextLog.WithLevel(config.RequestLatencyLevel)
+				mainEvt = logger.log.WithLevel(config.RequestLatencyLevel)
 			} else {
-				mainEvt = afterNextLog.WithLevel(afterNextLog.GetLevel())
+				mainEvt = logger.log.WithLevel(logger.log.GetLevel())
 			}
 
 			var evt *zerolog.Event
-
-			withNewDict := config.NestKey != "" && !config.SkipDefaultFields
-
-			if withNewDict { // Start a new event (dict) if there's a nest key for default fields.
+			if config.NestKey != "" { // Start a new event (dict) if there's a nest key.
 				evt = zerolog.Dict()
 			} else {
 				evt = mainEvt
 			}
-			if !config.SkipDefaultFields {
-				evt.Str("remote_ip", c.RealIP())
-				evt.Str("host", req.Host)
-				evt.Str("method", req.Method)
-				evt.Str("uri", req.RequestURI)
-				evt.Str("user_agent", req.UserAgent())
-				evt.Int("status", res.Status)
-				evt.Str("referer", req.Referer())
-				evt.Dur("latency", latency)
-				evt.Str("latency_human", latency.String())
 
-				cl := req.Header.Get(echo.HeaderContentLength)
-				if cl == "" {
-					cl = "0"
-				}
+			evt.Str("remote_ip", c.RealIP())
+			evt.Str("host", req.Host)
+			evt.Str("method", req.Method)
+			evt.Str("uri", req.RequestURI)
+			evt.Str("user_agent", req.UserAgent())
+			evt.Int("status", res.Status)
+			evt.Str("referer", req.Referer())
+			evt.Dur("latency", latency)
+			evt.Str("latency_human", latency.String())
 
-				evt.Str("bytes_in", cl)
-				evt.Str("bytes_out", strconv.FormatInt(res.Size, 10))
+			cl := req.Header.Get(echo.HeaderContentLength)
+			if cl == "" {
+				cl = "0"
 			}
 
-			if withNewDict { // Nest the new event (dict) under the nest key for default fields.
+			evt.Str("bytes_in", cl)
+			evt.Str("bytes_out", strconv.FormatInt(res.Size, 10))
+
+			if config.NestKey != "" { // Nest the new event (dict) under the nest key.
 				mainEvt.Dict(config.NestKey, evt)
 			}
-
 			mainEvt.Send()
 
 			return err
