@@ -7,7 +7,7 @@ require (
 	github.com/blevesearch/bleve/v2 v2.6.0
 	github.com/blevesearch/bleve_index_api v1.3.12
 	github.com/etkecc/go-apm v1.3.5
-	github.com/etkecc/go-echo-basic-auth v1.4.0
+	github.com/etkecc/go-echo-basic-auth v1.4.1
 	github.com/etkecc/go-fswatcher v1.0.1
 	github.com/etkecc/go-healthchecks/v2 v2.4.1
 	github.com/etkecc/go-kit v1.12.5
@@ -79,7 +79,7 @@ require (
 	github.com/labstack/gommon v0.5.0 // indirect
 	github.com/matrix-org/util v0.0.0-20221111132719-399730281e66 // indirect
 	github.com/mattn/go-colorable v0.1.15 // indirect
-	github.com/mattn/go-isatty v0.0.22 // indirect
+	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/mschoch/smat v0.2.0 // indirect
