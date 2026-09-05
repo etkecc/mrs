@@ -40,8 +40,7 @@ func TestBatchServers_StubCarriesOnlineAt(t *testing.T) {
 	}
 }
 
-// the two-clock invariant guard: marking a server offline stamps CheckedAt (backoff) but must leave OnlineAt (prune) put.
-// if OnlineAt ever moves here, the 30d prune clock resets on every offline dial and dead servers become immortal.
+// two-clock invariant: marking offline stamps CheckedAt but must leave OnlineAt put, or dead servers go immortal.
 func TestMarkServersOffline_StampsCheckedAtLeavesOnlineAt(t *testing.T) {
 	d, err := New(filepath.Join(t.TempDir(), "test.db"))
 	if err != nil {
@@ -75,9 +74,7 @@ func TestMarkServersOffline_StampsCheckedAtLeavesOnlineAt(t *testing.T) {
 	}
 }
 
-// first-contact-offline (no prior record) must still get an OnlineAt, or the fresh stub lands in year-1 and the
-// same-run prune buries it on sight. discoverServer no longer persists the offline case, so markServerOffline is
-// the only writer that can save a resolves-but-down server on first sighting.
+// first-contact-offline needs OnlineAt or it lands in year-1 and gets pruned; markServerOffline is the sole writer.
 func TestMarkServersOffline_FreshStubGetsOnlineAt(t *testing.T) {
 	d, err := New(filepath.Join(t.TempDir(), "test.db"))
 	if err != nil {

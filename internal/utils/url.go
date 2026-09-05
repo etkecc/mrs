@@ -37,8 +37,7 @@ func ParseURL(uri string) *url.URL {
 	return u
 }
 
-// Unescape unescapes a URL-encoded string, e.g. a path param ("%23" -> "#")
-// if unescaping fails, it returns the original value
+// Unescape decodes a URL-encoded string (e.g. "%23" -> "#"); returns the original value if decoding fails.
 func Unescape(value string) string {
 	unescapedValue, err := url.QueryUnescape(value)
 	if err == nil {
@@ -47,11 +46,7 @@ func Unescape(value string) string {
 	return value
 }
 
-// HashURLValues returns the CRC64-ISO hash of url.Values as a hex string
-// It uses a canonical ordering for the keys and values to ensure deterministic output
-// It is intended to be fast and not cryptographically secure
-// The function already highly optimized for performance (552.5 ns/op, 112 B/op, 3 allocs/op),
-// do NOT change the implementation unless you have a very good reason
+// HashURLValues: canonical CRC64-ISO hash of url.Values; unsafe for crypto use, optimized so do not change lightly.
 func HashURLValues(values url.Values) string {
 	h := crc64.New(crc64Table)
 

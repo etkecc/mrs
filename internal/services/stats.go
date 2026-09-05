@@ -19,7 +19,7 @@ import (
 	"github.com/etkecc/mrs/internal/model"
 )
 
-// webhookClient is fast-fail and retry-free: a webhook POST must not be replayed (double-notify) or hoard the federation pool, so it stays off the federation client.
+// webhookClient is fast-fail, retry-free: a webhook POST must never replay or hoard the federation pool.
 var webhookClient = &http.Client{Timeout: 10 * time.Second}
 
 type StatsRepository interface {

@@ -51,8 +51,7 @@ var (
 			en.StopName,
 		},
 	}
-	// analyzerExact never stems: "villingen" stays whole instead of clipped to "villing" and missing itself.
-	// Twin of matrix_alias on purpose, not a reuse, so exact never inherits a future alias-analysis change.
+	// analyzerExact never stems ("villingen" stays whole); twin of matrix_alias so it stays independent of alias changes.
 	analyzerExact = map[string]any{
 		"type": custom.Name,
 		"char_filters": []any{
@@ -94,10 +93,7 @@ func getIndexMapping(ctx context.Context) mapping.IndexMapping {
 	textFM := bleve.NewTextFieldMapping()
 	textFM.Analyzer = multilang.Name
 
-	// name_exact / topic_exact ride alongside the stemmed fields: same source value,
-	// unstemmed, so a full-word query matches even when the stemmer ate the tail.
-	// Indexed only, nothing reads them back, so no second copy stored, no term
-	// vectors, no _all, no doc values: match is all they owe.
+	// name_exact / topic_exact ride unstemmed alongside stemmed fields; indexed-only, no store/vectors/doc-values.
 	nameExactFM := bleve.NewTextFieldMapping()
 	nameExactFM.Analyzer = "exact_text"
 	nameExactFM.Name = "name_exact"

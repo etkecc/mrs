@@ -36,8 +36,7 @@ type Moderation struct {
 	matrix matrixService
 }
 
-// webhookPayload for hookshot
-// ref: https://matrix-org.github.io/matrix-hookshot/latest/setup/webhooks.html
+// webhookPayload for hookshot, ref: https://matrix-org.github.io/matrix-hookshot/latest/setup/webhooks.html
 type webhookPayload struct {
 	Username string `json:"username"`
 	Markdown string `json:"text"`

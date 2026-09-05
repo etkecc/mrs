@@ -8,8 +8,7 @@ import (
 	"github.com/hashicorp/golang-lru/v2/expirable"
 )
 
-// knock on a dead server twice; the second knock hits memory, not the corpse. the tell it short-circuited is the
-// error going nil: a real re-lookup of nonexistent.invalid (guaranteed NXDOMAIN, so no real egress) would hand back one.
+// knock on a dead server twice; the second hits memory. the tell is a nil error: nonexistent.invalid always NXDOMAINs.
 func TestQueryServerName_negativeCacheStopsRefetch(t *testing.T) {
 	ctx := context.Background()
 	s := &Server{
@@ -34,7 +33,7 @@ func TestQueryServerName_negativeCacheStopsRefetch(t *testing.T) {
 	}
 }
 
-// a server that came back from the dead shouldn't stay buried: a live positive-cache entry outranks a stale "it's dead" note.
+// a server back from the dead should not stay buried: a live positive-cache entry outranks a stale negative one.
 func TestQueryServerName_positiveCacheBeatsNegative(t *testing.T) {
 	ctx := context.Background()
 	s := &Server{

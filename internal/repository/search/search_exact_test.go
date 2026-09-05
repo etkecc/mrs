@@ -11,8 +11,7 @@ import (
 	"github.com/etkecc/mrs/internal/model"
 )
 
-// multilangRooms are faked from live rooms: identifiers placeholder, name/topic
-// verbatim so the stemmers trip like prod. Kept off testEntries, count asserts depend on it.
+// multilangRooms fake live rooms (placeholder IDs, verbatim topic); kept off testEntries, count asserts depend on it.
 var multilangRooms = []*model.Entry{
 	{ // the actual reported bug: German prose, place names the de stemmer clips -en from
 		ID: "!de-lugvs:example.org", Type: "room", Alias: "#de-lugvs:example.org",
@@ -62,9 +61,7 @@ var multilangRooms = []*model.Entry{
 	},
 }
 
-// testLangDetector is the one detector the whole test binary shares. multilang.Register
-// registers into a global registry, first-writer-wins, so a second detector would be
-// silently ignored: every test builder must hand NewIndex this exact set.
+// testLangDetector is shared binary-wide: multilang.Register is global first-writer-wins, so every index must use it.
 func testLangDetector() lingua.LanguageDetector {
 	return lingua.NewLanguageDetectorBuilder().
 		FromLanguages(lingua.English, lingua.German, lingua.French, lingua.Russian, lingua.Spanish).
@@ -111,8 +108,7 @@ func searchOneField(t *testing.T, idx *Index, q, field string) []*model.Entry {
 	return results
 }
 
-// TestSearch_ExactMatchAllLanguages: the full inflected word matches its unstemmed
-// *_exact field in every language. This is the fix's behavior, language-general.
+// TestSearch_ExactMatchAllLanguages: the full inflected word matches its unstemmed *_exact field in every language.
 func TestSearch_ExactMatchAllLanguages(t *testing.T) {
 	idx := newIndexWith(t, multilangRooms)
 
@@ -136,9 +132,7 @@ func TestSearch_ExactMatchAllLanguages(t *testing.T) {
 	}
 }
 
-// TestSearch_ExactBugWitness: the SAME full word misses the stemmed base field, so
-// the exact field is load-bearing, not redundant. Proven on the reported German case,
-// where the de stemmer clips -en from the place names but an English query can't.
+// TestSearch_ExactBugWitness: the SAME word misses the stemmed field, proving exact is needed (German -en clip case).
 func TestSearch_ExactBugWitness(t *testing.T) {
 	idx := newIndexWith(t, multilangRooms)
 
@@ -156,8 +150,7 @@ func TestSearch_ExactBugWitness(t *testing.T) {
 	}
 }
 
-// TestSearch_ExactTruncationsStillWork: a truncation into the stem still prefix-matches
-// the stemmed field, the recall path the fix must not regress.
+// TestSearch_ExactTruncationsStillWork: a truncation into the stem still prefix-matches the stemmed field (recall).
 func TestSearch_ExactTruncationsStillWork(t *testing.T) {
 	idx := newIndexWith(t, multilangRooms)
 
@@ -184,8 +177,7 @@ func TestSearch_ExactEnglishUnaffected(t *testing.T) {
 	}
 }
 
-// TestSearch_ExactStopwordSanity: "the" is stopword-filtered off the exact field,
-// the meaningful token still lands.
+// TestSearch_ExactStopwordSanity: "the" is stopword-filtered off the exact field, the meaningful token still lands.
 func TestSearch_ExactStopwordSanity(t *testing.T) {
 	idx := newIndexWith(t, multilangRooms)
 

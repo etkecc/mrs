@@ -11,15 +11,10 @@ import (
 	"github.com/etkecc/mrs/internal/model"
 )
 
-// stubConfig / stubCache are the only two dependencies ConfigureRouter touches at
-// registration time (auth realms + gzip/cache middleware). Everything else is captured
-// into handler closures that this test never invokes, so nil is fine for them.
+// stubConfig / stubCache are the only deps ConfigureRouter touches at registration; the rest are unused closures.
 type stubConfig struct{}
 
-// Auth must be non-nil: ConfigureRouter reads cfg.Get().Auth.<realm> when it builds the
-// basic-auth middleware at registration time. The realms themselves are zero-value (value
-// fields), which is fine, the validators are never invoked here. Every other *Config* pointer
-// is either nil-checked (Blocklist) or only touched at request time (Matrix), so nil is fine.
+// Auth must be non-nil: ConfigureRouter reads cfg.Get().Auth at registration; other *Config* fields are nil-safe.
 func (stubConfig) Get() *model.Config { return &model.Config{Auth: &model.ConfigAuth{}} }
 
 type stubCache struct{}
@@ -52,9 +47,7 @@ func swaggerToEcho(path string) string {
 	return swaggerParam.ReplaceAllString(path, ":$1")
 }
 
-// TestSwaggerPathsMatchRouter asserts every documented @Router path is really registered,
-// so an annotation cannot drift from its handler's echo.GET/POST without the suite noticing.
-// This is the single guard the whole "document exactly what mrs does" mandate leans on.
+// TestSwaggerPathsMatchRouter asserts every documented @Router path is really registered in ConfigureRouter.
 func TestSwaggerPathsMatchRouter(t *testing.T) {
 	routes := routeSet(testRouter(t))
 
@@ -76,8 +69,7 @@ func TestSwaggerPathsMatchRouter(t *testing.T) {
 	}
 }
 
-// TestDoNotGZIPPathsRegistered asserts every gzip-skip path is a real route, so the map
-// cannot rot into skipping a path that no longer exists (or miss one that was renamed).
+// TestDoNotGZIPPathsRegistered asserts every gzip-skip path is a real, currently-registered route.
 func TestDoNotGZIPPathsRegistered(t *testing.T) {
 	routes := routeSet(testRouter(t))
 	for path := range doNotGZIP {

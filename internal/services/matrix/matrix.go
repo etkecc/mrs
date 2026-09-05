@@ -13,8 +13,7 @@ const (
 	MatrixSearchLimit = 100 // default matrix (!) search limit
 	devhost           = "localhost"
 	cacheTTL          = 24 * time.Hour // matches the Matrix .well-known/matrix/server default TTL
-	// namesNegativeCacheTTL is short on purpose: long enough to swallow a repeat-probe flood, short enough a
-	// host that blinked offline for a minute isn't written off for the whole day.
+	// namesNegativeCacheTTL swallows a repeat-probe flood, short enough a one-minute blink doesn't cost a whole day.
 	namesNegativeCacheTTL = 5 * time.Minute
 )
 

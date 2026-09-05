@@ -554,8 +554,7 @@ func TestSearch_DisjunctionQuery(t *testing.T) {
 	idx := newTestIndex(t)
 	ctx := context.Background()
 
-	// Simulate the kind of query the search service builds:
-	// search "Postmoogle" across name, alias, topic
+	// simulate the search service query: search "Postmoogle" across name, alias, topic
 	nameQ := bleve.NewMatchQuery("Postmoogle")
 	nameQ.SetField("name")
 	nameQ.SetBoost(10)
@@ -666,8 +665,7 @@ func TestSearch_EmptyQueryWithRoomTypeFilter(t *testing.T) {
 	idx := newTestIndex(t)
 	ctx := context.Background()
 
-	// Simulate the fixed empty-query + room_types path:
-	// MatchAll filtered to only spaces
+	// simulate the fixed empty-query + room_types path: MatchAll filtered to only spaces
 	roomTypeQ := bleve.NewTermQuery("m.space")
 	roomTypeQ.SetField("room_type")
 
@@ -843,8 +841,7 @@ func TestSearch_IDField(t *testing.T) {
 	idx := newTestIndex(t)
 	ctx := context.Background()
 
-	// matrix_id analyzer strips #, !, : and lowercases
-	// searching for parts of a room ID should work
+	// matrix_id analyzer strips #, !, : and lowercases; searching parts of a room ID should work
 	q := bleve.NewMatchQuery("etke.cc")
 	q.SetField("id")
 	results, total, err := idx.Search(ctx, q, 100, 0, []string{"_score"})
@@ -861,8 +858,7 @@ func TestSearch_ScoreBoostOrdering(t *testing.T) {
 	idx := newTestIndex(t)
 	ctx := context.Background()
 
-	// Build a disjunction like the search service does:
-	// "Baibot" should rank higher in name (boost=10) than in topic (boost=3)
+	// build a disjunction like the search service does: "Baibot" ranks higher in name (boost=10) than topic (boost=3)
 	nameQ := bleve.NewMatchQuery("baibot")
 	nameQ.SetField("name")
 	nameQ.SetBoost(10)
@@ -948,8 +944,7 @@ func TestSearch_FieldsQuery(t *testing.T) {
 	}
 }
 
-// TestSearch_TopicMatchContributes verifies that topic matches contribute to search results
-// (regression test for zero-boost bug)
+// TestSearch_TopicMatchContributes verifies topic matches contribute to results (regression: zero-boost bug)
 func TestSearch_TopicMatchContributes(t *testing.T) {
 	idx := newTestIndex(t)
 	ctx := context.Background()

@@ -223,8 +223,7 @@ func (s *Server) QueryServerKeys(ctx context.Context, serverName string, validUn
 	return payload
 }
 
-// QueryServersKeys is /_matrix/key/v2/query for multiple servers
-// Current naive implementation returns all keys, even when request is for specific key IDs
+// QueryServersKeys is /_matrix/key/v2/query for multiple servers; naive impl returns all keys, ignoring key IDs.
 func (s *Server) QueryServersKeys(ctx context.Context, req *model.QueryServerKeysRequest, validUntilTS int64) []byte {
 	serverNames := kit.MapKeys(req.ServerKeys)
 	log := apm.Log(ctx).With().Strs("servers", serverNames).Logger()
@@ -233,8 +232,7 @@ func (s *Server) QueryServersKeys(ctx context.Context, req *model.QueryServerKey
 	}
 	keyPayloads := make([]json.RawMessage, 0, len(serverNames))
 	var mu sync.Mutex
-	// notaryLookupKeys carries its own deadline, so we cut the parent cancel loose once up here: reassign this
-	// shared ctx inside each worker instead and the goroutines scribble over each other, -race reads you your rights.
+	// notaryLookupKeys has its own deadline; ctx.WithoutCancel here once, a per-worker reassign races (-race catches it).
 	ctx = context.WithoutCancel(ctx)
 	wp := workpool.New(s.cfg.Get().Workers.Discovery)
 	for _, serverName := range serverNames {
@@ -268,9 +266,7 @@ func (s *Server) QueryCSURL(ctx context.Context, serverName string) string {
 	return csurl
 }
 
-// resolveCSURL resolves the Matrix CS API base URL via /.well-known/matrix/client, falling back to
-// https://serverName. Uncached on purpose: the via path calls this so an attacker-supplied serverName
-// never poisons curlsCache.
+// resolveCSURL: CS URL via well-known/matrix/client, else https://serverName; uncached so via can't poison curlsCache.
 func (s *Server) resolveCSURL(ctx context.Context, serverName string) string {
 	csurl := "https://" + serverName
 	if fromWellKnown, err := s.parseClientWellKnown(ctx, serverName); err == nil {

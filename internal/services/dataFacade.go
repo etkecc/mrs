@@ -49,8 +49,7 @@ func NewDataFacade(
 	return &DataFacade{crawler, index, stats}
 }
 
-// AddServer by name, intended for HTTP API
-// returns http status code to send to the reporter
+// AddServer by name, intended for HTTP API; returns http status code to send to the reporter
 func (df *DataFacade) AddServer(ctx context.Context, name string) int {
 	defer df.stats.CollectServers(ctx, true)
 	return df.crawler.AddServer(ctx, name)

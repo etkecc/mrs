@@ -12,8 +12,7 @@ import (
 	"github.com/etkecc/go-kit/httpclient"
 )
 
-// checkRedirect gates on the origin request (via[0]), not the attacker-controlled destination: same
-// destination, different origin, opposite decision.
+// checkRedirect gates on the origin request (via[0]); same destination, different origin flips the decision.
 func TestCheckRedirect_followsWellKnownOriginBlocksElse(t *testing.T) {
 	dest, err := http.NewRequest(http.MethodGet, "https://b.example/anything", http.NoBody)
 	if err != nil {
@@ -37,10 +36,7 @@ func TestCheckRedirect_followsWellKnownOriginBlocksElse(t *testing.T) {
 	}
 }
 
-// TestSharedClient_pinnedPrivateDialRefused checks the shared client refuses a dial pinned to a private IP. A
-// live loopback listener exists and the request is pinned straight to it: without the guard the dial would land
-// and return 200, so a non-error means no guard. We assert the outcome, not the error string, whose exact
-// wording through the retry and client layers isn't guaranteed.
+// pins a dial straight at a live loopback listener; asserts the guard-refused outcome, never the exact error text.
 func TestSharedClient_pinnedPrivateDialRefused(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)

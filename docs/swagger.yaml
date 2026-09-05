@@ -143,13 +143,15 @@ definitions:
   github_com_etkecc_mrs_internal_model.MatrixServer:
     properties:
       checked_at:
+        description: backoff clock, bumped on every dial attempt whether online or
+          not
         type: string
       contacts:
         allOf:
         - $ref: '#/definitions/github_com_etkecc_mrs_internal_model.MatrixServerContacts'
         description: Contacts as per MSC1929
       indexable:
-        description: Is the server published the public room directory over federation?
+        description: Is the server's room directory published over federation?
         type: boolean
       name:
         description: ServerName, as per spec, e.g., "example.com"
@@ -158,9 +160,7 @@ definitions:
         description: Is the server online and federating?
         type: boolean
       online_at:
-        description: |-
-          OnlineAt is the prune clock: last seen online, the sole basis for the 30d offline delete. Never bumped on an offline dial.
-          CheckedAt is the backoff clock: last dial attempt, bumped every dial. Merge them and dead servers reset the prune clock and go immortal.
+        description: prune clock; merged with CheckedAt, dead servers go immortal
         type: string
       software:
         description: Software running on the server, e.g., Synapse, Dendrite

@@ -13,8 +13,7 @@ import (
 	"github.com/etkecc/mrs/internal/model"
 )
 
-// each phase's CAS guard rejects re-entry while it's already running. no mock is wired, so any work the
-// early-return skips would surface as an unexpected call and fail the test.
+// each phase's CAS guard rejects re-entry while running; no mock wired, so a skipped early-return fails the test.
 func TestPhaseGuards_RejectReentry(t *testing.T) {
 	tests := []struct {
 		name string
@@ -43,7 +42,7 @@ func TestPhaseGuards_RejectReentry(t *testing.T) {
 	}
 }
 
-// harvested servers get persisted for next cycle, not dialed inline. the discovery mocks stay un-wired, so an inline dial fails the test.
+// harvested servers persist for next cycle instead of dialing inline; discovery mocks stay un-wired.
 func TestParseRooms_DefersHarvestNotDiscovers(t *testing.T) {
 	cfg := NewMockConfigService(t)
 	fed := NewMockFederationService(t)
@@ -63,8 +62,7 @@ func TestParseRooms_DefersHarvestNotDiscovers(t *testing.T) {
 	data.EXPECT().FilterServers(mock.Anything, mock.Anything).Return(map[string]*model.MatrixServer{}).Once() // removeOldOfflineServers
 	block.EXPECT().ByServer("known.example").Return(false)
 
-	// its public rooms surface a brand-new server via the client directory.
-	// the topic's (MRS-language:EN-MRS) directive pins the language so room.Parse never touches the nil detector.
+	// its public rooms surface a new server; (MRS-language:EN-MRS) pins language, skipping the nil detector.
 	resp := &model.RoomDirectoryResponse{
 		Chunk: []*model.RoomDirectoryRoom{
 			{ID: "!r:known.example", Alias: "#r:known.example", Name: "Test", Topic: "(MRS-language:EN-MRS)", JoinRule: "public"},
@@ -116,8 +114,7 @@ func TestOfflineBackoff(t *testing.T) {
 	}
 }
 
-// loadServers must dial online servers and never-checked stubs always, and throttle offline servers by the backoff curve.
-// RunAndReturn is load-bearing: it runs the real predicate against the candidates; a plain Return would skip the closure entirely.
+// loadServers dials online/never-checked stubs always, offline throttled by backoff; RunAndReturn runs the predicate.
 func TestLoadServers_BackoffFilter(t *testing.T) {
 	cfg := NewMockConfigService(t)
 	fed := NewMockFederationService(t)
@@ -197,10 +194,7 @@ func TestDiscoverServer_StampsCheckedAt(t *testing.T) {
 	}
 }
 
-// the clobber regression guard: a resolves-but-down server (IsOnline returns a name but ok=false) must NOT be
-// persisted by discoverServer. AddServer is a blind Put; persisting here would stamp OnlineAt=now and reset the
-// prune clock, making the corpse immortal. MarkServersOffline is the sole offline writer. No AddServer expectation
-// is wired, so any persist call fails the test.
+// clobber guard: resolves-but-down must skip AddServer (a Put would immortalize it); no mock wired, so a call fails.
 func TestDiscoverServer_OfflineDoesNotPersist(t *testing.T) {
 	cfg := NewMockConfigService(t)
 	fed := NewMockFederationService(t)
@@ -224,8 +218,7 @@ func TestDiscoverServer_OfflineDoesNotPersist(t *testing.T) {
 	}
 }
 
-// AddServer's HTTP status must track what actually persisted: online is stored (201), offline stored nothing (422).
-// guards against the old dead `server == nil` check that reported 201 for a server it never added.
+// AddServer's status tracks what persisted (online=201, offline=422); guards the old server==nil false-201 check.
 func TestAddServer_StatusReflectsPersistence(t *testing.T) {
 	t.Run("online persists and reports created", func(t *testing.T) {
 		cfg := NewMockConfigService(t)
@@ -261,7 +254,7 @@ func TestAddServer_StatusReflectsPersistence(t *testing.T) {
 		data.EXPECT().HasServer(mock.Anything, "down.example").Return(false)
 		block.EXPECT().ByServer("down.example").Return(false)
 		v.EXPECT().IsOnline(mock.Anything, "down.example").Return("down.example", "", "", false)
-		// the row is what stops the anonymous re-dial hammer. via MarkServersOffline (safe writer), NOT AddServer (would clobber).
+		// the row stops the anonymous re-dial hammer via MarkServersOffline (safe writer); AddServer would clobber it.
 		data.EXPECT().MarkServersOffline(mock.Anything, []string{"down.example"}).Return().Once()
 
 		m := NewCrawler(cfg, fed, v, block, media, data, nil)
@@ -270,8 +263,7 @@ func TestAddServer_StatusReflectsPersistence(t *testing.T) {
 		}
 	})
 
-	// the vulnerability-killer: once a name is known, a repeat POST must short-circuit on HasServer and never re-dial.
-	// no IsOnline/discoverServer mocks are wired, so any re-dial fails the test.
+	// once a name is known, a repeat POST short-circuits on HasServer; no re-dial mocks wired, so a re-dial fails.
 	t.Run("already-known short-circuits without re-dialing", func(t *testing.T) {
 		cfg := NewMockConfigService(t)
 		fed := NewMockFederationService(t)

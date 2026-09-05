@@ -1682,6 +1682,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "checked_at": {
+                    "description": "backoff clock, bumped on every dial attempt whether online or not",
                     "type": "string"
                 },
                 "contacts": {
@@ -1693,7 +1694,7 @@ const docTemplate = `{
                     ]
                 },
                 "indexable": {
-                    "description": "Is the server published the public room directory over federation?",
+                    "description": "Is the server's room directory published over federation?",
                     "type": "boolean"
                 },
                 "name": {
@@ -1705,7 +1706,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "online_at": {
-                    "description": "OnlineAt is the prune clock: last seen online, the sole basis for the 30d offline delete. Never bumped on an offline dial.\nCheckedAt is the backoff clock: last dial attempt, bumped every dial. Merge them and dead servers reset the prune clock and go immortal.",
+                    "description": "prune clock; merged with CheckedAt, dead servers go immortal",
                     "type": "string"
                 },
                 "software": {

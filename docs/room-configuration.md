@@ -30,7 +30,7 @@ You can direct Matrix Rooms Search instances to recognize rooms per your setting
 
 The recommended place to add the string is the end of the room's topic, as it will be removed from the topic when MRS will process it.
 
-💡 **Hint**: you can "hide" that configuration string by utilizing Markdown link format — just use `[.]` (or even `[]`) as the link text, so it will not be visible in the room's topic, but still will be processed by MRS. Below is an example of how to do that:
+💡 **Hint**: you can "hide" that configuration string by utilizing Markdown link format, just use `[.]` (or even `[]`) as the link text, so it will not be visible in the room's topic, but still will be processed by MRS. Below is an example of how to do that:
 
 ```markdown
 [.](MRS-language:EN|email:admin@example.com-MRS)

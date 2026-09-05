@@ -38,7 +38,7 @@ At **[MatrixRooms.info](https://matrixrooms.info)** is a public demo instance av
   ```
   GET /_matrix/federation/v1/publicRooms
   ```
-* Displays metadata retrieved via the API — such as room name, topic, number of joined users, and aliases.
+* Displays metadata retrieved via the API, such as room name, topic, number of joined users, and aliases.
 
 See [the protocol documentation](https://spec.matrix.org/latest/server-server-api/#get_matrixfederationv1publicrooms) for technical details.
 

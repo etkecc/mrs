@@ -79,9 +79,7 @@ func (s *Server) GetMediaThumbnail(ctx context.Context, serverName, mediaID stri
 	return newReader, contentType
 }
 
-// GetClientMediaThumbnail is /_matrix/media/v3/thumbnail/{serverName}/{mediaID}
-//
-// Deprecated: use GetMediaThumbnail() instead, ref: https://spec.matrix.org/v1.11/server-server-api/#get_matrixfederationv1mediathumbnailmediaid
+// Deprecated: use GetMediaThumbnail() instead (spec: server-server-api media thumbnail, v1.11).
 func (s *Server) GetClientMediaThumbnail(ctx context.Context, serverName, mediaID string, params url.Values) (content io.Reader, contentType string) {
 	params = utils.ValuesOrDefault(params, s.getDefaultThumbnailParams())
 	if content, contentType := s.media.Get(ctx, serverName, mediaID, params); content != nil && contentType != "" {
@@ -113,7 +111,7 @@ func (s *Server) GetClientMediaThumbnail(ctx context.Context, serverName, mediaI
 			s.media.Add(ctx, serverName, mediaID, params, contents)
 			return reader, contentType
 		}
-		// non-image fallback: buffer a bounded body then close it so the connection pools instead of leaking (caller gets an io.Reader and can't Close the original)
+		// non-image fallback: buffer a bounded body and close it so the connection pools; caller's io.Reader can't Close it.
 		buf, err := io.ReadAll(io.LimitReader(resp.Body, maxThumbnailBytes))
 		resp.Body.Close()
 		if err != nil {
@@ -164,8 +162,7 @@ func (s *Server) getImageFromMultipart(ctx context.Context, resp *http.Response)
 	return nil, ""
 }
 
-// getDefaultThumbnailParams returns the default thumbnail parameters
-// it is intentionally returning a new url.Values object to avoid concurrent map access
+// getDefaultThumbnailParams returns a fresh url.Values each call, to avoid concurrent map access on a shared one.
 func (s *Server) getDefaultThumbnailParams() url.Values {
 	return url.Values{
 		"animated": []string{"true"},

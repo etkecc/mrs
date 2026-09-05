@@ -10,8 +10,7 @@ import (
 const (
 	// Name used for all components
 	Name = "multilang"
-	// LangDivider is a special symbol added to the end of the input
-	// after that symbol detected lang name is stored
+	// LangDivider is appended to the input; the detected lang name is stored after it
 	LangDivider = byte('_')
 )
 

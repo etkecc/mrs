@@ -215,10 +215,7 @@ func TestGetSearchQuery_QueryWithFields(t *testing.T) {
 	}
 }
 
-// TestGetSearchQuery_IncludesExactFields guards the real query path, not the bleve schema:
-// the exact-field fix lives or dies on these clauses reaching the disjunction, and the
-// repo-layer tests never walk getSearchQuery. Drop the loop in buildTextSearchQueries and
-// this is the only test that goes red.
+// TestGetSearchQuery_IncludesExactFields is the sole test exercising getSearchQuery; drop its loop and this goes red.
 func TestGetSearchQuery_IncludesExactFields(t *testing.T) {
 	env := newTestSearchService(t)
 	q := env.svc.getSearchQuery("villingen", nil, nil, true)
@@ -258,8 +255,7 @@ func TestGetEmptyQueryResults_SpacesOnly(t *testing.T) {
 	env.dataMock.EXPECT().GetBiggestRooms(mock.Anything, mock.AnythingOfType("int"), 0).Return(testRooms)
 	env.dataMock.EXPECT().GetBiggestRooms(mock.Anything, mock.AnythingOfType("int"), mock.AnythingOfType("int")).Return(nil).Maybe()
 
-	// TODO: Revisit filtered totals for empty-query searches.
-	// Current behavior intentionally returns all indexed rooms as total.
+	// TODO: revisit filtered totals for empty-query searches; currently returns all indexed rooms as total.
 	entries, total := env.svc.getEmptyQueryResults(context.Background(), []string{"m.space"}, 20, 0)
 	for _, e := range entries {
 		if e.RoomType != "m.space" {
@@ -279,9 +275,7 @@ func TestGetEmptyQueryResults_RegularRoomsOnly(t *testing.T) {
 	env.dataMock.EXPECT().GetBiggestRooms(mock.Anything, mock.AnythingOfType("int"), 0).Return(testRooms)
 	env.dataMock.EXPECT().GetBiggestRooms(mock.Anything, mock.AnythingOfType("int"), mock.AnythingOfType("int")).Return(nil).Maybe()
 
-	// null in JSON -> "" in Go -> regular rooms
-	// TODO: Revisit filtered totals for empty-query searches.
-	// Current behavior intentionally returns all indexed rooms as total.
+	// null in JSON -> "" in Go -> regular rooms; TODO: revisit filtered totals, currently returns all rooms as total.
 	entries, total := env.svc.getEmptyQueryResults(context.Background(), []string{""}, 20, 0)
 	for _, e := range entries {
 		if e.RoomType == "m.space" {
@@ -301,8 +295,7 @@ func TestGetEmptyQueryResults_BothTypes(t *testing.T) {
 	env.dataMock.EXPECT().GetBiggestRooms(mock.Anything, mock.AnythingOfType("int"), 0).Return(testRooms)
 	env.dataMock.EXPECT().GetBiggestRooms(mock.Anything, mock.AnythingOfType("int"), mock.AnythingOfType("int")).Return(nil).Maybe()
 
-	// [null, "m.space"] -> both regular and spaces = everything
-	// Combined filters match the entire fixture set, so this total is stable either way.
+	// [null, "m.space"] -> both regular and spaces = everything; combined filters match the entire fixture set.
 	entries, total := env.svc.getEmptyQueryResults(context.Background(), []string{"", "m.space"}, 20, 0)
 	if len(entries) != len(testRooms) {
 		t.Errorf("len(entries) = %d, want %d (all rooms)", len(entries), len(testRooms))
@@ -319,8 +312,7 @@ func TestGetEmptyQueryResults_FilteredPagination(t *testing.T) {
 			return biggestRoomsPage(limit, offset)
 		})
 
-	// TODO: Revisit filtered totals for empty-query searches.
-	// Pagination is correct today; total still reflects all indexed rooms.
+	// TODO: revisit filtered totals for empty-query searches; pagination is correct, total reflects all rooms.
 	page1, total1 := env.svc.getEmptyQueryResults(context.Background(), []string{""}, 2, 0)
 	page2, total2 := env.svc.getEmptyQueryResults(context.Background(), []string{""}, 2, 2)
 
@@ -353,8 +345,7 @@ func TestGetEmptyQueryResults_FilteredPaginationExhaust(t *testing.T) {
 			return biggestRoomsPage(limit, offset)
 		})
 
-	// TODO: Revisit filtered totals for empty-query searches.
-	// Current behavior intentionally keeps returning all indexed rooms as total.
+	// TODO: revisit filtered totals for empty-query searches; currently keeps returning all indexed rooms as total.
 	entries, total := env.svc.getEmptyQueryResults(context.Background(), []string{"m.space"}, 20, 0)
 	if len(entries) != 3 {
 		t.Errorf("len(entries) = %d, want 3", len(entries))
@@ -633,9 +624,7 @@ func TestSearchFieldsBoost(t *testing.T) {
 	}
 }
 
-// TestSearch_TracksExactlyOneEvent pins the event-path invariant: one Search call fires exactly one
-// Search analytics event, never zero and never two. The empty-query branch was invisible before, and
-// the shared trackSearch now runs both branches, so this is the guard against a double-fire regression.
+// TestSearch_TracksExactlyOneEvent: one Search call fires exactly one event; guards trackSearch against double-fire.
 func TestSearch_TracksExactlyOneEvent(t *testing.T) {
 	cases := []struct {
 		name      string

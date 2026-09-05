@@ -17,8 +17,7 @@ import (
 )
 
 const (
-	// roomSummaryTimeout bounds one MSC3266 fallback fetch. 5s: a homeserver that can't produce a room summary
-	// in five seconds isn't shy, it's dead, and we're not holding the whole request hostage while it decomposes.
+	// roomSummaryTimeout bounds one MSC3266 fallback fetch; 5s catches a dead homeserver instead of stalling the request.
 	roomSummaryTimeout = 5 * time.Second
 )
 
@@ -115,9 +114,7 @@ func (s *Server) GetClientRoomSummary(ctx context.Context, aliasOrID, via string
 	return http.StatusOK, entry
 }
 
-// GetClientRoomVisibility is /_matrix/client/v3/directory/list/room/{roomID}
-// MRS indexes only public rooms, so a room we hold is public by definition; a room we do not
-// hold (or have banned) is a 404 per spec, not a blanket "public" for the whole ID space.
+// GetClientRoomVisibility is directory/list/room/{roomID}: a held room is always public; unheld or banned is 404.
 func (s *Server) GetClientRoomVisibility(ctx context.Context, roomID string) (statusCode int, resp []byte) {
 	roomID = utils.Unescape(roomID)
 	if roomID == "" {
@@ -167,9 +164,7 @@ func (s *Server) roomSummaryFallback(ctx context.Context, aliasOrID, via string)
 		return nil
 	}
 
-	// via must be a Matrix server name, not an IP (spec); reject the canonical IP forms early to skip a
-	// pointless resolve. This is not the security boundary: the shared dial guard is the authority, refusing
-	// any private IP post-resolution, including the decimal/octal/zone-disguised forms this early check misses.
+	// via must be a server name per spec; this early IP check is just an optimization, the dial guard is the real gate.
 	host := via
 	if h, _, err := net.SplitHostPort(via); err == nil {
 		host = h
@@ -193,10 +188,7 @@ func (s *Server) roomSummaryFallback(ctx context.Context, aliasOrID, via string)
 	return nil
 }
 
-// summaryEndpoint joins the MSC3266 summary path onto the CS base URL through url, not string concat, so a
-// base_url carrying a stray path, query, or #fragment (a hostile well-known can return any) cannot swallow the
-// appended path and turn mrs into a GET-relay. It also collapses the spec-legal trailing slash and keeps a
-// legitimate path prefix.
+// summaryEndpoint uses url.URL to join paths; a hostile base_url with a stray path/query/fragment cannot hijack it.
 func (s *Server) summaryEndpoint(csBaseURL, aliasOrID string) (string, error) {
 	base, err := url.Parse(csBaseURL)
 	if err != nil {

@@ -28,8 +28,7 @@ func (cfg *RoomConfig) IsEmpty() bool {
 	return cfg == nil || (cfg.Language == "" && cfg.Email == "" && !cfg.Noindex)
 }
 
-// ParseRoomConfig parses the room topic to extract the room configuration,
-// removing the room config string from the topic if it exists.
+// ParseRoomConfig extracts room config from the topic, removing the config string from the topic if present.
 func ParseRoomConfig(topic string) (string, *RoomConfig) {
 	cfg := &RoomConfig{}
 	if topic == "" {

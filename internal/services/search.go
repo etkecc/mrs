@@ -65,8 +65,7 @@ func NewSearch(cfg ConfigService, data searchDataRepository, repo SearchReposito
 	return s
 }
 
-// Search things
-// ref: https://blevesearch.com/docs/Query-String-Query/
+// Search things, ref: https://blevesearch.com/docs/Query-String-Query/
 func (s *Search) Search(ctx context.Context, req *http.Request, q, sortBy string, roomTypes []string, limit, offset int) ([]*model.Entry, int, error) {
 	log := apm.Log(ctx)
 	originServer := mcontext.GetOrigin(ctx)
@@ -88,8 +87,7 @@ func (s *Search) Search(ctx context.Context, req *http.Request, q, sortBy string
 
 	var builtQuery query.Query
 	if q == "" {
-		// empty query is a directory listing (biggest rooms); track it as a Search too, or federation
-		// publicRooms browsing without a filter stays invisible, which is most of the directory traffic.
+		// empty query is a directory listing; track it as a Search too, or publicRooms browsing stays invisible.
 		s.trackSearch(ctx, req, "")
 		entries, length := s.getEmptyQueryResults(ctx, roomTypes, limit, offset)
 		entries = s.addHighlights(originServer, entries)
@@ -108,9 +106,7 @@ func (s *Search) Search(ctx context.Context, req *http.Request, q, sortBy string
 	}
 	sort := kit.StringToSlice(sortBy, s.cfg.Get().Search.Defaults.SortBy)
 	if q == "" {
-		// Filter-only queries (e.g. "language:EN") have equal _score for all
-		// matches. Append -members as a deterministic tiebreaker so pagination
-		// stays stable.
+		// filter-only queries (e.g. "language:EN") tie on _score; append -members as a deterministic tiebreaker.
 		sort = append(sort, "-members")
 	}
 	results, total, err := s.repo.Search(ctx, builtQuery, limit, offset, sort)
@@ -131,7 +127,7 @@ func (s *Search) Search(ctx context.Context, req *http.Request, q, sortBy string
 	return results, total, nil
 }
 
-// trackSearch fires a fire-and-forget Search analytics event; WithoutCancel so the request finishing doesn't kill the send.
+// trackSearch fires a fire-and-forget analytics event; WithoutCancel keeps it alive past the request finishing.
 func (s *Search) trackSearch(ctx context.Context, req *http.Request, term string) {
 	evt := model.NewAnalyticsEvent(ctx, "Search", map[string]string{"query": term}, req)
 	go func(ctx context.Context, evt *model.AnalyticsEvent) {
@@ -294,8 +290,7 @@ func (s *Search) removeBlocked(results []*model.Entry) []*model.Entry {
 	return allowed
 }
 
-// matchFields parses the query string and returns the sanitized query string, fields and fuzzy flag
-// fuzzy flag is a field "fuzzy" in the fields map, if it is set to "true" (default), then the query should be treated as fuzzy
+// matchFields parses key:value pairs from the query string; fuzzy defaults true unless fuzzy:false is set.
 func (s *Search) matchFields(queryStr string) (sanitizedQuery string, fields map[string]string, fuzzy bool) {
 	if !strings.Contains(queryStr, ":") { // if no key:value pair(-s) - nothing is here
 		return queryStr, nil, true
@@ -365,9 +360,7 @@ func (s *Search) buildTextSearchQueries(q string, fuzzy bool) []query.Query {
 		}
 	}
 
-	// unstemmed twins of name/topic: match-only, so a full inflected query still
-	// lands when the stemmer clipped the indexed word. No prefix/fuzzy here, those
-	// already ride the stemmed fields and fuzzy across 4 fields burns CPU for nothing.
+	// unstemmed twins of name/topic: match-only, catches a query the stemmer clipped; skip prefix/fuzzy, wasted CPU.
 	for _, field := range []string{"name_exact", "topic_exact"} {
 		queries = append(queries, s.newMatchQuery(q, field, false))
 	}
@@ -462,8 +455,7 @@ func (s *Search) newMatchQuery(match, field string, phrase bool) bleveQuery {
 	return searchQuery
 }
 
-// newRoomTypeQuery creates a query that behaves like room_type IN(roomTypes),
-// with a special case: "" means "regular rooms" (documents that are NOT m.space).
+// newRoomTypeQuery builds room_type IN(roomTypes); "" means regular rooms, documents whose room_type isn't m.space.
 func (s *Search) newRoomTypeQuery(roomTypes []string) query.Query {
 	if len(roomTypes) == 0 {
 		return nil

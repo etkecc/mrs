@@ -1,7 +1,6 @@
 package model
 
-// WellKnownClient is /.well-known/matrix/client: the breadcrumb a Matrix client
-// follows to find the homeserver, because SRV records never quite caught on with clients.
+// WellKnownClient is /.well-known/matrix/client: points a Matrix client at the homeserver (SRV never caught on).
 type WellKnownClient struct {
 	Homeserver WellKnownHomeserver `json:"m.homeserver"`
 }
@@ -11,15 +10,12 @@ type WellKnownHomeserver struct {
 	BaseURL string `json:"base_url"` // e.g. https://matrix.example.com
 }
 
-// WellKnownServer is /.well-known/matrix/server: federation delegation, one line.
-// Points other servers at where our federation API actually answers.
+// WellKnownServer is /.well-known/matrix/server: federation delegation, points servers at our federation API.
 type WellKnownServer struct {
 	Host string `json:"m.server"` // host:port, e.g. matrix.example.com:443
 }
 
-// ClientVersions is /_matrix/client/versions. We are a search index wearing a homeserver's
-// coat, so most of this is polite fiction: a spec-version list old clients and matrix.to
-// insist on seeing before they will talk to us.
+// ClientVersions is /_matrix/client/versions: polite fiction, the spec-version list old clients and matrix.to expect.
 type ClientVersions struct {
 	Versions         []string        `json:"versions"`          // advertised client-server spec versions
 	UnstableFeatures map[string]bool `json:"unstable_features"` // unstable MSCs we actually honor
@@ -36,8 +32,7 @@ type ServerVersionInfo struct {
 	Version string `json:"version"` // server software version
 }
 
-// RoomVisibility is the 200 body of /_matrix/client/v3/directory/list/room/{roomID}.
-// MRS holds only public rooms, so whenever this is returned Visibility is "public"; a room we do not hold or have banned is a 404 with no body.
+// RoomVisibility is directory/list/room/{roomID} body: always "public" (MRS holds only public; else 404, no body).
 type RoomVisibility struct {
 	Visibility string `json:"visibility"` // always "public"
 }

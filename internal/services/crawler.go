@@ -130,8 +130,7 @@ func (m *Crawler) AddServers(ctx context.Context, names []string, workers int) {
 	m.discoverServers(ctx, servers, workers)
 }
 
-// AddServer by name, intended for HTTP API
-// returns http status code to send to the reporter
+// AddServer by name, intended for HTTP API; returns http status code to send to the reporter
 func (m *Crawler) AddServer(ctx context.Context, name string) int {
 	if m.data.HasServer(ctx, name) {
 		return http.StatusAlreadyReported
@@ -139,8 +138,7 @@ func (m *Crawler) AddServer(ctx context.Context, name string) int {
 
 	server := m.discoverServer(ctx, name)
 	if !server.Online {
-		// remember the dead one, or this anonymous endpoint is a free federation-dial vending machine:
-		// no row means HasServer never trips, so every repeat POST re-dials a host of the caller's choosing.
+		// remember the dead one: no row means HasServer never trips, so every repeat POST re-dials the caller's host.
 		m.data.MarkServersOffline(ctx, []string{server.Name})
 		return http.StatusUnprocessableEntity // added nothing that federates; don't pretend we did
 	}
@@ -277,8 +275,7 @@ func (m *Crawler) loadServers(ctx context.Context) *kit.List[string, string] {
 	return servers
 }
 
-// offlineBackoff is the minimum gap between dials of an offline server, widening the longer it's been dead.
-// age <7d: 0, dial every run to catch a quick recovery; <14d: every 4d; older: weekly. >30d never reaches here, removeOldOfflineServers deleted it.
+// offlineBackoff widens with age: <7d dials every run, <14d every 4d, older weekly; >30d is pruned before this runs.
 func offlineBackoff(age time.Duration) time.Duration {
 	if age < 0 {
 		age = 0 // a backwards clock step is not an invitation to resurrect the whole graveyard for a redial. floor it.
@@ -304,8 +301,7 @@ func (m *Crawler) discoverServer(ctx context.Context, rawName string) *model.Mat
 		return &model.MatrixServer{Name: rawName, Online: false}
 	}
 	if !ok {
-		// resolves but dead. don't AddServer it: the blind Put would stamp OnlineAt=now and make the corpse
-		// immortal. MarkServersOffline is the only offline writer, and it keeps the real OnlineAt.
+		// resolves but dead: skip AddServer, a blind Put stamps OnlineAt=now; MarkServersOffline keeps the real one.
 		return &model.MatrixServer{Name: name, Online: false}
 	}
 
@@ -478,8 +474,7 @@ func (m *Crawler) getServerContacts(ctx context.Context, name string) model.Matr
 	return contacts
 }
 
-// getPublicRooms reads public rooms of the given server from the matrix client-server api
-// and sends them into channel
+// getPublicRooms reads public rooms of the given server from the matrix client-server api and sends them into channel
 //
 //nolint:gocognit // TODO: refactor
 func (m *Crawler) getPublicRooms(ctx context.Context, name string) *kit.List[string, string] {

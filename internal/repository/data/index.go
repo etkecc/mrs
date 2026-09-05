@@ -45,8 +45,7 @@ func (d *Data) getIndexStatsFullTL(ctx context.Context) (map[time.Time]*model.In
 			if err != nil {
 				return err
 			}
-			// if the result is for previous years,
-			// keep only one result per month
+			// for previous years, keep only one result per month
 			if !bytes.HasPrefix(k, currentYear) {
 				month := t.Format("2006-01")
 				if _, ok := months[month]; ok {
@@ -55,8 +54,7 @@ func (d *Data) getIndexStatsFullTL(ctx context.Context) (map[time.Time]*model.In
 				months[month] = struct{}{}
 			}
 
-			// if the result is for the current year, but not for the current month,
-			// keep only one result per week
+			// for the current year but not current month, keep only one result per week
 			if bytes.HasPrefix(k, currentYear) && !bytes.HasPrefix(k, currentMonth) {
 				_, week := t.ISOWeek()
 				if _, ok := weeks[week]; ok {
@@ -69,8 +67,7 @@ func (d *Data) getIndexStatsFullTL(ctx context.Context) (map[time.Time]*model.In
 			if err := json.Unmarshal(v, &stats); err != nil {
 				return err
 			}
-			// Ensure that there is no big difference between the current and previous stats,
-			// because such difference may indicate a bug in the stats collection or a data corruption.
+			// guard against a big stats jump, which usually means a collection bug or data corruption
 			if prev != nil {
 				if stats.Rooms.Parsed > 5*prev.Rooms.Parsed || stats.Rooms.Parsed < prev.Rooms.Parsed/5 {
 					return nil

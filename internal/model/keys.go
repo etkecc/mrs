@@ -9,8 +9,7 @@ import (
 	"github.com/goccy/go-json"
 )
 
-// ServerKeys is /_matrix/key/v2/server: a server's published signing keys, signed by that server.
-// verify_keys is keyed by key ID by design (the spec key set is dynamic), so it stays a map, not lazy typing.
+// ServerKeys is /_matrix/key/v2/server: a server signing-keys response; verify_keys stays a map (dynamic key set).
 type ServerKeys struct {
 	ServerName    string                       `json:"server_name"`          // the server these keys belong to
 	ValidUntilTS  int64                        `json:"valid_until_ts"`       // keys are trustworthy until this ms timestamp
@@ -19,8 +18,7 @@ type ServerKeys struct {
 	Signatures    map[string]map[string]string `json:"signatures,omitempty"` // server -> keyID -> signature over this object
 }
 
-// ServerKeysQueryResponse is /_matrix/key/v2/query and /_matrix/key/v2/query/{serverName}:
-// a notary handing back a batch of already-signed ServerKeys blobs verbatim, no re-wrapping.
+// ServerKeysQueryResponse is /_matrix/key/v2/query(/{serverName}): a notary batch of signed ServerKeys, verbatim.
 type ServerKeysQueryResponse struct {
 	ServerKeys []json.RawMessage `json:"server_keys"` // each element is a signed ServerKeys object
 }

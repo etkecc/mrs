@@ -107,7 +107,7 @@ func (p *Plausible) buildRequest(ctx context.Context, evt *model.AnalyticsEvent,
 	return req, nil
 }
 
-// eventURL resolves the bare request path against Public.API so the page lands under our domain, not Plausible's hostless "(none)" bucket.
+// eventURL resolves the bare path against Public.API to keep the page off Plausible's hostless "(none)" bucket.
 func (p *Plausible) eventURL(raw string) string {
 	pub := p.cfg.Get().Public
 	if pub == nil || pub.API == "" {

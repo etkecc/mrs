@@ -12,10 +12,7 @@ type RoomDirectoryRequest struct {
 	Limit  int                 `json:"limit" query:"limit"`
 	Since  string              `json:"since" query:"since"`
 	IP     string              `json:"-"` // custom field for plausible
-	// there should be more fields:
-	// `include_all_networks` (json and query)
-	// `third_party_instance_id` (json and query)
-	// but they aren't used in MRS, so not implemented
+	// unimplemented: include_all_networks, third_party_instance_id (unused in MRS)
 }
 
 // RoomDirectoryFilter for the RoomDirectoryRequest

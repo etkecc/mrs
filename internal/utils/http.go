@@ -15,8 +15,7 @@ import (
 )
 
 const (
-	// DefaultTimeout bounds the whole retry sequence; 5m lets us wait out slow TLS on port 8448,
-	// stalled publicRooms, and three patient attempts without clipping legitimate tries.
+	// DefaultTimeout bounds the whole retry sequence; 5m waits out slow TLS on 8448 across three patient tries.
 	DefaultTimeout = 300 * time.Second
 )
 
@@ -27,15 +26,13 @@ func init() {
 	msc1929.Client = httpClient
 }
 
-// cancelOnClose fires the request-timeout cancel when the body closes, not when Do returns:
-// media.go streams resp.Body long after Do, so an early cancel truncates it mid-read.
+// cancelOnClose cancels when the body closes; media.go streams resp.Body long after Do already returned.
 type cancelOnClose struct {
 	io.ReadCloser
 	cancel context.CancelFunc
 }
 
-// newHTTPClient builds a patient crawler: 60s per attempt for slow Synapse, 30s TLS handshake
-// for Raspberry Pi on 8448, 3 retries with exponential backoff. We ingest from everyone, even the broken ones.
+// newHTTPClient is a patient crawler: 60s/attempt, 30s TLS handshake, 3 retries; we ingest even the broken hosts.
 func newHTTPClient() *http.Client {
 	client := httpclient.NewMultiHost(
 		httpclient.WithDialGuard(),
@@ -61,9 +58,7 @@ func newSlowHTTPClient() *http.Client {
 	return client
 }
 
-// checkRedirect follows a redirect only when the original request (via[0]) was a well-known fetch, the one
-// lookup the Matrix spec sanctions 30x for; a signed federation request never follows. A well-known fetch
-// bounced toward a private or metadata IP is refused at dial time by the shared client's WithDialGuard.
+// checkRedirect follows only a well-known fetch redirect, the one 30x the spec allows; dial guard blocks bad IPs.
 func checkRedirect(req *http.Request, via []*http.Request) error {
 	if len(via) > 0 && strings.HasPrefix(via[0].URL.Path, "/.well-known/matrix/") {
 		return nil

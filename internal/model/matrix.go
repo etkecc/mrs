@@ -32,17 +32,15 @@ func (e MatrixError) Error() string {
 
 // MatrixServer info
 type MatrixServer struct {
-	Name      string               `json:"name"`      // ServerName, as per spec, e.g., "example.com"
-	URL       string               `json:"url"`       // Server-Server API URL, e.g., "https://example.com:8448"
-	Software  string               `json:"software"`  // Software running on the server, e.g., Synapse, Dendrite
-	Version   string               `json:"version"`   // Version of the software, e.g., 1.0.0
-	Online    bool                 `json:"online"`    // Is the server online and federating?
-	Indexable bool                 `json:"indexable"` // Is the server published the public room directory over federation?
-	Contacts  MatrixServerContacts `json:"contacts"`  // Contacts as per MSC1929
-	// OnlineAt is the prune clock: last seen online, the sole basis for the 30d offline delete. Never bumped on an offline dial.
-	// CheckedAt is the backoff clock: last dial attempt, bumped every dial. Merge them and dead servers reset the prune clock and go immortal.
-	OnlineAt  time.Time `json:"online_at"`
-	CheckedAt time.Time `json:"checked_at"`
+	Name      string               `json:"name"`       // ServerName, as per spec, e.g., "example.com"
+	URL       string               `json:"url"`        // Server-Server API URL, e.g., "https://example.com:8448"
+	Software  string               `json:"software"`   // Software running on the server, e.g., Synapse, Dendrite
+	Version   string               `json:"version"`    // Version of the software, e.g., 1.0.0
+	Online    bool                 `json:"online"`     // Is the server online and federating?
+	Indexable bool                 `json:"indexable"`  // Is the server's room directory published over federation?
+	Contacts  MatrixServerContacts `json:"contacts"`   // Contacts as per MSC1929
+	OnlineAt  time.Time            `json:"online_at"`  // prune clock; merged with CheckedAt, dead servers go immortal
+	CheckedAt time.Time            `json:"checked_at"` // backoff clock, bumped on every dial attempt whether online or not
 }
 
 // MatrixServerContacts - MSC1929
@@ -115,8 +113,7 @@ func (r *MatrixRoom) DirectoryEntry() *RoomDirectoryRoom {
 	}
 }
 
-// Parse matrix room info to prepare custom fields
-// returns false if the room must not be parsed due to room config tag
+// Parse room info into custom fields; returns false if room config tag says it must not be parsed
 func (r *MatrixRoom) Parse(detector lingua.LanguageDetector, media mediaURLService, mrsServerName string) bool {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -185,11 +182,7 @@ func (r *MatrixRoom) AllServers() []string {
 	return kit.Uniq(servers)
 }
 
-// parseContact tries to parse contact info from room topic
-// the contact should be in the form of "<matrix.server_name from MRS config>:<field>:<value>" string, example:
-// "example.com:email:admin@example.com"
-//
-// Deprecated: use ParseRoomConfig instead
+// parseContact parses "<mrsServerName>:<field>:<value>" from room topic; deprecated, use ParseRoomConfig instead
 func (r *MatrixRoom) parseContact(mrsServerName, field string) string {
 	if r.Topic == "" {
 		return ""
@@ -238,9 +231,7 @@ func (r *MatrixRoom) parseLanguage(detector lingua.LanguageDetector, mrsServerNa
 	r.Language, _ = utils.DetectLanguage(detector, r.Name+" "+r.Topic)
 }
 
-// parseLanguageOption tries to parse language option from room topic
-//
-// Deprecated: use ParseRoomConfig instead
+// parseLanguageOption parses the language option from room topic; deprecated, use ParseRoomConfig instead
 func (r *MatrixRoom) parseLanguageOption(mrsServerName string) string {
 	if r.Topic == "" {
 		return ""
@@ -290,9 +281,7 @@ func (r *MatrixRoom) parseAvatar(media mediaURLService) {
 	r.AvatarURL = media.GetURL(parts[0], parts[1])
 }
 
-// QueryServerKeysRequest is used in POST /_matrix/key/v2/query
-// Current naive implementation cares only about server names, and attempts to return all keys,
-// even when request specifies particular key IDs.
+// QueryServerKeysRequest is POST /_matrix/key/v2/query; naive impl returns all keys per server, ignoring key IDs.
 type QueryServerKeysRequest struct {
 	ServerKeys map[string]any `json:"server_keys"`
 }

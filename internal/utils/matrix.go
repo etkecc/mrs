@@ -25,9 +25,7 @@ func IsValidID(id string) bool {
 		return false
 	}
 
-	// v1-v11 roomID: !opaqueID:serverName
-	// v12+ roomID: !31hneApxJ_1o-63DmFrpeqnkFfWppnzWso1JvH3ogLM
-	// ref: https://github.com/matrix-org/matrix-spec-proposals/blob/matthew/msc4291/proposals/4291-room-ids-as-hashes.md
+	// roomID: !opaqueID:serverName (v1-v11) or !hash-like-id (v12+), ref: MSC4291 room-ids-as-hashes.
 	return strings.HasPrefix(id, "!") && len(id) > 10 && len(id) < 256
 }
 

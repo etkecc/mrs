@@ -38,8 +38,7 @@ func TestDcrURL_cachesThreePartValue(t *testing.T) {
 	}
 }
 
-// TestGetURL_cacheHit_delegatedHostInURL_ipNotLeaked pins the crux invariant on the read side: the delegated
-// host stays in the URL (pool key + Host + SNI), and the resolved dial IP never appears in the URL or Host.
+// TestGetURL_cacheHit_delegatedHostInURL_ipNotLeaked: delegated host stays in URL/Host/SNI, dial IP never leaks.
 func TestGetURL_cacheHit_delegatedHostInURL_ipNotLeaked(t *testing.T) {
 	s := newCacheTestServer()
 	// seed exactly as the SRV-divergent branch does: delegated host in the URL, resolved IP as the pin.
@@ -60,8 +59,7 @@ func TestGetURL_cacheHit_delegatedHostInURL_ipNotLeaked(t *testing.T) {
 	}
 }
 
-// TestGetURL_staleTwoPartEntry_treatedAsMiss guards the cache-format migration: a pre-3-part entry must be
-// dropped and re-resolved, never misparsed. An explicit-port serverName keeps re-resolution network-free.
+// pre-3-part entry drops and re-resolves, never misparses; explicit-port serverName keeps it network-free.
 func TestGetURL_staleTwoPartEntry_treatedAsMiss(t *testing.T) {
 	s := newCacheTestServer()
 	s.surlsCache.Add("example.org:8448", "https://example.org:8448||example.org:8448")

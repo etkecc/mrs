@@ -173,8 +173,7 @@ func (s *Server) validateAuth(obj map[string]any, canonical []byte, auth *matrix
 	return nil
 }
 
-// parseAuths parses Authorization headers,
-// copied from https://github.com/turt2live/matrix-media-repo/blob/4da32e5739a8924e0cfcdde2daf4af4a90c2ff85/util/http.go#L52
+// from https://github.com/turt2live/matrix-media-repo/blob/4da32e5739a8924e0cfcdde2daf4af4a90c2ff85/util/http.go#L52
 func (s *Server) parseAuths(ctx context.Context, r *http.Request) []*matrixAuth {
 	headers := r.Header.Values("Authorization")
 	auths := make([]*matrixAuth, 0)

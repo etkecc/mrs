@@ -5,29 +5,21 @@ import (
 )
 
 var (
-	// servers_info bucket
-	// contains information about servers
+	// servers_info bucket: information about servers
 	serversInfoBucket = []byte(`servers_info`)
-	// rooms bucket
-	// contains information about rooms
+	// rooms bucket: information about rooms
 	roomsBucket = []byte(`rooms`)
-	// rooms_mappings bucket
-	// contains mappings room_id <-> room_alias
+	// rooms_mappings bucket: mappings room_id <-> room_alias
 	roomsMappingsBucket = []byte(`rooms_mappings`)
-	// biggest rooms bucket
-	// contains the same content as rooms bucket, but sorted by the number of users
+	// biggest rooms bucket: same content as rooms bucket, sorted by number of users
 	biggestRoomsBucket = []byte(`rooms_biggest`)
-	// rooms banlist bucket
-	// contains information about banned rooms
+	// rooms banlist bucket: information about banned rooms
 	roomsBanlistBucket = []byte(`rooms_banlist`)
-	// rooms reports bucket
-	// contains information about reported rooms
+	// rooms reports bucket: information about reported rooms
 	roomsReportsBucket = []byte(`rooms_reports`)
-	// index bucket
-	// contains latest index stats
+	// index bucket: latest index stats
 	indexBucket = []byte(`index`)
-	// index_timeline bucket
-	// contains index stats by date
+	// index_timeline bucket: index stats by date
 	indexTLBucket = []byte(`index_timeline`)
 
 	buckets = [][]byte{serversInfoBucket, roomsBucket, biggestRoomsBucket, roomsBanlistBucket, roomsReportsBucket, roomsMappingsBucket, indexBucket, indexTLBucket}

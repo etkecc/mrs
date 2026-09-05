@@ -13,8 +13,7 @@ import (
 	"github.com/etkecc/mrs/internal/model"
 )
 
-// fakeVisibilityData is a minimal dataRepository: enough to drive GetClientRoomVisibility's
-// found / not-found / banned branches without dragging in a real store.
+// fakeVisibilityData is a minimal dataRepository driving GetClientRoomVisibility's found/not-found/banned branches.
 type fakeVisibilityData struct {
 	room   *model.MatrixRoom
 	banned bool
@@ -26,8 +25,7 @@ func (f *fakeVisibilityData) GetRoom(context.Context, string) (*model.MatrixRoom
 func (f *fakeVisibilityData) GetRoomMapping(context.Context, string) string { return "" }
 func (f *fakeVisibilityData) IsBanned(context.Context, string) bool         { return f.banned }
 
-// TestGetClientRoomVisibility pins the spec fix: MRS holds only public rooms, so a room we have is
-// "public" (200), and anything we never crawled or have banned is a 404, not a blanket "public".
+// TestGetClientRoomVisibility pins the spec fix: a held room is 200 public; uncrawled or banned is 404.
 func TestGetClientRoomVisibility(t *testing.T) {
 	const roomID = "!room:example.org"
 	cases := []struct {
@@ -52,9 +50,7 @@ func TestGetClientRoomVisibility(t *testing.T) {
 	}
 }
 
-// TestRoomSummaryFallback_rejectsIPLiteralVia checks the early reject catches the canonical IP-literal forms
-// of via before any resolve or dial, and never caches them. Disguised forms (decimal/octal/zone) pass this
-// check by design and are refused later by the shared dial guard, which is the real authority.
+// catches IP-literal via forms pre-dial, uncached; disguised (decimal/octal/zone) forms pass, dial guard catches them.
 func TestRoomSummaryFallback_rejectsIPLiteralVia(t *testing.T) {
 	s := &Server{curlsCache: expirable.NewLRU[string, string](100, nil, time.Hour)}
 	for _, via := range []string{"127.0.0.1", "10.0.0.1:8448", "[::1]", "[::1]:8448", "[2001:db8::1]", "2001:db8::1"} {
@@ -67,9 +63,7 @@ func TestRoomSummaryFallback_rejectsIPLiteralVia(t *testing.T) {
 	}
 }
 
-// TestRoomSummaryFallback_hostnameViaDoesNotPoisonCache checks the via path resolves through the uncached
-// resolveCSURL, so an attacker-supplied hostname never writes the shared curlsCache. .invalid never resolves,
-// so the dial fails; the assertion is only that resolution left the cache empty.
+// via resolves via uncached resolveCSURL; an attacker hostname never poisons curlsCache (.invalid never resolves).
 func TestRoomSummaryFallback_hostnameViaDoesNotPoisonCache(t *testing.T) {
 	s := &Server{curlsCache: expirable.NewLRU[string, string](100, nil, time.Hour)}
 	via := "attacker.invalid"
@@ -81,10 +75,7 @@ func TestRoomSummaryFallback_hostnameViaDoesNotPoisonCache(t *testing.T) {
 	}
 }
 
-// TestSummaryEndpoint_neutralizesHostileBase checks a hostile or oddly-shaped base_url can never move the
-// request off its own host or swallow the appended summary path: the host stays the base host, the MSC3266
-// path always lands in the path, and via is set, whether the base carries a #fragment, a query, a trailing
-// slash, or a legitimate path prefix.
+// a hostile/oddly-shaped base_url never moves the host or swallows the summary path: fragment, query, slash, prefix.
 func TestSummaryEndpoint_neutralizesHostileBase(t *testing.T) {
 	const alias = "!r:example.org"
 	var s Server

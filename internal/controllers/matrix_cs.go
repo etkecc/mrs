@@ -18,7 +18,7 @@ func configureMatrixCSEndpoints(e *echo.Echo, matrixSvc matrixService, cacheSvc 
 	e.GET("/_matrix/media/v3/thumbnail/:name/:id", avatar(matrixSvc), rl, cacheSvc.MiddlewareImmutable())
 	e.GET("/_matrix/client/r0/directory/room/:room_alias", clientDirectoryRoom(matrixSvc), rl)
 	e.GET("/_matrix/client/v3/directory/room/:room_alias", clientDirectoryRoom(matrixSvc), rl)
-	// uncached on purpose: visibility is ban/index-state-dependent and there is no CDN purge, so an edge-cached "public" would outlive a ban.
+	// uncached on purpose: ban state affects visibility with no CDN purge, so a cached "public" could outlive a ban.
 	e.GET("/_matrix/client/r0/directory/list/room/:room_id", clientDirectoryList(matrixSvc), rl)
 	e.GET("/_matrix/client/v3/directory/list/room/:room_id", clientDirectoryList(matrixSvc), rl)
 
