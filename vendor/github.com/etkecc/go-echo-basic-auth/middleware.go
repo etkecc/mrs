@@ -25,7 +25,8 @@ func NewValidator(auths ...*Auth) middleware.BasicAuthValidator {
 			if allowedIP {
 				wasIPAllowed = true
 			}
-			match := equals(auth.Login, login) && equals(auth.Password, password)
+			// Empty configured creds must never match, or a service that lost its password degrades to IP-only auth.
+			match := auth.Login != "" && auth.Password != "" && equals(auth.Login, login) && equals(auth.Password, password)
 			if match {
 				wasAuthAllowed = true
 			}

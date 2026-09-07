@@ -185,7 +185,7 @@ github.com/davecgh/go-spew/spew
 # github.com/etkecc/go-apm v1.3.5
 ## explicit; go 1.23.0
 github.com/etkecc/go-apm
-# github.com/etkecc/go-echo-basic-auth v1.4.0
+# github.com/etkecc/go-echo-basic-auth v1.4.1
 ## explicit; go 1.25.0
 github.com/etkecc/go-echo-basic-auth
 # github.com/etkecc/go-fswatcher v1.0.1
@@ -316,8 +316,8 @@ github.com/mattevans/postmark-go
 # github.com/mattn/go-colorable v0.1.15
 ## explicit; go 1.18
 github.com/mattn/go-colorable
-# github.com/mattn/go-isatty v0.0.22
-## explicit; go 1.21
+# github.com/mattn/go-isatty v0.0.24
+## explicit; go 1.20
 github.com/mattn/go-isatty
 # github.com/microcosm-cc/bluemonday v1.0.27
 ## explicit; go 1.19
