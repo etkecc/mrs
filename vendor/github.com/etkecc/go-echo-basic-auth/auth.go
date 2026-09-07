@@ -8,9 +8,9 @@ import (
 
 // Auth model
 type Auth struct {
-	Login    string   `json:"login" yaml:"login"`       // Basic auth login
-	Password string   `json:"password" yaml:"password"` //nolint:gosec // this is an auth model, the field is intentional
-	IPs      []string `json:"ips" yaml:"ips"`           // Allowed IPs and CIDRs
+	Login    string   `json:"login" yaml:"login"` // Basic auth login
+	Password string   `json:"password" yaml:"password"`
+	IPs      []string `json:"ips" yaml:"ips"` // Allowed IPs and CIDRs
 
 	parsedIPs   []string     // lazily parsed plain IPs from the IPs field, used by AllowedIP
 	parsedCIDRs []*net.IPNet // lazily parsed CIDRs from the IPs field, used by AllowedIP
