@@ -4,6 +4,7 @@ run:
   modules-download-mode: readonly
   issues-exit-code: 1
   tests: true
+  allow-parallel-runners: true
 output:
   formats:
     text:
@@ -109,6 +110,9 @@ linters:
           - staticcheck
         text: 'SA9003:'
       - linters:
+          - govet
+        text: 'cannot inline: type parameter inference is not yet supported'
+      - linters:
           - lll
         source: '^//go:generate '
       - linters:
@@ -122,6 +126,7 @@ linters:
       - third_party$
       - builtin$
       - examples$
+      - views/node_modules
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
@@ -140,7 +145,8 @@ formatters:
         - pattern: a[b:len(a)]
           replacement: a[b:]
     gofumpt:
-      extra-rules: true
+      extra:
+        group-params: true
   exclusions:
     generated: lax
     paths:

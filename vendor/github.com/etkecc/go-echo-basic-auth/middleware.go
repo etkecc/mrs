@@ -19,13 +19,14 @@ func NewValidator(auths ...*Auth) middleware.BasicAuthValidator {
 		return nil
 	}
 	return func(login, password string, c echo.Context) (bool, error) {
-		var wasIPAllowed, wasAuthAllowed bool
+		ip := ClientIP(c)
+		wasIPAllowed, wasAuthAllowed := false, false
 		for _, auth := range auths {
-			allowedIP := auth.AllowedIP(c.RealIP())
+			allowedIP := auth.AllowedIP(ip)
 			if allowedIP {
 				wasIPAllowed = true
 			}
-			match := equals(auth.Login, login) && equals(auth.Password, password)
+			match := auth.Match(login, password)
 			if match {
 				wasAuthAllowed = true
 			}
@@ -36,17 +37,17 @@ func NewValidator(auths ...*Auth) middleware.BasicAuthValidator {
 			}
 		}
 
-		logAttempt(c, wasIPAllowed, wasAuthAllowed)
+		logAttempt(c, ip, wasIPAllowed, wasAuthAllowed)
 		return false, nil
 	}
 }
 
-// logAttempt logs a failed authentication attempt
-func logAttempt(c echo.Context, wasIPAllowed, wasAuthAllowed bool) {
+// logAttempt logs a failed authentication attempt at WARN, visible once the app raises the logger level
+func logAttempt(c echo.Context, ip string, wasIPAllowed, wasAuthAllowed bool) {
 	requestPath := strings.ReplaceAll(strings.ReplaceAll(c.Request().URL.Path, "\n", ""), "\r", "")
 	c.Logger().Warnf(
 		`%s - FAIL [%s] "%s %s %s" 401 0 "-" "Auth: false (ip: %t; creds: %t)"`,
-		anonymizeIP(c.RealIP()),
+		anonymizeIP(ip),
 		time.Now().Format("2/Jan/2006:15:04:05 -0700"),
 		c.Request().Method,
 		requestPath,
@@ -58,5 +59,12 @@ func logAttempt(c echo.Context, wasIPAllowed, wasAuthAllowed bool) {
 
 // NewMiddleware returns a new BasicAuth middleware instance
 func NewMiddleware(auths ...*Auth) echo.MiddlewareFunc {
-	return middleware.BasicAuth(NewValidator(auths...))
+	v := NewValidator(auths...)
+	if v == nil {
+		return func(_ echo.HandlerFunc) echo.HandlerFunc {
+			return func(_ echo.Context) error { return echo.ErrUnauthorized }
+		}
+	}
+
+	return middleware.BasicAuth(v)
 }
