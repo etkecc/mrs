@@ -287,16 +287,16 @@ func (b *faissBinaryIndex) setNProbe(nprobe int32) {
 }
 
 func (b *faissBinaryIndex) trainAndAdd(trainingData *vectorSet, vecsToAdd *vectorSet) error {
-	// train the backing index with the floatData
+	nvecsToTrain := b.params.numTrainingVecs(trainingData.nvecs)
 	var err error
 	if b.backing.IsSQIndex() {
-		err = b.backing.Train(trainingData.floatData)
+		err = b.backing.Train(trainingData.floatData[:nvecsToTrain*b.dim()])
 		if err != nil {
 			return err
 		}
 	}
 
-	err = b.binary.Train(trainingData.binaryData)
+	err = b.binary.Train(trainingData.binaryData[:nvecsToTrain*(b.dim()/8)])
 	if err != nil {
 		return err
 	}

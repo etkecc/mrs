@@ -49,15 +49,23 @@ func (z *ZapPlugin) Open(path string) (segment.Segment, error) {
 	return z.open(path, nil)
 }
 
-func (*ZapPlugin) open(path string, config map[string]interface{}) (segment.Segment, error) {
+func (z *ZapPlugin) open(path string, config map[string]interface{}) (segment.Segment, error) {
+	zapStats, ok := config[segment.StatsKey].(*segment.Stats)
+	if !ok || zapStats == nil {
+		zapStats = new(segment.Stats)
+	}
+
+	atomic.AddUint64(&zapStats.TotOpenBeg, 1)
 	f, err := os.Open(path)
 	if err != nil {
+		atomic.AddUint64(&zapStats.TotOpenErrors, 1)
 		return nil, err
 	}
 	mm, err := mmap.Map(f, mmap.RDONLY, 0)
 	if err != nil {
 		// mmap failed, try to close the file
 		_ = f.Close()
+		atomic.AddUint64(&zapStats.TotOpenErrors, 1)
 		return nil, err
 	}
 
@@ -68,10 +76,12 @@ func (*ZapPlugin) open(path string, config map[string]interface{}) (segment.Segm
 			invIndexCache:     newInvertedIndexCache(),
 			vecIndexCache:     newVectorIndexCache(),
 			synIndexCache:     newSynonymIndexCache(),
+			geoIndexCache:     newGeoIndexCache(),
 			nstIndexCache:     newNestedIndexCache(),
 			trainedIndexCache: newTrainedIndexCache(),
 			fieldDvReaders:    make([][]*docValueReader, len(segmentSections)),
 			config:            config,
+			stats:             zapStats,
 		},
 		f:    f,
 		mm:   mm,
@@ -83,18 +93,21 @@ func (*ZapPlugin) open(path string, config map[string]interface{}) (segment.Segm
 	err = rv.loadConfig()
 	if err != nil {
 		_ = rv.Close()
+		atomic.AddUint64(&zapStats.TotOpenErrors, 1)
 		return nil, err
 	}
 
 	err = rv.loadFields()
 	if err != nil {
 		_ = rv.Close()
+		atomic.AddUint64(&zapStats.TotOpenErrors, 1)
 		return nil, err
 	}
 
 	err = rv.loadDvReaders()
 	if err != nil {
 		_ = rv.Close()
+		atomic.AddUint64(&zapStats.TotOpenErrors, 1)
 		return nil, err
 	}
 
@@ -102,9 +115,11 @@ func (*ZapPlugin) open(path string, config map[string]interface{}) (segment.Segm
 	err = rv.nstIndexCache.initialize(rv.numDocs, rv.getEdgeListOffset(), rv.mem)
 	if err != nil {
 		_ = rv.Close()
+		atomic.AddUint64(&zapStats.TotOpenErrors, 1)
 		return nil, err
 	}
 
+	atomic.AddUint64(&zapStats.TotOpenEnd, 1)
 	return rv, nil
 }
 
@@ -141,7 +156,11 @@ type SegmentBase struct {
 	vecIndexCache     *vectorIndexCache
 	trainedIndexCache *trainedIndexCache
 	synIndexCache     *synonymIndexCache
+	geoIndexCache     *geoIndexCache
 	nstIndexCache     *nestedIndexCache
+
+	// segment level stats that are tracked and reported as part of the segment's lifecycle
+	stats *segment.Stats
 }
 
 func (sb *SegmentBase) Size() int {
@@ -188,6 +207,7 @@ func (sb *SegmentBase) Close() (err error) {
 	sb.trainedIndexCache.Clear()
 	sb.synIndexCache.Clear()
 	sb.nstIndexCache.Clear()
+	sb.geoIndexCache.Clear()
 	return nil
 }
 
@@ -709,6 +729,7 @@ func (s *Segment) closeActual() (err error) {
 		}
 	}
 
+	atomic.AddUint64(&s.stats.TotSegmentsClosed, 1)
 	return
 }
 
@@ -947,4 +968,21 @@ func (sb *SegmentBase) countRootDeleted(deleted *roaring.Bitmap) uint64 {
 
 func (sb *SegmentBase) CallbackId() string {
 	return sb.fileReader.id
+}
+
+func (sb *SegmentBase) GeoShapeV2Data(field string, except *roaring.Bitmap) (segment.GeoShapeV2Data, error) {
+	fieldIDPlus1 := sb.fieldsMap[field]
+	if fieldIDPlus1 == 0 {
+		return nil, nil
+	}
+	pos := sb.fieldsSectionsMap[fieldIDPlus1-1][SectionGeoShapeV2Index]
+	if pos > 0 {
+		// skip the doc value offsets to get to the geo cell data portion
+		for i := 0; i < 2; i++ {
+			_, n := binary.Uvarint(sb.mem[pos : pos+binary.MaxVarintLen64])
+			pos += uint64(n)
+		}
+		return sb.geoIndexCache.loadOrCreate(fieldIDPlus1-1, sb.mem[pos:], except, sb.fileReader)
+	}
+	return nil, nil
 }

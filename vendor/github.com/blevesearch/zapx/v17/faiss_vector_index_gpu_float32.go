@@ -317,7 +317,8 @@ func (f *faissGPUFloat32Index) trainAndAdd(trainingData *vectorSet, vecsToAdd *v
 		return f.trainAndAddCPU(trainingData, vecsToAdd)
 	}
 
-	err := gpuState.idx.Train(trainingData.floatData)
+	nvecsToTrain := f.params.numTrainingVecs(trainingData.nvecs)
+	err := gpuState.idx.Train(trainingData.floatData[:nvecsToTrain*f.dim()])
 	if err != nil {
 		f.teardownGPU()
 		return f.trainAndAddCPU(trainingData, vecsToAdd)
@@ -352,7 +353,8 @@ func (f *faissGPUFloat32Index) trainAndAdd(trainingData *vectorSet, vecsToAdd *v
 }
 
 func (f *faissGPUFloat32Index) trainAndAddCPU(trainingData *vectorSet, vecsToAdd *vectorSet) error {
-	err := f.cpuIdx.Train(trainingData.floatData)
+	nvecsToTrain := f.params.numTrainingVecs(trainingData.nvecs)
+	err := f.cpuIdx.Train(trainingData.floatData[:nvecsToTrain*f.dim()])
 	if err != nil {
 		return err
 	}

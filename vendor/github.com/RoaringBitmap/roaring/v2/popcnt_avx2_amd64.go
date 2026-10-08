@@ -32,6 +32,9 @@ func _popcntXorSliceAVX2(s, m []uint64) uint64
 var useAVX2 = _hasAVX2()
 
 func popcntSlice(s []uint64) uint64 {
+	if useAVX512Popcnt {
+		return popcntSliceAVX512(s)
+	}
 	if useAVX2 {
 		return _popcntSliceAVX2(s)
 	}
@@ -39,6 +42,9 @@ func popcntSlice(s []uint64) uint64 {
 }
 
 func popcntMaskSlice(s, m []uint64) uint64 {
+	if useAVX512Popcnt {
+		return popcntMaskSliceAVX512(s, m)
+	}
 	if useAVX2 {
 		return _popcntMaskSliceAVX2(s, m)
 	}
@@ -46,6 +52,9 @@ func popcntMaskSlice(s, m []uint64) uint64 {
 }
 
 func popcntAndSlice(s, m []uint64) uint64 {
+	if useAVX512Popcnt {
+		return popcntAndSliceAVX512(s, m)
+	}
 	if useAVX2 {
 		return _popcntAndSliceAVX2(s, m)
 	}
@@ -53,6 +62,9 @@ func popcntAndSlice(s, m []uint64) uint64 {
 }
 
 func popcntOrSlice(s, m []uint64) uint64 {
+	if useAVX512Popcnt {
+		return popcntOrSliceAVX512(s, m)
+	}
 	if useAVX2 {
 		return _popcntOrSliceAVX2(s, m)
 	}
@@ -60,6 +72,9 @@ func popcntOrSlice(s, m []uint64) uint64 {
 }
 
 func popcntXorSlice(s, m []uint64) uint64 {
+	if useAVX512Popcnt {
+		return popcntXorSliceAVX512(s, m)
+	}
 	if useAVX2 {
 		return _popcntXorSliceAVX2(s, m)
 	}

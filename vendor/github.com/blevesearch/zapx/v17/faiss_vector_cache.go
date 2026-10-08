@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/RoaringBitmap/roaring/v2"
+	seg "github.com/blevesearch/scorch_segment_api/v2"
 )
 
 // -----------------------------------------------------------------------------
@@ -72,6 +73,7 @@ type vectorCacheOptions struct {
 	optStr  string
 
 	skipMapping bool // if true, skip building the idMapping
+	stats       *seg.Stats
 }
 
 func newVectorCacheOptions(mem []byte, numDocs uint32, except *roaring.Bitmap,
@@ -192,7 +194,7 @@ func readVectorSectionFromFile(opts *vectorCacheOptions) (index faissIndex,
 	}
 	pos += int(indexSize)
 
-	params := newFaissIndexParams(opts.optStr, int(numVecs), faissIOFlagsReadOnly)
+	params := newFaissIndexParams(opts.optStr, int(numVecs), 0, faissIOFlagsReadOnly)
 	if faissIndexType(indexType) == faissBIVFIndex {
 		// read the faiss binary index size
 		binSize, n := binary.Uvarint(mem[pos : pos+binary.MaxVarintLen64])
@@ -330,28 +332,6 @@ func (vc *vectorIndexCache) monitor() {
 				return
 			}
 		}
-	}
-}
-
-// -----------------------------------------------------------------------------
-
-type ewma struct {
-	alpha float64
-	avg   float64
-	// every hit to the cache entry is recorded as part of a sample
-	// which will be used to calculate the average in the next cycle of average
-	// computation (which is average traffic for the field till now). this is
-	// used to track the per second hits to the cache entries.
-	sample uint64
-}
-
-func (e *ewma) add(val uint64) {
-	if e.avg == 0.0 {
-		e.avg = float64(val)
-	} else {
-		// the exponentially weighted moving average
-		// X(t) = a.v + (1 - a).X(t-1)
-		e.avg = e.alpha*float64(val) + (1-e.alpha)*e.avg
 	}
 }
 
