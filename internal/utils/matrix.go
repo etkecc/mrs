@@ -1,44 +1,31 @@
 package utils
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/goccy/go-json"
 	"github.com/matrix-org/gomatrixserverlib"
 )
 
-var aliasRegex = regexp.MustCompile(`^#[^:\x00]+:[a-zA-Z0-9.\-]+(:\d+)?$`)
+const maxIDLen = 255
 
-// IsValidRoomAlias checks if the given alias is a valid matrix room alias
+// IsValidAlias checks if the given string is a valid matrix room alias (#localpart:domain).
 func IsValidAlias(alias string) bool {
-	if alias == "" {
-		return false
-	}
-
-	return aliasRegex.MatchString(alias)
+	return validNamespacedID(alias, '#', false)
 }
 
-// IsValidRoomID checks if the given ID is a valid matrix room ID
+// IsValidID checks if the given string is a valid matrix room ID (!localpart[:domain], domain-less since v12).
 func IsValidID(id string) bool {
-	if id == "" {
-		return false
-	}
-
-	// roomID: !opaqueID:serverName (v1-v11) or !hash-like-id (v12+), ref: MSC4291 room-ids-as-hashes.
-	return strings.HasPrefix(id, "!") && len(id) > 10 && len(id) < 256
+	return validNamespacedID(id, '!', true)
 }
 
-// Server returns server name from the matrix ID (room id/alias, user ID, etc)
+// ServerFrom returns the server name from a matrix ID (room ID, alias, user ID, etc).
 func ServerFrom(matrixID string) string {
-	idx := strings.LastIndex(matrixID, ":")
-	if idx == -1 {
+	_, domain, found := strings.Cut(matrixID, ":")
+	if !found || domain == "" {
 		return ""
 	}
-	if idx+2 == len(matrixID) { // "wrongid:"
-		return ""
-	}
-	return matrixID[idx+1:]
+	return domain
 }
 
 // JSON marshals input into canonical json
@@ -57,4 +44,52 @@ func MustJSON(input any) []byte {
 		panic(err)
 	}
 	return data
+}
+
+// validNamespacedID checks sigil, non-empty localpart without NUL, and a domain; aliases always have one.
+func validNamespacedID(id string, sigil byte, domainless bool) bool {
+	if id == "" || len(id) > maxIDLen {
+		return false
+	}
+	if id[0] != sigil {
+		return false
+	}
+	local, domain, hasDomain := strings.Cut(id[1:], ":")
+	if local == "" || strings.ContainsRune(local, 0) {
+		return false
+	}
+	if !hasDomain {
+		return domainless
+	}
+	return validDomain(domain)
+}
+
+// validDomain checks the structural form of a server name: host, bracketed IPv6 host, or host:port.
+func validDomain(domain string) bool {
+	if domain == "" {
+		return false
+	}
+	if strings.HasPrefix(domain, "[") {
+		closer := strings.LastIndexByte(domain, ']')
+		if closer <= 1 {
+			return false
+		}
+		port := domain[closer+1:]
+		return port == "" || (strings.HasPrefix(port, ":") && isDigits(port[1:]))
+	}
+	host, port, found := strings.Cut(domain, ":")
+	if !found {
+		return true
+	}
+	return host != "" && isDigits(port)
+}
+
+// isDigits reports whether s is a non-empty run of ASCII digits.
+func isDigits(s string) bool {
+	for _, r := range s {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return s != ""
 }
