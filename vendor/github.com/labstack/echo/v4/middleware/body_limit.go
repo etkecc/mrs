@@ -92,18 +92,12 @@ func BodyLimitWithConfig(config BodyLimitConfig) echo.MiddlewareFunc {
 }
 
 func (r *limitedReader) Read(b []byte) (n int, err error) {
-	if r.limit > 0 && r.read > r.limit {
-		return 0, echo.ErrStatusRequestEntityTooLarge
-	}
-
 	n, err = r.reader.Read(b)
 	r.read += int64(n)
-
-	if r.limit > 0 && r.read > r.limit {
+	if r.read > r.limit {
 		return n, echo.ErrStatusRequestEntityTooLarge
 	}
-
-	return n, err
+	return
 }
 
 func (r *limitedReader) Close() error {

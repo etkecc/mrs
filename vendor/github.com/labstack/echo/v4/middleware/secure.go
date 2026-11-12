@@ -106,6 +106,7 @@ func SecureWithConfig(config SecureConfig) echo.MiddlewareFunc {
 				return next(c)
 			}
 
+			req := c.Request()
 			res := c.Response()
 
 			if config.XSSProtection != "" {
@@ -117,7 +118,7 @@ func SecureWithConfig(config SecureConfig) echo.MiddlewareFunc {
 			if config.XFrameOptions != "" {
 				res.Header().Set(echo.HeaderXFrameOptions, config.XFrameOptions)
 			}
-			if config.HSTSMaxAge != 0 && c.Scheme() == "https" {
+			if (c.IsTLS() || (req.Header.Get(echo.HeaderXForwardedProto) == "https")) && config.HSTSMaxAge != 0 {
 				subdomains := ""
 				if !config.HSTSExcludeSubdomains {
 					subdomains = "; includeSubdomains"
