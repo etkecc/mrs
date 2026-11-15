@@ -97,17 +97,8 @@ type Echo struct {
 	Validator        Validator
 	Renderer         Renderer
 	Logger           Logger
-	// IPExtractor defines how Context.RealIP determines the client IP address.
-	// If nil, only the connection peer is used. Applications behind a proxy must
-	// configure a header extractor that trusts only their own proxies.
-	IPExtractor IPExtractor
-	// SchemeExtractor defines the strategy for determining the request scheme (`http` or `https`),
-	// particularly important when behind proxies or load balancers that terminate TLS.
-	// Used by Context.Scheme and by the HTTPS redirect, Secure and Proxy middlewares.
-	// If not set, forwarding headers such as `X-Forwarded-Proto` are trusted only from loopback, link-local and
-	// private network addresses and unix sockets. See ExtractSchemeFromHeaders.
-	SchemeExtractor SchemeExtractor
-	ListenerNetwork string
+	IPExtractor      IPExtractor
+	ListenerNetwork  string
 
 	// OnAddRouteHandler is called when Echo adds new route to specific host router.
 	OnAddRouteHandler func(host string, route Route, handler HandlerFunc, middleware []MiddlewareFunc)
@@ -288,7 +279,7 @@ const (
 
 const (
 	// Version of Echo
-	Version = "4.16.5"
+	Version = "4.15.4"
 	website = "https://echo.labstack.com"
 	// http://patorjk.com/software/taag/#p=display&f=Small%20Slant&t=Echo
 	banner = `
@@ -363,10 +354,6 @@ var (
 	ErrValidatorNotRegistered = errors.New("validator not registered")
 	ErrRendererNotRegistered  = errors.New("renderer not registered")
 	ErrInvalidRedirectCode    = errors.New("invalid redirect status code")
-
-	// ErrInvalidJSONPCallback is wrapped in the 400 Bad Request error that Context.JSONP and Context.JSONPBlob
-	// return when the callback is not a valid JSONP function name. See Context.JSONP.
-	ErrInvalidJSONPCallback   = errors.New("invalid JSONP callback")
 	ErrCookieNotFound         = errors.New("cookie not found")
 	ErrInvalidCertOrKeyType   = errors.New("invalid cert or key type, must be string or []byte")
 	ErrInvalidListenerNetwork = errors.New("invalid listener network")
@@ -863,8 +850,6 @@ func (e *Echo) TLSListenerAddr() net.Addr {
 }
 
 // StartH2CServer starts a custom http/2 server with h2c (HTTP/2 Cleartext).
-//
-//lint:ignore SA1019 Preserve the v4 public API through its supported lifetime; x/net remains security patched.
 func (e *Echo) StartH2CServer(address string, h2s *http2.Server) error {
 	e.startupMutex.Lock()
 	// Setup
