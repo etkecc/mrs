@@ -10,8 +10,7 @@ import (
 	"github.com/rs/zerolog"
 )
 
-// Healthchecks is the interface for gitlab.com/etke.cc/go/healthchecks,
-// to avoid direct dependecy on the package for project where it is not needed
+// Healthchecks mirrors gitlab.com/etke.cc/go/healthchecks so projects that don't need it avoid the direct dependency.
 type Healthchecks interface {
 	Fail(optionalBody ...io.Reader)
 }
@@ -39,8 +38,7 @@ func (h healthchecksHook) Run(e *zerolog.Event, level zerolog.Level, msg string)
 		return
 	}
 
-	// create a string that appends } to the end of the buf variable you access via reflection, to get a valid JSON object
-	// ref: https://github.com/rs/zerolog/issues/493#issuecomment-1458241050
+	// close buf via reflection into a valid JSON object; ref: github.com/rs/zerolog/issues/493#issuecomment-1458241050
 	ev := fmt.Sprintf("%s}", reflect.ValueOf(e).Elem().FieldByName("buf"))
 	// try to pretty print the event
 	var evObj any

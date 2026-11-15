@@ -78,8 +78,7 @@ func WrapRoundTripper(rt http.RoundTripper, opts ...RoundTripperOption) http.Rou
 	return apmrt
 }
 
-// RoundTrip implements the http.RoundTripper interface, creating a transaction and span for each http request
-// and handling retries for 5xx responses
+// RoundTrip implements http.RoundTripper: creates a transaction/span per request and retries 5xx responses.
 func (rt *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	// creating a custom http.client transaction if not already present to avoid unlabeled transactions
 	name := req.Method + " " + req.URL.String()
