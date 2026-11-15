@@ -16,6 +16,15 @@ func newCacheTestServer() *Server {
 	}
 }
 
+func TestReadLimitedBody(t *testing.T) {
+	if _, err := readLimitedBody(strings.NewReader("ok"), 2); err != nil {
+		t.Fatalf("small body rejected: %v", err)
+	}
+	if _, err := readLimitedBody(strings.NewReader("toolong"), 2); err == nil {
+		t.Fatal("oversized body accepted")
+	}
+}
+
 func TestDcrURL_cachesThreePartValue(t *testing.T) {
 	s := newCacheTestServer()
 	gotURL, gotHost, gotIP := s.dcrURL(context.Background(), "example.org", "https://delegated.example:8448", "delegated.example", "1.2.3.4", false)

@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -86,11 +87,15 @@ func (e *Email) SendReport(ctx context.Context, room *model.MatrixRoom, server *
 
 // SendModReport sends report email to MRS instance's moderators
 func (e *Email) SendModReport(message, email string) error {
+	client := e.getClient()
+	if client == nil {
+		return errors.New("email service is not configured")
+	}
 	subject := "New report from MRS instance"
 	text, html := utils.MarkdownRender(message)
 	req := e.buildPMReqs(subject, text, html, []string{email}, &e.cfg.Get().Email.Postmark.Report)[0]
 	req.Tag = "report-mod"
-	_, _, err := e.getClient().Send(req)
+	_, _, err := client.Send(req)
 	return err
 }
 

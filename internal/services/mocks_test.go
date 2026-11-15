@@ -26,10 +26,19 @@ func newMockcacheStats(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *mockcacheStats {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &mockcacheStats{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -99,10 +108,19 @@ func NewMockConfigService(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *MockConfigService {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &MockConfigService{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -172,10 +190,19 @@ func NewMockBlocklistService(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *MockBlocklistService {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &MockBlocklistService{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -206,7 +233,7 @@ type MockBlocklistService_Add_Call struct {
 
 // Add is a helper method to define mock.On call
 //   - server string
-func (_e *MockBlocklistService_Expecter) Add(server interface{}) *MockBlocklistService_Add_Call {
+func (_e *MockBlocklistService_Expecter) Add(server any) *MockBlocklistService_Add_Call {
 	return &MockBlocklistService_Add_Call{Call: _e.mock.On("Add", server)}
 }
 
@@ -257,7 +284,7 @@ type MockBlocklistService_ByID_Call struct {
 
 // ByID is a helper method to define mock.On call
 //   - matrixID string
-func (_e *MockBlocklistService_Expecter) ByID(matrixID interface{}) *MockBlocklistService_ByID_Call {
+func (_e *MockBlocklistService_Expecter) ByID(matrixID any) *MockBlocklistService_ByID_Call {
 	return &MockBlocklistService_ByID_Call{Call: _e.mock.On("ByID", matrixID)}
 }
 
@@ -308,7 +335,7 @@ type MockBlocklistService_ByServer_Call struct {
 
 // ByServer is a helper method to define mock.On call
 //   - server string
-func (_e *MockBlocklistService_Expecter) ByServer(server interface{}) *MockBlocklistService_ByServer_Call {
+func (_e *MockBlocklistService_Expecter) ByServer(server any) *MockBlocklistService_ByServer_Call {
 	return &MockBlocklistService_ByServer_Call{Call: _e.mock.On("ByServer", server)}
 }
 
@@ -374,10 +401,19 @@ func NewMockDataRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *MockDataRepository {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &MockDataRepository{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -409,7 +445,7 @@ type MockDataRepository_AddRoomBatch_Call struct {
 // AddRoomBatch is a helper method to define mock.On call
 //   - context1 context.Context
 //   - matrixRoom *model.MatrixRoom
-func (_e *MockDataRepository_Expecter) AddRoomBatch(context1 interface{}, matrixRoom interface{}) *MockDataRepository_AddRoomBatch_Call {
+func (_e *MockDataRepository_Expecter) AddRoomBatch(context1 any, matrixRoom any) *MockDataRepository_AddRoomBatch_Call {
 	return &MockDataRepository_AddRoomBatch_Call{Call: _e.mock.On("AddRoomBatch", context1, matrixRoom)}
 }
 
@@ -467,7 +503,7 @@ type MockDataRepository_AddRoomMapping_Call struct {
 //   - context1 context.Context
 //   - s string
 //   - s1 string
-func (_e *MockDataRepository_Expecter) AddRoomMapping(context1 interface{}, s interface{}, s1 interface{}) *MockDataRepository_AddRoomMapping_Call {
+func (_e *MockDataRepository_Expecter) AddRoomMapping(context1 any, s any, s1 any) *MockDataRepository_AddRoomMapping_Call {
 	return &MockDataRepository_AddRoomMapping_Call{Call: _e.mock.On("AddRoomMapping", context1, s, s1)}
 }
 
@@ -529,7 +565,7 @@ type MockDataRepository_AddServer_Call struct {
 // AddServer is a helper method to define mock.On call
 //   - context1 context.Context
 //   - matrixServer *model.MatrixServer
-func (_e *MockDataRepository_Expecter) AddServer(context1 interface{}, matrixServer interface{}) *MockDataRepository_AddServer_Call {
+func (_e *MockDataRepository_Expecter) AddServer(context1 any, matrixServer any) *MockDataRepository_AddServer_Call {
 	return &MockDataRepository_AddServer_Call{Call: _e.mock.On("AddServer", context1, matrixServer)}
 }
 
@@ -586,7 +622,7 @@ type MockDataRepository_BanRoom_Call struct {
 // BanRoom is a helper method to define mock.On call
 //   - context1 context.Context
 //   - s string
-func (_e *MockDataRepository_Expecter) BanRoom(context1 interface{}, s interface{}) *MockDataRepository_BanRoom_Call {
+func (_e *MockDataRepository_Expecter) BanRoom(context1 any, s any) *MockDataRepository_BanRoom_Call {
 	return &MockDataRepository_BanRoom_Call{Call: _e.mock.On("BanRoom", context1, s)}
 }
 
@@ -643,7 +679,7 @@ type MockDataRepository_BatchServers_Call struct {
 // BatchServers is a helper method to define mock.On call
 //   - context1 context.Context
 //   - strings []string
-func (_e *MockDataRepository_Expecter) BatchServers(context1 interface{}, strings interface{}) *MockDataRepository_BatchServers_Call {
+func (_e *MockDataRepository_Expecter) BatchServers(context1 any, strings any) *MockDataRepository_BatchServers_Call {
 	return &MockDataRepository_BatchServers_Call{Call: _e.mock.On("BatchServers", context1, strings)}
 }
 
@@ -689,7 +725,7 @@ type MockDataRepository_EachRoom_Call struct {
 // EachRoom is a helper method to define mock.On call
 //   - context1 context.Context
 //   - fn func(string, *model.MatrixRoom) bool
-func (_e *MockDataRepository_Expecter) EachRoom(context1 interface{}, fn interface{}) *MockDataRepository_EachRoom_Call {
+func (_e *MockDataRepository_Expecter) EachRoom(context1 any, fn any) *MockDataRepository_EachRoom_Call {
 	return &MockDataRepository_EachRoom_Call{Call: _e.mock.On("EachRoom", context1, fn)}
 }
 
@@ -748,7 +784,7 @@ type MockDataRepository_FilterServers_Call struct {
 // FilterServers is a helper method to define mock.On call
 //   - context1 context.Context
 //   - fn func(server *model.MatrixServer) bool
-func (_e *MockDataRepository_Expecter) FilterServers(context1 interface{}, fn interface{}) *MockDataRepository_FilterServers_Call {
+func (_e *MockDataRepository_Expecter) FilterServers(context1 any, fn any) *MockDataRepository_FilterServers_Call {
 	return &MockDataRepository_FilterServers_Call{Call: _e.mock.On("FilterServers", context1, fn)}
 }
 
@@ -793,7 +829,7 @@ type MockDataRepository_FlushRoomBatch_Call struct {
 
 // FlushRoomBatch is a helper method to define mock.On call
 //   - context1 context.Context
-func (_e *MockDataRepository_Expecter) FlushRoomBatch(context1 interface{}) *MockDataRepository_FlushRoomBatch_Call {
+func (_e *MockDataRepository_Expecter) FlushRoomBatch(context1 any) *MockDataRepository_FlushRoomBatch_Call {
 	return &MockDataRepository_FlushRoomBatch_Call{Call: _e.mock.On("FlushRoomBatch", context1)}
 }
 
@@ -862,9 +898,9 @@ type MockDataRepository_GetBannedRooms_Call struct {
 // GetBannedRooms is a helper method to define mock.On call
 //   - context1 context.Context
 //   - strings ...string
-func (_e *MockDataRepository_Expecter) GetBannedRooms(context1 interface{}, strings ...interface{}) *MockDataRepository_GetBannedRooms_Call {
+func (_e *MockDataRepository_Expecter) GetBannedRooms(context1 any, strings ...any) *MockDataRepository_GetBannedRooms_Call {
 	return &MockDataRepository_GetBannedRooms_Call{Call: _e.mock.On("GetBannedRooms",
-		append([]interface{}{context1}, strings...)...)}
+		append([]any{context1}, strings...)...)}
 }
 
 func (_c *MockDataRepository_GetBannedRooms_Call) Run(run func(context1 context.Context, strings ...string)) *MockDataRepository_GetBannedRooms_Call {
@@ -939,9 +975,9 @@ type MockDataRepository_GetReportedRooms_Call struct {
 // GetReportedRooms is a helper method to define mock.On call
 //   - context1 context.Context
 //   - strings ...string
-func (_e *MockDataRepository_Expecter) GetReportedRooms(context1 interface{}, strings ...interface{}) *MockDataRepository_GetReportedRooms_Call {
+func (_e *MockDataRepository_Expecter) GetReportedRooms(context1 any, strings ...any) *MockDataRepository_GetReportedRooms_Call {
 	return &MockDataRepository_GetReportedRooms_Call{Call: _e.mock.On("GetReportedRooms",
-		append([]interface{}{context1}, strings...)...)}
+		append([]any{context1}, strings...)...)}
 }
 
 func (_c *MockDataRepository_GetReportedRooms_Call) Run(run func(context1 context.Context, strings ...string)) *MockDataRepository_GetReportedRooms_Call {
@@ -1010,7 +1046,7 @@ type MockDataRepository_GetRoom_Call struct {
 // GetRoom is a helper method to define mock.On call
 //   - context1 context.Context
 //   - s string
-func (_e *MockDataRepository_Expecter) GetRoom(context1 interface{}, s interface{}) *MockDataRepository_GetRoom_Call {
+func (_e *MockDataRepository_Expecter) GetRoom(context1 any, s any) *MockDataRepository_GetRoom_Call {
 	return &MockDataRepository_GetRoom_Call{Call: _e.mock.On("GetRoom", context1, s)}
 }
 
@@ -1067,7 +1103,7 @@ type MockDataRepository_GetRoomMapping_Call struct {
 // GetRoomMapping is a helper method to define mock.On call
 //   - context1 context.Context
 //   - s string
-func (_e *MockDataRepository_Expecter) GetRoomMapping(context1 interface{}, s interface{}) *MockDataRepository_GetRoomMapping_Call {
+func (_e *MockDataRepository_Expecter) GetRoomMapping(context1 any, s any) *MockDataRepository_GetRoomMapping_Call {
 	return &MockDataRepository_GetRoomMapping_Call{Call: _e.mock.On("GetRoomMapping", context1, s)}
 }
 
@@ -1135,7 +1171,7 @@ type MockDataRepository_GetServerInfo_Call struct {
 // GetServerInfo is a helper method to define mock.On call
 //   - context1 context.Context
 //   - s string
-func (_e *MockDataRepository_Expecter) GetServerInfo(context1 interface{}, s interface{}) *MockDataRepository_GetServerInfo_Call {
+func (_e *MockDataRepository_Expecter) GetServerInfo(context1 any, s any) *MockDataRepository_GetServerInfo_Call {
 	return &MockDataRepository_GetServerInfo_Call{Call: _e.mock.On("GetServerInfo", context1, s)}
 }
 
@@ -1192,7 +1228,7 @@ type MockDataRepository_HasServer_Call struct {
 // HasServer is a helper method to define mock.On call
 //   - context1 context.Context
 //   - s string
-func (_e *MockDataRepository_Expecter) HasServer(context1 interface{}, s interface{}) *MockDataRepository_HasServer_Call {
+func (_e *MockDataRepository_Expecter) HasServer(context1 any, s any) *MockDataRepository_HasServer_Call {
 	return &MockDataRepository_HasServer_Call{Call: _e.mock.On("HasServer", context1, s)}
 }
 
@@ -1249,7 +1285,7 @@ type MockDataRepository_IsReported_Call struct {
 // IsReported is a helper method to define mock.On call
 //   - context1 context.Context
 //   - s string
-func (_e *MockDataRepository_Expecter) IsReported(context1 interface{}, s interface{}) *MockDataRepository_IsReported_Call {
+func (_e *MockDataRepository_Expecter) IsReported(context1 any, s any) *MockDataRepository_IsReported_Call {
 	return &MockDataRepository_IsReported_Call{Call: _e.mock.On("IsReported", context1, s)}
 }
 
@@ -1295,7 +1331,7 @@ type MockDataRepository_MarkServersOffline_Call struct {
 // MarkServersOffline is a helper method to define mock.On call
 //   - context1 context.Context
 //   - strings []string
-func (_e *MockDataRepository_Expecter) MarkServersOffline(context1 interface{}, strings interface{}) *MockDataRepository_MarkServersOffline_Call {
+func (_e *MockDataRepository_Expecter) MarkServersOffline(context1 any, strings any) *MockDataRepository_MarkServersOffline_Call {
 	return &MockDataRepository_MarkServersOffline_Call{Call: _e.mock.On("MarkServersOffline", context1, strings)}
 }
 
@@ -1352,7 +1388,7 @@ type MockDataRepository_RecreateRoomMapping_Call struct {
 // RecreateRoomMapping is a helper method to define mock.On call
 //   - context1 context.Context
 //   - stringToString map[string]string
-func (_e *MockDataRepository_Expecter) RecreateRoomMapping(context1 interface{}, stringToString interface{}) *MockDataRepository_RecreateRoomMapping_Call {
+func (_e *MockDataRepository_Expecter) RecreateRoomMapping(context1 any, stringToString any) *MockDataRepository_RecreateRoomMapping_Call {
 	return &MockDataRepository_RecreateRoomMapping_Call{Call: _e.mock.On("RecreateRoomMapping", context1, stringToString)}
 }
 
@@ -1399,7 +1435,7 @@ type MockDataRepository_RemoveRoomMapping_Call struct {
 //   - context1 context.Context
 //   - s string
 //   - s1 string
-func (_e *MockDataRepository_Expecter) RemoveRoomMapping(context1 interface{}, s interface{}, s1 interface{}) *MockDataRepository_RemoveRoomMapping_Call {
+func (_e *MockDataRepository_Expecter) RemoveRoomMapping(context1 any, s any, s1 any) *MockDataRepository_RemoveRoomMapping_Call {
 	return &MockDataRepository_RemoveRoomMapping_Call{Call: _e.mock.On("RemoveRoomMapping", context1, s, s1)}
 }
 
@@ -1450,7 +1486,7 @@ type MockDataRepository_RemoveRooms_Call struct {
 // RemoveRooms is a helper method to define mock.On call
 //   - context1 context.Context
 //   - strings []string
-func (_e *MockDataRepository_Expecter) RemoveRooms(context1 interface{}, strings interface{}) *MockDataRepository_RemoveRooms_Call {
+func (_e *MockDataRepository_Expecter) RemoveRooms(context1 any, strings any) *MockDataRepository_RemoveRooms_Call {
 	return &MockDataRepository_RemoveRooms_Call{Call: _e.mock.On("RemoveRooms", context1, strings)}
 }
 
@@ -1507,7 +1543,7 @@ type MockDataRepository_RemoveServer_Call struct {
 // RemoveServer is a helper method to define mock.On call
 //   - context1 context.Context
 //   - s string
-func (_e *MockDataRepository_Expecter) RemoveServer(context1 interface{}, s interface{}) *MockDataRepository_RemoveServer_Call {
+func (_e *MockDataRepository_Expecter) RemoveServer(context1 any, s any) *MockDataRepository_RemoveServer_Call {
 	return &MockDataRepository_RemoveServer_Call{Call: _e.mock.On("RemoveServer", context1, s)}
 }
 
@@ -1553,7 +1589,7 @@ type MockDataRepository_RemoveServers_Call struct {
 // RemoveServers is a helper method to define mock.On call
 //   - context1 context.Context
 //   - strings []string
-func (_e *MockDataRepository_Expecter) RemoveServers(context1 interface{}, strings interface{}) *MockDataRepository_RemoveServers_Call {
+func (_e *MockDataRepository_Expecter) RemoveServers(context1 any, strings any) *MockDataRepository_RemoveServers_Call {
 	return &MockDataRepository_RemoveServers_Call{Call: _e.mock.On("RemoveServers", context1, strings)}
 }
 
@@ -1612,7 +1648,7 @@ type MockDataRepository_ReportRoom_Call struct {
 //   - s string
 //   - s1 string
 //   - s2 string
-func (_e *MockDataRepository_Expecter) ReportRoom(context1 interface{}, s interface{}, s1 interface{}, s2 interface{}) *MockDataRepository_ReportRoom_Call {
+func (_e *MockDataRepository_Expecter) ReportRoom(context1 any, s any, s1 any, s2 any) *MockDataRepository_ReportRoom_Call {
 	return &MockDataRepository_ReportRoom_Call{Call: _e.mock.On("ReportRoom", context1, s, s1, s2)}
 }
 
@@ -1679,7 +1715,7 @@ type MockDataRepository_SetBiggestRooms_Call struct {
 // SetBiggestRooms is a helper method to define mock.On call
 //   - context1 context.Context
 //   - strings []string
-func (_e *MockDataRepository_Expecter) SetBiggestRooms(context1 interface{}, strings interface{}) *MockDataRepository_SetBiggestRooms_Call {
+func (_e *MockDataRepository_Expecter) SetBiggestRooms(context1 any, strings any) *MockDataRepository_SetBiggestRooms_Call {
 	return &MockDataRepository_SetBiggestRooms_Call{Call: _e.mock.On("SetBiggestRooms", context1, strings)}
 }
 
@@ -1736,7 +1772,7 @@ type MockDataRepository_UnbanRoom_Call struct {
 // UnbanRoom is a helper method to define mock.On call
 //   - context1 context.Context
 //   - s string
-func (_e *MockDataRepository_Expecter) UnbanRoom(context1 interface{}, s interface{}) *MockDataRepository_UnbanRoom_Call {
+func (_e *MockDataRepository_Expecter) UnbanRoom(context1 any, s any) *MockDataRepository_UnbanRoom_Call {
 	return &MockDataRepository_UnbanRoom_Call{Call: _e.mock.On("UnbanRoom", context1, s)}
 }
 
@@ -1792,7 +1828,7 @@ type MockDataRepository_UnreportAll_Call struct {
 
 // UnreportAll is a helper method to define mock.On call
 //   - context1 context.Context
-func (_e *MockDataRepository_Expecter) UnreportAll(context1 interface{}) *MockDataRepository_UnreportAll_Call {
+func (_e *MockDataRepository_Expecter) UnreportAll(context1 any) *MockDataRepository_UnreportAll_Call {
 	return &MockDataRepository_UnreportAll_Call{Call: _e.mock.On("UnreportAll", context1)}
 }
 
@@ -1844,7 +1880,7 @@ type MockDataRepository_UnreportRoom_Call struct {
 // UnreportRoom is a helper method to define mock.On call
 //   - context1 context.Context
 //   - s string
-func (_e *MockDataRepository_Expecter) UnreportRoom(context1 interface{}, s interface{}) *MockDataRepository_UnreportRoom_Call {
+func (_e *MockDataRepository_Expecter) UnreportRoom(context1 any, s any) *MockDataRepository_UnreportRoom_Call {
 	return &MockDataRepository_UnreportRoom_Call{Call: _e.mock.On("UnreportRoom", context1, s)}
 }
 
@@ -1882,10 +1918,19 @@ func NewMockValidatorService(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *MockValidatorService {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &MockValidatorService{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -1927,7 +1972,7 @@ type MockValidatorService_Domain_Call struct {
 
 // Domain is a helper method to define mock.On call
 //   - server string
-func (_e *MockValidatorService_Expecter) Domain(server interface{}) *MockValidatorService_Domain_Call {
+func (_e *MockValidatorService_Expecter) Domain(server any) *MockValidatorService_Domain_Call {
 	return &MockValidatorService_Domain_Call{Call: _e.mock.On("Domain", server)}
 }
 
@@ -1979,7 +2024,7 @@ type MockValidatorService_IsIndexable_Call struct {
 // IsIndexable is a helper method to define mock.On call
 //   - ctx context.Context
 //   - server string
-func (_e *MockValidatorService_Expecter) IsIndexable(ctx interface{}, server interface{}) *MockValidatorService_IsIndexable_Call {
+func (_e *MockValidatorService_Expecter) IsIndexable(ctx any, server any) *MockValidatorService_IsIndexable_Call {
 	return &MockValidatorService_IsIndexable_Call{Call: _e.mock.On("IsIndexable", ctx, server)}
 }
 
@@ -2057,7 +2102,7 @@ type MockValidatorService_IsOnline_Call struct {
 // IsOnline is a helper method to define mock.On call
 //   - ctx context.Context
 //   - server string
-func (_e *MockValidatorService_Expecter) IsOnline(ctx interface{}, server interface{}) *MockValidatorService_IsOnline_Call {
+func (_e *MockValidatorService_Expecter) IsOnline(ctx any, server any) *MockValidatorService_IsOnline_Call {
 	return &MockValidatorService_IsOnline_Call{Call: _e.mock.On("IsOnline", ctx, server)}
 }
 
@@ -2113,7 +2158,7 @@ type MockValidatorService_IsRoomAllowed_Call struct {
 
 // IsRoomAllowed is a helper method to define mock.On call
 //   - room *model.MatrixRoom
-func (_e *MockValidatorService_Expecter) IsRoomAllowed(room interface{}) *MockValidatorService_IsRoomAllowed_Call {
+func (_e *MockValidatorService_Expecter) IsRoomAllowed(room any) *MockValidatorService_IsRoomAllowed_Call {
 	return &MockValidatorService_IsRoomAllowed_Call{Call: _e.mock.On("IsRoomAllowed", room)}
 }
 
@@ -2146,10 +2191,19 @@ func NewMockFederationService(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *MockFederationService {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &MockFederationService{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -2192,7 +2246,7 @@ type MockFederationService_QueryCSURL_Call struct {
 // QueryCSURL is a helper method to define mock.On call
 //   - ctx context.Context
 //   - serverName string
-func (_e *MockFederationService_Expecter) QueryCSURL(ctx interface{}, serverName interface{}) *MockFederationService_QueryCSURL_Call {
+func (_e *MockFederationService_Expecter) QueryCSURL(ctx any, serverName any) *MockFederationService_QueryCSURL_Call {
 	return &MockFederationService_QueryCSURL_Call{Call: _e.mock.On("QueryCSURL", ctx, serverName)}
 }
 
@@ -2260,7 +2314,7 @@ type MockFederationService_QueryDirectoryExternal_Call struct {
 // QueryDirectoryExternal is a helper method to define mock.On call
 //   - ctx context.Context
 //   - roomAlias string
-func (_e *MockFederationService_Expecter) QueryDirectoryExternal(ctx interface{}, roomAlias interface{}) *MockFederationService_QueryDirectoryExternal_Call {
+func (_e *MockFederationService_Expecter) QueryDirectoryExternal(ctx any, roomAlias any) *MockFederationService_QueryDirectoryExternal_Call {
 	return &MockFederationService_QueryDirectoryExternal_Call{Call: _e.mock.On("QueryDirectoryExternal", ctx, roomAlias)}
 }
 
@@ -2330,7 +2384,7 @@ type MockFederationService_QueryPublicRooms_Call struct {
 //   - serverName string
 //   - limit string
 //   - since string
-func (_e *MockFederationService_Expecter) QueryPublicRooms(ctx interface{}, serverName interface{}, limit interface{}, since interface{}) *MockFederationService_QueryPublicRooms_Call {
+func (_e *MockFederationService_Expecter) QueryPublicRooms(ctx any, serverName any, limit any, since any) *MockFederationService_QueryPublicRooms_Call {
 	return &MockFederationService_QueryPublicRooms_Call{Call: _e.mock.On("QueryPublicRooms", ctx, serverName, limit, since)}
 }
 
@@ -2406,7 +2460,7 @@ type MockFederationService_QueryServerName_Call struct {
 // QueryServerName is a helper method to define mock.On call
 //   - ctx context.Context
 //   - serverName string
-func (_e *MockFederationService_Expecter) QueryServerName(ctx interface{}, serverName interface{}) *MockFederationService_QueryServerName_Call {
+func (_e *MockFederationService_Expecter) QueryServerName(ctx any, serverName any) *MockFederationService_QueryServerName_Call {
 	return &MockFederationService_QueryServerName_Call{Call: _e.mock.On("QueryServerName", ctx, serverName)}
 }
 
@@ -2478,7 +2532,7 @@ type MockFederationService_QueryVersion_Call struct {
 // QueryVersion is a helper method to define mock.On call
 //   - ctx context.Context
 //   - serverName string
-func (_e *MockFederationService_Expecter) QueryVersion(ctx interface{}, serverName interface{}) *MockFederationService_QueryVersion_Call {
+func (_e *MockFederationService_Expecter) QueryVersion(ctx any, serverName any) *MockFederationService_QueryVersion_Call {
 	return &MockFederationService_QueryVersion_Call{Call: _e.mock.On("QueryVersion", ctx, serverName)}
 }
 
@@ -2516,10 +2570,19 @@ func newMockdataCrawlerService(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *mockdataCrawlerService {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &mockdataCrawlerService{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -2562,7 +2625,7 @@ type mockdataCrawlerService_AddServer_Call struct {
 // AddServer is a helper method to define mock.On call
 //   - context1 context.Context
 //   - s string
-func (_e *mockdataCrawlerService_Expecter) AddServer(context1 interface{}, s interface{}) *mockdataCrawlerService_AddServer_Call {
+func (_e *mockdataCrawlerService_Expecter) AddServer(context1 any, s any) *mockdataCrawlerService_AddServer_Call {
 	return &mockdataCrawlerService_AddServer_Call{Call: _e.mock.On("AddServer", context1, s)}
 }
 
@@ -2609,7 +2672,7 @@ type mockdataCrawlerService_AddServers_Call struct {
 //   - context1 context.Context
 //   - strings []string
 //   - n int
-func (_e *mockdataCrawlerService_Expecter) AddServers(context1 interface{}, strings interface{}, n interface{}) *mockdataCrawlerService_AddServers_Call {
+func (_e *mockdataCrawlerService_Expecter) AddServers(context1 any, strings any, n any) *mockdataCrawlerService_AddServers_Call {
 	return &mockdataCrawlerService_AddServers_Call{Call: _e.mock.On("AddServers", context1, strings, n)}
 }
 
@@ -2666,9 +2729,9 @@ type mockdataCrawlerService_DiscoverServers_Call struct {
 //   - context1 context.Context
 //   - n int
 //   - lists ...*kit.List[string, string]
-func (_e *mockdataCrawlerService_Expecter) DiscoverServers(context1 interface{}, n interface{}, lists ...interface{}) *mockdataCrawlerService_DiscoverServers_Call {
+func (_e *mockdataCrawlerService_Expecter) DiscoverServers(context1 any, n any, lists ...any) *mockdataCrawlerService_DiscoverServers_Call {
 	return &mockdataCrawlerService_DiscoverServers_Call{Call: _e.mock.On("DiscoverServers",
-		append([]interface{}{context1, n}, lists...)...)}
+		append([]any{context1, n}, lists...)...)}
 }
 
 func (_c *mockdataCrawlerService_DiscoverServers_Call) Run(run func(context1 context.Context, n int, lists ...*kit.List[string, string])) *mockdataCrawlerService_DiscoverServers_Call {
@@ -2720,7 +2783,7 @@ type mockdataCrawlerService_EachRoom_Call struct {
 // EachRoom is a helper method to define mock.On call
 //   - context1 context.Context
 //   - fn func(string, *model.MatrixRoom) bool
-func (_e *mockdataCrawlerService_Expecter) EachRoom(context1 interface{}, fn interface{}) *mockdataCrawlerService_EachRoom_Call {
+func (_e *mockdataCrawlerService_Expecter) EachRoom(context1 any, fn any) *mockdataCrawlerService_EachRoom_Call {
 	return &mockdataCrawlerService_EachRoom_Call{Call: _e.mock.On("EachRoom", context1, fn)}
 }
 
@@ -2788,7 +2851,7 @@ type mockdataCrawlerService_GetRoom_Call struct {
 // GetRoom is a helper method to define mock.On call
 //   - ctx context.Context
 //   - roomID string
-func (_e *mockdataCrawlerService_Expecter) GetRoom(ctx interface{}, roomID interface{}) *mockdataCrawlerService_GetRoom_Call {
+func (_e *mockdataCrawlerService_Expecter) GetRoom(ctx any, roomID any) *mockdataCrawlerService_GetRoom_Call {
 	return &mockdataCrawlerService_GetRoom_Call{Call: _e.mock.On("GetRoom", ctx, roomID)}
 }
 
@@ -2834,7 +2897,7 @@ type mockdataCrawlerService_ParseRooms_Call struct {
 // ParseRooms is a helper method to define mock.On call
 //   - context1 context.Context
 //   - n int
-func (_e *mockdataCrawlerService_Expecter) ParseRooms(context1 interface{}, n interface{}) *mockdataCrawlerService_ParseRooms_Call {
+func (_e *mockdataCrawlerService_Expecter) ParseRooms(context1 any, n any) *mockdataCrawlerService_ParseRooms_Call {
 	return &mockdataCrawlerService_ParseRooms_Call{Call: _e.mock.On("ParseRooms", context1, n)}
 }
 
@@ -2872,10 +2935,19 @@ func newMockdataIndexService(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *mockdataIndexService {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &mockdataIndexService{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -2917,7 +2989,7 @@ type mockdataIndexService_EmptyIndex_Call struct {
 
 // EmptyIndex is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *mockdataIndexService_Expecter) EmptyIndex(ctx interface{}) *mockdataIndexService_EmptyIndex_Call {
+func (_e *mockdataIndexService_Expecter) EmptyIndex(ctx any) *mockdataIndexService_EmptyIndex_Call {
 	return &mockdataIndexService_EmptyIndex_Call{Call: _e.mock.On("EmptyIndex", ctx)}
 }
 
@@ -2968,7 +3040,7 @@ type mockdataIndexService_IndexBatch_Call struct {
 
 // IndexBatch is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *mockdataIndexService_Expecter) IndexBatch(ctx interface{}) *mockdataIndexService_IndexBatch_Call {
+func (_e *mockdataIndexService_Expecter) IndexBatch(ctx any) *mockdataIndexService_IndexBatch_Call {
 	return &mockdataIndexService_IndexBatch_Call{Call: _e.mock.On("IndexBatch", ctx)}
 }
 
@@ -3021,7 +3093,7 @@ type mockdataIndexService_RoomsBatch_Call struct {
 //   - ctx context.Context
 //   - roomID string
 //   - data *model.Entry
-func (_e *mockdataIndexService_Expecter) RoomsBatch(ctx interface{}, roomID interface{}, data interface{}) *mockdataIndexService_RoomsBatch_Call {
+func (_e *mockdataIndexService_Expecter) RoomsBatch(ctx any, roomID any, data any) *mockdataIndexService_RoomsBatch_Call {
 	return &mockdataIndexService_RoomsBatch_Call{Call: _e.mock.On("RoomsBatch", ctx, roomID, data)}
 }
 
@@ -3064,10 +3136,19 @@ func newMockdataStatsService(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *mockdataStatsService {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &mockdataStatsService{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -3098,7 +3179,7 @@ type mockdataStatsService_Collect_Call struct {
 
 // Collect is a helper method to define mock.On call
 //   - context1 context.Context
-func (_e *mockdataStatsService_Expecter) Collect(context1 interface{}) *mockdataStatsService_Collect_Call {
+func (_e *mockdataStatsService_Expecter) Collect(context1 any) *mockdataStatsService_Collect_Call {
 	return &mockdataStatsService_Collect_Call{Call: _e.mock.On("Collect", context1)}
 }
 
@@ -3139,7 +3220,7 @@ type mockdataStatsService_CollectServers_Call struct {
 // CollectServers is a helper method to define mock.On call
 //   - context1 context.Context
 //   - b bool
-func (_e *mockdataStatsService_Expecter) CollectServers(context1 interface{}, b interface{}) *mockdataStatsService_CollectServers_Call {
+func (_e *mockdataStatsService_Expecter) CollectServers(context1 any, b any) *mockdataStatsService_CollectServers_Call {
 	return &mockdataStatsService_CollectServers_Call{Call: _e.mock.On("CollectServers", context1, b)}
 }
 
@@ -3232,7 +3313,7 @@ type mockdataStatsService_SetFinishedAt_Call struct {
 //   - context1 context.Context
 //   - s string
 //   - time1 time.Time
-func (_e *mockdataStatsService_Expecter) SetFinishedAt(context1 interface{}, s interface{}, time1 interface{}) *mockdataStatsService_SetFinishedAt_Call {
+func (_e *mockdataStatsService_Expecter) SetFinishedAt(context1 any, s any, time1 any) *mockdataStatsService_SetFinishedAt_Call {
 	return &mockdataStatsService_SetFinishedAt_Call{Call: _e.mock.On("SetFinishedAt", context1, s, time1)}
 }
 
@@ -3284,7 +3365,7 @@ type mockdataStatsService_SetStartedAt_Call struct {
 //   - context1 context.Context
 //   - s string
 //   - time1 time.Time
-func (_e *mockdataStatsService_Expecter) SetStartedAt(context1 interface{}, s interface{}, time1 interface{}) *mockdataStatsService_SetStartedAt_Call {
+func (_e *mockdataStatsService_Expecter) SetStartedAt(context1 any, s any, time1 any) *mockdataStatsService_SetStartedAt_Call {
 	return &mockdataStatsService_SetStartedAt_Call{Call: _e.mock.On("SetStartedAt", context1, s, time1)}
 }
 
@@ -3327,10 +3408,19 @@ func NewMockIndexRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *MockIndexRepository {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &MockIndexRepository{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -3372,7 +3462,7 @@ type MockIndexRepository_Delete_Call struct {
 
 // Delete is a helper method to define mock.On call
 //   - roomID string
-func (_e *MockIndexRepository_Expecter) Delete(roomID interface{}) *MockIndexRepository_Delete_Call {
+func (_e *MockIndexRepository_Expecter) Delete(roomID any) *MockIndexRepository_Delete_Call {
 	return &MockIndexRepository_Delete_Call{Call: _e.mock.On("Delete", roomID)}
 }
 
@@ -3424,7 +3514,7 @@ type MockIndexRepository_Index_Call struct {
 // Index is a helper method to define mock.On call
 //   - roomID string
 //   - data *model.Entry
-func (_e *MockIndexRepository_Expecter) Index(roomID interface{}, data interface{}) *MockIndexRepository_Index_Call {
+func (_e *MockIndexRepository_Expecter) Index(roomID any, data any) *MockIndexRepository_Index_Call {
 	return &MockIndexRepository_Index_Call{Call: _e.mock.On("Index", roomID, data)}
 }
 
@@ -3480,7 +3570,7 @@ type MockIndexRepository_IndexBatch_Call struct {
 
 // IndexBatch is a helper method to define mock.On call
 //   - batch *bleve.Batch
-func (_e *MockIndexRepository_Expecter) IndexBatch(batch interface{}) *MockIndexRepository_IndexBatch_Call {
+func (_e *MockIndexRepository_Expecter) IndexBatch(batch any) *MockIndexRepository_IndexBatch_Call {
 	return &MockIndexRepository_IndexBatch_Call{Call: _e.mock.On("IndexBatch", batch)}
 }
 
@@ -3577,7 +3667,7 @@ type MockIndexRepository_Swap_Call struct {
 
 // Swap is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *MockIndexRepository_Expecter) Swap(ctx interface{}) *MockIndexRepository_Swap_Call {
+func (_e *MockIndexRepository_Expecter) Swap(ctx any) *MockIndexRepository_Swap_Call {
 	return &MockIndexRepository_Swap_Call{Call: _e.mock.On("Swap", ctx)}
 }
 
@@ -3610,10 +3700,19 @@ func NewMockMediaService(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *MockMediaService {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &MockMediaService{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -3648,7 +3747,7 @@ type MockMediaService_Add_Call struct {
 //   - mediaID string
 //   - params url.Values
 //   - content []byte
-func (_e *MockMediaService_Expecter) Add(ctx interface{}, serverName interface{}, mediaID interface{}, params interface{}, content interface{}) *MockMediaService_Add_Call {
+func (_e *MockMediaService_Expecter) Add(ctx any, serverName any, mediaID any, params any, content any) *MockMediaService_Add_Call {
 	return &MockMediaService_Add_Call{Call: _e.mock.On("Add", ctx, serverName, mediaID, params, content)}
 }
 
@@ -3710,7 +3809,7 @@ type MockMediaService_Delete_Call struct {
 //   - ctx context.Context
 //   - serverName string
 //   - mediaID string
-func (_e *MockMediaService_Expecter) Delete(ctx interface{}, serverName interface{}, mediaID interface{}) *MockMediaService_Delete_Call {
+func (_e *MockMediaService_Expecter) Delete(ctx any, serverName any, mediaID any) *MockMediaService_Delete_Call {
 	return &MockMediaService_Delete_Call{Call: _e.mock.On("Delete", ctx, serverName, mediaID)}
 }
 
@@ -3773,7 +3872,7 @@ type MockMediaService_Exists_Call struct {
 //   - serverName string
 //   - mediaID string
 //   - params url.Values
-func (_e *MockMediaService_Expecter) Exists(serverName interface{}, mediaID interface{}, params interface{}) *MockMediaService_Exists_Call {
+func (_e *MockMediaService_Expecter) Exists(serverName any, mediaID any, params any) *MockMediaService_Exists_Call {
 	return &MockMediaService_Exists_Call{Call: _e.mock.On("Exists", serverName, mediaID, params)}
 }
 
@@ -3848,7 +3947,7 @@ type MockMediaService_Get_Call struct {
 //   - serverName string
 //   - mediaID string
 //   - params url.Values
-func (_e *MockMediaService_Expecter) Get(ctx interface{}, serverName interface{}, mediaID interface{}, params interface{}) *MockMediaService_Get_Call {
+func (_e *MockMediaService_Expecter) Get(ctx any, serverName any, mediaID any, params any) *MockMediaService_Get_Call {
 	return &MockMediaService_Get_Call{Call: _e.mock.On("Get", ctx, serverName, mediaID, params)}
 }
 
@@ -3915,7 +4014,7 @@ type MockMediaService_GetURL_Call struct {
 // GetURL is a helper method to define mock.On call
 //   - serverName string
 //   - mediaID string
-func (_e *MockMediaService_Expecter) GetURL(serverName interface{}, mediaID interface{}) *MockMediaService_GetURL_Call {
+func (_e *MockMediaService_Expecter) GetURL(serverName any, mediaID any) *MockMediaService_GetURL_Call {
 	return &MockMediaService_GetURL_Call{Call: _e.mock.On("GetURL", serverName, mediaID)}
 }
 
@@ -3953,10 +4052,19 @@ func NewMockEmailService(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *MockEmailService {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &MockEmailService{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -3999,7 +4107,7 @@ type MockEmailService_SendModReport_Call struct {
 // SendModReport is a helper method to define mock.On call
 //   - text string
 //   - email string
-func (_e *MockEmailService_Expecter) SendModReport(text interface{}, email interface{}) *MockEmailService_SendModReport_Call {
+func (_e *MockEmailService_Expecter) SendModReport(text any, email any) *MockEmailService_SendModReport_Call {
 	return &MockEmailService_SendModReport_Call{Call: _e.mock.On("SendModReport", text, email)}
 }
 
@@ -4059,7 +4167,7 @@ type MockEmailService_SendReport_Call struct {
 //   - server *model.MatrixServer
 //   - reason string
 //   - emails []string
-func (_e *MockEmailService_Expecter) SendReport(ctx interface{}, room interface{}, server interface{}, reason interface{}, emails interface{}) *MockEmailService_SendReport_Call {
+func (_e *MockEmailService_Expecter) SendReport(ctx any, room any, server any, reason any, emails any) *MockEmailService_SendReport_Call {
 	return &MockEmailService_SendReport_Call{Call: _e.mock.On("SendReport", ctx, room, server, reason, emails)}
 }
 
@@ -4112,10 +4220,19 @@ func newMockmatrixService(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *mockmatrixService {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &mockmatrixService{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -4171,7 +4288,7 @@ type mockmatrixService_GetClientRoomSummary_Call struct {
 //   - aliasOrID string
 //   - via string
 //   - onlyMSC3266 bool
-func (_e *mockmatrixService_Expecter) GetClientRoomSummary(ctx interface{}, aliasOrID interface{}, via interface{}, onlyMSC3266 interface{}) *mockmatrixService_GetClientRoomSummary_Call {
+func (_e *mockmatrixService_Expecter) GetClientRoomSummary(ctx any, aliasOrID any, via any, onlyMSC3266 any) *mockmatrixService_GetClientRoomSummary_Call {
 	return &mockmatrixService_GetClientRoomSummary_Call{Call: _e.mock.On("GetClientRoomSummary", ctx, aliasOrID, via, onlyMSC3266)}
 }
 
@@ -4219,10 +4336,19 @@ func NewMockPlausibleService(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *MockPlausibleService {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &MockPlausibleService{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -4254,7 +4380,7 @@ type MockPlausibleService_Track_Call struct {
 // Track is a helper method to define mock.On call
 //   - ctx context.Context
 //   - evt *model.AnalyticsEvent
-func (_e *MockPlausibleService_Expecter) Track(ctx interface{}, evt interface{}) *MockPlausibleService_Track_Call {
+func (_e *MockPlausibleService_Expecter) Track(ctx any, evt any) *MockPlausibleService_Track_Call {
 	return &MockPlausibleService_Track_Call{Call: _e.mock.On("Track", ctx, evt)}
 }
 
@@ -4292,10 +4418,19 @@ func newMocksearchDataRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *mocksearchDataRepository {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &mocksearchDataRepository{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -4341,7 +4476,7 @@ type mocksearchDataRepository_GetBiggestRooms_Call struct {
 //   - ctx context.Context
 //   - limit int
 //   - offset int
-func (_e *mocksearchDataRepository_Expecter) GetBiggestRooms(ctx interface{}, limit interface{}, offset interface{}) *mocksearchDataRepository_GetBiggestRooms_Call {
+func (_e *mocksearchDataRepository_Expecter) GetBiggestRooms(ctx any, limit any, offset any) *mocksearchDataRepository_GetBiggestRooms_Call {
 	return &mocksearchDataRepository_GetBiggestRooms_Call{Call: _e.mock.On("GetBiggestRooms", ctx, limit, offset)}
 }
 
@@ -4384,10 +4519,19 @@ func NewMockSearchRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *MockSearchRepository {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &MockSearchRepository{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -4450,7 +4594,7 @@ type MockSearchRepository_Search_Call struct {
 //   - limit int
 //   - offset int
 //   - sortBy []string
-func (_e *MockSearchRepository_Expecter) Search(ctx interface{}, searchQuery interface{}, limit interface{}, offset interface{}, sortBy interface{}) *MockSearchRepository_Search_Call {
+func (_e *MockSearchRepository_Expecter) Search(ctx any, searchQuery any, limit any, offset any, sortBy any) *MockSearchRepository_Search_Call {
 	return &MockSearchRepository_Search_Call{Call: _e.mock.On("Search", ctx, searchQuery, limit, offset, sortBy)}
 }
 
@@ -4503,10 +4647,19 @@ func NewMockStatsService(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *MockStatsService {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &MockStatsService{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -4576,10 +4729,19 @@ func newMockbleveQuery(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *mockbleveQuery {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &mockbleveQuery{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -4635,7 +4797,7 @@ type mockbleveQuery_Searcher_Call struct {
 //   - i index.IndexReader
 //   - m mapping.IndexMapping
 //   - options search.SearcherOptions
-func (_e *mockbleveQuery_Expecter) Searcher(ctx interface{}, i interface{}, m interface{}, options interface{}) *mockbleveQuery_Searcher_Call {
+func (_e *mockbleveQuery_Expecter) Searcher(ctx any, i any, m any, options any) *mockbleveQuery_Searcher_Call {
 	return &mockbleveQuery_Searcher_Call{Call: _e.mock.On("Searcher", ctx, i, m, options)}
 }
 
@@ -4690,7 +4852,7 @@ type mockbleveQuery_SetBoost_Call struct {
 
 // SetBoost is a helper method to define mock.On call
 //   - f float64
-func (_e *mockbleveQuery_Expecter) SetBoost(f interface{}) *mockbleveQuery_SetBoost_Call {
+func (_e *mockbleveQuery_Expecter) SetBoost(f any) *mockbleveQuery_SetBoost_Call {
 	return &mockbleveQuery_SetBoost_Call{Call: _e.mock.On("SetBoost", f)}
 }
 
@@ -4730,7 +4892,7 @@ type mockbleveQuery_SetField_Call struct {
 
 // SetField is a helper method to define mock.On call
 //   - s string
-func (_e *mockbleveQuery_Expecter) SetField(s interface{}) *mockbleveQuery_SetField_Call {
+func (_e *mockbleveQuery_Expecter) SetField(s any) *mockbleveQuery_SetField_Call {
 	return &mockbleveQuery_SetField_Call{Call: _e.mock.On("SetField", s)}
 }
 
@@ -4763,10 +4925,19 @@ func NewMockStatsRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *MockStatsRepository {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &MockStatsRepository{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }
@@ -4798,7 +4969,7 @@ type MockStatsRepository_AddRoomBatch_Call struct {
 // AddRoomBatch is a helper method to define mock.On call
 //   - context1 context.Context
 //   - matrixRoom *model.MatrixRoom
-func (_e *MockStatsRepository_Expecter) AddRoomBatch(context1 interface{}, matrixRoom interface{}) *MockStatsRepository_AddRoomBatch_Call {
+func (_e *MockStatsRepository_Expecter) AddRoomBatch(context1 any, matrixRoom any) *MockStatsRepository_AddRoomBatch_Call {
 	return &MockStatsRepository_AddRoomBatch_Call{Call: _e.mock.On("AddRoomBatch", context1, matrixRoom)}
 }
 
@@ -4856,7 +5027,7 @@ type MockStatsRepository_AddRoomMapping_Call struct {
 //   - context1 context.Context
 //   - s string
 //   - s1 string
-func (_e *MockStatsRepository_Expecter) AddRoomMapping(context1 interface{}, s interface{}, s1 interface{}) *MockStatsRepository_AddRoomMapping_Call {
+func (_e *MockStatsRepository_Expecter) AddRoomMapping(context1 any, s any, s1 any) *MockStatsRepository_AddRoomMapping_Call {
 	return &MockStatsRepository_AddRoomMapping_Call{Call: _e.mock.On("AddRoomMapping", context1, s, s1)}
 }
 
@@ -4918,7 +5089,7 @@ type MockStatsRepository_AddServer_Call struct {
 // AddServer is a helper method to define mock.On call
 //   - context1 context.Context
 //   - matrixServer *model.MatrixServer
-func (_e *MockStatsRepository_Expecter) AddServer(context1 interface{}, matrixServer interface{}) *MockStatsRepository_AddServer_Call {
+func (_e *MockStatsRepository_Expecter) AddServer(context1 any, matrixServer any) *MockStatsRepository_AddServer_Call {
 	return &MockStatsRepository_AddServer_Call{Call: _e.mock.On("AddServer", context1, matrixServer)}
 }
 
@@ -4975,7 +5146,7 @@ type MockStatsRepository_BanRoom_Call struct {
 // BanRoom is a helper method to define mock.On call
 //   - context1 context.Context
 //   - s string
-func (_e *MockStatsRepository_Expecter) BanRoom(context1 interface{}, s interface{}) *MockStatsRepository_BanRoom_Call {
+func (_e *MockStatsRepository_Expecter) BanRoom(context1 any, s any) *MockStatsRepository_BanRoom_Call {
 	return &MockStatsRepository_BanRoom_Call{Call: _e.mock.On("BanRoom", context1, s)}
 }
 
@@ -5032,7 +5203,7 @@ type MockStatsRepository_BatchServers_Call struct {
 // BatchServers is a helper method to define mock.On call
 //   - context1 context.Context
 //   - strings []string
-func (_e *MockStatsRepository_Expecter) BatchServers(context1 interface{}, strings interface{}) *MockStatsRepository_BatchServers_Call {
+func (_e *MockStatsRepository_Expecter) BatchServers(context1 any, strings any) *MockStatsRepository_BatchServers_Call {
 	return &MockStatsRepository_BatchServers_Call{Call: _e.mock.On("BatchServers", context1, strings)}
 }
 
@@ -5078,7 +5249,7 @@ type MockStatsRepository_EachRoom_Call struct {
 // EachRoom is a helper method to define mock.On call
 //   - context1 context.Context
 //   - fn func(string, *model.MatrixRoom) bool
-func (_e *MockStatsRepository_Expecter) EachRoom(context1 interface{}, fn interface{}) *MockStatsRepository_EachRoom_Call {
+func (_e *MockStatsRepository_Expecter) EachRoom(context1 any, fn any) *MockStatsRepository_EachRoom_Call {
 	return &MockStatsRepository_EachRoom_Call{Call: _e.mock.On("EachRoom", context1, fn)}
 }
 
@@ -5137,7 +5308,7 @@ type MockStatsRepository_FilterServers_Call struct {
 // FilterServers is a helper method to define mock.On call
 //   - context1 context.Context
 //   - fn func(server *model.MatrixServer) bool
-func (_e *MockStatsRepository_Expecter) FilterServers(context1 interface{}, fn interface{}) *MockStatsRepository_FilterServers_Call {
+func (_e *MockStatsRepository_Expecter) FilterServers(context1 any, fn any) *MockStatsRepository_FilterServers_Call {
 	return &MockStatsRepository_FilterServers_Call{Call: _e.mock.On("FilterServers", context1, fn)}
 }
 
@@ -5182,7 +5353,7 @@ type MockStatsRepository_FlushRoomBatch_Call struct {
 
 // FlushRoomBatch is a helper method to define mock.On call
 //   - context1 context.Context
-func (_e *MockStatsRepository_Expecter) FlushRoomBatch(context1 interface{}) *MockStatsRepository_FlushRoomBatch_Call {
+func (_e *MockStatsRepository_Expecter) FlushRoomBatch(context1 any) *MockStatsRepository_FlushRoomBatch_Call {
 	return &MockStatsRepository_FlushRoomBatch_Call{Call: _e.mock.On("FlushRoomBatch", context1)}
 }
 
@@ -5251,9 +5422,9 @@ type MockStatsRepository_GetBannedRooms_Call struct {
 // GetBannedRooms is a helper method to define mock.On call
 //   - context1 context.Context
 //   - strings ...string
-func (_e *MockStatsRepository_Expecter) GetBannedRooms(context1 interface{}, strings ...interface{}) *MockStatsRepository_GetBannedRooms_Call {
+func (_e *MockStatsRepository_Expecter) GetBannedRooms(context1 any, strings ...any) *MockStatsRepository_GetBannedRooms_Call {
 	return &MockStatsRepository_GetBannedRooms_Call{Call: _e.mock.On("GetBannedRooms",
-		append([]interface{}{context1}, strings...)...)}
+		append([]any{context1}, strings...)...)}
 }
 
 func (_c *MockStatsRepository_GetBannedRooms_Call) Run(run func(context1 context.Context, strings ...string)) *MockStatsRepository_GetBannedRooms_Call {
@@ -5312,7 +5483,7 @@ type MockStatsRepository_GetIndexStats_Call struct {
 
 // GetIndexStats is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *MockStatsRepository_Expecter) GetIndexStats(ctx interface{}) *MockStatsRepository_GetIndexStats_Call {
+func (_e *MockStatsRepository_Expecter) GetIndexStats(ctx any) *MockStatsRepository_GetIndexStats_Call {
 	return &MockStatsRepository_GetIndexStats_Call{Call: _e.mock.On("GetIndexStats", ctx)}
 }
 
@@ -5375,7 +5546,7 @@ type MockStatsRepository_GetIndexStatsTL_Call struct {
 // GetIndexStatsTL is a helper method to define mock.On call
 //   - ctx context.Context
 //   - prefix string
-func (_e *MockStatsRepository_Expecter) GetIndexStatsTL(ctx interface{}, prefix interface{}) *MockStatsRepository_GetIndexStatsTL_Call {
+func (_e *MockStatsRepository_Expecter) GetIndexStatsTL(ctx any, prefix any) *MockStatsRepository_GetIndexStatsTL_Call {
 	return &MockStatsRepository_GetIndexStatsTL_Call{Call: _e.mock.On("GetIndexStatsTL", ctx, prefix)}
 }
 
@@ -5449,9 +5620,9 @@ type MockStatsRepository_GetReportedRooms_Call struct {
 // GetReportedRooms is a helper method to define mock.On call
 //   - context1 context.Context
 //   - strings ...string
-func (_e *MockStatsRepository_Expecter) GetReportedRooms(context1 interface{}, strings ...interface{}) *MockStatsRepository_GetReportedRooms_Call {
+func (_e *MockStatsRepository_Expecter) GetReportedRooms(context1 any, strings ...any) *MockStatsRepository_GetReportedRooms_Call {
 	return &MockStatsRepository_GetReportedRooms_Call{Call: _e.mock.On("GetReportedRooms",
-		append([]interface{}{context1}, strings...)...)}
+		append([]any{context1}, strings...)...)}
 }
 
 func (_c *MockStatsRepository_GetReportedRooms_Call) Run(run func(context1 context.Context, strings ...string)) *MockStatsRepository_GetReportedRooms_Call {
@@ -5520,7 +5691,7 @@ type MockStatsRepository_GetRoom_Call struct {
 // GetRoom is a helper method to define mock.On call
 //   - context1 context.Context
 //   - s string
-func (_e *MockStatsRepository_Expecter) GetRoom(context1 interface{}, s interface{}) *MockStatsRepository_GetRoom_Call {
+func (_e *MockStatsRepository_Expecter) GetRoom(context1 any, s any) *MockStatsRepository_GetRoom_Call {
 	return &MockStatsRepository_GetRoom_Call{Call: _e.mock.On("GetRoom", context1, s)}
 }
 
@@ -5577,7 +5748,7 @@ type MockStatsRepository_GetRoomMapping_Call struct {
 // GetRoomMapping is a helper method to define mock.On call
 //   - context1 context.Context
 //   - s string
-func (_e *MockStatsRepository_Expecter) GetRoomMapping(context1 interface{}, s interface{}) *MockStatsRepository_GetRoomMapping_Call {
+func (_e *MockStatsRepository_Expecter) GetRoomMapping(context1 any, s any) *MockStatsRepository_GetRoomMapping_Call {
 	return &MockStatsRepository_GetRoomMapping_Call{Call: _e.mock.On("GetRoomMapping", context1, s)}
 }
 
@@ -5645,7 +5816,7 @@ type MockStatsRepository_GetServerInfo_Call struct {
 // GetServerInfo is a helper method to define mock.On call
 //   - context1 context.Context
 //   - s string
-func (_e *MockStatsRepository_Expecter) GetServerInfo(context1 interface{}, s interface{}) *MockStatsRepository_GetServerInfo_Call {
+func (_e *MockStatsRepository_Expecter) GetServerInfo(context1 any, s any) *MockStatsRepository_GetServerInfo_Call {
 	return &MockStatsRepository_GetServerInfo_Call{Call: _e.mock.On("GetServerInfo", context1, s)}
 }
 
@@ -5702,7 +5873,7 @@ type MockStatsRepository_HasServer_Call struct {
 // HasServer is a helper method to define mock.On call
 //   - context1 context.Context
 //   - s string
-func (_e *MockStatsRepository_Expecter) HasServer(context1 interface{}, s interface{}) *MockStatsRepository_HasServer_Call {
+func (_e *MockStatsRepository_Expecter) HasServer(context1 any, s any) *MockStatsRepository_HasServer_Call {
 	return &MockStatsRepository_HasServer_Call{Call: _e.mock.On("HasServer", context1, s)}
 }
 
@@ -5759,7 +5930,7 @@ type MockStatsRepository_IsReported_Call struct {
 // IsReported is a helper method to define mock.On call
 //   - context1 context.Context
 //   - s string
-func (_e *MockStatsRepository_Expecter) IsReported(context1 interface{}, s interface{}) *MockStatsRepository_IsReported_Call {
+func (_e *MockStatsRepository_Expecter) IsReported(context1 any, s any) *MockStatsRepository_IsReported_Call {
 	return &MockStatsRepository_IsReported_Call{Call: _e.mock.On("IsReported", context1, s)}
 }
 
@@ -5805,7 +5976,7 @@ type MockStatsRepository_MarkServersOffline_Call struct {
 // MarkServersOffline is a helper method to define mock.On call
 //   - context1 context.Context
 //   - strings []string
-func (_e *MockStatsRepository_Expecter) MarkServersOffline(context1 interface{}, strings interface{}) *MockStatsRepository_MarkServersOffline_Call {
+func (_e *MockStatsRepository_Expecter) MarkServersOffline(context1 any, strings any) *MockStatsRepository_MarkServersOffline_Call {
 	return &MockStatsRepository_MarkServersOffline_Call{Call: _e.mock.On("MarkServersOffline", context1, strings)}
 }
 
@@ -5862,7 +6033,7 @@ type MockStatsRepository_RecreateRoomMapping_Call struct {
 // RecreateRoomMapping is a helper method to define mock.On call
 //   - context1 context.Context
 //   - stringToString map[string]string
-func (_e *MockStatsRepository_Expecter) RecreateRoomMapping(context1 interface{}, stringToString interface{}) *MockStatsRepository_RecreateRoomMapping_Call {
+func (_e *MockStatsRepository_Expecter) RecreateRoomMapping(context1 any, stringToString any) *MockStatsRepository_RecreateRoomMapping_Call {
 	return &MockStatsRepository_RecreateRoomMapping_Call{Call: _e.mock.On("RecreateRoomMapping", context1, stringToString)}
 }
 
@@ -5909,7 +6080,7 @@ type MockStatsRepository_RemoveRoomMapping_Call struct {
 //   - context1 context.Context
 //   - s string
 //   - s1 string
-func (_e *MockStatsRepository_Expecter) RemoveRoomMapping(context1 interface{}, s interface{}, s1 interface{}) *MockStatsRepository_RemoveRoomMapping_Call {
+func (_e *MockStatsRepository_Expecter) RemoveRoomMapping(context1 any, s any, s1 any) *MockStatsRepository_RemoveRoomMapping_Call {
 	return &MockStatsRepository_RemoveRoomMapping_Call{Call: _e.mock.On("RemoveRoomMapping", context1, s, s1)}
 }
 
@@ -5960,7 +6131,7 @@ type MockStatsRepository_RemoveRooms_Call struct {
 // RemoveRooms is a helper method to define mock.On call
 //   - context1 context.Context
 //   - strings []string
-func (_e *MockStatsRepository_Expecter) RemoveRooms(context1 interface{}, strings interface{}) *MockStatsRepository_RemoveRooms_Call {
+func (_e *MockStatsRepository_Expecter) RemoveRooms(context1 any, strings any) *MockStatsRepository_RemoveRooms_Call {
 	return &MockStatsRepository_RemoveRooms_Call{Call: _e.mock.On("RemoveRooms", context1, strings)}
 }
 
@@ -6017,7 +6188,7 @@ type MockStatsRepository_RemoveServer_Call struct {
 // RemoveServer is a helper method to define mock.On call
 //   - context1 context.Context
 //   - s string
-func (_e *MockStatsRepository_Expecter) RemoveServer(context1 interface{}, s interface{}) *MockStatsRepository_RemoveServer_Call {
+func (_e *MockStatsRepository_Expecter) RemoveServer(context1 any, s any) *MockStatsRepository_RemoveServer_Call {
 	return &MockStatsRepository_RemoveServer_Call{Call: _e.mock.On("RemoveServer", context1, s)}
 }
 
@@ -6063,7 +6234,7 @@ type MockStatsRepository_RemoveServers_Call struct {
 // RemoveServers is a helper method to define mock.On call
 //   - context1 context.Context
 //   - strings []string
-func (_e *MockStatsRepository_Expecter) RemoveServers(context1 interface{}, strings interface{}) *MockStatsRepository_RemoveServers_Call {
+func (_e *MockStatsRepository_Expecter) RemoveServers(context1 any, strings any) *MockStatsRepository_RemoveServers_Call {
 	return &MockStatsRepository_RemoveServers_Call{Call: _e.mock.On("RemoveServers", context1, strings)}
 }
 
@@ -6122,7 +6293,7 @@ type MockStatsRepository_ReportRoom_Call struct {
 //   - s string
 //   - s1 string
 //   - s2 string
-func (_e *MockStatsRepository_Expecter) ReportRoom(context1 interface{}, s interface{}, s1 interface{}, s2 interface{}) *MockStatsRepository_ReportRoom_Call {
+func (_e *MockStatsRepository_Expecter) ReportRoom(context1 any, s any, s1 any, s2 any) *MockStatsRepository_ReportRoom_Call {
 	return &MockStatsRepository_ReportRoom_Call{Call: _e.mock.On("ReportRoom", context1, s, s1, s2)}
 }
 
@@ -6189,7 +6360,7 @@ type MockStatsRepository_SetBiggestRooms_Call struct {
 // SetBiggestRooms is a helper method to define mock.On call
 //   - context1 context.Context
 //   - strings []string
-func (_e *MockStatsRepository_Expecter) SetBiggestRooms(context1 interface{}, strings interface{}) *MockStatsRepository_SetBiggestRooms_Call {
+func (_e *MockStatsRepository_Expecter) SetBiggestRooms(context1 any, strings any) *MockStatsRepository_SetBiggestRooms_Call {
 	return &MockStatsRepository_SetBiggestRooms_Call{Call: _e.mock.On("SetBiggestRooms", context1, strings)}
 }
 
@@ -6247,7 +6418,7 @@ type MockStatsRepository_SetFinishedAt_Call struct {
 //   - ctx context.Context
 //   - process string
 //   - finishedAt time.Time
-func (_e *MockStatsRepository_Expecter) SetFinishedAt(ctx interface{}, process interface{}, finishedAt interface{}) *MockStatsRepository_SetFinishedAt_Call {
+func (_e *MockStatsRepository_Expecter) SetFinishedAt(ctx any, process any, finishedAt any) *MockStatsRepository_SetFinishedAt_Call {
 	return &MockStatsRepository_SetFinishedAt_Call{Call: _e.mock.On("SetFinishedAt", ctx, process, finishedAt)}
 }
 
@@ -6309,7 +6480,7 @@ type MockStatsRepository_SetIndexBannedRooms_Call struct {
 // SetIndexBannedRooms is a helper method to define mock.On call
 //   - ctx context.Context
 //   - rooms int
-func (_e *MockStatsRepository_Expecter) SetIndexBannedRooms(ctx interface{}, rooms interface{}) *MockStatsRepository_SetIndexBannedRooms_Call {
+func (_e *MockStatsRepository_Expecter) SetIndexBannedRooms(ctx any, rooms any) *MockStatsRepository_SetIndexBannedRooms_Call {
 	return &MockStatsRepository_SetIndexBannedRooms_Call{Call: _e.mock.On("SetIndexBannedRooms", ctx, rooms)}
 }
 
@@ -6366,7 +6537,7 @@ type MockStatsRepository_SetIndexBlockedServers_Call struct {
 // SetIndexBlockedServers is a helper method to define mock.On call
 //   - ctx context.Context
 //   - servers int
-func (_e *MockStatsRepository_Expecter) SetIndexBlockedServers(ctx interface{}, servers interface{}) *MockStatsRepository_SetIndexBlockedServers_Call {
+func (_e *MockStatsRepository_Expecter) SetIndexBlockedServers(ctx any, servers any) *MockStatsRepository_SetIndexBlockedServers_Call {
 	return &MockStatsRepository_SetIndexBlockedServers_Call{Call: _e.mock.On("SetIndexBlockedServers", ctx, servers)}
 }
 
@@ -6423,7 +6594,7 @@ type MockStatsRepository_SetIndexIndexableServers_Call struct {
 // SetIndexIndexableServers is a helper method to define mock.On call
 //   - ctx context.Context
 //   - servers int
-func (_e *MockStatsRepository_Expecter) SetIndexIndexableServers(ctx interface{}, servers interface{}) *MockStatsRepository_SetIndexIndexableServers_Call {
+func (_e *MockStatsRepository_Expecter) SetIndexIndexableServers(ctx any, servers any) *MockStatsRepository_SetIndexIndexableServers_Call {
 	return &MockStatsRepository_SetIndexIndexableServers_Call{Call: _e.mock.On("SetIndexIndexableServers", ctx, servers)}
 }
 
@@ -6480,7 +6651,7 @@ type MockStatsRepository_SetIndexIndexedRooms_Call struct {
 // SetIndexIndexedRooms is a helper method to define mock.On call
 //   - ctx context.Context
 //   - rooms int
-func (_e *MockStatsRepository_Expecter) SetIndexIndexedRooms(ctx interface{}, rooms interface{}) *MockStatsRepository_SetIndexIndexedRooms_Call {
+func (_e *MockStatsRepository_Expecter) SetIndexIndexedRooms(ctx any, rooms any) *MockStatsRepository_SetIndexIndexedRooms_Call {
 	return &MockStatsRepository_SetIndexIndexedRooms_Call{Call: _e.mock.On("SetIndexIndexedRooms", ctx, rooms)}
 }
 
@@ -6537,7 +6708,7 @@ type MockStatsRepository_SetIndexOnlineServers_Call struct {
 // SetIndexOnlineServers is a helper method to define mock.On call
 //   - ctx context.Context
 //   - servers int
-func (_e *MockStatsRepository_Expecter) SetIndexOnlineServers(ctx interface{}, servers interface{}) *MockStatsRepository_SetIndexOnlineServers_Call {
+func (_e *MockStatsRepository_Expecter) SetIndexOnlineServers(ctx any, servers any) *MockStatsRepository_SetIndexOnlineServers_Call {
 	return &MockStatsRepository_SetIndexOnlineServers_Call{Call: _e.mock.On("SetIndexOnlineServers", ctx, servers)}
 }
 
@@ -6594,7 +6765,7 @@ type MockStatsRepository_SetIndexParsedRooms_Call struct {
 // SetIndexParsedRooms is a helper method to define mock.On call
 //   - ctx context.Context
 //   - rooms int
-func (_e *MockStatsRepository_Expecter) SetIndexParsedRooms(ctx interface{}, rooms interface{}) *MockStatsRepository_SetIndexParsedRooms_Call {
+func (_e *MockStatsRepository_Expecter) SetIndexParsedRooms(ctx any, rooms any) *MockStatsRepository_SetIndexParsedRooms_Call {
 	return &MockStatsRepository_SetIndexParsedRooms_Call{Call: _e.mock.On("SetIndexParsedRooms", ctx, rooms)}
 }
 
@@ -6651,7 +6822,7 @@ type MockStatsRepository_SetIndexReportedRooms_Call struct {
 // SetIndexReportedRooms is a helper method to define mock.On call
 //   - ctx context.Context
 //   - rooms int
-func (_e *MockStatsRepository_Expecter) SetIndexReportedRooms(ctx interface{}, rooms interface{}) *MockStatsRepository_SetIndexReportedRooms_Call {
+func (_e *MockStatsRepository_Expecter) SetIndexReportedRooms(ctx any, rooms any) *MockStatsRepository_SetIndexReportedRooms_Call {
 	return &MockStatsRepository_SetIndexReportedRooms_Call{Call: _e.mock.On("SetIndexReportedRooms", ctx, rooms)}
 }
 
@@ -6708,7 +6879,7 @@ type MockStatsRepository_SetIndexServersSoftware_Call struct {
 // SetIndexServersSoftware is a helper method to define mock.On call
 //   - ctx context.Context
 //   - software map[string]int
-func (_e *MockStatsRepository_Expecter) SetIndexServersSoftware(ctx interface{}, software interface{}) *MockStatsRepository_SetIndexServersSoftware_Call {
+func (_e *MockStatsRepository_Expecter) SetIndexServersSoftware(ctx any, software any) *MockStatsRepository_SetIndexServersSoftware_Call {
 	return &MockStatsRepository_SetIndexServersSoftware_Call{Call: _e.mock.On("SetIndexServersSoftware", ctx, software)}
 }
 
@@ -6766,7 +6937,7 @@ type MockStatsRepository_SetIndexStatsTL_Call struct {
 //   - ctx context.Context
 //   - calculatedAt time.Time
 //   - stats *model.IndexStats
-func (_e *MockStatsRepository_Expecter) SetIndexStatsTL(ctx interface{}, calculatedAt interface{}, stats interface{}) *MockStatsRepository_SetIndexStatsTL_Call {
+func (_e *MockStatsRepository_Expecter) SetIndexStatsTL(ctx any, calculatedAt any, stats any) *MockStatsRepository_SetIndexStatsTL_Call {
 	return &MockStatsRepository_SetIndexStatsTL_Call{Call: _e.mock.On("SetIndexStatsTL", ctx, calculatedAt, stats)}
 }
 
@@ -6829,7 +7000,7 @@ type MockStatsRepository_SetStartedAt_Call struct {
 //   - ctx context.Context
 //   - process string
 //   - startedAt time.Time
-func (_e *MockStatsRepository_Expecter) SetStartedAt(ctx interface{}, process interface{}, startedAt interface{}) *MockStatsRepository_SetStartedAt_Call {
+func (_e *MockStatsRepository_Expecter) SetStartedAt(ctx any, process any, startedAt any) *MockStatsRepository_SetStartedAt_Call {
 	return &MockStatsRepository_SetStartedAt_Call{Call: _e.mock.On("SetStartedAt", ctx, process, startedAt)}
 }
 
@@ -6891,7 +7062,7 @@ type MockStatsRepository_UnbanRoom_Call struct {
 // UnbanRoom is a helper method to define mock.On call
 //   - context1 context.Context
 //   - s string
-func (_e *MockStatsRepository_Expecter) UnbanRoom(context1 interface{}, s interface{}) *MockStatsRepository_UnbanRoom_Call {
+func (_e *MockStatsRepository_Expecter) UnbanRoom(context1 any, s any) *MockStatsRepository_UnbanRoom_Call {
 	return &MockStatsRepository_UnbanRoom_Call{Call: _e.mock.On("UnbanRoom", context1, s)}
 }
 
@@ -6947,7 +7118,7 @@ type MockStatsRepository_UnreportAll_Call struct {
 
 // UnreportAll is a helper method to define mock.On call
 //   - context1 context.Context
-func (_e *MockStatsRepository_Expecter) UnreportAll(context1 interface{}) *MockStatsRepository_UnreportAll_Call {
+func (_e *MockStatsRepository_Expecter) UnreportAll(context1 any) *MockStatsRepository_UnreportAll_Call {
 	return &MockStatsRepository_UnreportAll_Call{Call: _e.mock.On("UnreportAll", context1)}
 }
 
@@ -6999,7 +7170,7 @@ type MockStatsRepository_UnreportRoom_Call struct {
 // UnreportRoom is a helper method to define mock.On call
 //   - context1 context.Context
 //   - s string
-func (_e *MockStatsRepository_Expecter) UnreportRoom(context1 interface{}, s interface{}) *MockStatsRepository_UnreportRoom_Call {
+func (_e *MockStatsRepository_Expecter) UnreportRoom(context1 any, s any) *MockStatsRepository_UnreportRoom_Call {
 	return &MockStatsRepository_UnreportRoom_Call{Call: _e.mock.On("UnreportRoom", context1, s)}
 }
 
@@ -7037,10 +7208,19 @@ func NewMockLenable(t interface {
 	mock.TestingT
 	Cleanup(func())
 }) *MockLenable {
+	if helper, ok := t.(interface{ Helper() }); ok {
+		helper.Helper()
+	}
+
 	mock := &MockLenable{}
 	mock.Mock.Test(t)
 
-	t.Cleanup(func() { mock.AssertExpectations(t) })
+	t.Cleanup(func() {
+		if helper, ok := t.(interface{ Helper() }); ok {
+			helper.Helper()
+		}
+		mock.AssertExpectations(t)
+	})
 
 	return mock
 }

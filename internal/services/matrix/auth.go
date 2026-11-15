@@ -166,6 +166,9 @@ func (s *Server) validateAuth(obj map[string]any, canonical []byte, auth *matrix
 	if !ok {
 		return fmt.Errorf("unknown key '%s'", auth.KeyID)
 	}
+	if len(key) != ed25519.PublicKeySize {
+		return fmt.Errorf("invalid key length for '%s'", auth.KeyID)
+	}
 	if !ed25519.Verify(key, canonical, auth.Signature) {
 		return fmt.Errorf("failed signatures on '%s'", auth.KeyID)
 	}

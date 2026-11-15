@@ -50,6 +50,27 @@ var SearchFieldsBoost = map[string]float64{
 	"topic_exact": 6, // 2x topic, same reason
 }
 
+const (
+	maxSearchLimit  = 1000
+	maxSearchOffset = 10_000
+)
+
+func clampSearchBounds(limit, offset int) (clampedLimit, clampedOffset int) {
+	if limit < 0 {
+		limit = 0
+	}
+	if limit > maxSearchLimit {
+		limit = maxSearchLimit
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	if offset > maxSearchOffset {
+		offset = maxSearchOffset
+	}
+	return limit, offset
+}
+
 // NewSearch creates new search service
 func NewSearch(cfg ConfigService, data searchDataRepository, repo SearchRepository, block BlocklistService, stats StatsService, plausible PlausibleService) *Search {
 	s := &Search{
@@ -70,14 +91,15 @@ func (s *Search) Search(ctx context.Context, req *http.Request, q, sortBy string
 	log := apm.Log(ctx)
 	originServer := mcontext.GetOrigin(ctx)
 	highlights := s.availableHighlights(originServer)
-	if limit == 0 {
+	if limit <= 0 {
 		limit = s.cfg.Get().Search.Defaults.Limit
 	}
 	if offset == 0 {
 		offset = s.cfg.Get().Search.Defaults.Offset
 	}
+	limit, offset = clampSearchBounds(limit, offset)
 	limit -= highlights
-	if limit == 0 {
+	if limit < 1 {
 		limit = 1
 	}
 	offset -= highlights
@@ -177,14 +199,20 @@ func (s *Search) addHighlights(originServer string, entries []*model.Entry) []*m
 }
 
 func (s *Search) getEmptyQueryResults(ctx context.Context, roomTypes []string, limit, offset int) (entries []*model.Entry, length int) {
+	limit, offset = clampSearchBounds(limit, offset)
 	total := s.stats.Get().Rooms.Indexed
-
 	if len(roomTypes) == 0 {
 		return s.biggestRoomsEntries(ctx, limit, offset), total
 	}
 
 	includeRegular, allowed := parseRoomTypeFilter(roomTypes)
-	return s.filteredBiggestRoomsEntries(ctx, includeRegular, allowed, limit, offset), total
+	entries = s.filteredBiggestRoomsEntries(ctx, includeRegular, allowed, limit, offset)
+	_, filteredTotal, err := s.repo.Search(ctx, s.newRoomTypeQuery(roomTypes), 0, 0, nil)
+	if err != nil {
+		apm.Log(ctx).Warn().Err(err).Msg("cannot count filtered rooms")
+		return entries, total
+	}
+	return entries, filteredTotal
 }
 
 func (s *Search) roomTypeMatches(roomType string, includeRegular bool, allowed map[string]struct{}) bool {

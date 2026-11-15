@@ -1,10 +1,21 @@
 package controllers
 
 import (
+	"mime"
 	"net/http"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 )
+
+func isSafeImage(contentType string) bool {
+	mediaType, _, err := mime.ParseMediaType(contentType)
+	if err != nil {
+		return false
+	}
+	mediaType = strings.ToLower(mediaType)
+	return strings.HasPrefix(mediaType, "image/") && !strings.HasPrefix(mediaType, "image/svg")
+}
 
 // @Summary		Media thumbnail
 // @Description	Serves a media thumbnail. Tries the unauthenticated client-server media API first (faster), then falls back to the authenticated federation media API. Streams the image on a hit, or 204 when there is nothing to serve. Standard Matrix thumbnail query params (width, height, method) are passed straight through.
@@ -31,13 +42,15 @@ func avatar(svc matrixService) echo.HandlerFunc {
 
 		// attempt to get unauthenticated media thumbnail first (CS API, faster)
 		avatar, contentType := svc.GetClientMediaThumbnail(c.Request().Context(), name, id, c.QueryParams())
-		if avatar != nil && contentType != "" {
+		if avatar != nil && isSafeImage(contentType) {
+			c.Response().Header().Set("X-Content-Type-Options", "nosniff")
 			return c.Stream(http.StatusOK, contentType, avatar)
 		}
 
 		// fallback to authenticated media thumbnail (S2S API, slower)
 		avatar, contentType = svc.GetMediaThumbnail(c.Request().Context(), name, id, c.QueryParams())
-		if avatar != nil && contentType != "" {
+		if avatar != nil && isSafeImage(contentType) {
+			c.Response().Header().Set("X-Content-Type-Options", "nosniff")
 			return c.Stream(http.StatusOK, contentType, avatar)
 		}
 

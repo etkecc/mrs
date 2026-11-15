@@ -10,7 +10,7 @@ import (
 
 // Blocklist service
 type Blocklist struct {
-	mu      *sync.Mutex
+	mu      sync.RWMutex
 	cfg     ConfigService
 	regexes []*regexp.Regexp
 	dynamic map[string]struct{}
@@ -19,7 +19,6 @@ type Blocklist struct {
 // NewBlocklist creates new blocklist service
 func NewBlocklist(cfg ConfigService) *Blocklist {
 	b := &Blocklist{
-		mu:      &sync.Mutex{},
 		cfg:     cfg,
 		dynamic: map[string]struct{}{},
 	}
@@ -38,6 +37,7 @@ func (b *Blocklist) initRegexes() {
 		re, err := regexp.Compile(r)
 		if err != nil {
 			apm.Log().Error().Err(err).Str("regex", r).Msg("Failed to compile blocklist.servers regex for blocklist")
+			continue
 		}
 		b.regexes = append(b.regexes, re)
 	}
@@ -45,7 +45,9 @@ func (b *Blocklist) initRegexes() {
 
 // Len of the blocklist
 func (b *Blocklist) Len() int {
-	return len(b.cfg.Get().Blocklist.Servers) + len(b.dynamic)
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	return len(b.regexes) + len(b.dynamic)
 }
 
 // Reset dynamic part of the blocklist
@@ -79,6 +81,9 @@ func (b *Blocklist) ByID(matrixID string) bool {
 
 // ByServer checks if server is present in the blocklist
 func (b *Blocklist) ByServer(server string) bool {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+
 	for _, re := range b.regexes {
 		if re.MatchString(server) {
 			apm.Log().Info().Str("server", server).Msg("server is blocked by blocklist")

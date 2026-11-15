@@ -165,6 +165,7 @@ func (d *Data) FilterServers(ctx context.Context, filter func(server *model.Matr
 			var server *model.MatrixServer
 			if err := json.Unmarshal(v, &server); err != nil {
 				log.Error().Err(err).Str("server", string(k)).Msg("cannot unmarshal server")
+				return nil
 			}
 			if filter(server) {
 				servers[string(k)] = server

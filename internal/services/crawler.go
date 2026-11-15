@@ -127,7 +127,8 @@ func (m *Crawler) AddServers(ctx context.Context, names []string, workers int) {
 		}
 	}
 
-	m.discoverServers(ctx, servers, workers)
+	offline := m.discoverServers(ctx, servers, workers)
+	m.data.MarkServersOffline(ctx, offline.Slice())
 }
 
 // AddServer by name, intended for HTTP API; returns http status code to send to the reporter

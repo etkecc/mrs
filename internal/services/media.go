@@ -3,6 +3,7 @@ package services
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -83,11 +84,19 @@ func (m *Media) Get(ctx context.Context, serverName, mediaID string, params url.
 
 	// detect content type
 	sniff := make([]byte, 512)
-	if _, err := file.Read(sniff); err != nil {
+	n, err := file.Read(sniff)
+	if err != nil && !errors.Is(err, io.EOF) {
 		log.Warn().Err(err).Msg("cannot read media file")
 		return nil, ""
 	}
-	contentType = http.DetectContentType(sniff)
+	if n == 0 {
+		return nil, ""
+	}
+	contentType = http.DetectContentType(sniff[:n])
+	if !strings.HasPrefix(contentType, "image/") {
+		log.Warn().Str("content_type", contentType).Msg("cached media is not an image")
+		return nil, ""
+	}
 
 	if _, err := file.Seek(0, 0); err != nil {
 		log.Warn().Err(err).Msg("cannot seek media file")

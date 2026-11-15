@@ -47,7 +47,9 @@ func (i *Index) RoomsBatch(ctx context.Context, roomID string, data *model.Entry
 	defer i.mu.Unlock()
 
 	if i.batch.Size() >= i.cfg.Get().Batch.Rooms {
-		return i.IndexBatch(ctx)
+		if err := i.IndexBatch(ctx); err != nil {
+			return err
+		}
 	}
 
 	return i.batch.Index(roomID, data)

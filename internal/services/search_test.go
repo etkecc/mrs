@@ -237,6 +237,25 @@ func TestGetSearchQuery_IncludesExactFields(t *testing.T) {
 	}
 }
 
+func TestClampSearchBounds(t *testing.T) {
+	cases := []struct {
+		limit, offset         int
+		wantLimit, wantOffset int
+	}{
+		{-1, -1, 0, 0},
+		{0, 0, 0, 0},
+		{20, 5, 20, 5},
+		{maxSearchLimit + 1, maxSearchOffset + 1, maxSearchLimit, maxSearchOffset},
+	}
+	for _, tc := range cases {
+		gotLimit, gotOffset := clampSearchBounds(tc.limit, tc.offset)
+		if gotLimit != tc.wantLimit || gotOffset != tc.wantOffset {
+			t.Errorf("clampSearchBounds(%d, %d) = (%d, %d), want (%d, %d)",
+				tc.limit, tc.offset, gotLimit, gotOffset, tc.wantLimit, tc.wantOffset)
+		}
+	}
+}
+
 func TestGetEmptyQueryResults_NoFilter(t *testing.T) {
 	env := newTestSearchService(t)
 	env.dataMock.EXPECT().GetBiggestRooms(mock.Anything, 5, 0).Return(biggestRoomsPage(5, 0))
@@ -254,8 +273,8 @@ func TestGetEmptyQueryResults_SpacesOnly(t *testing.T) {
 	env := newTestSearchService(t)
 	env.dataMock.EXPECT().GetBiggestRooms(mock.Anything, mock.AnythingOfType("int"), 0).Return(testRooms)
 	env.dataMock.EXPECT().GetBiggestRooms(mock.Anything, mock.AnythingOfType("int"), mock.AnythingOfType("int")).Return(nil).Maybe()
+	env.repoMock.EXPECT().Search(mock.Anything, mock.Anything, 0, 0, mock.Anything).Return(nil, 3, nil).Once()
 
-	// TODO: revisit filtered totals for empty-query searches; currently returns all indexed rooms as total.
 	entries, total := env.svc.getEmptyQueryResults(context.Background(), []string{"m.space"}, 20, 0)
 	for _, e := range entries {
 		if e.RoomType != "m.space" {
@@ -266,7 +285,7 @@ func TestGetEmptyQueryResults_SpacesOnly(t *testing.T) {
 		t.Errorf("len(entries) = %d, want 3 (spaces)", len(entries))
 	}
 	if total != 3 {
-		t.Logf("TODO: filtered spaces total still reports indexed rooms: got %d, want 3", total)
+		t.Errorf("total = %d, want 3 (spaces)", total)
 	}
 }
 
@@ -274,8 +293,8 @@ func TestGetEmptyQueryResults_RegularRoomsOnly(t *testing.T) {
 	env := newTestSearchService(t)
 	env.dataMock.EXPECT().GetBiggestRooms(mock.Anything, mock.AnythingOfType("int"), 0).Return(testRooms)
 	env.dataMock.EXPECT().GetBiggestRooms(mock.Anything, mock.AnythingOfType("int"), mock.AnythingOfType("int")).Return(nil).Maybe()
+	env.repoMock.EXPECT().Search(mock.Anything, mock.Anything, 0, 0, mock.Anything).Return(nil, 5, nil).Once()
 
-	// null in JSON -> "" in Go -> regular rooms; TODO: revisit filtered totals, currently returns all rooms as total.
 	entries, total := env.svc.getEmptyQueryResults(context.Background(), []string{""}, 20, 0)
 	for _, e := range entries {
 		if e.RoomType == "m.space" {
@@ -286,7 +305,7 @@ func TestGetEmptyQueryResults_RegularRoomsOnly(t *testing.T) {
 		t.Errorf("len(entries) = %d, want 5 (regular rooms)", len(entries))
 	}
 	if total != 5 {
-		t.Logf("TODO: filtered regular-room total still reports indexed rooms: got %d, want 5", total)
+		t.Errorf("total = %d, want 5 (regular rooms)", total)
 	}
 }
 
@@ -294,6 +313,7 @@ func TestGetEmptyQueryResults_BothTypes(t *testing.T) {
 	env := newTestSearchService(t)
 	env.dataMock.EXPECT().GetBiggestRooms(mock.Anything, mock.AnythingOfType("int"), 0).Return(testRooms)
 	env.dataMock.EXPECT().GetBiggestRooms(mock.Anything, mock.AnythingOfType("int"), mock.AnythingOfType("int")).Return(nil).Maybe()
+	env.repoMock.EXPECT().Search(mock.Anything, mock.Anything, 0, 0, mock.Anything).Return(nil, len(testRooms), nil).Once()
 
 	// [null, "m.space"] -> both regular and spaces = everything; combined filters match the entire fixture set.
 	entries, total := env.svc.getEmptyQueryResults(context.Background(), []string{"", "m.space"}, 20, 0)
@@ -311,8 +331,8 @@ func TestGetEmptyQueryResults_FilteredPagination(t *testing.T) {
 		RunAndReturn(func(_ context.Context, limit, offset int) []*model.MatrixRoom {
 			return biggestRoomsPage(limit, offset)
 		})
+	env.repoMock.EXPECT().Search(mock.Anything, mock.Anything, 0, 0, mock.Anything).Return(nil, 5, nil).Twice()
 
-	// TODO: revisit filtered totals for empty-query searches; pagination is correct, total reflects all rooms.
 	page1, total1 := env.svc.getEmptyQueryResults(context.Background(), []string{""}, 2, 0)
 	page2, total2 := env.svc.getEmptyQueryResults(context.Background(), []string{""}, 2, 2)
 
@@ -323,10 +343,10 @@ func TestGetEmptyQueryResults_FilteredPagination(t *testing.T) {
 		t.Errorf("page2 len = %d, want 2", len(page2))
 	}
 	if total1 != 5 {
-		t.Logf("TODO: page1 filtered total still reports indexed rooms: got %d, want 5", total1)
+		t.Errorf("page1 total = %d, want 5", total1)
 	}
 	if total2 != 5 {
-		t.Logf("TODO: page2 filtered total still reports indexed rooms: got %d, want 5", total2)
+		t.Errorf("page2 total = %d, want 5", total2)
 	}
 
 	for _, e1 := range page1 {
@@ -344,23 +364,23 @@ func TestGetEmptyQueryResults_FilteredPaginationExhaust(t *testing.T) {
 		RunAndReturn(func(_ context.Context, limit, offset int) []*model.MatrixRoom {
 			return biggestRoomsPage(limit, offset)
 		})
+	env.repoMock.EXPECT().Search(mock.Anything, mock.Anything, 0, 0, mock.Anything).Return(nil, 3, nil).Twice()
 
-	// TODO: revisit filtered totals for empty-query searches; currently keeps returning all indexed rooms as total.
 	entries, total := env.svc.getEmptyQueryResults(context.Background(), []string{"m.space"}, 20, 0)
 	if len(entries) != 3 {
 		t.Errorf("len(entries) = %d, want 3", len(entries))
 	}
 	if total != 3 {
-		t.Logf("TODO: filtered spaces total still reports indexed rooms: got %d, want 3", total)
+		t.Errorf("total = %d, want 3", total)
 	}
 
-	// Offset past all spaces -> empty page; total mismatch remains documented but non-fatal for now.
+	// Offset past all spaces -> empty page, same filtered total.
 	entries, total = env.svc.getEmptyQueryResults(context.Background(), []string{"m.space"}, 20, 3)
 	if len(entries) != 0 {
 		t.Errorf("len(entries) = %d, want 0 (past all spaces)", len(entries))
 	}
 	if total != 3 {
-		t.Logf("TODO: exhausted filtered total still reports indexed rooms: got %d, want 3", total)
+		t.Errorf("total = %d, want 3 (exhausted)", total)
 	}
 }
 
@@ -425,8 +445,8 @@ func TestSearch_EmptyQueryWithRoomTypes(t *testing.T) {
 		RunAndReturn(func(_ context.Context, limit, offset int) []*model.MatrixRoom {
 			return biggestRoomsPage(limit, offset)
 		})
+	env.repoMock.EXPECT().Search(mock.Anything, mock.Anything, 0, 0, mock.Anything).Return(nil, 3, nil).Once()
 
-	// TODO: Revisit filtered totals for empty-query room-type searches at the service level.
 	entries, total, err := env.svc.Search(context.Background(), newReq(), "", "", []string{"m.space"}, 20, 0)
 	if err != nil {
 		t.Fatal("error:", err)
@@ -440,7 +460,7 @@ func TestSearch_EmptyQueryWithRoomTypes(t *testing.T) {
 		t.Errorf("len = %d, want 3", len(entries))
 	}
 	if total != 3 {
-		t.Logf("TODO: service-level filtered total still reports indexed rooms: got %d, want 3", total)
+		t.Errorf("total = %d, want 3", total)
 	}
 }
 

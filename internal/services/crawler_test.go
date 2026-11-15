@@ -42,6 +42,25 @@ func TestPhaseGuards_RejectReentry(t *testing.T) {
 	}
 }
 
+// AddServers persists offline names so the next bulk call does not re-dial them.
+func TestAddServers_MarksOffline(t *testing.T) {
+	cfg := NewMockConfigService(t)
+	fed := NewMockFederationService(t)
+	v := NewMockValidatorService(t)
+	block := NewMockBlocklistService(t)
+	media := NewMockMediaService(t)
+	data := NewMockDataRepository(t)
+
+	ctx := context.Background()
+	data.EXPECT().HasServer(ctx, "dead.example").Return(false).Once()
+	block.EXPECT().ByServer("dead.example").Return(false).Once()
+	v.EXPECT().IsOnline(ctx, "dead.example").Return("", "", "", false).Once()
+	data.EXPECT().MarkServersOffline(ctx, []string{"dead.example"}).Once()
+
+	m := NewCrawler(cfg, fed, v, block, media, data, nil)
+	m.AddServers(ctx, []string{"dead.example"}, 1)
+}
+
 // harvested servers persist for next cycle instead of dialing inline; discovery mocks stay un-wired.
 func TestParseRooms_DefersHarvestNotDiscovers(t *testing.T) {
 	cfg := NewMockConfigService(t)

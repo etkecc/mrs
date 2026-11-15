@@ -29,9 +29,10 @@ func New[T any](size int, flushfunc func(ctx context.Context, items []T)) *Batch
 func (b *Batch[T]) Add(ctx context.Context, item T) {
 	b.mu.Lock()
 	b.data = append(b.data, item)
+	full := len(b.data) >= b.size
 	b.mu.Unlock()
 
-	if len(b.data) >= b.size {
+	if full {
 		b.Flush(ctx)
 	}
 }

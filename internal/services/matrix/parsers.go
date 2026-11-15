@@ -17,6 +17,7 @@ import (
 	"github.com/etkecc/go-apm"
 	"github.com/etkecc/go-kit/httpclient"
 	"github.com/goccy/go-json"
+	"github.com/matrix-org/gomatrixserverlib"
 
 	"github.com/etkecc/mrs/internal/model"
 	"github.com/etkecc/mrs/internal/utils"
@@ -50,6 +51,20 @@ func (s *Server) parseErrorResp(status string, body []byte) *model.MatrixError {
 	return merr
 }
 
+// maxWellKnownBytes caps hostile well-known responses before JSON decoding.
+const maxWellKnownBytes = 64 << 10
+
+func readLimitedBody(body io.Reader, limit int64) ([]byte, error) {
+	datab, err := io.ReadAll(io.LimitReader(body, limit+1))
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(datab)) > limit {
+		return nil, fmt.Errorf("response exceeds %d bytes", limit)
+	}
+	return datab, nil
+}
+
 // parseClientWellKnown returns URL of the Matrix CS API server
 func (s *Server) parseClientWellKnown(ctx context.Context, serverName string) (string, error) {
 	resp, err := utils.Get(ctx, "https://"+serverName+"/.well-known/matrix/client")
@@ -61,7 +76,7 @@ func (s *Server) parseClientWellKnown(ctx context.Context, serverName string) (s
 		return "", fmt.Errorf("no /.well-known/matrix/client")
 	}
 
-	datab, err := io.ReadAll(resp.Body)
+	datab, err := readLimitedBody(resp.Body, maxWellKnownBytes)
 	if err != nil {
 		return "", err
 	}
@@ -99,7 +114,7 @@ func (s *Server) parseServerWellKnown(ctx context.Context, serverName string) (s
 		return "", fmt.Errorf("no /.well-known/matrix/server")
 	}
 
-	datab, err := io.ReadAll(resp.Body)
+	datab, err := readLimitedBody(resp.Body, maxWellKnownBytes)
 	if err != nil {
 		log.Warn().Err(err).Msg("failed to read /.well-known/matrix/server")
 		return "", err
@@ -279,8 +294,13 @@ func (s *Server) lookupKeys(ctx context.Context, serverName string, discover boo
 		return nil, err
 	}
 	defer resp.Body.Close()
-	datab, err := io.ReadAll(resp.Body)
+	datab, err := io.ReadAll(io.LimitReader(resp.Body, maxServerKeysBytes+1))
 	if err != nil {
+		log.Warn().Err(err).Msg("failed to read keys")
+		return nil, err
+	}
+	if len(datab) > maxServerKeysBytes {
+		err = fmt.Errorf("server keys response exceeds %d bytes", maxServerKeysBytes)
 		log.Warn().Err(err).Msg("failed to read keys")
 		return nil, err
 	}
@@ -297,7 +317,80 @@ func (s *Server) lookupKeys(ctx context.Context, serverName string, discover boo
 	if keysResp == nil {
 		return nil, fmt.Errorf("empty server keys response")
 	}
+	if err := verifyServerKeys(ctx, datab, keysResp); err != nil {
+		log.Warn().Err(err).Msg("server keys verification failed")
+		return nil, err
+	}
 	return keysResp, nil
+}
+
+// Key responses are attacker-controlled; these caps bound parsing and signature work.
+const (
+	maxServerKeysBytes      = 64 << 10
+	maxServerKeysSignatures = 8
+	maxServerKeysVerifyKeys = 64
+)
+
+// verifyServerKeys checks that the response is signed by the server name it claims.
+func verifyServerKeys(ctx context.Context, raw []byte, keysResp *model.ServerKeys) error {
+	if keysResp.ServerName == "" {
+		return errors.New("keys response has no server_name")
+	}
+	if len(raw) > maxServerKeysBytes {
+		return fmt.Errorf("keys response exceeds %d bytes", maxServerKeysBytes)
+	}
+	signatures := keysResp.Signatures[keysResp.ServerName]
+	if len(signatures) == 0 {
+		return fmt.Errorf("keys response is unsigned by %q", keysResp.ServerName)
+	}
+	if len(signatures) > maxServerKeysSignatures {
+		return fmt.Errorf("keys response has %d signatures, max %d", len(signatures), maxServerKeysSignatures)
+	}
+	verifyKeys, err := decodeServerVerifyKeys(keysResp.VerifyKeys)
+	if err != nil {
+		return err
+	}
+	var verifyErr error
+	for keyID := range signatures {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		publicKey, ok := verifyKeys[keyID]
+		if !ok {
+			continue
+		}
+		if err := gomatrixserverlib.VerifyJSON(keysResp.ServerName, gomatrixserverlib.KeyID(keyID), publicKey, raw); err != nil {
+			verifyErr = err
+			continue
+		}
+		return nil
+	}
+	if verifyErr != nil {
+		return fmt.Errorf("no valid signature from %q: %w", keysResp.ServerName, verifyErr)
+	}
+	return fmt.Errorf("keys response has no verifiable signature from %q", keysResp.ServerName)
+}
+
+// decodeServerVerifyKeys validates every published key before any signature check.
+func decodeServerVerifyKeys(verifyKeys map[string]map[string]string) (map[string]ed25519.PublicKey, error) {
+	if len(verifyKeys) > maxServerKeysVerifyKeys {
+		return nil, fmt.Errorf("keys response has %d verify keys, max %d", len(verifyKeys), maxServerKeysVerifyKeys)
+	}
+	keys := make(map[string]ed25519.PublicKey, len(verifyKeys))
+	for keyID, keyData := range verifyKeys {
+		if !strings.HasPrefix(keyID, "ed25519:") {
+			return nil, fmt.Errorf("verify key %q has unsupported algorithm", keyID)
+		}
+		publicKey, err := base64.RawStdEncoding.DecodeString(keyData["key"])
+		if err != nil {
+			return nil, fmt.Errorf("cannot decode verify key %q: %w", keyID, err)
+		}
+		if len(publicKey) != ed25519.PublicKeySize {
+			return nil, fmt.Errorf("verify key %q has invalid length", keyID)
+		}
+		keys[keyID] = publicKey
+	}
+	return keys, nil
 }
 
 // notaryLookupKeys returns signed serverName's keys for notary use
@@ -335,25 +428,29 @@ func (s *Server) notaryLookupKeys(ctx context.Context, serverName string, validU
 	}
 
 	if !isCached {
-		// TODO: validate signatures
 		s.keysCache.Add(serverName, *keysResp)
 	}
 	return keyPayload
+}
+
+// decodePublicKeys returns only well-formed ed25519 keys.
+func decodePublicKeys(verifyKeys map[string]map[string]string) map[string]ed25519.PublicKey {
+	keys := make(map[string]ed25519.PublicKey, len(verifyKeys))
+	for keyID, keyData := range verifyKeys {
+		publicKey, err := base64.RawStdEncoding.DecodeString(keyData["key"])
+		if err != nil || len(publicKey) != ed25519.PublicKeySize {
+			continue
+		}
+		keys[keyID] = publicKey
+	}
+	return keys
 }
 
 // queryKeys returns serverName's keys
 func (s *Server) queryKeys(ctx context.Context, serverName string) map[string]ed25519.PublicKey {
 	cached, ok := s.keysCache.Get(serverName)
 	if ok {
-		keys := map[string]ed25519.PublicKey{}
-		for id, data := range cached.VerifyKeys {
-			pub, err := base64.RawStdEncoding.DecodeString(data["key"])
-			if err != nil {
-				continue
-			}
-			keys[id] = pub
-		}
-		return keys
+		return decodePublicKeys(cached.VerifyKeys)
 	}
 	log := apm.Log(ctx)
 	resp, err := s.lookupKeys(ctx, serverName, true)
@@ -368,17 +465,7 @@ func (s *Server) queryKeys(ctx context.Context, serverName string) map[string]ed
 	if resp.ValidUntilTS <= time.Now().UnixMilli() {
 		log.Warn().Msg("server keys are expired")
 	}
-	// TODO: validate signatures
 	s.keysCache.Add(serverName, *resp)
 
-	keys := map[string]ed25519.PublicKey{}
-	for id, data := range resp.VerifyKeys {
-		pub, err := base64.RawStdEncoding.DecodeString(data["key"])
-		if err != nil {
-			log.Warn().Err(err).Msg("failed to decode server key")
-			continue
-		}
-		keys[id] = pub
-	}
-	return keys
+	return decodePublicKeys(resp.VerifyKeys)
 }

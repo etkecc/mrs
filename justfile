@@ -110,7 +110,7 @@ lintfix: && swaggerfix
 
 # generate mocks
 mocks:
-    @mockery --all --inpackage --testonly --exclude vendor
+    @mockery
 
 # generate swagger docks
 swagger:

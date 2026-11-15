@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"go.etcd.io/bbolt"
+
 	"github.com/etkecc/mrs/internal/model"
 )
 
@@ -103,5 +105,34 @@ func TestMarkServersOffline_FreshStubGetsOnlineAt(t *testing.T) {
 	}
 	if srv.CheckedAt.IsZero() {
 		t.Error("fresh offline stub has zero CheckedAt")
+	}
+}
+
+// corrupt values are logged and skipped; the filter never sees them.
+func TestFilterServers_SkipsCorruptRecord(t *testing.T) {
+	d, err := New(filepath.Join(t.TempDir(), "test.db"))
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	defer d.Close()
+
+	ctx := t.Context()
+	if err := d.AddServer(ctx, &model.MatrixServer{Name: "good.example", Online: true}); err != nil {
+		t.Fatalf("AddServer: %v", err)
+	}
+	if err := d.db.Update(func(tx *bbolt.Tx) error {
+		return tx.Bucket(serversInfoBucket).Put([]byte("broken.example"), []byte("{"))
+	}); err != nil {
+		t.Fatalf("seed corrupt server: %v", err)
+	}
+
+	servers := d.FilterServers(ctx, func(server *model.MatrixServer) bool {
+		return server.Online
+	})
+	if len(servers) != 1 {
+		t.Fatalf("expected 1 server, got %d: %v", len(servers), servers)
+	}
+	if servers["good.example"] == nil {
+		t.Fatalf("good server missing: %v", servers)
 	}
 }

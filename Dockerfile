@@ -9,6 +9,6 @@ FROM scratch
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /app/mrs /bin/mrs
 
-USER app
+USER 10001:10001
 
 ENTRYPOINT ["/bin/mrs"]

@@ -16,7 +16,7 @@ import (
 	"github.com/etkecc/mrs/internal/version"
 )
 
-const maxThumbnailBytes = 1 << 20 // 1 MiB cap on a buffered fallback body: thumbnails are small, so a hostile oversized response can't balloon memory
+const maxThumbnailBytes = 1 << 20 // 1 MiB cap on buffered avatar bodies; thumbnails are small
 
 // GetMediaThumbnail is /_matrix/federation/v1/media/thumbnail/{mediaId}
 func (s *Server) GetMediaThumbnail(ctx context.Context, serverName, mediaID string, params url.Values) (content io.Reader, contentType string) {
@@ -65,7 +65,7 @@ func (s *Server) GetMediaThumbnail(ctx context.Context, serverName, mediaID stri
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body) //nolint:errcheck // intended
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, maxThumbnailBytes)) //nolint:errcheck // intended
 		resp.Body.Close()
 		log.Warn().Str("server", serverName).Str("mediaID", mediaID).Int("status", resp.StatusCode).Str("body", string(body)).Msg("cannot get media thumbnail")
 		return nil, ""
@@ -75,6 +75,9 @@ func (s *Server) GetMediaThumbnail(ctx context.Context, serverName, mediaID stri
 		return nil, ""
 	}
 	newReader, contents := s.readerBytes(reader)
+	if newReader == nil {
+		return nil, ""
+	}
 	s.media.Add(ctx, serverName, mediaID, params, contents)
 	return newReader, contentType
 }
@@ -125,8 +128,8 @@ func (s *Server) GetClientMediaThumbnail(ctx context.Context, serverName, mediaI
 
 // readerBytes reads the contents of a reader and returns a new reader and the contents
 func (s *Server) readerBytes(reader io.Reader) (newReader io.Reader, contents []byte) {
-	contents, err := io.ReadAll(reader)
-	if err != nil {
+	contents, err := io.ReadAll(io.LimitReader(reader, maxThumbnailBytes+1))
+	if err != nil || len(contents) > maxThumbnailBytes {
 		return nil, nil
 	}
 	newReader = bytes.NewReader(contents)

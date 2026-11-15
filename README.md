@@ -98,7 +98,7 @@ MRS allows you to configure different room parameters by adding special configur
 
 ### [MSC1929](https://github.com/matrix-org/matrix-spec-proposals/pull/1929) integration
 
-MRS integrates [MSC1929](https://github.com/matrix-org/matrix-spec-proposals/pull/1929) natively, in order to help homeserver administrators to combat unlawful actions. See details on [this page](./msc1929.md).
+MRS integrates [MSC1929](https://github.com/matrix-org/matrix-spec-proposals/pull/1929) natively, in order to help homeserver administrators to combat unlawful actions. See details on [this page](./docs/msc1929.md).
 
 ### API
 

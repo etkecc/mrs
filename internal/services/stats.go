@@ -10,6 +10,8 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/goccy/go-json"
@@ -49,8 +51,9 @@ type Stats struct {
 	data       StatsRepository
 	block      Lenable
 	index      Lenable
+	mu         sync.RWMutex
 	stats      *model.IndexStats
-	collecting bool
+	collecting atomic.Bool
 }
 
 // softwareNameRE to normalize software names
@@ -68,20 +71,33 @@ func NewStats(cfg ConfigService, data StatsRepository, index, blocklist Lenable)
 //
 //nolint:gosec // no integer overflow here, as the counters are too low
 func (s *Stats) setMetrics() {
-	metrics.ServersOnline.Set(uint64(s.stats.Servers.Online))
-	metrics.ServersIndexable.Set(uint64(s.stats.Servers.Indexable))
-	metrics.RoomsParsed.Set(uint64(s.stats.Rooms.Parsed))
-	metrics.RoomsIndexed.Set(uint64(s.stats.Rooms.Indexed))
+	stats := s.Get()
+	if stats == nil {
+		return
+	}
+	metrics.ServersOnline.Set(uint64(stats.Servers.Online))
+	metrics.ServersIndexable.Set(uint64(stats.Servers.Indexable))
+	metrics.RoomsParsed.Set(uint64(stats.Rooms.Parsed))
+	metrics.RoomsIndexed.Set(uint64(stats.Rooms.Indexed))
 }
 
 // reload saved stats. Useful when you need to get updated timestamps, but don't want to parse whole db
 func (s *Stats) reload(ctx context.Context) {
-	s.stats = s.data.GetIndexStats(ctx)
+	s.setStats(s.data.GetIndexStats(ctx))
 	s.setMetrics()
+}
+
+// setStats replaces the cached stats snapshot under the lock.
+func (s *Stats) setStats(stats *model.IndexStats) {
+	s.mu.Lock()
+	s.stats = stats
+	s.mu.Unlock()
 }
 
 // Get stats
 func (s *Stats) Get() *model.IndexStats {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	return s.stats
 }
 
@@ -99,7 +115,7 @@ func (s *Stats) SetStartedAt(ctx context.Context, process string, startedAt time
 	if err := s.data.SetStartedAt(ctx, process, startedAt); err != nil {
 		apm.Log(ctx).Error().Err(err).Str("process", process).Msg("cannot set started_at")
 	}
-	s.stats = s.data.GetIndexStats(ctx)
+	s.setStats(s.data.GetIndexStats(ctx))
 }
 
 // SetFinishedAt of the process
@@ -107,7 +123,7 @@ func (s *Stats) SetFinishedAt(ctx context.Context, process string, finishedAt ti
 	if err := s.data.SetFinishedAt(ctx, process, finishedAt); err != nil {
 		apm.Log(ctx).Error().Err(err).Str("process", process).Msg("cannot set finished_at")
 	}
-	s.stats = s.data.GetIndexStats(ctx)
+	s.setStats(s.data.GetIndexStats(ctx))
 }
 
 // CollectServers stats only
@@ -171,12 +187,11 @@ func (s *Stats) CollectServers(ctx context.Context, reload bool) {
 func (s *Stats) Collect(ctx context.Context) {
 	log := apm.Log(ctx)
 
-	if s.collecting {
+	if !s.collecting.CompareAndSwap(false, true) {
 		log.Info().Msg("stats collection already in progress, ignoring request")
 		return
 	}
-	s.collecting = true
-	defer func() { s.collecting = false }()
+	defer s.collecting.Store(false)
 
 	s.CollectServers(ctx, false)
 
@@ -207,7 +222,7 @@ func (s *Stats) Collect(ctx context.Context) {
 	}
 
 	s.reload(ctx)
-	if err := s.data.SetIndexStatsTL(ctx, time.Now().UTC(), s.stats); err != nil {
+	if err := s.data.SetIndexStatsTL(ctx, time.Now().UTC(), s.Get()); err != nil {
 		log.Error().Err(err).Msg("cannot set stats timeline")
 	}
 	s.sendWebhook(ctx)
@@ -254,16 +269,20 @@ func (s *Stats) sendWebhook(ctx context.Context) {
 }
 
 func (s *Stats) getWebhookText() string {
+	stats := s.Get()
+	if stats == nil {
+		return ""
+	}
 	var text strings.Builder
 	text.WriteString("**stats have been collected**\n\n")
 
-	fmt.Fprintf(&text, "* `%d` servers online (`%d` blocked)\n", s.stats.Servers.Online, s.stats.Servers.Blocked)
-	fmt.Fprintf(&text, "* `%d` rooms (`%d` blocked, `%d` reported)\n", s.stats.Rooms.Indexed, s.stats.Rooms.Banned, s.stats.Rooms.Reported)
+	fmt.Fprintf(&text, "* `%d` servers online (`%d` blocked)\n", stats.Servers.Online, stats.Servers.Blocked)
+	fmt.Fprintf(&text, "* `%d` rooms (`%d` blocked, `%d` reported)\n", stats.Rooms.Indexed, stats.Rooms.Banned, stats.Rooms.Reported)
 	text.WriteString("\n---\n\n")
 
-	discovery := s.stats.Discovery.FinishedAt.Sub(s.stats.Discovery.StartedAt)
-	parsing := s.stats.Parsing.FinishedAt.Sub(s.stats.Parsing.StartedAt)
-	indexing := s.stats.Indexing.FinishedAt.Sub(s.stats.Indexing.StartedAt)
+	discovery := stats.Discovery.FinishedAt.Sub(stats.Discovery.StartedAt)
+	parsing := stats.Parsing.FinishedAt.Sub(stats.Parsing.StartedAt)
+	indexing := stats.Indexing.FinishedAt.Sub(stats.Indexing.StartedAt)
 	total := discovery + parsing + indexing
 
 	fmt.Fprintf(&text, "* `%s` took discovery process\n", discovery.String())

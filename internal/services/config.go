@@ -46,6 +46,8 @@ func NewConfig(path string) (*Config, error) {
 
 // Get config
 func (c *Config) Get() *model.Config {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	return c.cfg
 }
 
