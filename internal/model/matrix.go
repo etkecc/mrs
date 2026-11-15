@@ -68,7 +68,7 @@ type MatrixRoom struct {
 	WorldReadable bool   `json:"world_readable"`
 
 	// Parsed (custom) fields
-	Server    string    `json:"server"` // Server of origin
+	Server    string    `json:"server"` // room server: ID server, alias server, else directory server
 	Servers   []string  `json:"servers"`
 	Email     string    `json:"email"`
 	Language  string    `json:"language"`
@@ -85,7 +85,7 @@ func (r *MatrixRoom) Entry() *Entry {
 		Name:          r.Name,
 		Topic:         r.Topic,
 		Avatar:        r.Avatar,
-		Server:        r.Server,
+		Server:        r.GetOwnServer(),
 		Servers:       strings.Join(r.Servers, ","),
 		Members:       r.Members,
 		Language:      r.Language,
@@ -158,16 +158,17 @@ func (r *MatrixRoom) Parse(detector lingua.LanguageDetector, media mediaURLServi
 
 // GetOwnServer returns the most relevant server for the room
 func (r *MatrixRoom) GetOwnServer() string {
-	if r.Server != "" && !strings.Contains(r.Server, ",") {
-		return r.Server
-	}
 	if server := utils.ServerFrom(r.ID); server != "" {
 		return server
 	}
 	if server := utils.ServerFrom(r.Alias); server != "" {
 		return server
 	}
-	return ""
+	// legacy rows stored a comma-separated list of servers in this field
+	if strings.Contains(r.Server, ",") {
+		return ""
+	}
+	return r.Server
 }
 
 // Servers returns all servers from the room object

@@ -45,7 +45,7 @@ type RoomDirectoryRoom struct {
 
 // Convert room directory's room to matrix room
 func (r *RoomDirectoryRoom) Convert(originServerName string) *MatrixRoom {
-	return &MatrixRoom{
+	room := &MatrixRoom{
 		ID:            r.ID,
 		Alias:         r.Alias,
 		Name:          r.Name,
@@ -56,6 +56,8 @@ func (r *RoomDirectoryRoom) Convert(originServerName string) *MatrixRoom {
 		JoinRule:      r.JoinRule,
 		GuestJoinable: r.GuestJoinable,
 		WorldReadable: r.WorldReadable,
-		Server:        originServerName,
+		Server:        originServerName, // fallback when the room knows neither ID nor alias server
 	}
+	room.Server = room.GetOwnServer()
+	return room
 }

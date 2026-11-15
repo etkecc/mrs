@@ -70,6 +70,8 @@ func catalogRoom(dataSvc dataService, matrixSvc matrixService, plausible plausib
 			plausible.Track(ctx, evt)
 		}(c.Request().Context(), evt)
 
+		room.Server = room.GetOwnServer() // stored rows may predate the ID-first precedence
+
 		return c.JSON(http.StatusOK, room)
 	}
 }

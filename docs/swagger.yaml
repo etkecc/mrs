@@ -37,7 +37,7 @@ definitions:
       room_type:
         type: string
       server:
-        description: server of origin
+        description: 'room server: ID server, alias server, else directory server'
         type: string
       servers:
         description: comma-separated list of servers

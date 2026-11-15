@@ -1522,7 +1522,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "server": {
-                    "description": "server of origin",
+                    "description": "room server: ID server, alias server, else directory server",
                     "type": "string"
                 },
                 "servers": {
