@@ -32,10 +32,7 @@ func isCallerCtxErr(err error) bool {
 	return errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded)
 }
 
-// defaultRetryIf is the static classifier: retry on a per-attempt timeout, a retryable
-// status, a timeout net.Error, or a refused/reset connection. Caller-context death and
-// everything else (including any 4xx other than 429) is terminal. It sees only the error,
-// never the request method, so the non-idempotent gate lives in the transport, not here.
+// defaultRetryIf: retry timeouts, retryable statuses, reset conns; else terminal. Method-blind; gated in transport.
 func defaultRetryIf(err error) bool {
 	if err == nil {
 		return false

@@ -7,23 +7,13 @@ import (
 	"time"
 )
 
-// schedule is a parsed 5-field cron spec. Each field is a lookup table indexed by
-// the time value (minute[t.Minute()], month[int(t.Month())], ...), so match is a set
-// of index reads. domStar and dowStar record whether the day-of-month and day-of-week
-// fields were "*", which selects between the Vixie union and intersection in match.
+// schedule is a parsed 5-field cron spec; a lookup table per field, domStar/dowStar select union vs intersection.
 type schedule struct {
 	minute, hour, dom, month, dow []bool
 	domStar, dowStar              bool
 }
 
-// match reports whether the schedule fires at t. t must already be in the target
-// location; the caller (runDue) passes now.In(c.loc) so field extraction is zone-correct.
-//
-// Day handling follows Vixie cron: when both day-of-month and day-of-week are restricted
-// (neither is "*"), a day matches if it satisfies EITHER field; when at least one is "*",
-// both must match. "1 0 1 * 1" therefore fires on the 1st of every month AND every Monday,
-// not only when the 1st is a Monday. Collapsing domStar/dowStar into a plain AND is the
-// silent-wrong bug this split exists to prevent.
+// match reports whether t fires; per Vixie cron, when dom and dow are both restricted, either matching is enough.
 func (s *schedule) match(t time.Time) bool {
 	if !s.minute[t.Minute()] || !s.hour[t.Hour()] || !s.month[int(t.Month())] {
 		return false
@@ -34,10 +24,7 @@ func (s *schedule) match(t time.Time) bool {
 	return s.dom[t.Day()] && s.dow[int(t.Weekday())]
 }
 
-// parse turns a standard 5-field cron spec ("min hour dom month dow") into a schedule.
-// Fields are numeric only (no JAN/MON names). Day-of-week accepts 0-7 with both 0 and 7
-// meaning Sunday. Calendar-impossible dates (e.g. "0 0 30 2 *") parse without error and
-// simply never fire, matching standard cron.
+// parse turns a 5-field numeric cron spec into a schedule; dow 0 and 7 both mean Sunday; impossible dates never fire.
 func parse(spec string) (*schedule, error) {
 	fields := strings.Fields(spec)
 	if len(fields) != 5 {
@@ -77,8 +64,7 @@ func parse(spec string) (*schedule, error) {
 	}, nil
 }
 
-// parseField parses one comma-separated cron field into a lookup table of length maxVal+1.
-// name identifies the field in error messages ("day-of-month field value 40 out of range").
+// parseField parses one comma-separated field into a lookup table of length maxVal+1, using name in error messages.
 func parseField(spec string, minVal, maxVal int, name string) ([]bool, error) {
 	set := make([]bool, maxVal+1)
 	for term := range strings.SplitSeq(spec, ",") {
@@ -89,9 +75,7 @@ func parseField(spec string, minVal, maxVal int, name string) ([]bool, error) {
 	return set, nil
 }
 
-// parseTerm sets the bits for a single field term: "*", "a", "a-b", "*/N", "a/N" (= a-max/N),
-// or "a-b/N". A missing step defaults to 1. Step must be a positive integer; "*/0" is rejected
-// (the infinite-loop trap), as are out-of-range values and reversed ranges.
+// parseTerm sets bits for one term (*, a, a-b, */N, a/N, a-b/N); missing step defaults to 1, step<=0 is rejected.
 func parseTerm(term string, minVal, maxVal int, name string, set []bool) error {
 	rangePart, stepStr, hasStep := strings.Cut(term, "/")
 	step := 1
@@ -112,8 +96,7 @@ func parseTerm(term string, minVal, maxVal int, name string, set []bool) error {
 	return nil
 }
 
-// parseRange resolves the low and high bounds of a term's range part. hasStep is true when
-// the term carried a "/N", which turns a bare value "a" into the open range "a-max".
+// parseRange resolves a term's low/high bounds; hasStep true turns a bare value into the open range a-max.
 func parseRange(part string, minVal, maxVal int, name string, hasStep bool) (lo, hi int, err error) {
 	if part == "*" {
 		return minVal, maxVal, nil

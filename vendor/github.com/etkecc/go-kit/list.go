@@ -5,18 +5,13 @@ import (
 	"sync"
 )
 
-// List is a concurrency-safe set that remembers nothing about insertion order and hands you its
-// contents back sorted. T must be cmp.Ordered so Slice can sort; V is a phantom type parameter that
-// only exists so AddMapKeys can take a map[T]V. Every method is safe to call from any goroutine. The
-// zero value is not usable, build one with NewList or NewListFrom.
+// List is a concurrency-safe, order-forgetting set returned sorted; zero value unusable, build via NewList/NewListFrom.
 type List[T cmp.Ordered, V any] struct {
 	mu   *sync.Mutex
 	data map[T]struct{}
 }
 
-// NewList creates and returns a new empty List.
-// Both type parameters T and V must be explicitly provided.
-// Use NewListFrom when starting a List from an existing slice.
+// NewList creates an empty List; both type parameters must be explicit. Use NewListFrom to start from a slice.
 func NewList[T cmp.Ordered, V any]() *List[T, V] {
 	return &List[T, V]{
 		mu:   &sync.Mutex{},
@@ -24,34 +19,28 @@ func NewList[T cmp.Ordered, V any]() *List[T, V] {
 	}
 }
 
-// NewListFrom creates a new List and populates it from the provided slice.
-// The V type parameter is fixed to T (since no map is involved).
-// The returned List owns a deduplicated copy of the slice contents;
-// duplicate elements in the input slice are included only once in the List.
+// NewListFrom creates a List from slice, owning a deduplicated copy; V is fixed to T since no map is involved.
 func NewListFrom[T cmp.Ordered](slice []T) *List[T, T] {
 	list := NewList[T, T]()
 	list.AddSlice(slice)
 	return list
 }
 
-// AddMapKeys adds all keys from the provided map to the List.
-// Duplicate keys are ignored due to the List's uniqueness guarantee.
+// AddMapKeys adds all keys from datamap to the List; duplicates are ignored.
 func (l *List[T, V]) AddMapKeys(datamap map[T]V) {
 	for k := range datamap {
 		l.Add(k)
 	}
 }
 
-// AddSlice adds all elements from the provided slice to the List.
-// Duplicate elements are ignored due to the List's uniqueness guarantee.
+// AddSlice adds all elements from dataslice to the List; duplicates are ignored.
 func (l *List[T, V]) AddSlice(dataslice []T) {
 	for _, k := range dataslice {
 		l.Add(k)
 	}
 }
 
-// Add inserts an item into the List.
-// If the item already exists, Add is a no-op and the item is not duplicated.
+// Add inserts item into the List; a no-op if it already exists.
 func (l *List[T, V]) Add(item T) {
 	l.mu.Lock()
 	if _, ok := l.data[item]; !ok {
@@ -60,33 +49,30 @@ func (l *List[T, V]) Add(item T) {
 	l.mu.Unlock()
 }
 
-// RemoveSlice removes all elements from the provided slice from the List.
-// If an element does not exist, it is ignored.
+// RemoveSlice removes all elements of dataslice from the List; missing elements are ignored.
 func (l *List[T, V]) RemoveSlice(dataslice []T) {
 	for _, k := range dataslice {
 		l.Remove(k)
 	}
 }
 
-// Remove deletes an item from the List.
-// If the item does not exist, Remove is a no-op.
+// Remove deletes item from the List; a no-op if it doesn't exist.
 func (l *List[T, V]) Remove(item T) {
 	l.mu.Lock()
 	delete(l.data, item)
 	l.mu.Unlock()
 }
 
-// Len returns the number of items in the List.
-// Note: this method does not acquire the mutex, it reads the map length directly.
-// While Go map length reads are atomic for reading purposes, the returned value may be stale
-// if called concurrently with Add or Remove operations.
+// Len returns the item count.
 func (l *List[T, V]) Len() int {
+	l.mu.Lock()
+	defer l.mu.Unlock()
 	return len(l.data)
 }
 
-// Slice returns the contents of the List as a sorted slice in ascending order.
-// The returned slice is a fresh allocation each time and is not a view into internal state.
-// The sorting is provided by the underlying MapKeys function.
+// Slice returns the List's contents as a fresh, ascending-sorted slice, via MapKeys.
 func (l *List[T, V]) Slice() []T {
+	l.mu.Lock()
+	defer l.mu.Unlock()
 	return MapKeys(l.data)
 }

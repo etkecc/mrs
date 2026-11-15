@@ -1,9 +1,4 @@
-// Package template is a thin wrapper over html/template for the common case: parse a string, run
-// it, get a string back. Three entry points for three tempers, Execute hands you the error, May
-// swallows it and falls back to the input, Must panics.
-//
-// It's html/template, not text/template, so output is HTML-escaped by default and dropping user
-// data into a page won't quietly hand you an XSS hole.
+// Package template wraps html/template; output is HTML-escaped by default, unlike text/template.
 package template
 
 import (
@@ -11,9 +6,7 @@ import (
 	"html/template"
 )
 
-// Execute parses tplString and runs it with vars as the dot ("."). Returns the rendered string,
-// or "" and an error when parsing or execution fails: a malformed template, or a reach for a
-// field that isn't there.
+// Execute parses and runs tplString with vars as the dot ("."), returning "" and an error on failure.
 func Execute(tplString string, vars any) (string, error) {
 	var result bytes.Buffer
 	tpl, err := template.New("template").Parse(tplString)
@@ -27,9 +20,7 @@ func Execute(tplString string, vars any) (string, error) {
 	return result.String(), nil
 }
 
-// May runs the template and falls back to the original tplString when execution fails OR renders
-// empty. Handy over config values, where a plain non-template string (or one that renders to
-// nothing) should pass through untouched. The swallowed error is the whole point here, not a slip.
+// May runs the template, falling back to tplString when execution fails or renders empty; errors are swallowed.
 func May(tplString string, vars any) string {
 	result, _ := Execute(tplString, vars) //nolint:errcheck // that's the point
 	if result == "" {
@@ -38,8 +29,7 @@ func May(tplString string, vars any) string {
 	return result
 }
 
-// Must runs the template and panics if anything goes wrong. Only for compile-time-constant
-// templates you know are good, never user-supplied ones: a bad template takes the process with it.
+// Must runs the template and panics on any error; use only for known-good templates, never user-supplied ones.
 func Must(tplString string, vars any) string {
 	result, err := Execute(tplString, vars)
 	if err != nil {

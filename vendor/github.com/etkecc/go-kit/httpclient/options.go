@@ -12,21 +12,17 @@ import (
 
 // Exported defaults, safe to reference when overriding one knob relative to another.
 const (
-	// DefaultPoolSize is the connection-pool size NewSingleHost applies to all three pool
-	// dimensions, overriding the stdlib default of 2 idle connections per host.
+	// DefaultPoolSize is the pool size NewSingleHost applies to all pool dims, overriding stdlib's 2-per-host default.
 	DefaultPoolSize = 256
 	// DefaultIdleConnTimeout is how long an idle connection is kept before closing.
 	DefaultIdleConnTimeout = 90 * time.Second
 	// DefaultPerAttemptTimeout is the deadline applied to each individual attempt.
 	DefaultPerAttemptTimeout = 10 * time.Second
-	// DefaultMaxRetryAfter is the ceiling on an honored Retry-After: past it, the response
-	// is returned live instead of waiting.
+	// DefaultMaxRetryAfter is the ceiling on an honored Retry-After; past it, the response returns immediately, live.
 	DefaultMaxRetryAfter = 30 * time.Second
-	// DefaultMultiHostIdleConnsPerHost caps idle connections kept per host under NewMultiHost,
-	// low because a many-host crawler rarely revisits a host before the idle timeout reclaims it.
+	// DefaultMultiHostIdleConnsPerHost caps per-host idle conns under NewMultiHost, low since a host is rarely revisited.
 	DefaultMultiHostIdleConnsPerHost = 2
-	// DefaultMultiHostIdleConnTimeout is how long NewMultiHost keeps an idle connection, short so
-	// a finished host's FDs come back fast during a wide fan-out.
+	// DefaultMultiHostIdleConnTimeout is how long NewMultiHost keeps an idle conn, short so FDs return fast in fan-out.
 	DefaultMultiHostIdleConnTimeout = 30 * time.Second
 )
 
@@ -42,24 +38,19 @@ const (
 	defaultDialKeepAlive         = 30 * time.Second
 )
 
-// dialIPKey carries a WithDialIP pin on the request context; a struct key can't collide with a
-// string key from another package.
+// dialIPKey carries a WithDialIP pin on the ctx; a struct key avoids colliding with another package's string key.
 type dialIPKey struct{}
 
-// Option configures a client during New, NewSingleHost, or NewMultiHost, which take either kind
-// below. Each kind also satisfies a narrower interface, so the specialized constructors reject the
-// wrong knob at compile time instead of swallowing it at runtime.
+// Option configures New, NewSingleHost, or NewMultiHost; each kind's interface rejects the wrong knob at compile time.
 type Option interface{ apply(*config) }
 
-// TransportOption tunes the transport, so it is valid on NewTransport (a bare transport, no retry)
-// as well as the full-client constructors. A retry knob is not one, and won't compile on NewTransport.
+// TransportOption tunes the transport: valid on NewTransport and the full-client constructors, but not on Wrap.
 type TransportOption interface {
 	Option
 	isTransport()
 }
 
-// RetryOption tunes the retry layer, so it is valid on Wrap (retry over a BYO client) as well as
-// the full-client constructors. A transport knob is not one, and won't compile on Wrap.
+// RetryOption tunes the retry layer: valid on Wrap and the full-client constructors, but not on NewTransport.
 type RetryOption interface {
 	Option
 	isRetry()
@@ -71,8 +62,7 @@ type optionFunc func(*config)
 func (f optionFunc) apply(c *config) { f(c) }
 func (optionFunc) isTransport()      {}
 
-// retryOptionFunc adapts a config mutator into a RetryOption: it satisfies apply (from
-// Option) and the isRetry marker, so it is usable everywhere an Option is.
+// retryOptionFunc adapts a config mutator into a RetryOption, satisfying both apply and the isRetry marker.
 type retryOptionFunc func(*config)
 
 func (f retryOptionFunc) apply(c *config) { f(c) }
@@ -109,8 +99,7 @@ func defaultHTTP2Config() *http.HTTP2Config {
 	}
 }
 
-// singleHostPreset caps per-host connections to the pool size and enables HTTP/2 keepalive
-// pings, on top of the shared defaults. Applied before caller options, so callers still win.
+// singleHostPreset caps per-host conns to the pool size and enables HTTP/2 keepalive, on top of the shared defaults.
 func singleHostPreset() Option {
 	return optionFunc(func(c *config) {
 		WithMaxConnsPerHost(DefaultPoolSize).apply(c)
@@ -177,29 +166,17 @@ func WithTLSMinVersion(v uint16) TransportOption {
 	return optionFunc(func(c *config) { c.tlsMinVersion = v })
 }
 
-// WithDialContext redirects only the TCP dial to a caller-resolved IP; the URL host stays the pool
-// key, Host header, and SNI, which is what keeps two SNI-routed backends on one IP from colliding on
-// a shared TLS session. The dialer MUST dial that ctx IP and IGNORE addr: Go passes the URL host as
-// addr, so dialing it re-resolves through DNS and hands your pinned request to whatever the resolver
-// feels like, quietly undoing the pin. It runs concurrently across RoundTrips, so guard shared
-// resolver state; it also ghosts HTTP(S)_PROXY (that rides in addr too), leaving the proxy feeling
-// invited while every request strolls past it. Honor ctx cancellation and set a TCP timeout.
-// You own the dial now, so WithDialGuard does not reach this: put your own Control on the dialer.
+// WithDialContext redirects the dial to a resolved IP; dial exactly that IP or the pin drops; WithDialGuard skips this.
 func WithDialContext(fn func(context.Context, string, string) (net.Conn, error)) TransportOption {
 	return optionFunc(func(c *config) { c.dialContext = fn })
 }
 
-// WithDialGuard refuses any dial to a private, loopback, link-local, or cloud-metadata IP, checked
-// at dial time on the resolved (and WithDialIP-pinned) address. Use it wherever a URL or redirect
-// target is attacker-influenced. It also nulls the proxy: a guard and an egress proxy are mutually
-// exclusive (Control would only ever see the proxy's IP), so the guard wins. Covers the built-in
-// dialer only, not a caller-supplied WithDialContext.
+// WithDialGuard refuses dials to private/loopback/link-local/metadata IPs at dial time, and nulls the proxy too.
 func WithDialGuard() TransportOption {
 	return optionFunc(func(c *config) { c.dialControl = dialGuard })
 }
 
-// WithDialIP pins the TCP dial target for a delegated host whose resolved IP differs from its name.
-// Empty ip is a no-op. Takes effect only on the built-in dialer, not a WithDialContext override.
+// WithDialIP pins the dial target for a delegated host whose resolved IP differs from its name; empty ip is a no-op.
 func WithDialIP(ctx context.Context, ip string) context.Context {
 	if ip == "" {
 		return ctx
@@ -225,34 +202,27 @@ func WithMaxRetryAfter(d time.Duration) RetryOption {
 	return retryOptionFunc(func(c *config) { c.maxRetryAfter = d })
 }
 
-// WithRetry replaces the default retrier. The caller then owns backoff, jitter, and the
-// retry predicate; WithRetryIf, WithMaxRetries, and WithRetryDelayStep are ignored once this
-// is set.
+// WithRetry replaces the default retrier; the caller then owns backoff, jitter, and the predicate.
 func WithRetry(r *retry.Retry) RetryOption {
 	return retryOptionFunc(func(c *config) { c.retrier = r })
 }
 
-// WithRetryIf overrides the predicate deciding which errors are retryable. Ignored when
-// WithRetry supplies a full retrier.
+// WithRetryIf overrides which errors are retryable; ignored when WithRetry supplies a full retrier.
 func WithRetryIf(predicate func(error) bool) RetryOption {
 	return retryOptionFunc(func(c *config) { c.retryIf = predicate })
 }
 
-// WithMaxRetries sets the default retrier's total attempt count, first try included: n=1 is one
-// shot, zero mercy. Same warty count as retry.WithMaxRetries; ignored when WithRetry brings its own.
+// WithMaxRetries sets the default retrier's total attempt count, first try included: n=1 is one shot, zero mercy.
 func WithMaxRetries(n int) RetryOption {
 	return retryOptionFunc(func(c *config) { c.maxRetries = n })
 }
 
-// WithRetryDelayStep sets the default retrier's linear backoff step: retry i waits step*(i+1),
-// jittered. Same retrier, same classifier, just a longer fuse before each try. Ignored when
-// WithRetry supplies its own.
+// WithRetryDelayStep sets the default retrier's linear backoff step: retry i waits step*(i+1), jittered.
 func WithRetryDelayStep(d time.Duration) RetryOption {
 	return retryOptionFunc(func(c *config) { c.delayStep = d })
 }
 
-// WithRetryNonIdempotent opts non-idempotent methods (POST, PATCH) into retry. Off by
-// default: a replayed POST can double-apply a side effect.
+// WithRetryNonIdempotent opts non-idempotent methods (POST, PATCH) into retry; off by default to avoid double effects.
 func WithRetryNonIdempotent(on bool) RetryOption {
 	return retryOptionFunc(func(c *config) { c.retryNonIdempotent = on })
 }
@@ -266,8 +236,7 @@ func WithRetryBudget(b RetryBudget) RetryOption {
 	})
 }
 
-// WithOnAttempt registers a hook called after every attempt with its AttemptInfo. The hook
-// runs on every concurrent RoundTrip of a shared client, so it must be safe for concurrent use.
+// WithOnAttempt registers a hook run after every attempt; it fires concurrently, so it must be concurrency-safe.
 func WithOnAttempt(hook func(AttemptInfo)) RetryOption {
 	return retryOptionFunc(func(c *config) { c.onAttempt = hook })
 }

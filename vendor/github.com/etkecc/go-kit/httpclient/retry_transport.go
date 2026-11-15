@@ -12,10 +12,7 @@ import (
 	"github.com/etkecc/go-kit/retry"
 )
 
-// retryTransport is the retrying http.RoundTripper. The retrier owns the retry decision
-// and the sleep; this layer converts a retryable HTTP status into an error the retrier can
-// classify, manages per-attempt deadlines and body lifetime, and returns the final
-// response live.
+// retryTransport is the retrying RoundTripper: turns a retryable status into an error the retrier classifies.
 type retryTransport struct {
 	base          http.RoundTripper
 	retrier       *retry.Retry
@@ -26,15 +23,13 @@ type retryTransport struct {
 	onAttempt     func(AttemptInfo)
 }
 
-// retryableStatusError carries a retryable HTTP status out of an attempt so the retrier
-// classifies it, and its parsed Retry-After (0 if absent) so the retrier honors it.
+// retryableStatusError carries a retryable status out of an attempt, plus a parsed Retry-After delay (0 if absent).
 type retryableStatusError struct {
 	status int
 	delay  time.Duration
 }
 
-// attemptLoop holds the mutable state threaded across attempts of one RoundTrip: the held
-// response to drain, the pending cancel, the attempt counter, and the terminal response.
+// attemptLoop holds mutable state across one RoundTrip's attempts: held response, pending cancel, counter, terminal.
 type attemptLoop struct {
 	rt        *retryTransport
 	req       *http.Request
@@ -46,15 +41,13 @@ type attemptLoop struct {
 	attempt    int
 }
 
-// cancelOnClose ties an attempt context's cancel to the response body's Close. It closes
-// the body first so a fully-read body returns its connection to the pool, then cancels.
+// cancelOnClose ties an attempt's cancel to body Close, closing body first so a read one returns its conn to the pool.
 type cancelOnClose struct {
 	io.ReadCloser
 	cancel context.CancelFunc
 }
 
-// Value receivers, so both a value and a pointer satisfy DelayHinter and errors.As matches
-// however the error is wrapped (the trap the DelayHinter doc in retry.go warns about).
+// Value receivers, so both a value and pointer satisfy DelayHinter and errors.As matches however the error is wrapped.
 func (e retryableStatusError) Error() string {
 	return "httpclient: retryable status " + strconv.Itoa(e.status)
 }
@@ -67,23 +60,18 @@ func (c *cancelOnClose) Close() error {
 	return err
 }
 
-// RoundTrip runs the request through the retrier. The method-and-body gate is checked once
-// up front, then each attempt runs via attemptLoop.
+// RoundTrip runs the request through the retrier: method-and-body gate checked once, then each attempt via attemptLoop.
 func (rt *retryTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	_, idempotent := idempotentMethods[req.Method]
 	retryable := rt.nonIdem || idempotent
-	// A retryable request with a body it can't rewind can't be replayed; refuse loud
-	// rather than send a consumed reader on attempt 2. http.NoBody is empty and replays
-	// for free, so it is not a real body here.
+	// A retryable request whose body can't rewind can't be replayed; refuse loud rather than resend a consumed reader.
 	if retryable && req.Body != nil && req.Body != http.NoBody && req.GetBody == nil {
 		return nil, ErrNonReplayableBody
 	}
 
 	loop := &attemptLoop{rt: rt, req: req, retryable: retryable}
 	if !retryable {
-		// A non-idempotent request gets exactly one attempt regardless of how it fails.
-		// The retrier and its classifier are method-blind (a bare func(error) bool), so a
-		// timeout or a reset would otherwise retry a POST; the method gate has to live here.
+		// A non-idempotent request gets exactly one attempt; the classifier is method-blind, so the method gate lives here.
 		return loop.result(loop.once())
 	}
 	return loop.result(rt.retrier.DoCtx(req.Context(), loop.once))
@@ -103,9 +91,7 @@ func (l *attemptLoop) once() error {
 	return l.send()
 }
 
-// drainPrev drains and closes the response held from the previous attempt, freeing its
-// connection. The current attempt's response is never drained here, so the terminal one
-// survives to be returned live.
+// drainPrev drains and closes the previous attempt's response, freeing its conn; the current response stays untouched.
 func (l *attemptLoop) drainPrev() {
 	if l.prev == nil {
 		return
@@ -145,9 +131,7 @@ func (l *attemptLoop) send() error {
 	return l.classify(r, cancel, elapsed, reused)
 }
 
-// classify decides an attempt's response: a retryable status within the Retry-After cap is
-// held and handed back as an error for the retrier; anything else (success, non-retryable
-// status, or a Retry-After past the cap) is the terminal response, returned live.
+// classify decides a response: a retryable status within the Retry-After cap becomes an error for the retrier.
 func (l *attemptLoop) classify(r *http.Response, cancel context.CancelFunc, elapsed time.Duration, reused bool) error {
 	if _, ok := retryableStatuses[r.StatusCode]; l.retryable && ok {
 		if delay, withinCap := l.rt.retryAfterDelay(r); withinCap {
@@ -156,17 +140,14 @@ func (l *attemptLoop) classify(r *http.Response, cancel context.CancelFunc, elap
 			return retryableStatusError{status: r.StatusCode, delay: delay}
 		}
 	}
-	// Terminal response. l.prev is nil here: once drains it before every send, so there is
-	// nothing held to clean up, and adding a drain would double-close.
+	// Terminal response. l.prev is nil here: once drains it before every send, so nothing is held to clean up.
 	wrapBodyCancel(r, cancel)
 	l.resp = r
 	l.rt.emit(l.req, l.attempt, r.StatusCode, nil, elapsed, false, reused)
 	return nil
 }
 
-// result maps the retrier's outcome to the RoundTrip return. A terminal response wins; a
-// retry-exhausted retryable status returns the held response live (sentinel stripped, since
-// http.Client discards the response on any error); a real error discards any held response.
+// result maps the retrier's outcome to RoundTrip's return: terminal wins, exhausted retryable status returns held live.
 func (l *attemptLoop) result(err error) (*http.Response, error) {
 	if l.resp != nil {
 		return l.resp, nil
@@ -182,8 +163,7 @@ func (l *attemptLoop) result(err error) (*http.Response, error) {
 	return nil, err
 }
 
-// attemptContext derives the per-attempt context: perAttempt, or the time left on the
-// caller's deadline when that is sooner, recomputed each attempt so elapsed time counts.
+// attemptContext derives the per-attempt context: perAttempt, or the caller's remaining deadline when that is sooner.
 func (rt *retryTransport) attemptContext(parent context.Context) (context.Context, context.CancelFunc) {
 	if rt.perAttempt <= 0 {
 		return context.WithCancel(parent)
@@ -197,10 +177,7 @@ func (rt *retryTransport) attemptContext(parent context.Context) (context.Contex
 	return context.WithTimeout(parent, d)
 }
 
-// normalizeErr disambiguates a failed attempt: the caller's own context death is terminal,
-// a per-attempt timeout with the caller still alive is retryable, everything else is raw
-// for the classifier. Both contexts surface the same DeadlineExceeded, so the classifier
-// alone can't tell them apart; this is where per-attempt timeouts become retryable.
+// normalizeErr disambiguates a failed attempt: caller ctx death is terminal, per-attempt timeout retryable, else raw.
 func (rt *retryTransport) normalizeErr(parent, attemptCtx context.Context, rerr error) error {
 	if parent.Err() != nil {
 		return parent.Err()
@@ -211,9 +188,7 @@ func (rt *retryTransport) normalizeErr(parent, attemptCtx context.Context, rerr 
 	return rerr
 }
 
-// retryAfterDelay parses a Retry-After from a 429 or 503 (delta-seconds or HTTP-date) and
-// reports whether it is within maxRetryAfter. A value beyond the cap returns withinCap
-// false, the signal to return the response live rather than wait.
+// retryAfterDelay parses a Retry-After from a 429/503 and reports whether it's within maxRetryAfter.
 func (rt *retryTransport) retryAfterDelay(r *http.Response) (delay time.Duration, withinCap bool) {
 	delay = rt.parseRetryAfter(r)
 	if delay > rt.maxRetryAfter {
@@ -222,9 +197,7 @@ func (rt *retryTransport) retryAfterDelay(r *http.Response) (delay time.Duration
 	return delay, true
 }
 
-// parseRetryAfter reads a Retry-After from a 429 or 503 in delta-seconds or HTTP-date form.
-// A delta-seconds large enough to overflow int64 nanoseconds is clamped just past the cap
-// (so retryAfterDelay reports it out of range) rather than wrapping to a negative duration.
+// parseRetryAfter reads a 429/503 Retry-After (delta-seconds or HTTP-date); an overflowing delta clamps past the cap.
 func (rt *retryTransport) parseRetryAfter(r *http.Response) time.Duration {
 	if r.StatusCode != http.StatusTooManyRequests && r.StatusCode != http.StatusServiceUnavailable {
 		return 0
@@ -260,14 +233,12 @@ func (rt *retryTransport) emit(req *http.Request, attempt, status int, err error
 	})
 }
 
-// wrapBodyCancel replaces the response body with one that cancels the attempt context on
-// Close, so the body stays readable after RoundTrip returns.
+// wrapBodyCancel replaces the response body with one that cancels the attempt context on Close.
 func wrapBodyCancel(r *http.Response, cancel context.CancelFunc) {
 	r.Body = &cancelOnClose{ReadCloser: r.Body, cancel: cancel}
 }
 
-// drainClose drains and closes a response body best-effort, then cancels its attempt
-// context. Draining lets the connection return to the pool instead of being torn down.
+// drainClose drains and closes a response body best-effort, then cancels its attempt context.
 func drainClose(r *http.Response, cancel context.CancelFunc) {
 	_, _ = io.Copy(io.Discard, r.Body) //nolint:errcheck // best-effort drain; a failure just costs the connection
 	_ = r.Body.Close()

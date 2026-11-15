@@ -6,9 +6,7 @@ import (
 	"sort"
 )
 
-// MapFromSlice turns a slice into a set: every element becomes a key set to true, for O(1)
-// membership checks. Duplicates collapse into one; an empty or nil slice gives an empty
-// (non-nil) map.
+// MapFromSlice turns slice into a set (element to true) for O(1) membership checks; nil slice gives an empty map.
 func MapFromSlice[T cmp.Ordered](slice []T) map[T]bool {
 	data := make(map[T]bool, len(slice))
 	for _, k := range slice {
@@ -17,8 +15,7 @@ func MapFromSlice[T cmp.Ordered](slice []T) map[T]bool {
 	return data
 }
 
-// MapKeys returns a map's keys as an ascending-sorted slice. Empty or nil map gives an empty
-// (non-nil) slice.
+// MapKeys returns a map's keys as an ascending-sorted slice; empty or nil map gives an empty slice.
 func MapKeys[T cmp.Ordered, V any](data map[T]V) []T {
 	keys := make([]T, 0, len(data))
 	for k := range data {
@@ -29,8 +26,7 @@ func MapKeys[T cmp.Ordered, V any](data map[T]V) []T {
 	return keys
 }
 
-// MergeMapKeys gathers the keys across m and every add, deduplicated and sorted ascending.
-// Always non-nil, empty only when all the maps were.
+// MergeMapKeys gathers the keys across m and every add, deduplicated and sorted ascending; always non-nil.
 func MergeMapKeys[V any](m map[string]V, adds ...map[string]V) []string {
 	uniq := map[string]bool{}
 	for k := range m {

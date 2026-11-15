@@ -9,10 +9,7 @@ import (
 	"unicode/utf8"
 )
 
-// Truncate cuts s to length runes (runes, not bytes, so it won't slice a multibyte character in
-// half) and appends "..." only when it actually cut something. length <= 0 or empty s gives "".
-// A string already within length comes back untouched, no ellipsis. Truncate("hello world", 5)
-// returns "hello...".
+// Truncate cuts s to length runes and appends "..." only when it cut something; length<=0 or empty s gives "".
 func Truncate(s string, length int) string {
 	if length <= 0 || s == "" {
 		return ""
@@ -43,9 +40,7 @@ func Truncate(s string, length int) string {
 	return truncated
 }
 
-// Unquote is strconv.Unquote with the error swallowed: it decodes a Go-quoted string, and hands
-// the original back unchanged when the input wasn't properly quoted or an escape was bad. Always
-// returns a string, never an error.
+// Unquote is strconv.Unquote with the error swallowed: returns the original string if it wasn't validly quoted.
 func Unquote(s string) string {
 	unquoted, err := strconv.Unquote(s)
 	if err != nil {
@@ -54,16 +49,14 @@ func Unquote(s string) string {
 	return unquoted
 }
 
-// Hash returns the SHA-256 of str as lowercase hex, always 64 characters. One-way digest, not
-// encryption: there's no getting str back out of it.
+// Hash returns the SHA-256 of str as lowercase hex, always 64 characters; a one-way digest.
 func Hash(str string) string {
 	h := sha256.New()
 	h.Write([]byte(str))
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-// StringToInt parses value as an int, trimming surrounding whitespace first. Empty or unparseable
-// falls back to the optional default, or 0 if you didn't pass one. Only the first default counts.
+// StringToInt parses value as an int, trimmed first; empty or unparseable falls back to the optional default, else 0.
 func StringToInt(value string, optionalDefaultValue ...int) int {
 	defaultValue := 0
 	if len(optionalDefaultValue) > 0 {
@@ -83,9 +76,7 @@ func StringToInt(value string, optionalDefaultValue ...int) int {
 	return vInt
 }
 
-// StringToSlice splits a comma-separated value into trimmed parts. Two edge cases worth knowing:
-// empty input (after trimming) gives []string{default}, and a non-empty value with no comma gives
-// []string{value}, the value itself, not the default. Everything else is split-and-trim.
+// StringToSlice splits a comma-separated value into trimmed parts; empty input gives []string{default}.
 func StringToSlice(value string, optionalDefaultValue ...string) []string {
 	var defaultValue string
 	if len(optionalDefaultValue) > 0 {
@@ -108,8 +99,7 @@ func StringToSlice(value string, optionalDefaultValue ...string) []string {
 	return parts
 }
 
-// SliceToString joins slice with delimiter, optionally running each element through hook first
-// (pass nil to skip it). Empty slice gives "".
+// SliceToString joins slice with delimiter, running each element through hook first if non-nil; empty slice gives "".
 func SliceToString(slice []string, delimiter string, hook func(string) string) string {
 	if len(slice) == 0 {
 		return ""

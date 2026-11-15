@@ -2,15 +2,7 @@ package kit
 
 import "runtime/debug"
 
-// Version answers "what version am I?" from the running binary's build info, whether the caller is
-// the app itself (the main module, or pass "") or a library down in the dep tree. First hit wins:
-//
-//	first non-empty override > Main.Version > Deps[module] > VCS revision(+"-dirty") > fallback
-//
-// override carries an app's -X ldflag value; "(devel)" and "" both count as unstamped. The VCS
-// revision is the main module's own repo, so it stays out of the dep path on purpose: a library
-// reports v0.0.0 in dev, never the host binary's git sha, which would be a confident lie about
-// whose code is running. Reads build info every call; wrap in sync.OnceValue on a hot path.
+// Version tries override, Main.Version, Deps[module], VCS revision(+"-dirty"), then fallback, first hit wins.
 func Version(module, fallback string, override ...string) string {
 	if len(override) > 0 && override[0] != "" {
 		return override[0]
@@ -41,8 +33,7 @@ func mainVersion(info *debug.BuildInfo) string {
 	return vcsVersion(info)
 }
 
-// depVersion is a dependency's own version, hopping through a replace directive: under a local replace
-// dep.Version is the stale pin, not the fork you're actually compiling.
+// depVersion follows any replace directive for module's version, since dep.Version alone is the stale pre-replace pin.
 func depVersion(info *debug.BuildInfo, module string) string {
 	for _, dep := range info.Deps {
 		if dep.Path != module {
@@ -56,8 +47,7 @@ func depVersion(info *debug.BuildInfo, module string) string {
 	return ""
 }
 
-// UserAgent builds a "product/version" User-Agent, version resolved via Version with a v0.0.0 fallback.
-// A library passes its own module path; an app passes "" (or its path) plus an optional ldflag override.
+// UserAgent builds a "product/version" string via Version with a v0.0.0 fallback; module is the caller's own path.
 func UserAgent(product, module string, override ...string) string {
 	return product + "/" + Version(module, "v0.0.0", override...)
 }

@@ -175,16 +175,35 @@ func (bcmi *bitmapContainerManyIterator) nextMany(hs uint32, buf []uint32) int {
 	n := 0
 	base := bcmi.base
 	bitset := bcmi.bitset
+	bitmap := bcmi.ptr.bitmap
 
 	for n < len(buf) {
 		if bitset == 0 {
+			// The current word is exhausted, so whole words follow. Decode them
+			// in bulk while the buffer still has room for the 64 values a single
+			// word could produce; anything left over falls through to the loop
+			// below. bitset stays zero, which keeps the iterator's invariant
+			// that word `base` has been fully consumed.
+			for useVectorFill {
+				words := (len(buf) - n) / 64
+				if remaining := len(bitmap) - base - 1; words > remaining {
+					words = remaining
+				}
+				if words <= 0 {
+					break
+				}
+				start := base + 1
+				n = fillLeastSignificant16bitsVector(bitmap[start:start+words], buf, n, hs|uint32(start)*64)
+				base += words
+			}
+
 			base++
-			if base >= len(bcmi.ptr.bitmap) {
+			if base >= len(bitmap) {
 				bcmi.base = base
 				bcmi.bitset = bitset
 				return n
 			}
-			bitset = bcmi.ptr.bitmap[base]
+			bitset = bitmap[base]
 			continue
 		}
 		t := bitset & -bitset
@@ -1114,12 +1133,30 @@ func (bc *bitmapContainer) toArrayContainer() *arrayContainer {
 	return ac
 }
 
+// bitmapContainerSkipMaxCardinality is where scanning eight words at a time and
+// skipping the empty groups stops paying for itself and compressing every word
+// becomes cheaper. Measured crossover is just under 768 values.
+const bitmapContainerSkipMaxCardinality = 768
+
+// fillArray writes the values of the container into the given slice, whose
+// length is the container's cardinality.
 func (bc *bitmapContainer) fillArray(container []uint16) {
-	// TODO: rewrite in assembly
+	if useVectorFill {
+		if len(container) < bitmapContainerSkipMaxCardinality {
+			fillArraySkipVector(bc.bitmap, container)
+		} else {
+			fillArrayVector(bc.bitmap, container)
+		}
+		return
+	}
+	fillArrayScalar(bc.bitmap, container)
+}
+
+func fillArrayScalar(bitmap []uint64, container []uint16) {
 	pos := 0
 	base := 0
-	for k := 0; k < len(bc.bitmap); k++ {
-		bitset := bc.bitmap[k]
+	for k := 0; k < len(bitmap); k++ {
+		bitset := bitmap[k]
 		for bitset != 0 {
 			t := bitset & -bitset
 			container[pos] = uint16((base + bits.OnesCount64(t-1)))

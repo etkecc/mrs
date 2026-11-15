@@ -2,9 +2,7 @@ package kit
 
 import "cmp"
 
-// Uniq drops duplicates while keeping first-seen order: the first copy of each element stays,
-// later ones vanish. (MergeSlices sorts instead; this one preserves the order you handed it.)
-// Nil or empty in, empty non-nil slice out.
+// Uniq drops duplicates keeping first-seen order (MergeSlices sorts instead); nil or empty in, empty non-nil out.
 func Uniq(slice []string) []string {
 	uniq := map[string]struct{}{}
 	result := []string{}
@@ -18,9 +16,7 @@ func Uniq(slice []string) []string {
 	return result
 }
 
-// MergeSlices concatenates every input slice, dedupes, and returns the result sorted ascending,
-// so input order doesn't survive. Empty and nil inputs are skipped. K has to be cmp.Ordered,
-// since the output comes back sorted.
+// MergeSlices concatenates, dedupes, and sorts ascending (input order doesn't survive); K must be cmp.Ordered.
 func MergeSlices[K cmp.Ordered](slices ...[]K) []K {
 	uniq := make(map[K]struct{}, 0)
 	for _, slice := range slices {
@@ -32,8 +28,7 @@ func MergeSlices[K cmp.Ordered](slices ...[]K) []K {
 	return MapKeys(uniq)
 }
 
-// RemoveFromSlice returns the elements of base that aren't in toRemove, in base's order,
-// deduplicated so a repeat in base still shows up only once. Nil base gives an empty slice.
+// RemoveFromSlice returns base's elements not in toRemove, in order, deduplicated; nil base gives an empty slice.
 func RemoveFromSlice[K comparable](base, toRemove []K) []K {
 	processed := map[K]struct{}{}
 	items := []K{}
@@ -50,9 +45,7 @@ func RemoveFromSlice[K comparable](base, toRemove []K) []K {
 	return items
 }
 
-// Chunk splits items into sub-slices of at most chunkSize each; the last one holds whatever's
-// left over. A non-positive chunkSize means "don't chunk": the whole slice comes back as one
-// chunk, no panic, no divide-by-zero, no drama. Nil or empty input gives a single empty chunk.
+// Chunk splits items into sub-slices of at most chunkSize; non-positive chunkSize returns one whole-slice chunk.
 func Chunk[T any](items []T, chunkSize int) (chunks [][]T) {
 	if chunkSize <= 0 {
 		return [][]T{items}

@@ -6,8 +6,7 @@ import (
 	"syscall"
 )
 
-// disallowedNets are the ranges the stdlib net.IP.Is* methods miss: the v4-in-v6 embedders (all of
-// which can smuggle 169.254.169.254 inside a v6 literal), CGNAT, 0.0.0.0/8, and cloud-metadata.
+// disallowedNets are ranges stdlib net.IP.Is* misses: v4-in-v6 embedders, CGNAT, 0.0.0.0/8, cloud-metadata.
 var disallowedNets = []*net.IPNet{
 	mustCIDR("64:ff9b::/96"),       // NAT64
 	mustCIDR("64:ff9b:1::/48"),     // NAT64 local-use
@@ -28,8 +27,7 @@ func mustCIDR(s string) *net.IPNet {
 	return n
 }
 
-// isDisallowedIP reports whether ip is loopback, private, link-local, unspecified, multicast, or in
-// disallowedNets. To4() first, or an IPv4-mapped v6 (::ffff:169.254.169.254) slips past as public v6.
+// isDisallowedIP checks loopback/private/link-local/unspecified/multicast/disallowedNets; To4() avoids a v6 bypass.
 func isDisallowedIP(ip net.IP) bool {
 	norm := ip
 	if v4 := ip.To4(); v4 != nil {
@@ -50,9 +48,7 @@ func isDisallowedIP(ip net.IP) bool {
 	return false
 }
 
-// dialGuard is the net.Dialer.Control callback WithDialGuard installs: it checks the resolved (and
-// pinned) IP at dial time, the last honest moment before connect. A hostname will swear it's public
-// right up until it resolves to 169.254.169.254.
+// dialGuard is Dialer.Control from WithDialGuard: checks the resolved/pinned IP at dial time, the last honest moment.
 func dialGuard(_, address string, _ syscall.RawConn) error {
 	host, _, err := net.SplitHostPort(address)
 	if err != nil {
