@@ -6,7 +6,8 @@ require (
 	github.com/VictoriaMetrics/metrics v1.45.0
 	github.com/blevesearch/bleve/v2 v2.6.3
 	github.com/blevesearch/bleve_index_api v1.4.1
-	github.com/etkecc/go-apm v1.3.5
+	github.com/etkecc/go-apm v1.3.7
+	github.com/etkecc/go-apm/v2 v2.0.0
 	github.com/etkecc/go-echo-basic-auth v1.5.0
 	github.com/etkecc/go-fswatcher v1.0.1
 	github.com/etkecc/go-healthchecks/v2 v2.4.1
