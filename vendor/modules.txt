@@ -183,9 +183,11 @@ github.com/buger/jsonparser
 # github.com/etkecc/go-apm v1.3.5
 ## explicit; go 1.23.0
 github.com/etkecc/go-apm
-# github.com/etkecc/go-echo-basic-auth v1.5.0
+# github.com/etkecc/go-echo-basic-auth v1.5.1
 ## explicit; go 1.26.0
 github.com/etkecc/go-echo-basic-auth
+# github.com/etkecc/go-echo-basic-auth/v2 v2.0.0
+## explicit; go 1.26.0
 # github.com/etkecc/go-fswatcher v1.0.1
 ## explicit; go 1.20
 github.com/etkecc/go-fswatcher
