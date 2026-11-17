@@ -28,7 +28,7 @@ require (
 	github.com/ziflex/lecho/v3 v3.11.1
 	go.etcd.io/bbolt v1.5.0
 	golang.org/x/exp v0.0.0-20261113113407-e3970619a1a4
-	golang.org/x/net v0.62.0
+	golang.org/x/net v0.63.0
 	golang.org/x/time v0.16.0
 	gopkg.in/yaml.v3 v3.0.1
 	mvdan.cc/xurls/v2 v2.6.0
