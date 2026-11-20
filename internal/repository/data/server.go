@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/etkecc/go-apm"
+	"github.com/etkecc/go-apm/v2"
 	"github.com/goccy/go-json"
 	"go.etcd.io/bbolt"
 
@@ -18,7 +18,7 @@ func (d *Data) AddServer(ctx context.Context, server *model.MatrixServer) error 
 	return d.db.Batch(func(tx *bbolt.Tx) error {
 		serverb, merr := json.Marshal(server)
 		if merr != nil {
-			log.Error().Err(merr).Str("server", server.Name).Msg("cannot marshal server")
+			log.Error("cannot marshal server", "error", merr, "server", server.Name)
 			return merr
 		}
 		return tx.Bucket(serversInfoBucket).Put([]byte(server.Name), serverb)
@@ -36,11 +36,11 @@ func (d *Data) BatchServers(ctx context.Context, servers []string) error {
 				// stamp OnlineAt, or the stub is year-1 and the same-run prune eats it on arrival.
 				v, merr := json.Marshal(&model.MatrixServer{Name: server, OnlineAt: time.Now().UTC()})
 				if merr != nil {
-					log.Error().Err(merr).Msg("cannot marshal server")
+					log.Error("cannot marshal server", "error", merr)
 					continue
 				}
 				if err := bucket.Put([]byte(server), v); err != nil {
-					log.Error().Err(err).Msg("cannot store server")
+					log.Error("cannot store server", "error", err)
 				}
 			}
 		}
@@ -50,7 +50,7 @@ func (d *Data) BatchServers(ctx context.Context, servers []string) error {
 
 // HasServer checks if server is already exists
 func (d *Data) HasServer(ctx context.Context, name string) bool {
-	apm.Log(ctx).Debug().Str("server", name).Msg("checking if server exists")
+	apm.Log(ctx).Debug("checking if server exists", "server", name)
 	var has bool
 	d.db.View(func(tx *bbolt.Tx) error { //nolint:errcheck // that's ok
 		v := tx.Bucket(serversInfoBucket).Get([]byte(name))
@@ -62,7 +62,7 @@ func (d *Data) HasServer(ctx context.Context, name string) bool {
 
 // GetServerInfo
 func (d *Data) GetServerInfo(ctx context.Context, name string) (*model.MatrixServer, error) {
-	apm.Log(ctx).Debug().Str("server", name).Msg("getting server info")
+	apm.Log(ctx).Debug("getting server info", "server", name)
 	var server *model.MatrixServer
 	err := d.db.View(func(tx *bbolt.Tx) error {
 		v := tx.Bucket(serversInfoBucket).Get([]byte(name))
@@ -81,7 +81,7 @@ func (d *Data) GetServerInfo(ctx context.Context, name string) (*model.MatrixSer
 
 // RemoveServer info
 func (d *Data) RemoveServer(ctx context.Context, name string) error {
-	apm.Log(ctx).Debug().Str("server", name).Msg("removing server info")
+	apm.Log(ctx).Debug("removing server info", "server", name)
 	nameb := []byte(name)
 	return d.db.Batch(func(tx *bbolt.Tx) error {
 		return tx.Bucket(serversInfoBucket).Delete(nameb)
@@ -94,7 +94,7 @@ func (d *Data) RemoveServers(ctx context.Context, keys []string) {
 		return
 	}
 
-	apm.Log(ctx).Info().Int("count", len(keys)).Msg("removing servers from db")
+	apm.Log(ctx).Info("removing servers from db", "count", len(keys))
 	d.db.Update(func(tx *bbolt.Tx) error { //nolint:errcheck // that's ok
 		sibucket := tx.Bucket(serversInfoBucket)
 		for _, k := range keys {
@@ -110,7 +110,7 @@ func (d *Data) markServerOffline(ctx context.Context, bucket *bbolt.Bucket, name
 	key := []byte(name)
 	if v := bucket.Get(key); v != nil {
 		if merr := json.Unmarshal(v, &server); merr != nil {
-			log.Error().Err(merr).Msg("cannot unmarshal server")
+			log.Error("cannot unmarshal server", "error", merr)
 		}
 	}
 	if server == nil {
@@ -124,12 +124,12 @@ func (d *Data) markServerOffline(ctx context.Context, bucket *bbolt.Bucket, name
 
 	datab, merr := json.Marshal(server)
 	if merr != nil {
-		log.Error().Err(merr).Msg("cannot marshal server")
+		log.Error("cannot marshal server", "error", merr)
 		return
 	}
 
 	if err := bucket.Put(key, datab); err != nil {
-		log.Error().Err(err).Msg("cannot store server")
+		log.Error("cannot store server", "error", err)
 	}
 }
 
@@ -139,7 +139,7 @@ func (d *Data) MarkServersOffline(ctx context.Context, keys []string) {
 		return
 	}
 
-	apm.Log(ctx).Info().Int("count", len(keys)).Msg("marking servers offline")
+	apm.Log(ctx).Info("marking servers offline", "count", len(keys))
 	d.db.Batch(func(tx *bbolt.Tx) error { //nolint:errcheck // that's ok
 		bucket := tx.Bucket(serversInfoBucket)
 		for _, k := range keys {
@@ -164,7 +164,7 @@ func (d *Data) FilterServers(ctx context.Context, filter func(server *model.Matr
 			}
 			var server *model.MatrixServer
 			if err := json.Unmarshal(v, &server); err != nil {
-				log.Error().Err(err).Str("server", string(k)).Msg("cannot unmarshal server")
+				log.Error("cannot unmarshal server", "error", err, "server", string(k))
 				return nil
 			}
 			if filter(server) {
@@ -175,7 +175,7 @@ func (d *Data) FilterServers(ctx context.Context, filter func(server *model.Matr
 		})
 	})
 	if err != nil {
-		log.Error().Err(err).Msg("cannot filter servers")
+		log.Error("cannot filter servers", "error", err)
 	}
 
 	return servers

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/etkecc/go-apm"
+	"github.com/etkecc/go-apm/v2"
 	"github.com/etkecc/go-kit/template"
 	"github.com/mattevans/postmark-go"
 
@@ -48,12 +48,12 @@ func (e *Email) getClient() *postmark.EmailService {
 func (e *Email) SendReport(ctx context.Context, room *model.MatrixRoom, server *model.MatrixServer, reason string, emails []string) error {
 	log := apm.Log(ctx)
 	if len(emails) == 0 {
-		log.Info().Str("reason", "no recipients").Msg("email sending canceled")
+		log.Info("email sending canceled", "reason", "no recipients")
 		return nil
 	}
 	client := e.getClient()
 	if client == nil {
-		log.Info().Str("reason", "no sender").Msg("email sending canceled")
+		log.Info("email sending canceled", "reason", "no sender")
 		return nil
 	}
 
@@ -76,9 +76,9 @@ func (e *Email) SendReport(ctx context.Context, room *model.MatrixRoom, server *
 	text, html := utils.MarkdownRender(body)
 	for _, req := range e.buildPMReqs(subject, text, html, emails, &e.cfg.Get().Email.Postmark.Report) {
 		req.Tag = "report-msc1929"
-		log.Info().Str("to", req.To).Msg("sending email")
+		log.Info("sending email", "to", req.To)
 		if _, _, err = client.Send(req); err != nil {
-			log.Warn().Err(err).Str("to", req.To).Msg("sending email failed")
+			log.Warn("sending email failed", "error", err, "to", req.To)
 		}
 	}
 

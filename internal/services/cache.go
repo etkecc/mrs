@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 
 	"github.com/etkecc/mrs/internal/model"
 )
@@ -37,7 +37,7 @@ func NewCache(cfg ConfigService, stats cacheStats) *Cache {
 	return cache
 }
 
-func (cache *Cache) clearHeaders(c echo.Context) {
+func (cache *Cache) clearHeaders(c *echo.Context) {
 	c.Response().Header().Del("Cache-Control")
 	c.Response().Header().Del("CDN-Tag")
 	c.Response().Header().Del("Last-Modified")
@@ -50,7 +50,7 @@ func (cache *Cache) getLastModified() string {
 // Middleware returns cache middleware
 func (cache *Cache) Middleware() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
+		return func(c *echo.Context) error {
 			if c.Request().Method != http.MethodGet {
 				return next(c)
 			}
@@ -80,7 +80,7 @@ func (cache *Cache) Middleware() echo.MiddlewareFunc {
 // MiddlewareSearch returns cache middleware for search endpoints
 func (cache *Cache) MiddlewareSearch() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
+		return func(c *echo.Context) error {
 			if c.Request().Method != http.MethodGet {
 				return next(c)
 			}
@@ -109,7 +109,7 @@ func (cache *Cache) MiddlewareSearch() echo.MiddlewareFunc {
 // MiddlewareImmutable returns echo middleware with immutable in cache-control
 func (cache *Cache) MiddlewareImmutable() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
+		return func(c *echo.Context) error {
 			if c.Request().Method != http.MethodGet {
 				return next(c)
 			}

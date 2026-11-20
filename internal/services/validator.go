@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/etkecc/go-apm"
+	"github.com/etkecc/go-apm/v2"
 	"github.com/etkecc/mrs/internal/model"
 )
 
@@ -72,20 +72,20 @@ func (v *Validator) IsOnline(ctx context.Context, server string) (serverName, se
 
 // IsIndexable check if server is indexable
 func (v *Validator) IsIndexable(ctx context.Context, server string) bool {
-	log := apm.Log(ctx).With().Str("server", server).Logger()
+	log := apm.Log(ctx).With("server", server)
 	if !v.Domain(server) {
-		log.Info().Str("reason", "domain").Msg("not indexable")
+		log.Info("not indexable", "reason", "domain")
 		return false
 	}
 	if v.block.ByServer(server) {
-		log.Info().Str("reason", "blocklist").Msg("not indexable")
+		log.Info("not indexable", "reason", "blocklist")
 		return false
 	}
 	if _, err := v.matrix.QueryPublicRooms(ctx, server, "1", ""); err != nil {
-		log.Info().Err(err).Str("reason", "publicRooms").Msg("not indexable")
+		log.Info("not indexable", "error", err, "reason", "publicRooms")
 		return false
 	}
-	log.Info().Msg("indexable")
+	log.Info("indexable")
 	return true
 }
 

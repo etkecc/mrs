@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 
 	"github.com/etkecc/go-kit"
 	"github.com/etkecc/mrs/internal/metrics"
@@ -29,7 +29,7 @@ type searchService interface {
 // @Success		204	"No matches"
 // @Router			/search [get]
 func search(svc searchService, cfg configService, path bool) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		defer metrics.IncSearchQueries("rest", cfg.Get().Matrix.ServerName)
 
 		paramfunc := c.QueryParam

@@ -5,24 +5,22 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/base64"
-	"errors"
 	"flag"
 	"fmt"
-	"net/http"
+	"log/slog"
 	"os"
 	"os/signal"
+	"runtime/debug"
 	"strings"
 	"syscall"
 	"time"
 
-	"github.com/etkecc/go-apm"
+	"github.com/etkecc/go-apm/v2"
 	"github.com/etkecc/go-healthchecks/v2"
 	"github.com/etkecc/go-kit/crontab"
 	"github.com/etkecc/go-msc1929"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/pemistahl/lingua-go"
-	"github.com/rs/zerolog"
-	"github.com/ziflex/lecho/v3"
 
 	"github.com/etkecc/mrs/internal/controllers"
 	"github.com/etkecc/mrs/internal/repository/data"
@@ -35,13 +33,22 @@ import (
 // AllLanguages to load all language models at once
 const AllLanguages = "ALL"
 
+// gracefulTimeout bounds how long the HTTP server drains before it is stopped
+const gracefulTimeout = 5 * time.Second
+
+// healthchecksEvery is the healthchecks.io ping interval
+const healthchecksEvery = 60 * time.Second
+
+// teardownTimeout bounds the cron drain on shutdown
+const teardownTimeout = 5 * time.Second
+
 var (
 	configPath string
 	runGenKey  bool
 	dataRepo   *data.Data
 	index      *search.Index
 	cron       *crontab.Crontab
-	log        *zerolog.Logger
+	log        *slog.Logger
 	hc         *healthchecks.Client
 	e          *echo.Echo
 )
@@ -68,52 +75,98 @@ var (
 // @name						Authorization
 // @description				Matrix federation signature auth: an `Authorization: X-Matrix origin=...,key=...,sig=...` header carrying an ed25519 signature over the request, which we verify against the origin server's published keys.
 func main() {
-	quit := make(chan struct{})
+	os.Exit(run())
+}
+
+// run parses the config, starts the service and reports the outcome to healthchecks
+func run() (code int) {
 	flag.StringVar(&configPath, "c", "config.yml", "Path to the config file")
 	flag.BoolVar(&runGenKey, "genkey", false, "Generate matrix signing key")
 	flag.Parse()
 
 	cfg, err := services.NewConfig(configPath)
 	if err != nil {
-		log.Fatal().Err(err).Msg("cannot read config")
+		apm.NewLoggerPlain().Error("cannot read config", "error", err)
+		return 1
+	}
+	if cfg.Get() == nil {
+		apm.NewLoggerPlain().Error("config is unreadable", "path", configPath)
+		return 1
 	}
 
 	apm.SetName("MRS")
 	apm.SetSentryDSN(cfg.Get().SentryDSN)
 	apm.SetLogLevel("info")
 	log = apm.Log()
-	if cfg.Get().Healthchecks.UUID != "" {
+	defer apm.Flush()
+
+	if hcCfg := cfg.Get().Healthchecks; hcCfg != nil && hcCfg.UUID != "" {
 		hc = healthchecks.New(
-			healthchecks.WithBaseURL(cfg.Get().Healthchecks.URL),
-			healthchecks.WithCheckUUID(cfg.Get().Healthchecks.UUID),
+			healthchecks.WithBaseURL(hcCfg.URL),
+			healthchecks.WithCheckUUID(hcCfg.UUID),
 		)
 		apm.SetHealthchecks(hc)
 		hc.Start(strings.NewReader("MRS is starting..."))
-		go hc.Auto(60 * time.Second)
+		go hc.Auto(healthchecksEvery)
+		defer func() {
+			hc.ExitStatus(code, strings.NewReader(exitStatus(code)))
+			hc.Shutdown()
+		}()
+	}
+
+	return serve(cfg)
+}
+
+// exitStatus describes the process outcome in the healthchecks exit ping
+func exitStatus(code int) string {
+	if code == 0 {
+		return "MRS stopped"
+	}
+	return fmt.Sprintf("MRS stopped with exit code %d", code)
+}
+
+// serve builds the services, serves until a signal or a listener failure and returns the exit code
+func serve(cfg *services.Config) (code int) {
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			log.Error("panic recovered", "error", fmt.Sprintf("%+v", recovered), "stack", string(debug.Stack()))
+			code = 1
+		}
+	}()
+
+	if err := cfg.Validate(); err != nil {
+		log.Error("invalid config", "error", err)
+		return 1
 	}
 
 	if runGenKey {
 		if _, err := generateKey(); err != nil {
-			log.Fatal().Err(err).Msg("cannot generate key")
+			log.Error("cannot generate key", "error", err)
+			return 1
 		}
-		return
+		return 0
 	}
 
 	msc1929.UserAgent = version.UserAgent
-	dataRepo, err = data.New(cfg.Get().Path.Data)
+	repo, err := data.New(cfg.Get().Path.Data)
 	if err != nil {
-		log.Fatal().Err(err).Msg("cannot open data repo")
+		log.Error("cannot open data repo", "error", err)
+		return 1
 	}
+	dataRepo = repo
 	media, err := services.NewMedia(cfg)
 	if err != nil {
-		log.Fatal().Err(err).Msg("cannot open media repo")
+		log.Error("cannot open media repo", "error", err)
+		return 1
 	}
 
 	detector := getLanguageDetector(cfg.Get().Languages)
-	index, err = search.NewIndex(cfg.Get().Path.Index, detector, "en")
+	idx, err := search.NewIndex(cfg.Get().Path.Index, detector, "en")
 	if err != nil {
-		log.Fatal().Err(err).Msg("cannot open index repo")
+		log.Error("cannot open index repo", "error", err)
+		return 1
 	}
+	index = idx
 	plausibleSvc := services.NewPlausible(cfg)
 	blockSvc := services.NewBlocklist(cfg)
 	statsSvc := services.NewStats(cfg, dataRepo, index, blockSvc)
@@ -121,7 +174,8 @@ func main() {
 	searchSvc := services.NewSearch(cfg, dataRepo, index, blockSvc, statsSvc, plausibleSvc)
 	matrixSvc, err := matrix.NewServer(cfg, dataRepo, media, searchSvc, blockSvc)
 	if err != nil {
-		log.Fatal().Err(err).Msg("cannot start matrix service")
+		log.Error("cannot start matrix service", "error", err)
+		return 1
 	}
 	validatorSvc := services.NewValidator(cfg, blockSvc, matrixSvc)
 	crawlerSvc := services.NewCrawler(cfg, matrixSvc, validatorSvc, blockSvc, media, dataRepo, detector)
@@ -132,17 +186,28 @@ func main() {
 	modSvc := services.NewModeration(cfg, dataRepo, media, index, mailSvc, matrixSvc)
 
 	e = echo.New()
-	e.Logger = lecho.From(*log)
+	e.Logger = log
 	controllers.ConfigureRouter(e, cfg, matrixSvc, dataSvc, cacheSvc, searchSvc, crawlerSvc, statsSvc, modSvc, plausibleSvc)
 
 	initCron(cfg, dataSvc)
-	initShutdown(quit)
+	defer stop()
 
-	if err := e.Start(cfg.Get().Address + ":" + cfg.Get().Port); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		log.Fatal().Err(err).Msg("http server failed")
+	serveCtx, cancelServe := context.WithCancel(apm.NewContext())
+	defer cancelServe()
+	initShutdown(cancelServe)
+
+	sc := echo.StartConfig{
+		Address:         cfg.Get().Address + ":" + cfg.Get().Port,
+		HideBanner:      true,
+		GracefulTimeout: gracefulTimeout,
+	}
+	if serveErr := sc.Start(serveCtx, e); serveErr != nil {
+		log.Error("http server failed", "error", serveErr)
+		return 1
 	}
 
-	<-quit
+	log.Info("stopped")
+	return 0
 }
 
 func generateKey() (string, error) {
@@ -151,7 +216,7 @@ func generateKey() (string, error) {
 		return "", err
 	}
 	key := fmt.Sprintf("ed25519 %s %s", base64.RawURLEncoding.EncodeToString(pub[:4]), base64.RawStdEncoding.EncodeToString(priv.Seed()))
-	log.Warn().Str("key", key).Msg("ATTENTION! A new key has been generated")
+	log.Warn("ATTENTION! A new key has been generated", "key", key)
 
 	return key, nil
 }
@@ -181,67 +246,53 @@ func getLanguageDetector(inputLangs []string) lingua.LanguageDetector {
 		Build()
 }
 
-func initShutdown(quit chan struct{}) {
+// initShutdown cancels the serve context on the first termination signal
+func initShutdown(cancel context.CancelFunc) {
 	listener := make(chan os.Signal, 1)
 	signal.Notify(listener, os.Interrupt, syscall.SIGABRT, syscall.SIGHUP, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
 
 	go func() {
-		<-listener
-		defer close(quit)
-
-		shutdown()
+		log.Info("shutting down...", "signal", (<-listener).String())
+		cancel()
 	}()
 }
 
 func initCron(cfg *services.Config, dataSvc *services.DataFacade) {
 	ctx := apm.NewContext()
 	cron = crontab.New(crontab.WithPanicHandler(func(spec string, recovered any) {
-		log.Error().Str("spec", spec).Any("recover", recovered).Msg("cron job panicked")
+		log.Error("cron job panicked", "spec", spec, "recover", recovered)
 	}))
 
 	if schedule := cfg.Get().Cron.Discovery; schedule != "" {
-		log.Info().Str("job", "discovery").Msg("cron job enabled")
+		log.Info("cron job enabled", "job", "discovery")
 		workers := cfg.Get().Workers.Discovery
 		cron.MustAddJob(schedule, func() { dataSvc.DiscoverServers(ctx, workers) })
 	}
 	if schedule := cfg.Get().Cron.Parsing; schedule != "" {
-		log.Info().Str("job", "parsing").Msg("cron job enabled")
+		log.Info("cron job enabled", "job", "parsing")
 		workers := cfg.Get().Workers.Parsing
 		cron.MustAddJob(schedule, func() { dataSvc.ParseRooms(ctx, workers) })
 	}
 	if schedule := cfg.Get().Cron.Indexing; schedule != "" {
-		log.Info().Str("job", "indexing").Msg("cron job enabled")
+		log.Info("cron job enabled", "job", "indexing")
 		cron.MustAddJob(schedule, func() { dataSvc.Ingest(ctx) })
 	}
 	if schedule := cfg.Get().Cron.Full; schedule != "" {
-		log.Info().Str("job", "full").Msg("cron job enabled")
+		log.Info("cron job enabled", "job", "full")
 		dw, pw := cfg.Get().Workers.Discovery, cfg.Get().Workers.Parsing
 		cron.MustAddJob(schedule, func() { dataSvc.Full(ctx, dw, pw) })
 	}
 }
 
-func shutdown() {
-	log.Info().Msg("shutting down...")
-	defer apm.Flush()
-	cronCtx, cronCancel := context.WithTimeout(context.Background(), 5*time.Second)
+// stop drains cron and closes the repositories once the HTTP server is down
+func stop() {
+	cronCtx, cronCancel := context.WithTimeout(apm.NewContext(), teardownTimeout)
 	defer cronCancel()
 	if err := cron.Shutdown(cronCtx); err != nil {
-		log.Warn().Err(err).Msg("cron shutdown did not drain cleanly")
+		log.Warn("cron shutdown did not drain cleanly", "error", err)
 	}
 	if err := index.Close(); err != nil {
-		log.Error().Err(err).Msg("cannot close the index")
+		log.Error("cannot close the index", "error", err)
 	}
 	dataRepo.Close()
-	if hc != nil {
-		hc.ExitStatus(0)
-	}
-	// api was not started yet
-	if e == nil {
-		return
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := e.Shutdown(ctx); err != nil {
-		log.Fatal().Err(err).Msg("http server shutdown failed") //nolint:gocritic // we are shutting down
-	}
 }

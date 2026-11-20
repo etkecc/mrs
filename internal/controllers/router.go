@@ -5,12 +5,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/etkecc/go-apm"
-	echobasicauth "github.com/etkecc/go-echo-basic-auth"
+	"github.com/etkecc/go-apm/v2"
+	echobasicauth "github.com/etkecc/go-echo-basic-auth/v2"
 	_ "github.com/etkecc/mrs/docs" // required for swaggo
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
-	echoSwagger "github.com/swaggo/echo-swagger"
+	"github.com/labstack/echo/v5"
+	"github.com/labstack/echo/v5/middleware"
+	echoSwagger "github.com/swaggo/echo-swagger/v2"
 
 	"github.com/etkecc/mrs/internal/metrics"
 	"github.com/etkecc/mrs/internal/model"
@@ -81,7 +81,7 @@ func ConfigureRouter(
 	e.POST("/discover/msc1929/:name", checkMSC1929(), getRL(1))
 
 	e.POST("/mod/report/:room_id", report(modSvc), getRL(1)) // doesn't use mod group to allow without auth
-	m := e.Group("mod")
+	m := e.Group("/mod")
 	m.Use(echobasicauth.NewMiddleware(&cfg.Get().Auth.Moderation))
 	m.GET("/list-reported", listReported(modSvc), rl())
 	m.GET("/list-reported/:server_name", listReported(modSvc), rl())
@@ -92,7 +92,7 @@ func ConfigureRouter(
 	m.GET("/ban/:room_id", ban(modSvc), rl())
 	m.GET("/unban/:room_id", unban(modSvc), rl())
 
-	a := e.Group("-")
+	a := e.Group("/-")
 	a.Use(echobasicauth.NewMiddleware(&cfg.Get().Auth.Admin))
 	a.GET("/status", status(statsSvc))
 	a.POST("/discover", discover(dataSvc, cfg))
@@ -106,29 +106,29 @@ func configureRouter(e *echo.Echo, cfgSvc configService, cacheSvc cacheService) 
 	e.Use(apm.WithSentry())
 	e.Use(cacheSvc.Middleware())
 	e.Use(middleware.Secure())
-	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{MaxAge: 86400}))
-	e.Use(middleware.GzipWithConfig(middleware.GzipConfig{Skipper: func(c echo.Context) bool { return doNotGZIP[c.Path()] }}))
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{AllowOrigins: []string{"*"}, MaxAge: 86400}))
+	e.Use(middleware.GzipWithConfig(middleware.GzipConfig{Skipper: func(c *echo.Context) bool { return doNotGZIP[c.Path()] }}))
 	e.Use(withBlocklist(cfgSvc))
 	e.Use(withMContext(cfgSvc))
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
+		return func(c *echo.Context) error {
 			c.Response().Header().Set(echo.HeaderServer, version.Server)
 			return next(c)
 		}
 	})
-	e.HideBanner = true
+	e.HTTPErrorHandler = errorLogger()
 	e.IPExtractor = echo.ExtractIPFromXFFHeader(
 		echo.TrustLoopback(true),
 		echo.TrustLinkLocal(true),
 		echo.TrustPrivateNet(true),
 	)
-	e.Any("/_health", func(c echo.Context) error {
+	e.Any("/_health", func(c *echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
 	})
-	e.GET("/robots.txt", func(c echo.Context) error {
+	e.GET("/robots.txt", func(c *echo.Context) error {
 		return c.String(http.StatusOK, "User-agent: *\nDisallow: /")
 	})
-	e.GET("/_docs", func(c echo.Context) error {
+	e.GET("/_docs", func(c *echo.Context) error {
 		return c.Redirect(http.StatusMovedPermanently, "/_docs/index.html")
 	})
 	e.GET("/_docs/*", echoSwagger.WrapHandler)
@@ -138,7 +138,7 @@ func configureRouter(e *echo.Echo, cfgSvc configService, cacheSvc cacheService) 
 func discoveryProtection(rl echo.MiddlewareFunc, cfg configService) echo.MiddlewareFunc {
 	auth := echobasicauth.NewMiddleware(&cfg.Get().Auth.Discovery)
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
+		return func(c *echo.Context) error {
 			if c.Request().Header.Get(echo.HeaderAuthorization) != "" {
 				return auth(next)(c)
 			}

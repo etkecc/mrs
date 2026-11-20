@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/etkecc/go-apm"
+	"github.com/etkecc/go-apm/v2"
 )
 
 // Batch struct
@@ -45,8 +45,8 @@ func (b *Batch[T]) Flush(ctx context.Context) {
 	log := apm.Log(ctx)
 
 	started := time.Now().UTC()
-	log.Info().Int("len", len(b.data)).Msg("storing data batch")
+	log.Info("storing data batch", "len", len(b.data))
 	b.flushfunc(ctx, b.data)
-	log.Info().Int("len", len(b.data)).Str("took", time.Since(started).String()).Msg("stored data batch")
+	log.Info("stored data batch", "len", len(b.data), "took", time.Since(started).String())
 	b.data = make([]T, 0, b.size)
 }

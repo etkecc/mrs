@@ -2,10 +2,13 @@ package services
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"os"
 	"sync"
 
-	"github.com/etkecc/go-apm"
+	"github.com/etkecc/go-apm/v2"
+	echobasicauth "github.com/etkecc/go-echo-basic-auth/v2"
 	"github.com/etkecc/go-fswatcher"
 	"github.com/fsnotify/fsnotify"
 	"gopkg.in/yaml.v3"
@@ -57,16 +60,16 @@ func (c *Config) Read(ctx context.Context) {
 	defer c.mu.Unlock()
 	log := apm.Log(ctx)
 
-	log.Info().Msg("reading config")
+	log.Info("reading config")
 	configb, err := os.ReadFile(c.path)
 	if err != nil {
-		log.Error().Err(err).Msg("cannot read config")
+		log.Error("cannot read config", "error", err)
 		return
 	}
 	var config *model.Config
 	err = yaml.Unmarshal(configb, &config)
 	if err != nil {
-		log.Error().Err(err).Msg("cannot unmarshal config")
+		log.Error("cannot unmarshal config", "error", err)
 		return
 	}
 
@@ -80,4 +83,30 @@ func (c *Config) Write(cfg *model.Config) error {
 		return err
 	}
 	return os.WriteFile(c.path, datab, 0o600)
+}
+
+// Validate reports auth allowlist entries that are neither an IP nor a CIDR, which would deny every peer
+func (c *Config) Validate() error {
+	cfg := c.Get()
+	if cfg == nil || cfg.Auth == nil {
+		return nil
+	}
+	named := []struct {
+		name string
+		auth *echobasicauth.Auth
+	}{
+		{"admin", &cfg.Auth.Admin},
+		{"metrics", &cfg.Auth.Metrics},
+		{"catalog", &cfg.Auth.Catalog},
+		{"discovery", &cfg.Auth.Discovery},
+		{"moderation", &cfg.Auth.Moderation},
+	}
+
+	errs := make([]error, 0, len(named))
+	for _, entry := range named {
+		if err := entry.auth.Validate(); err != nil {
+			errs = append(errs, fmt.Errorf("auth.%s: %w", entry.name, err))
+		}
+	}
+	return errors.Join(errs...)
 }

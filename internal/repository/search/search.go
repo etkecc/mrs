@@ -7,13 +7,13 @@ import (
 	"github.com/blevesearch/bleve/v2/search"
 	"github.com/blevesearch/bleve/v2/search/query"
 
-	"github.com/etkecc/go-apm"
+	"github.com/etkecc/go-apm/v2"
 	"github.com/etkecc/mrs/internal/model"
 )
 
 // Search something!
 func (i *Index) Search(ctx context.Context, searchQuery query.Query, limit, offset int, sortBy []string) (results []*model.Entry, total int, err error) {
-	apm.Log(ctx).Debug().Msg("searching index")
+	apm.Log(ctx).Debug("searching index")
 	req := bleve.NewSearchRequestOptions(searchQuery, limit, offset, false)
 	req.Fields = []string{"*"}
 	req.SortBy(sortBy)

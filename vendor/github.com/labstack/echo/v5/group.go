@@ -1,0 +1,223 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: © 2015 LabStack LLC and Echo contributors
+
+package echo
+
+import (
+	"io/fs"
+	"net/http"
+)
+
+// Group is a set of sub-routes for a specified route. It can be used for inner
+// routes that share a common middleware or functionality that should be separate
+// from the parent echo instance while still inheriting from it.
+type Group struct {
+	echo       *Echo
+	prefix     string
+	middleware []MiddlewareFunc
+
+	// noAutoRegisterRoutes is a flag that indicates whether Group should NOT register 404 routes automatically
+	// when there are middlewares registered with the group.
+	// Note: if you decide not to register 404 routes automatically, make sure to check if all your middlewares are executed
+	// as expected. For example - CORS middleware.
+	noAutoRegisterRoutes bool
+}
+
+// Use implements `Echo#Use()` for sub-routes within the Group.
+//
+// Important! Group middlewares are executed in case there was no exact route match as by default Group registers
+// `/*` NotFound routes for itself. If this kind of behavior is not needed, then create an Echo instance with the ` noAutoRegisterRoutes `
+// flag set to true. Example `echo.NewWithConfig(echo.Config{NoGroupAutoRegister404Routes: true})`.
+func (g *Group) Use(middleware ...MiddlewareFunc) {
+	g.middleware = append(g.middleware, middleware...)
+	if len(g.middleware) == 0 {
+		return
+	}
+	if g.noAutoRegisterRoutes {
+		return
+	}
+	// group level middlewares are different from Echo `Pre` and `Use` middlewares (those are global). Group level middlewares
+	// are only executed if they are added to the Router with route.
+	// So we register catch all route (404 is a safe way to emulate route match) for this group and now during routing the
+	// Router would find route to match our request path and therefore guarantee the middleware(s) will get executed.
+	// Note: we use nil handler so Router would choose the default 404 handler. This may not work with custom routers.
+	if _, err := g.AddRoute(Route{Method: RouteNotFound, Path: "", allowOverwrite: true}); err != nil {
+		panic(err) // this is how `v4` handles errors. `v5` has methods to have panic-free usage
+	}
+	if _, err := g.AddRoute(Route{Method: RouteNotFound, Path: "/*", allowOverwrite: true}); err != nil {
+		panic(err) // this is how `v4` handles errors. `v5` has methods to have panic-free usage
+	}
+}
+
+// CONNECT implements `Echo#CONNECT()` for sub-routes within the Group. Panics on error.
+func (g *Group) CONNECT(path string, h HandlerFunc, m ...MiddlewareFunc) RouteInfo {
+	return g.Add(http.MethodConnect, path, h, m...)
+}
+
+// DELETE implements `Echo#DELETE()` for sub-routes within the Group. Panics on error.
+func (g *Group) DELETE(path string, h HandlerFunc, m ...MiddlewareFunc) RouteInfo {
+	return g.Add(http.MethodDelete, path, h, m...)
+}
+
+// GET implements `Echo#GET()` for sub-routes within the Group. Panics on error.
+func (g *Group) GET(path string, h HandlerFunc, m ...MiddlewareFunc) RouteInfo {
+	return g.Add(http.MethodGet, path, h, m...)
+}
+
+// HEAD implements `Echo#HEAD()` for sub-routes within the Group. Panics on error.
+func (g *Group) HEAD(path string, h HandlerFunc, m ...MiddlewareFunc) RouteInfo {
+	return g.Add(http.MethodHead, path, h, m...)
+}
+
+// OPTIONS implements `Echo#OPTIONS()` for sub-routes within the Group. Panics on error.
+func (g *Group) OPTIONS(path string, h HandlerFunc, m ...MiddlewareFunc) RouteInfo {
+	return g.Add(http.MethodOptions, path, h, m...)
+}
+
+// PATCH implements `Echo#PATCH()` for sub-routes within the Group. Panics on error.
+func (g *Group) PATCH(path string, h HandlerFunc, m ...MiddlewareFunc) RouteInfo {
+	return g.Add(http.MethodPatch, path, h, m...)
+}
+
+// POST implements `Echo#POST()` for sub-routes within the Group. Panics on error.
+func (g *Group) POST(path string, h HandlerFunc, m ...MiddlewareFunc) RouteInfo {
+	return g.Add(http.MethodPost, path, h, m...)
+}
+
+// PUT implements `Echo#PUT()` for sub-routes within the Group. Panics on error.
+func (g *Group) PUT(path string, h HandlerFunc, m ...MiddlewareFunc) RouteInfo {
+	return g.Add(http.MethodPut, path, h, m...)
+}
+
+// QUERY implements `Echo#QUERY()` for sub-routes within the Group. Panics on error.
+func (g *Group) QUERY(path string, h HandlerFunc, m ...MiddlewareFunc) RouteInfo {
+	return g.Add(QUERY, path, h, m...)
+}
+
+// TRACE implements `Echo#TRACE()` for sub-routes within the Group. Panics on error.
+func (g *Group) TRACE(path string, h HandlerFunc, m ...MiddlewareFunc) RouteInfo {
+	return g.Add(http.MethodTrace, path, h, m...)
+}
+
+// Any implements `Echo#Any()` for sub-routes within the Group. Panics on error.
+func (g *Group) Any(path string, handler HandlerFunc, middleware ...MiddlewareFunc) RouteInfo {
+	return g.Add(RouteAny, path, handler, middleware...)
+}
+
+// Match implements `Echo#Match()` for sub-routes within the Group. Panics on error.
+func (g *Group) Match(methods []string, path string, handler HandlerFunc, middleware ...MiddlewareFunc) Routes {
+	errs := make([]error, 0)
+	ris := make(Routes, 0)
+	for _, m := range methods {
+		ri, err := g.AddRoute(Route{
+			Method:      m,
+			Path:        path,
+			Handler:     handler,
+			Middlewares: middleware,
+		})
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		ris = append(ris, ri)
+	}
+	if len(errs) > 0 {
+		panic(errs) // this is how `v4` handles errors. `v5` has methods to have panic-free usage
+	}
+	return ris
+}
+
+// Group creates a new sub-group with prefix and optional sub-group-level middleware.
+// The prefix is concatenated with the parent group's prefix without inserting a slash.
+// For example, a parent prefix of "/v1" and a sub-group prefix of "/admin" form "/v1/admin".
+//
+// Important! Group middlewares are executed in case there was no exact route match as by default Group registers
+// `/*` NotFound routes for itself. If this kind of behavior is not needed, then create an Echo instance with the ` noAutoRegisterRoutes `
+// flag set to true. Example `echo.NewWithConfig(echo.Config{NoGroupAutoRegister404Routes: true})`.
+func (g *Group) Group(prefix string, middleware ...MiddlewareFunc) (sg *Group) {
+	m := make([]MiddlewareFunc, 0, len(g.middleware)+len(middleware))
+	m = append(m, g.middleware...)
+	m = append(m, middleware...)
+	sg = g.echo.Group(g.prefix+prefix, m...)
+	return
+}
+
+// Static implements `Echo#Static()` for sub-routes within the Group.
+func (g *Group) Static(pathPrefix, fsRoot string, middleware ...MiddlewareFunc) RouteInfo {
+	subFs := MustSubFS(g.echo.Filesystem, fsRoot)
+	return g.StaticFS(pathPrefix, subFs, middleware...)
+}
+
+// StaticFS implements `Echo#StaticFS()` for sub-routes within the Group.
+//
+// When dealing with `embed.FS` use `fs := echo.MustSubFS(fs, "rootDirectory") to create sub fs which uses necessary
+// prefix for directory path. This is necessary as `//go:embed assets/images` embeds files with paths
+// including `assets/images` as their prefix.
+func (g *Group) StaticFS(pathPrefix string, filesystem fs.FS, middleware ...MiddlewareFunc) RouteInfo {
+	return g.Add(
+		http.MethodGet,
+		pathPrefix+"*",
+		StaticDirectoryHandler(filesystem, !g.echo.enablePathUnescapingStaticFiles),
+		middleware...,
+	)
+}
+
+// FileFS implements `Echo#FileFS()` for sub-routes within the Group.
+//
+// Avoid using the leading `/` slash as most of the Go standard library fs.FS implementations require relative paths for
+// file operations.
+func (g *Group) FileFS(path, file string, filesystem fs.FS, m ...MiddlewareFunc) RouteInfo {
+	return g.GET(path, StaticFileHandler(file, filesystem), m...)
+}
+
+// File implements `Echo#File()` for sub-routes within the Group. Panics on error.
+//
+// Avoid using the leading `/` slash as most of the Go standard library fs.FS implementations require relative paths for
+// file operations.
+func (g *Group) File(path, file string, middleware ...MiddlewareFunc) RouteInfo {
+	handler := func(c *Context) error {
+		return c.File(file)
+	}
+	return g.Add(http.MethodGet, path, handler, middleware...)
+}
+
+// RouteNotFound implements `Echo#RouteNotFound()` for sub-routes within the Group.
+//
+// Important! When the group has middlewares, each `Group#Use()` call (re)registers catch-all NotFound routes for
+// the group prefix and prefix + `/*` with the group middlewares, unless the Echo-wide
+// `Config.NoGroupAutoRegister404Routes` is set. `Echo#Group()` and `Group#Group()` make this call when the new group
+// has own or inherited middlewares. For the same route path the last registered NotFound route wins, and it runs
+// only the group middlewares it was registered with: these catch-all routes replace handlers registered earlier for
+// those paths (by any group or by Echo), and a handler registered later replaces them. Register custom ones on this
+// group after the last such call for its prefix to keep its middlewares. On a Router that does not allow overwriting
+// routes this panics; use the router-wide `RouterConfig.NotFoundHandler` there, or set
+// `Config.NoGroupAutoRegister404Routes` and register both paths yourself on the group whose middlewares should run
+// for them.
+//
+// Example: `g.RouteNotFound("/*", func(c *echo.Context) error { return c.NoContent(http.StatusNotFound) })`
+func (g *Group) RouteNotFound(path string, h HandlerFunc, m ...MiddlewareFunc) RouteInfo {
+	return g.Add(RouteNotFound, path, h, m...)
+}
+
+// Add implements `Echo#Add()` for sub-routes within the Group. Panics on error.
+func (g *Group) Add(method, path string, handler HandlerFunc, middleware ...MiddlewareFunc) RouteInfo {
+	ri, err := g.AddRoute(Route{
+		Method:      method,
+		Path:        path,
+		Handler:     handler,
+		Middlewares: middleware,
+	})
+	if err != nil {
+		panic(err) // this is how `v4` handles errors. `v5` has methods to have panic-free usage
+	}
+	return ri
+}
+
+// AddRoute registers a new Routable with Router
+func (g *Group) AddRoute(route Route) (RouteInfo, error) {
+	// Combine middleware into a new slice to avoid accidentally passing the same slice for
+	// multiple routes, which would lead to later add() calls overwriting the
+	// middleware from earlier calls.
+	groupRoute := route.WithPrefix(g.prefix, append([]MiddlewareFunc{}, g.middleware...))
+	return g.echo.add(groupRoute)
+}

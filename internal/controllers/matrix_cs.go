@@ -3,7 +3,7 @@ package controllers
 import (
 	"net/http"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 
 	"github.com/etkecc/mrs/internal/model"
 	"github.com/etkecc/mrs/internal/utils"
@@ -26,7 +26,7 @@ func configureMatrixCSEndpoints(e *echo.Echo, matrixSvc matrixService, cacheSvc 
 	summary := clientRoomSummary(matrixSvc)
 	e.GET("/_matrix/client/v1/room_summary/:room_id_alias", summary, rl)
 	e.GET("/_matrix/client/unstable/im.nheko.summary/summary/:room_id_alias", summary, rl)
-	e.GET("_matrix/client/unstable/im.nheko.summary/rooms/:room_id_alias/summary", summary, rl)
+	e.GET("/_matrix/client/unstable/im.nheko.summary/rooms/:room_id_alias/summary", summary, rl)
 }
 
 // @Summary		Client well-known
@@ -36,7 +36,7 @@ func configureMatrixCSEndpoints(e *echo.Echo, matrixSvc matrixService, cacheSvc 
 // @Success		200	{object}	model.WellKnownClient	"Where a client should point its homeserver base URL"
 // @Router			/.well-known/matrix/client [get]
 func wellKnownClient(matrixSvc matrixService) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		return c.JSONBlob(http.StatusOK, matrixSvc.GetClientWellKnown())
 	}
 }
@@ -48,7 +48,7 @@ func wellKnownClient(matrixSvc matrixService) echo.HandlerFunc {
 // @Success		200	{object}	msc1929.Response	"Admin and support contacts"
 // @Router			/.well-known/matrix/support [get]
 func wellKnownSupport(matrixSvc matrixService) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		return c.JSONBlob(http.StatusOK, matrixSvc.GetSupportWellKnown())
 	}
 }
@@ -60,7 +60,7 @@ func wellKnownSupport(matrixSvc matrixService) echo.HandlerFunc {
 // @Success		200	{object}	model.ClientVersions	"The spec versions we pretend to support so clients stop sulking"
 // @Router			/_matrix/client/versions [get]
 func clientVersions(matrixSvc matrixService) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		return c.JSONBlob(http.StatusOK, matrixSvc.GetClientVersion())
 	}
 }
@@ -75,7 +75,7 @@ func clientVersions(matrixSvc matrixService) echo.HandlerFunc {
 // @Router			/_matrix/client/r0/directory/room/{room_alias} [get]
 // @Router			/_matrix/client/v3/directory/room/{room_alias} [get]
 func clientDirectoryRoom(matrixSvc matrixService) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		return c.JSONBlob(matrixSvc.GetClientDirectory(c.Request().Context(), c.Param("room_alias")))
 	}
 }
@@ -90,7 +90,7 @@ func clientDirectoryRoom(matrixSvc matrixService) echo.HandlerFunc {
 // @Router			/_matrix/client/r0/directory/list/room/{room_id} [get]
 // @Router			/_matrix/client/v3/directory/list/room/{room_id} [get]
 func clientDirectoryList(matrixSvc matrixService) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		return c.JSONBlob(matrixSvc.GetClientRoomVisibility(c.Request().Context(), c.Param("room_id")))
 	}
 }
@@ -107,7 +107,7 @@ func clientDirectoryList(matrixSvc matrixService) echo.HandlerFunc {
 // @Router			/_matrix/client/unstable/im.nheko.summary/summary/{room_id_alias} [get]
 // @Router			/_matrix/client/unstable/im.nheko.summary/rooms/{room_id_alias}/summary [get]
 func clientRoomSummary(matrixSvc matrixService) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		code, room := matrixSvc.GetClientRoomSummary(c.Request().Context(), c.Param("room_id_alias"), c.QueryParam("via"), false)
 		if code != http.StatusOK {
 			return c.JSONBlob(code, utils.MustJSON(model.MatrixError{

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/etkecc/go-apm"
+	"github.com/etkecc/go-apm/v2"
 	"github.com/etkecc/go-kit"
 
 	"github.com/etkecc/mrs/internal/model"
@@ -65,13 +65,13 @@ func (df *DataFacade) AddServers(ctx context.Context, names []string, workers in
 // DiscoverServers matrix servers
 func (df *DataFacade) DiscoverServers(ctx context.Context, workers int) {
 	log := apm.Log(ctx)
-	log.Info().Msg("discovering matrix servers...")
+	log.Info("discovering matrix servers...")
 
 	start := time.Now().UTC()
 	df.stats.SetStartedAt(ctx, "discovery", start)
 	df.crawler.DiscoverServers(ctx, workers)
 	df.stats.SetFinishedAt(ctx, "discovery", time.Now().UTC())
-	log.Info().Str("took", time.Since(start).String()).Msg("servers discovery has been finished")
+	log.Info("servers discovery has been finished", "took", time.Since(start).String())
 }
 
 // EachRoom iterates over all discovered rooms
@@ -82,36 +82,36 @@ func (df *DataFacade) EachRoom(ctx context.Context, handler func(roomID string, 
 // ParseRooms from discovered servers
 func (df *DataFacade) ParseRooms(ctx context.Context, workers int) {
 	log := apm.Log(ctx)
-	log.Info().Msg("parsing matrix rooms...")
+	log.Info("parsing matrix rooms...")
 	start := time.Now().UTC()
 	df.stats.SetStartedAt(ctx, "parsing", start)
 	df.crawler.ParseRooms(ctx, workers)
 	df.stats.SetFinishedAt(ctx, "parsing", time.Now().UTC())
-	log.Info().Str("took", time.Since(start).String()).Msg("matrix rooms have been parsed")
+	log.Info("matrix rooms have been parsed", "took", time.Since(start).String())
 }
 
 // Ingest data into search index
 func (df *DataFacade) Ingest(ctx context.Context) {
 	log := apm.Log(ctx)
-	log.Info().Msg("creating fresh index...")
+	log.Info("creating fresh index...")
 	if err := df.index.EmptyIndex(ctx); err != nil {
-		log.Error().Err(err).Msg("cannot create empty index")
+		log.Error("cannot create empty index", "error", err)
 	}
 
-	log.Info().Msg("indexing matrix rooms...")
+	log.Info("indexing matrix rooms...")
 	start := time.Now().UTC()
 	df.stats.SetStartedAt(ctx, "indexing", start)
 	df.crawler.EachRoom(ctx, func(roomID string, room *model.MatrixRoom) bool {
 		if err := df.index.RoomsBatch(ctx, roomID, room.Entry()); err != nil {
-			log.Warn().Err(err).Str("id", room.ID).Msg("cannot add room to batch")
+			log.Warn("cannot add room to batch", "error", err, "id", room.ID)
 		}
 		return false
 	})
 	if err := df.index.IndexBatch(ctx); err != nil {
-		log.Warn().Err(err).Msg("indexing of the last batch failed")
+		log.Warn("indexing of the last batch failed", "error", err)
 	}
 	df.stats.SetFinishedAt(ctx, "indexing", time.Now().UTC())
-	log.Info().Str("took", time.Since(start).String()).Msg("matrix rooms have been indexed")
+	log.Info("matrix rooms have been indexed", "took", time.Since(start).String())
 }
 
 // Full data pipeline (discovery, parsing, indexing)
@@ -121,9 +121,9 @@ func (df *DataFacade) Full(ctx context.Context, discoveryWorkers, parsingWorkers
 	df.ParseRooms(ctx, parsingWorkers)
 	df.Ingest(ctx)
 
-	log.Info().Msg("collecting stats...")
+	log.Info("collecting stats...")
 	df.stats.Collect(ctx)
-	log.Info().Msg("stats have been collected")
+	log.Info("stats have been collected")
 }
 
 func (df *DataFacade) GetRoom(ctx context.Context, roomID string) (*model.MatrixRoom, error) {

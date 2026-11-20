@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/etkecc/go-apm"
+	"github.com/etkecc/go-apm/v2"
 
 	"github.com/etkecc/mrs/internal/utils"
 )
@@ -74,10 +74,10 @@ func (m *Media) Get(ctx context.Context, serverName, mediaID string, params url.
 		return nil, ""
 	}
 
-	log := apm.Log(ctx).With().Str("server", serverName).Str("mediaID", mediaID).Str("file", mediaPath).Logger()
+	log := apm.Log(ctx).With("server", serverName, "mediaID", mediaID, "file", mediaPath)
 	file, err := os.Open(mediaPath)
 	if err != nil {
-		log.Warn().Err(err).Msg("cannot open media file")
+		log.Warn("cannot open media file", "error", err)
 		return nil, ""
 	}
 	defer file.Close()
@@ -86,7 +86,7 @@ func (m *Media) Get(ctx context.Context, serverName, mediaID string, params url.
 	sniff := make([]byte, 512)
 	n, err := file.Read(sniff)
 	if err != nil && !errors.Is(err, io.EOF) {
-		log.Warn().Err(err).Msg("cannot read media file")
+		log.Warn("cannot read media file", "error", err)
 		return nil, ""
 	}
 	if n == 0 {
@@ -94,17 +94,17 @@ func (m *Media) Get(ctx context.Context, serverName, mediaID string, params url.
 	}
 	contentType = http.DetectContentType(sniff[:n])
 	if !strings.HasPrefix(contentType, "image/") {
-		log.Warn().Str("content_type", contentType).Msg("cached media is not an image")
+		log.Warn("cached media is not an image", "content_type", contentType)
 		return nil, ""
 	}
 
 	if _, err := file.Seek(0, 0); err != nil {
-		log.Warn().Err(err).Msg("cannot seek media file")
+		log.Warn("cannot seek media file", "error", err)
 		return nil, ""
 	}
 	contents, err := io.ReadAll(file)
 	if err != nil {
-		log.Warn().Err(err).Msg("cannot read media file")
+		log.Warn("cannot read media file", "error", err)
 		return nil, ""
 	}
 	return bytes.NewReader(contents), contentType
@@ -116,9 +116,9 @@ func (m *Media) Add(ctx context.Context, serverName, mediaID string, params url.
 	if mediaPath == "" {
 		return
 	}
-	log := apm.Log(ctx).With().Str("server", serverName).Str("mediaID", mediaID).Str("file", mediaPath).Logger()
+	log := apm.Log(ctx).With("server", serverName, "mediaID", mediaID, "file", mediaPath)
 	if len(content) == 0 {
-		log.Warn().Msg("the media file is empty")
+		log.Warn("the media file is empty")
 		return
 	}
 
@@ -127,22 +127,22 @@ func (m *Media) Add(ctx context.Context, serverName, mediaID string, params url.
 		return
 	}
 	if err := os.MkdirAll(filepath.Dir(mediaPath), 0o755); err != nil {
-		log.Warn().Err(err).Msg("cannot create media directory")
+		log.Warn("cannot create media directory", "error", err)
 		return
 	}
 
 	if err := os.WriteFile(mediaPath, content, 0o600); err != nil {
-		log.Warn().Err(err).Msg("cannot write media file")
+		log.Warn("cannot write media file", "error", err)
 	}
 }
 
 // Delete removes the media file from disk
 func (m *Media) Delete(ctx context.Context, serverName, mediaID string) {
 	media := m.cfg.Get().Path.Media
-	log := apm.Log(ctx).With().Str("server", serverName).Str("mediaID", mediaID).Logger()
+	log := apm.Log(ctx).With("server", serverName, "mediaID", mediaID)
 	entries, err := os.ReadDir(media)
 	if err != nil {
-		log.Warn().Err(err).Msg("cannot read media directory")
+		log.Warn("cannot read media directory", "error", err)
 		return
 	}
 
@@ -151,7 +151,7 @@ func (m *Media) Delete(ctx context.Context, serverName, mediaID string) {
 			continue
 		}
 		if err := os.Remove(filepath.Join(media, entry.Name())); err != nil {
-			log.Warn().Str("file", entry.Name()).Err(err).Msg("cannot delete media file")
+			log.Warn("cannot delete media file", "file", entry.Name(), "error", err)
 		}
 	}
 }

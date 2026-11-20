@@ -12,7 +12,7 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/matrix-org/gomatrixserverlib"
 
-	"github.com/etkecc/go-apm"
+	"github.com/etkecc/go-apm/v2"
 	"github.com/etkecc/mrs/internal/utils"
 )
 
@@ -22,7 +22,7 @@ func (s *Server) ValidateAuth(ctx context.Context, r *http.Request) (serverName 
 
 	defer r.Body.Close()
 	if s.cfg.Get().Matrix.ServerName == devhost {
-		log.Warn().Msg("ignoring auth validation on dev host")
+		log.Warn("ignoring auth validation on dev host")
 		return "ignored", nil
 	}
 	body, err := io.ReadAll(r.Body)
@@ -59,13 +59,12 @@ func (s *Server) ValidateAuth(ctx context.Context, r *http.Request) (serverName 
 	}
 	for _, auth := range auths {
 		if err := s.validateAuth(obj, canonical, auth, keys); err != nil {
-			log.
-				Warn().
-				Err(err).
-				Str("canonical", string(canonical)).
-				Any("content", content).
-				Any("obj", obj).
-				Msg("matrix auth validation failed")
+			log.Warn("matrix auth validation failed",
+				"error", err,
+				"canonical", string(canonical),
+				"content", content,
+				"obj", obj,
+			)
 			return "", err
 		}
 	}
@@ -136,7 +135,7 @@ func (s *Server) parseAuth(ctx context.Context, authorization string) *matrixAut
 		case "sig":
 			sig, err := base64.RawStdEncoding.DecodeString(value)
 			if err != nil {
-				log.Warn().Err(err).Msg("cannot decode signature")
+				log.Warn("cannot decode signature", "error", err)
 				return nil
 			}
 			auth.Signature = sig

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/blevesearch/bleve/v2"
-	"github.com/etkecc/go-apm"
+	"github.com/etkecc/go-apm/v2"
 
 	"github.com/etkecc/mrs/internal/model"
 )
@@ -60,9 +60,9 @@ func (i *Index) IndexBatch(ctx context.Context) error {
 	log := apm.Log(ctx)
 	size := i.batch.Size()
 	started := time.Now()
-	log.Info().Int("len", size).Msg("indexing batch...")
+	log.Info("indexing batch...", "len", size)
 	err := i.index.IndexBatch(i.batch)
 	i.batch.Reset()
-	log.Info().Int("len", size).Str("took", time.Since(started).String()).Msg("indexed batch")
+	log.Info("indexed batch", "len", size, "took", time.Since(started).String())
 	return err
 }

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 func isSafeImage(contentType string) bool {
@@ -33,7 +33,7 @@ func isSafeImage(contentType string) bool {
 // @Router			/_matrix/media/r0/thumbnail/{name}/{id} [get]
 // @Router			/_matrix/media/v3/thumbnail/{name}/{id} [get]
 func avatar(svc matrixService) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		name := c.Param("name")
 		id := c.Param("id")
 		if name == "" || id == "" {

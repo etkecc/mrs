@@ -10,7 +10,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/etkecc/go-apm"
+	"github.com/etkecc/go-apm/v2"
 
 	"github.com/etkecc/mrs/internal/utils"
 	"github.com/etkecc/mrs/internal/version"
@@ -29,7 +29,7 @@ func (s *Server) GetMediaThumbnail(ctx context.Context, serverName, mediaID stri
 
 	ctx, serverURL, serverHost := s.getURL(ctx, serverName, false)
 	if serverURL == "" {
-		log.Warn().Str("server", serverName).Msg("cannot get server URL")
+		log.Warn("cannot get server URL", "server", serverName)
 		return nil, ""
 	}
 
@@ -38,7 +38,7 @@ func (s *Server) GetMediaThumbnail(ctx context.Context, serverName, mediaID stri
 	apiURL := serverURL + path + "?" + query
 	authHeaders, err := s.Authorize(serverName, http.MethodGet, path+"?"+query, nil)
 	if err != nil {
-		log.Warn().Err(err).Str("server", serverName).Str("mediaID", mediaID).Msg("cannot authorize")
+		log.Warn("cannot authorize", "error", err, "server", serverName, "mediaID", mediaID)
 		return nil, ""
 	}
 
@@ -46,7 +46,7 @@ func (s *Server) GetMediaThumbnail(ctx context.Context, serverName, mediaID stri
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiURL, http.NoBody)
 	if err != nil {
-		log.Warn().Err(err).Str("server", serverName).Str("mediaID", mediaID).Msg("cannot create request")
+		log.Warn("cannot create request", "error", err, "server", serverName, "mediaID", mediaID)
 		return nil, ""
 	}
 	if serverHost != "" {
@@ -60,14 +60,14 @@ func (s *Server) GetMediaThumbnail(ctx context.Context, serverName, mediaID stri
 
 	resp, err := utils.Do(req)
 	if err != nil {
-		log.Warn().Err(err).Str("server", serverName).Str("mediaID", mediaID).Msg("cannot get media thumbnail")
+		log.Warn("cannot get media thumbnail", "error", err, "server", serverName, "mediaID", mediaID)
 		return nil, ""
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, maxThumbnailBytes)) //nolint:errcheck // intended
 		resp.Body.Close()
-		log.Warn().Str("server", serverName).Str("mediaID", mediaID).Int("status", resp.StatusCode).Str("body", string(body)).Msg("cannot get media thumbnail")
+		log.Warn("cannot get media thumbnail", "server", serverName, "mediaID", mediaID, "status", resp.StatusCode, "body", string(body))
 		return nil, ""
 	}
 	reader, contentType := s.getImageFromMultipart(ctx, resp)
@@ -141,7 +141,7 @@ func (s *Server) getImageFromMultipart(ctx context.Context, resp *http.Response)
 	log := apm.Log(ctx)
 	_, mediaParams, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
 	if err != nil {
-		log.Warn().Err(err).Msg("cannot parse content type")
+		log.Warn("cannot parse content type", "error", err)
 		return nil, ""
 	}
 	mr := multipart.NewReader(resp.Body, mediaParams["boundary"])
@@ -151,7 +151,7 @@ func (s *Server) getImageFromMultipart(ctx context.Context, resp *http.Response)
 			break
 		}
 		if err != nil {
-			log.Warn().Err(err).Msg("cannot read multipart")
+			log.Warn("cannot read multipart", "error", err)
 			return nil, ""
 		}
 		if p.Header.Get("Content-Type") == "application/json" {
@@ -161,7 +161,7 @@ func (s *Server) getImageFromMultipart(ctx context.Context, resp *http.Response)
 			return p, p.Header.Get("Content-Type")
 		}
 	}
-	log.Warn().Msg("cannot find image in multipart")
+	log.Warn("cannot find image in multipart")
 	return nil, ""
 }
 

@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/etkecc/go-apm"
-	"github.com/labstack/echo/v4"
+	"github.com/etkecc/go-apm/v2"
+	"github.com/labstack/echo/v5"
 
 	"github.com/etkecc/mrs/internal/model"
 )
@@ -30,7 +30,7 @@ func configureMatrixS2SEndpoints(e *echo.Echo, matrixSvc matrixService, cacheSvc
 // @Success		200	{object}	model.WellKnownServer	"Where our federation API actually answers"
 // @Router			/.well-known/matrix/server [get]
 func wellKnownServer(matrixSvc matrixService) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		return c.JSONBlob(http.StatusOK, matrixSvc.GetServerWellKnown())
 	}
 }
@@ -42,7 +42,7 @@ func wellKnownServer(matrixSvc matrixService) echo.HandlerFunc {
 // @Success		200	{object}	model.ServerVersion	"Server software name and version"
 // @Router			/_matrix/federation/v1/version [get]
 func serverVersion(matrixSvc matrixService) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		return c.JSONBlob(http.StatusOK, matrixSvc.GetServerVersion())
 	}
 }
@@ -54,7 +54,7 @@ func serverVersion(matrixSvc matrixService) echo.HandlerFunc {
 // @Success		200	{object}	model.ServerKeys	"Our signed public signing keys"
 // @Router			/_matrix/key/v2/server [get]
 func keyServer(matrixSvc matrixService) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		return c.JSONBlob(http.StatusOK, matrixSvc.GetKeyServer(c.Request().Context()))
 	}
 }
@@ -68,7 +68,7 @@ func keyServer(matrixSvc matrixService) echo.HandlerFunc {
 // @Success		200						{object}	model.ServerKeysQueryResponse	"Signed server keys, or an empty key set"
 // @Router			/_matrix/key/v2/query/{serverName} [get]
 func queryServerKeys(matrixSvc matrixService) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		serverName := c.Param("serverName")
 		if serverName == "" {
 			return c.JSONBlob(http.StatusOK, []byte(model.EmptyServerKeysResp))
@@ -95,10 +95,10 @@ func queryServerKeys(matrixSvc matrixService) echo.HandlerFunc {
 // @Failure		400						{object}	model.MatrixError				"Request body is not valid JSON"
 // @Router			/_matrix/key/v2/query [post]
 func queryServersKeys(matrixSvc matrixService) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		var req *model.QueryServerKeysRequest
 		if err := c.Bind(&req); err != nil {
-			apm.Log(c.Request().Context()).Warn().Err(err).Msg("failed to bind query server keys request")
+			apm.Log(c.Request().Context()).Warn("failed to bind query server keys request", "error", err)
 			return c.JSON(http.StatusBadRequest, &model.MatrixError{Code: "M_NOT_JSON", Message: "request body is not valid JSON"})
 		}
 		if req == nil {
@@ -130,7 +130,7 @@ func queryServersKeys(matrixSvc matrixService) echo.HandlerFunc {
 // @Security		FederationAuth
 // @Router			/_matrix/federation/v1/query/directory [get]
 func queryDirectory(matrixSvc matrixService) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		return c.JSONBlob(matrixSvc.QueryDirectory(c.Request().Context(), c.Request(), c.QueryParam("room_alias")))
 	}
 }
@@ -147,7 +147,7 @@ func queryDirectory(matrixSvc matrixService) echo.HandlerFunc {
 // @Router			/_matrix/federation/v1/publicRooms [get]
 // @Router			/_matrix/federation/v1/publicRooms [post]
 func matrixRoomDirectory(matrixSvc matrixService) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		log := apm.Log(c.Request().Context())
 		r := c.Request()
 		body, err := io.ReadAll(r.Body)
@@ -159,7 +159,7 @@ func matrixRoomDirectory(matrixSvc matrixService) echo.HandlerFunc {
 
 		var req model.RoomDirectoryRequest
 		if err := c.Bind(&req); err != nil {
-			log.Error().Err(err).Msg("POST directory request binding failed")
+			log.Error("POST directory request binding failed", "error", err)
 		}
 		req.IP = c.RealIP()
 		r.Body = io.NopCloser(bytes.NewBuffer(body))

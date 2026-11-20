@@ -3,7 +3,7 @@ package data
 import (
 	"context"
 
-	"github.com/etkecc/go-apm"
+	"github.com/etkecc/go-apm/v2"
 	"github.com/goccy/go-json"
 	"go.etcd.io/bbolt"
 
@@ -34,13 +34,13 @@ func New(path string) (*Data, error) {
 				for _, room := range rooms {
 					roomb, err := json.Marshal(room)
 					if err != nil {
-						log.Error().Err(err).Str("id", room.ID).Str("server", room.Server).Msg("cannot marshal room")
+						log.Error("cannot marshal room", "error", err, "id", room.ID, "server", room.Server)
 						continue
 					}
 
 					err = tx.Bucket(roomsBucket).Put([]byte(room.ID), roomb)
 					if err != nil {
-						log.Error().Err(err).Str("id", room.ID).Str("server", room.Server).Msg("cannot add room")
+						log.Error("cannot add room", "error", err, "id", room.ID, "server", room.Server)
 						continue
 					}
 				}

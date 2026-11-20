@@ -16,7 +16,7 @@ import (
 
 	"github.com/goccy/go-json"
 
-	"github.com/etkecc/go-apm"
+	"github.com/etkecc/go-apm/v2"
 	"github.com/etkecc/mrs/internal/metrics"
 	"github.com/etkecc/mrs/internal/model"
 )
@@ -105,7 +105,7 @@ func (s *Stats) Get() *model.IndexStats {
 func (s *Stats) GetTL(ctx context.Context) map[time.Time]*model.IndexStats {
 	tl, err := s.data.GetIndexStatsTL(ctx, "")
 	if err != nil {
-		apm.Log(ctx).Error().Err(err).Msg("cannot get stats timeline")
+		apm.Log(ctx).Error("cannot get stats timeline", "error", err)
 	}
 	return tl
 }
@@ -113,7 +113,7 @@ func (s *Stats) GetTL(ctx context.Context) map[time.Time]*model.IndexStats {
 // SetStartedAt of the process
 func (s *Stats) SetStartedAt(ctx context.Context, process string, startedAt time.Time) {
 	if err := s.data.SetStartedAt(ctx, process, startedAt); err != nil {
-		apm.Log(ctx).Error().Err(err).Str("process", process).Msg("cannot set started_at")
+		apm.Log(ctx).Error("cannot set started_at", "error", err, "process", process)
 	}
 	s.setStats(s.data.GetIndexStats(ctx))
 }
@@ -121,7 +121,7 @@ func (s *Stats) SetStartedAt(ctx context.Context, process string, startedAt time
 // SetFinishedAt of the process
 func (s *Stats) SetFinishedAt(ctx context.Context, process string, finishedAt time.Time) {
 	if err := s.data.SetFinishedAt(ctx, process, finishedAt); err != nil {
-		apm.Log(ctx).Error().Err(err).Str("process", process).Msg("cannot set finished_at")
+		apm.Log(ctx).Error("cannot set finished_at", "error", err, "process", process)
 	}
 	s.setStats(s.data.GetIndexStats(ctx))
 }
@@ -163,19 +163,19 @@ func (s *Stats) CollectServers(ctx context.Context, reload bool) {
 
 	log := apm.Log(ctx)
 	if err := s.data.SetIndexOnlineServers(ctx, online); err != nil {
-		log.Error().Err(err).Msg("cannot set online servers count")
+		log.Error("cannot set online servers count", "error", err)
 	}
 
 	if err := s.data.SetIndexIndexableServers(ctx, indexable); err != nil {
-		log.Error().Err(err).Msg("cannot set indexable servers count")
+		log.Error("cannot set indexable servers count", "error", err)
 	}
 
 	if err := s.data.SetIndexBlockedServers(ctx, s.block.Len()); err != nil {
-		log.Error().Err(err).Msg("cannot set blocked servers count")
+		log.Error("cannot set blocked servers count", "error", err)
 	}
 
 	if err := s.data.SetIndexServersSoftware(ctx, software); err != nil {
-		log.Error().Err(err).Msg("cannot set servers software stats")
+		log.Error("cannot set servers software stats", "error", err)
 	}
 
 	if reload {
@@ -188,7 +188,7 @@ func (s *Stats) Collect(ctx context.Context) {
 	log := apm.Log(ctx)
 
 	if !s.collecting.CompareAndSwap(false, true) {
-		log.Info().Msg("stats collection already in progress, ignoring request")
+		log.Info("stats collection already in progress, ignoring request")
 		return
 	}
 	defer s.collecting.Store(false)
@@ -201,29 +201,29 @@ func (s *Stats) Collect(ctx context.Context) {
 		return false
 	})
 	if err := s.data.SetIndexParsedRooms(ctx, rooms); err != nil {
-		log.Error().Err(err).Msg("cannot set parsed rooms count")
+		log.Error("cannot set parsed rooms count", "error", err)
 	}
 	if err := s.data.SetIndexIndexedRooms(ctx, s.index.Len()); err != nil {
-		log.Error().Err(err).Msg("cannot set indexed rooms count")
+		log.Error("cannot set indexed rooms count", "error", err)
 	}
 	banned, berr := s.data.GetBannedRooms(ctx)
 	if berr != nil {
-		log.Error().Err(berr).Msg("cannot get banned rooms count")
+		log.Error("cannot get banned rooms count", "error", berr)
 	}
 	if err := s.data.SetIndexBannedRooms(ctx, len(banned)); err != nil {
-		log.Error().Err(berr).Msg("cannot set banned rooms count")
+		log.Error("cannot set banned rooms count", "error", berr)
 	}
 	reported, rerr := s.data.GetReportedRooms(ctx)
 	if rerr != nil {
-		log.Error().Err(berr).Msg("cannot get reported rooms count")
+		log.Error("cannot get reported rooms count", "error", berr)
 	}
 	if err := s.data.SetIndexReportedRooms(ctx, len(reported)); err != nil {
-		log.Error().Err(berr).Msg("cannot set reported rooms count")
+		log.Error("cannot set reported rooms count", "error", berr)
 	}
 
 	s.reload(ctx)
 	if err := s.data.SetIndexStatsTL(ctx, time.Now().UTC(), s.Get()); err != nil {
-		log.Error().Err(err).Msg("cannot set stats timeline")
+		log.Error("cannot set stats timeline", "error", err)
 	}
 	s.sendWebhook(ctx)
 }
@@ -246,25 +246,25 @@ func (s *Stats) sendWebhook(ctx context.Context) {
 		Markdown: s.getWebhookText(),
 	})
 	if err != nil {
-		log.Error().Err(err).Msg("webhook payload marshaling failed")
+		log.Error("webhook payload marshaling failed", "error", err)
 		return
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.cfg.Get().Webhooks.Stats, bytes.NewReader(payload))
 	if err != nil {
-		log.Error().Err(err).Msg("webhook request failed")
+		log.Error("webhook request failed", "error", err)
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := webhookClient.Do(req)
 	if err != nil {
-		log.Error().Err(err).Msg("webhook sending failed")
+		log.Error("webhook sending failed", "error", err)
 		return
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusAccepted && resp.StatusCode != http.StatusOK {
 		body, err := io.ReadAll(resp.Body)
-		log.Error().Err(err).Int("status_code", resp.StatusCode).Str("body", string(body)).Msg("webhook sending failed")
+		log.Error("webhook sending failed", "error", err, "status_code", resp.StatusCode, "body", string(body))
 	}
 }
 

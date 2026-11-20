@@ -6,8 +6,8 @@ import (
 	"slices"
 	"time"
 
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
+	"github.com/labstack/echo/v5"
+	"github.com/labstack/echo/v5/middleware"
 	"golang.org/x/time/rate"
 
 	"github.com/etkecc/mrs/internal/model"
@@ -20,12 +20,32 @@ var mForbidden = utils.MustJSON(&model.MatrixError{
 	Message: "forbidden",
 })
 
+// errorLogger wraps the default error handler and reports 5xx responses at ERROR, which Echo v5 dropped
+func errorLogger() echo.HTTPErrorHandler {
+	handler := echo.DefaultHTTPErrorHandler(false)
+	return func(c *echo.Context, err error) {
+		code := echo.StatusCode(err)
+		if code == 0 {
+			code = http.StatusInternalServerError
+		}
+		if code >= http.StatusInternalServerError {
+			c.Logger().Error("request failed",
+				"error", err,
+				"status", code,
+				"method", c.Request().Method,
+				"path", c.Request().URL.Path,
+			)
+		}
+		handler(c, err)
+	}
+}
+
 func getRL(limit rate.Limit) echo.MiddlewareFunc {
 	cfg := middleware.DefaultRateLimiterConfig
-	cfg.Skipper = func(c echo.Context) bool {
+	cfg.Skipper = func(c *echo.Context) bool {
 		return c.Request().Method == http.MethodOptions
 	}
-	cfg.ErrorHandler = func(c echo.Context, err error) error {
+	cfg.ErrorHandler = func(c *echo.Context, err error) error {
 		message := "error while extracting identifier" // default message from middleware
 		if err != nil {
 			message = err.Error()
@@ -35,7 +55,7 @@ func getRL(limit rate.Limit) echo.MiddlewareFunc {
 			Message: message,
 		}))
 	}
-	cfg.DenyHandler = func(c echo.Context, _ string, _ error) error {
+	cfg.DenyHandler = func(c *echo.Context, _ string, _ error) error {
 		c.Response().Header().Set(echo.HeaderRetryAfter, "10")
 		return c.JSONBlob(http.StatusTooManyRequests, utils.MustJSON(&model.MatrixError{
 			Code:    "M_LIMIT_EXCEEDED",
@@ -43,7 +63,7 @@ func getRL(limit rate.Limit) echo.MiddlewareFunc {
 		}))
 	}
 	cfg.Store = middleware.NewRateLimiterMemoryStoreWithConfig(middleware.RateLimiterMemoryStoreConfig{
-		Rate:      limit,
+		Rate:      float64(limit),
 		Burst:     int(limit),
 		ExpiresIn: 5 * time.Minute,
 	})
@@ -72,7 +92,7 @@ func getBlocklist(cfg configService) ([]string, []*net.IPNet) {
 func withBlocklist(cfg configService) echo.MiddlewareFunc {
 	blockIPs, blockCIDRs := getBlocklist(cfg)
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
+		return func(c *echo.Context) error {
 			ip := c.RealIP()
 			if ip == "" {
 				return next(c)
@@ -97,7 +117,7 @@ func withBlocklist(cfg configService) echo.MiddlewareFunc {
 // withMContext is a middleware that sets the context for the request
 func withMContext(cfg configService) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
+		return func(c *echo.Context) error {
 			ctx := c.Request().Context()
 			ctx = mcontext.WithIP(ctx, c.RealIP())
 

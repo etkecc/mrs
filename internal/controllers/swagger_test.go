@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/goccy/go-json"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 
 	"github.com/etkecc/mrs/docs"
 	"github.com/etkecc/mrs/internal/model"
@@ -34,7 +34,7 @@ func testRouter(t *testing.T) *echo.Echo {
 
 func routeSet(e *echo.Echo) map[string]bool {
 	set := make(map[string]bool)
-	for _, r := range e.Routes() {
+	for _, r := range e.Router().Routes() {
 		set[r.Path] = true
 	}
 	return set

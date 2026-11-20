@@ -7,7 +7,7 @@ import (
 
 	"github.com/blevesearch/bleve/v2"
 	"github.com/blevesearch/bleve/v2/search/query"
-	"github.com/etkecc/go-apm"
+	"github.com/etkecc/go-apm/v2"
 	"github.com/etkecc/go-kit"
 	"golang.org/x/exp/slices"
 
@@ -133,15 +133,15 @@ func (s *Search) Search(ctx context.Context, req *http.Request, q, sortBy string
 	}
 	results, total, err := s.repo.Search(ctx, builtQuery, limit, offset, sort)
 	results = s.addHighlights(originServer, s.removeBlocked(results))
-	log.Info().
-		Err(err).
-		Str("query", q).
-		Int("limit", limit).
-		Int("offset", offset).
-		Int("results", len(results)).
-		Int("total", total).
-		Any("query", builtQuery).
-		Msg("search request")
+	log.Info("search request",
+		"error", err,
+		"query", q,
+		"limit", limit,
+		"offset", offset,
+		"results", len(results),
+		"total", total,
+		"built_query", builtQuery,
+	)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -209,7 +209,7 @@ func (s *Search) getEmptyQueryResults(ctx context.Context, roomTypes []string, l
 	entries = s.filteredBiggestRoomsEntries(ctx, includeRegular, allowed, limit, offset)
 	_, filteredTotal, err := s.repo.Search(ctx, s.newRoomTypeQuery(roomTypes), 0, 0, nil)
 	if err != nil {
-		apm.Log(ctx).Warn().Err(err).Msg("cannot count filtered rooms")
+		apm.Log(ctx).Warn("cannot count filtered rooms", "error", err)
 		return entries, total
 	}
 	return entries, filteredTotal

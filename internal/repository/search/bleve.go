@@ -11,7 +11,7 @@ import (
 	"github.com/blevesearch/bleve/v2/analysis/tokenizer/letter"
 	"github.com/blevesearch/bleve/v2/analysis/tokenizer/unicode"
 	"github.com/blevesearch/bleve/v2/mapping"
-	"github.com/etkecc/go-apm"
+	"github.com/etkecc/go-apm/v2"
 	"github.com/pemistahl/lingua-go"
 
 	"github.com/etkecc/mrs/internal/repository/search/multilang"
@@ -72,22 +72,22 @@ func getIndexMapping(ctx context.Context) mapping.IndexMapping {
 	m.DefaultType = "room"
 	err := m.AddCustomCharFilter("matrix_chars", charfilter)
 	if err != nil {
-		log.Error().Err(err).Msg("cannot create custom char filter")
+		log.Error("cannot create custom char filter", "error", err)
 	}
 
 	err = m.AddCustomAnalyzer("matrix_id", analyzerID)
 	if err != nil {
-		log.Error().Err(err).Msg("cannot create matrix_id analyzer")
+		log.Error("cannot create matrix_id analyzer", "error", err)
 	}
 
 	err = m.AddCustomAnalyzer("matrix_alias", analyzerAlias)
 	if err != nil {
-		log.Error().Err(err).Msg("cannot create matrix_alias analyzer")
+		log.Error("cannot create matrix_alias analyzer", "error", err)
 	}
 
 	err = m.AddCustomAnalyzer("exact_text", analyzerExact)
 	if err != nil {
-		log.Error().Err(err).Msg("cannot create exact_text analyzer")
+		log.Error("cannot create exact_text analyzer", "error", err)
 	}
 
 	textFM := bleve.NewTextFieldMapping()
@@ -186,7 +186,7 @@ func (i *Index) Swap(ctx context.Context) error {
 		// bleve's scorch has data race that may cause panic
 		if r := recover(); r != nil {
 			log := apm.Log(ctx)
-			log.Error().Interface("recover", r).Msg("panic in index swap")
+			log.Error("panic in index swap", "recover", r)
 		}
 	}()
 
@@ -196,11 +196,11 @@ func (i *Index) Swap(ctx context.Context) error {
 
 	log := apm.Log(ctx)
 	if err := os.RemoveAll(i.path + backupSuffix); err != nil {
-		log.Warn().Err(err).Msg("cannot remove index backup")
+		log.Warn("cannot remove index backup", "error", err)
 	}
 
 	if err := os.Rename(i.path, i.path+backupSuffix); err != nil {
-		log.Error().Err(err).Msg("cannot move index")
+		log.Error("cannot move index", "error", err)
 	}
 	return i.load(ctx)
 }

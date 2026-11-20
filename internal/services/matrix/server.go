@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/etkecc/go-apm"
+	"github.com/etkecc/go-apm/v2"
 	"github.com/etkecc/go-kit"
 
 	"github.com/etkecc/mrs/internal/metrics"
@@ -33,7 +33,7 @@ func (s *Server) GetKeyServer(ctx context.Context) []byte {
 	resp.ValidUntilTS = time.Now().UTC().Add(24 * 7 * time.Hour).UnixMilli()
 	payload, err := s.signJSON(resp)
 	if err != nil {
-		log.Error().Err(err).Msg("cannot sign payload")
+		log.Error("cannot sign payload", "error", err)
 	}
 	return payload
 }
@@ -43,7 +43,7 @@ func (s *Server) PublicRooms(ctx context.Context, req *http.Request, rdReq *mode
 	log := apm.Log(ctx)
 	origin, err := s.ValidateAuth(ctx, req)
 	if err != nil {
-		log.Warn().Err(err).Str("header", req.Header.Get("Authorization")).Msg("matrix auth failed")
+		log.Warn("matrix auth failed", "error", err, "header", req.Header.Get("Authorization"))
 		return http.StatusUnauthorized, s.getErrorResp(ctx, "M_UNAUTHORIZED", "authorization failed")
 	}
 	ctx = mcontext.WithOrigin(ctx, origin)
@@ -60,7 +60,7 @@ func (s *Server) PublicRooms(ctx context.Context, req *http.Request, rdReq *mode
 	offset := kit.StringToInt(rdReq.Since)
 	entries, total, err := s.search.Search(ctx, req, rdReq.Filter.GenericSearchTerm, "", rdReq.Filter.RoomTypes, limit, offset)
 	if err != nil {
-		log.Error().Err(err).Msg("search from matrix failed")
+		log.Error("search from matrix failed", "error", err)
 		return http.StatusInternalServerError, nil
 	}
 	chunk := make([]*model.RoomDirectoryRoom, 0, len(entries))
@@ -90,7 +90,7 @@ func (s *Server) PublicRooms(ctx context.Context, req *http.Request, rdReq *mode
 		Total:     total,
 	})
 	if err != nil {
-		log.Error().Err(err).Msg("cannot marshal room directory json")
+		log.Error("cannot marshal room directory json", "error", err)
 		return http.StatusInternalServerError, nil
 	}
 	return http.StatusOK, value

@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/etkecc/go-apm"
+	"github.com/etkecc/go-apm/v2"
 	"github.com/etkecc/go-kit"
 	"github.com/goccy/go-json"
 
@@ -92,7 +92,7 @@ func (m *Moderation) getReportText(ctx context.Context, roomID, reason, fromIP s
 
 	apiURL, err := url.Parse(m.cfg.Get().Public.API)
 	if err != nil {
-		log.Error().Err(err).Msg("cannot parse public api url")
+		log.Error("cannot parse public api url", "error", err)
 		return text.String()
 	}
 
@@ -176,39 +176,39 @@ func (m *Moderation) sendEmail(ctx context.Context, room *model.MatrixRoom, serv
 
 // Report a room
 func (m *Moderation) Report(ctx context.Context, fromIP, roomID, reason string, noMSC1929 bool) error {
-	log := apm.Log(ctx).With().Str("room", roomID).Str("fromIP", fromIP).Logger()
+	log := apm.Log(ctx).With("room", roomID, "fromIP", fromIP)
 	if m.data.IsReported(ctx, roomID) {
-		log.Warn().Msg("room already reported")
+		log.Warn("room already reported")
 		return nil
 	}
 
 	room, err := m.data.GetRoom(ctx, roomID)
 	if err != nil {
-		log.Warn().Err(err).Msg("cannot get room to report")
+		log.Warn("cannot get room to report", "error", err)
 		return err
 	}
 	if room == nil {
 		_, entry := m.matrix.GetClientRoomSummary(ctx, roomID, "", true)
 		if entry == nil {
-			log.Warn().Msg("room not found in data store, MSC3266 summary not available")
+			log.Warn("room not found in data store, MSC3266 summary not available")
 			return nil
 		}
 
-		log.Warn().Msg("room not found in data store, using MSC3266 summary")
+		log.Warn("room not found in data store, using MSC3266 summary")
 		room = entry.Convert("")
 	}
 
 	serverName := room.GetOwnServer()
 	server, err := m.data.GetServerInfo(ctx, serverName)
 	if err != nil {
-		log.Error().Err(err).Msg("cannot get server info")
+		log.Error("cannot get server info", "error", err)
 	}
 	if server == nil {
 		server = &model.MatrixServer{Name: serverName}
 	}
 
 	if err := m.sendWebhook(ctx, room, server, reason, fromIP); err != nil {
-		log.Error().Err(err).Msg("cannot send moderation webhook")
+		log.Error("cannot send moderation webhook", "error", err)
 	}
 
 	emails := server.Contacts.Emails
@@ -219,12 +219,12 @@ func (m *Moderation) Report(ctx context.Context, fromIP, roomID, reason string, 
 
 	if !noMSC1929 {
 		if merr := m.mail.SendReport(ctx, room, server, reason, emails); merr != nil {
-			log.Warn().Err(merr).Msg("cannot send report to the server's owner")
+			log.Warn("cannot send report to the server's owner", "error", merr)
 		}
 	}
 
 	if err := m.sendEmail(ctx, room, server, reason, fromIP); err != nil {
-		log.Error().Err(err).Msg("cannot send moderation email")
+		log.Error("cannot send moderation email", "error", err)
 	}
 
 	return m.data.ReportRoom(ctx, fromIP, roomID, reason)
@@ -232,17 +232,17 @@ func (m *Moderation) Report(ctx context.Context, fromIP, roomID, reason string, 
 
 // Unreport a room
 func (m *Moderation) Unreport(ctx context.Context, roomID string) error {
-	log := apm.Log(ctx).With().Str("room", roomID).Logger()
+	log := apm.Log(ctx).With("room", roomID)
 	if roomID == "" {
 		return m.data.UnreportAll(ctx)
 	}
 
 	if !m.data.IsReported(ctx, roomID) {
-		log.Warn().Msg("room not reported")
+		log.Warn("room not reported")
 		return nil
 	}
 	if err := m.data.UnreportRoom(ctx, roomID); err != nil {
-		log.Error().Err(err).Msg("cannot unreport room")
+		log.Error("cannot unreport room", "error", err)
 		return err
 	}
 	return nil
@@ -260,16 +260,16 @@ func (m *Moderation) ListReported(ctx context.Context, serverName ...string) (ma
 
 // Ban a room
 func (m *Moderation) Ban(ctx context.Context, roomID string) error {
-	log := apm.Log(ctx).With().Str("room", roomID).Logger()
+	log := apm.Log(ctx).With("room", roomID)
 	room, err := m.data.GetRoom(ctx, roomID)
 	if err != nil {
-		log.Warn().Err(err).Msg("cannot get room to ban (may be already banned)")
+		log.Warn("cannot get room to ban (may be already banned)", "error", err)
 		return nil
 	}
 	if room == nil {
 		_, entry := m.matrix.GetClientRoomSummary(ctx, roomID, "", true)
 		if entry != nil {
-			log.Warn().Msg("room not found in data store, using MSC3266 summary")
+			log.Warn("room not found in data store, using MSC3266 summary")
 			room = entry.Convert("")
 		}
 	}

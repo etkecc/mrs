@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/etkecc/go-apm"
+	"github.com/etkecc/go-apm/v2"
 	"github.com/etkecc/mrs/internal/model"
 	"github.com/etkecc/mrs/internal/utils"
 	"github.com/goccy/go-json"
@@ -45,30 +45,30 @@ func (p *Plausible) Track(ctx context.Context, evt *model.AnalyticsEvent) {
 	defer cancel()
 	req, err := p.buildRequest(ctx, evt, eventURL)
 	if err != nil {
-		log.Error().Err(err).Msg("cannot build plausible request")
+		log.Error("cannot build plausible request", "error", err)
 		return
 	}
 
 	// the wire on demand: flip to debug to see what left MRS. ip + user_agent are the visitor-hash terms.
-	log.Debug().
-		Str("name", evt.Name).
-		Str("referrer", evt.Referrer).
-		Str("user_agent", evt.UserAgent).
-		Str("ip", evt.ClientIP).
-		Msg("plausible event payload")
+	log.Debug("plausible event payload",
+		"name", evt.Name,
+		"referrer", evt.Referrer,
+		"user_agent", evt.UserAgent,
+		"ip", evt.ClientIP,
+	)
 
 	resp, err := utils.Do(req)
 	if err != nil {
-		log.Warn().Err(err).Msg("cannot send plausible request")
+		log.Warn("cannot send plausible request", "error", err)
 		return
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusAccepted {
-		log.Warn().Int("status", resp.StatusCode).Msg("unexpected plausible response")
+		log.Warn("unexpected plausible response", "status", resp.StatusCode)
 	}
 	// 202 comes back even on a silent drop; this header is the only tell. resp is non-nil past the err guard.
 	if resp.Header.Get("x-plausible-dropped") == "1" {
-		log.Warn().Str("url", eventURL).Msg("plausible silently dropped the event")
+		log.Warn("plausible silently dropped the event", "url", eventURL)
 	}
 }
 

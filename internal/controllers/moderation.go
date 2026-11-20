@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/etkecc/go-apm"
-	"github.com/labstack/echo/v4"
+	"github.com/etkecc/go-apm/v2"
+	"github.com/labstack/echo/v5"
 
 	"github.com/etkecc/mrs/internal/model"
 	"github.com/etkecc/mrs/internal/utils"
@@ -39,11 +39,11 @@ type reportSubmission struct {
 // @Failure		500		{object}	model.MatrixError	"Internal error while processing the report"
 // @Router			/mod/report/{room_id} [post]
 func report(svc moderationService) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		log := apm.Log(c.Request().Context())
 		var report reportSubmission
 		if err := c.Bind(&report); err != nil {
-			log.Error().Err(err).Msg("cannot bind report")
+			log.Error("cannot bind report", "error", err)
 			return err
 		}
 
@@ -62,7 +62,7 @@ func report(svc moderationService) echo.HandlerFunc {
 		}
 
 		if err := svc.Report(c.Request().Context(), c.RealIP(), report.RoomID, report.Reason, report.NoMSC1929); err != nil {
-			log.Error().Err(err).Msg("cannot report room")
+			log.Error("cannot report room", "error", err)
 			return c.JSON(http.StatusInternalServerError, &model.MatrixError{
 				Code:    "M_INTERNAL_ERROR",
 				Message: "An internal error occurred while processing your request.",
@@ -83,7 +83,7 @@ func report(svc moderationService) echo.HandlerFunc {
 // @Failure		403		"User-Agent contains 'bot'"
 // @Router			/mod/unreport/{room_id} [get]
 func unreport(svc moderationService) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		if strings.Contains(c.Request().UserAgent(), "bot") {
 			return c.NoContent(http.StatusForbidden)
 		}
@@ -107,7 +107,7 @@ func unreport(svc moderationService) echo.HandlerFunc {
 // @Failure		403	"User-Agent contains 'bot'"
 // @Router			/mod/list [get]
 func listBanned(svc moderationService) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		if strings.Contains(c.Request().UserAgent(), "bot") {
 			return c.NoContent(http.StatusForbidden)
 		}
@@ -141,7 +141,7 @@ func listBanned(svc moderationService) echo.HandlerFunc {
 // @Failure		403	"User-Agent contains 'bot'"
 // @Router			/mod/list-reported [get]
 func listReported(svc moderationService) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		if strings.Contains(c.Request().UserAgent(), "bot") {
 			return c.NoContent(http.StatusForbidden)
 		}
@@ -175,7 +175,7 @@ func listReported(svc moderationService) echo.HandlerFunc {
 // @Failure		403		"User-Agent contains 'bot'"
 // @Router			/mod/ban/{room_id} [get]
 func ban(svc moderationService) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		if strings.Contains(c.Request().UserAgent(), "bot") {
 			return c.NoContent(http.StatusForbidden)
 		}
@@ -199,7 +199,7 @@ func ban(svc moderationService) echo.HandlerFunc {
 // @Failure		403		"User-Agent contains 'bot'"
 // @Router			/mod/unban/{room_id} [get]
 func unban(svc moderationService) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		if strings.Contains(c.Request().UserAgent(), "bot") {
 			return c.NoContent(http.StatusForbidden)
 		}

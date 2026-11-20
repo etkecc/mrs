@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/etkecc/go-apm"
+	"github.com/etkecc/go-apm/v2"
 	"github.com/etkecc/go-kit"
 	"github.com/etkecc/go-kit/workpool"
 	"github.com/goccy/go-json"
@@ -38,7 +38,7 @@ func (s *Server) QueryServerName(ctx context.Context, serverName string) (string
 		s.namesCache.Add(serverName, discovered)
 	} else {
 		s.namesNegativeCache.Add(serverName, struct{}{})
-		log.Warn().Err(err).Str("server", serverName).Msg("cannot query server name")
+		log.Warn("cannot query server name", "error", err, "server", serverName)
 	}
 
 	return discovered, err
@@ -50,18 +50,18 @@ func (s *Server) QueryDirectory(ctx context.Context, req *http.Request, alias st
 
 	origin, err := s.ValidateAuth(ctx, req)
 	if err != nil {
-		log.Warn().Err(err).Msg("matrix auth failed")
+		log.Warn("matrix auth failed", "error", err)
 		return http.StatusUnauthorized, s.getErrorResp(ctx, "M_UNAUTHORIZED", "authorization failed")
 	}
 
 	alias = utils.Unescape(alias)
-	log.Info().Str("alias", alias).Str("origin", origin).Msg("querying directory")
+	log.Info("querying directory", "alias", alias, "origin", origin)
 	if alias == "" {
 		return http.StatusNotFound, s.getErrorResp(ctx, "M_NOT_FOUND", "room not found")
 	}
 	room, err := s.getRoom(ctx, alias)
 	if err != nil {
-		log.Error().Err(err).Msg("cannot get room from data store")
+		log.Error("cannot get room from data store", "error", err)
 	}
 	if room == nil {
 		return http.StatusNotFound, s.getErrorResp(ctx, "M_NOT_FOUND", "room not found")
@@ -73,7 +73,7 @@ func (s *Server) QueryDirectory(ctx context.Context, req *http.Request, alias st
 	}
 	respb, err = utils.JSON(resp)
 	if err != nil {
-		log.Error().Err(err).Msg("cannot marshal query directory resp")
+		log.Error("cannot marshal query directory resp", "error", err)
 		return http.StatusInternalServerError, nil
 	}
 
@@ -87,7 +87,7 @@ func (s *Server) QueryDirectoryExternal(ctx context.Context, alias string) (*mod
 	if alias == "" {
 		return nil, fmt.Errorf("room alias invalid")
 	}
-	log.Info().Str("alias", alias).Msg("querying external directory")
+	log.Info("querying external directory", "alias", alias)
 	serverName := utils.ServerFrom(alias)
 	if serverName == "" {
 		return nil, fmt.Errorf("cannot extract server name from alias")
@@ -205,7 +205,7 @@ func (s *Server) QueryPublicRooms(ctx context.Context, serverName, limit, since 
 
 // QueryServerKeys is /_matrix/key/v2/query/{serverName}
 func (s *Server) QueryServerKeys(ctx context.Context, serverName string, validUntilTS int64) []byte {
-	log := apm.Log(ctx).With().Str("server", serverName).Logger()
+	log := apm.Log(ctx).With("server", serverName)
 	if validUntilTS == 0 {
 		validUntilTS = time.Now().UnixMilli()
 	}
@@ -217,7 +217,7 @@ func (s *Server) QueryServerKeys(ctx context.Context, serverName string, validUn
 		ServerKeys: []json.RawMessage{keyPayload},
 	})
 	if err != nil {
-		log.Error().Err(err).Msg("cannot marshal key query response")
+		log.Error("cannot marshal key query response", "error", err)
 		return []byte(model.EmptyServerKeysResp)
 	}
 	return payload
@@ -226,7 +226,7 @@ func (s *Server) QueryServerKeys(ctx context.Context, serverName string, validUn
 // QueryServersKeys is /_matrix/key/v2/query for multiple servers; naive impl returns all keys, ignoring key IDs.
 func (s *Server) QueryServersKeys(ctx context.Context, req *model.QueryServerKeysRequest, validUntilTS int64) []byte {
 	serverNames := kit.MapKeys(req.ServerKeys)
-	log := apm.Log(ctx).With().Strs("servers", serverNames).Logger()
+	log := apm.Log(ctx).With("servers", serverNames)
 	if validUntilTS == 0 {
 		validUntilTS = time.Now().UnixMilli()
 	}
@@ -250,7 +250,7 @@ func (s *Server) QueryServersKeys(ctx context.Context, req *model.QueryServerKey
 		ServerKeys: keyPayloads,
 	})
 	if err != nil {
-		log.Error().Err(err).Msg("cannot marshal keys query response")
+		log.Error("cannot marshal keys query response", "error", err)
 		return []byte(model.EmptyServerKeysResp)
 	}
 	return payload

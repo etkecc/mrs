@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/etkecc/go-apm"
+	"github.com/etkecc/go-apm/v2"
 	"github.com/etkecc/go-kit"
 	"github.com/etkecc/go-kit/workpool"
 	"github.com/etkecc/go-msc1929"
@@ -99,7 +99,7 @@ func NewCrawler(cfg ConfigService, fedSvc FederationService, v ValidatorService,
 func (m *Crawler) DiscoverServers(ctx context.Context, workers int, overrideList ...*kit.List[string, string]) {
 	log := apm.Log(ctx)
 	if !m.discovering.CompareAndSwap(false, true) {
-		log.Info().Msg("servers discovery already in progress, ignoring request")
+		log.Info("servers discovery already in progress, ignoring request")
 		return
 	}
 	defer m.discovering.Store(false)
@@ -113,7 +113,7 @@ func (m *Crawler) DiscoverServers(ctx context.Context, workers int, overrideList
 
 	offline := m.discoverServers(ctx, servers, workers)
 
-	log.Info().Int("offline", offline.Len()).Msg("marking offline servers")
+	log.Info("marking offline servers", "offline", offline.Len())
 	m.data.MarkServersOffline(ctx, offline.Slice())
 }
 
@@ -151,7 +151,7 @@ func (m *Crawler) AddServer(ctx context.Context, name string) int {
 func (m *Crawler) ParseRooms(ctx context.Context, workers int) {
 	log := apm.Log(ctx)
 	if !m.parsing.CompareAndSwap(false, true) {
-		log.Info().Msg("room parsing already in progress, ignoring request")
+		log.Info("room parsing already in progress, ignoring request")
 		return
 	}
 	defer m.parsing.Store(false)
@@ -172,7 +172,7 @@ func (m *Crawler) ParseRooms(ctx context.Context, workers int) {
 	}
 	wp := workpool.New(workers)
 	discoveredServers := kit.NewList[string, string]()
-	log.Info().Int("servers", total).Int("workers", workers).Msg("parsing rooms")
+	log.Info("parsing rooms", "servers", total, "workers", workers)
 	for _, srvName := range slice {
 		name := srvName
 		wp.Do(func() {
@@ -184,14 +184,13 @@ func (m *Crawler) ParseRooms(ctx context.Context, workers int) {
 	wp.Run()
 	m.data.FlushRoomBatch(ctx)
 	discoveredServers.RemoveSlice(servers.Slice())
-	log.
-		Info().
-		Int("of", servers.Len()).
-		Int("discovered_servers", discoveredServers.Len()).
-		Msg("parsing rooms has been finished")
+	log.Info("parsing rooms has been finished",
+		"of", servers.Len(),
+		"discovered_servers", discoveredServers.Len(),
+	)
 
 	if err := m.data.BatchServers(ctx, discoveredServers.Slice()); err != nil {
-		log.Warn().Err(err).Msg("cannot persist discovered servers for next cycle")
+		log.Warn("cannot persist discovered servers for next cycle", "error", err)
 	}
 
 	m.afterRoomParsing(ctx)
@@ -201,7 +200,7 @@ func (m *Crawler) ParseRooms(ctx context.Context, workers int) {
 func (m *Crawler) EachRoom(ctx context.Context, handler func(roomID string, data *model.MatrixRoom) bool) {
 	log := apm.Log(ctx)
 	if !m.eachrooming.CompareAndSwap(false, true) {
-		log.Info().Msg("iterating over each room is already in progress, ignoring request")
+		log.Info("iterating over each room is already in progress, ignoring request")
 		return
 	}
 	defer m.eachrooming.Store(false)
@@ -260,10 +259,10 @@ func (m *Crawler) GetRoom(ctx context.Context, roomIDorAlias string) (*model.Mat
 
 func (m *Crawler) loadServers(ctx context.Context) *kit.List[string, string] {
 	log := apm.Log(ctx)
-	log.Info().Msg("loading servers")
+	log.Info("loading servers")
 	servers := kit.NewList[string, string]()
 	servers.AddSlice(m.cfg.Get().Servers)
-	log.Info().Int("servers", servers.Len()).Msg("loaded servers from config")
+	log.Info("loaded servers from config", "servers", servers.Len())
 	now := time.Now().UTC()
 	servers.AddSlice(kit.MapKeys(m.data.FilterServers(ctx, func(server *model.MatrixServer) bool {
 		if server.Online || server.CheckedAt.IsZero() {
@@ -271,7 +270,7 @@ func (m *Crawler) loadServers(ctx context.Context) *kit.List[string, string] {
 		}
 		return now.Sub(server.CheckedAt) >= offlineBackoff(now.Sub(server.OnlineAt))
 	})))
-	log.Info().Int("servers", servers.Len()).Msg("loaded servers from config and db")
+	log.Info("loaded servers from config and db", "servers", servers.Len())
 
 	return servers
 }
@@ -294,7 +293,7 @@ func offlineBackoff(age time.Duration) time.Duration {
 // discoverServer parses server information
 func (m *Crawler) discoverServer(ctx context.Context, rawName string) *model.MatrixServer {
 	if m.block.ByServer(rawName) {
-		apm.Log(ctx).Info().Str("server", rawName).Msg("server is blocked, skipping")
+		apm.Log(ctx).Info("server is blocked, skipping", "server", rawName)
 		return &model.MatrixServer{Name: rawName, Online: false}
 	}
 	name, software, version, ok := m.v.IsOnline(ctx, rawName)
@@ -322,8 +321,7 @@ func (m *Crawler) discoverServer(ctx context.Context, rawName string) *model.Mat
 	}
 
 	if err := m.data.AddServer(ctx, server); err != nil {
-		apm.Log(ctx).
-			Error().Err(err).Msg("cannot store server")
+		apm.Log(ctx).Error("cannot store server", "error", err)
 	}
 	return server
 }
@@ -335,7 +333,7 @@ func (m *Crawler) discoverServers(ctx context.Context, servers *kit.List[string,
 	online := kit.NewList[string, string]()
 	offline = kit.NewList[string, string]()
 	indexable := kit.NewList[string, string]() // just for stats
-	log.Info().Int("servers", servers.Len()).Int("workers", workers).Msg("validating servers")
+	log.Info("validating servers", "servers", servers.Len(), "workers", workers)
 
 	for _, server := range servers.Slice() {
 		srvName := server
@@ -358,12 +356,12 @@ func (m *Crawler) discoverServers(ctx context.Context, servers *kit.List[string,
 	}
 	wp.Run()
 
-	log.Info().
-		Int("online", online.Len()).
-		Int("offline", offline.Len()).
-		Int("indexable", indexable.Len()).
-		Int("of", servers.Len()).
-		Msg("servers discovery finished")
+	log.Info("servers discovery finished",
+		"online", online.Len(),
+		"offline", offline.Len(),
+		"indexable", indexable.Len(),
+		"of", servers.Len(),
+	)
 	return offline
 }
 
@@ -374,12 +372,12 @@ func (m *Crawler) removeOldOfflineServers(ctx context.Context) {
 		return !server.Online && server.OnlineAt.Before(threshold)
 	})
 	if len(servers) == 0 {
-		log.Info().Msg("no old offline servers to remove")
+		log.Info("no old offline servers to remove")
 		return
 	}
 
 	toRemove := kit.MapKeys(servers)
-	log.Info().Int("servers", len(toRemove)).Msg("removing old offline servers")
+	log.Info("removing old offline servers", "servers", len(toRemove))
 	m.data.RemoveServers(ctx, toRemove)
 }
 
@@ -391,7 +389,7 @@ func (m *Crawler) afterRoomParsing(ctx context.Context) {
 	}
 
 	log := apm.Log(ctx)
-	log.Info().Msg("after room parsing......")
+	log.Info("after room parsing......")
 	started := time.Now().UTC()
 	counts := []roomCount{}
 	toRemove := map[string]string{}
@@ -413,14 +411,14 @@ func (m *Crawler) afterRoomParsing(ctx context.Context) {
 	for _, count := range counts {
 		ids = append(ids, count.id)
 	}
-	log.Info().Str("took", time.Since(started).String()).Msg("biggest rooms have been calculated, storing")
+	log.Info("biggest rooms have been calculated, storing", "took", time.Since(started).String())
 	if err := m.data.SetBiggestRooms(ctx, ids); err != nil {
-		log.Error().Err(err).Msg("cannot set biggest rooms")
+		log.Error("cannot set biggest rooms", "error", err)
 	}
-	log.Info().Str("took", time.Since(started).String()).Msg("biggest rooms have been calculated and stored")
+	log.Info("biggest rooms have been calculated and stored", "took", time.Since(started).String())
 
 	if len(toRemove) > 0 {
-		log.Info().Int("rooms", len(toRemove)).Msg("removing rooms last updated more than a week ago...")
+		log.Info("removing rooms last updated more than a week ago...", "rooms", len(toRemove))
 		toRemoveSlice := kit.MapKeys(toRemove)
 		for _, mxcURL := range toRemove {
 			if mxcURL == "" {
@@ -435,9 +433,9 @@ func (m *Crawler) afterRoomParsing(ctx context.Context) {
 		m.data.RemoveRooms(ctx, toRemoveSlice)
 	}
 	if len(mapping) > 0 {
-		log.Info().Int("rooms", len(mapping)).Msg("recreating room mappings...")
+		log.Info("recreating room mappings...", "rooms", len(mapping))
 		if err := m.data.RecreateRoomMapping(ctx, mapping); err != nil {
-			log.Error().Err(err).Msg("cannot recreate room mappings")
+			log.Error("cannot recreate room mappings", "error", err)
 		}
 	}
 
@@ -489,11 +487,11 @@ func (m *Crawler) getPublicRooms(ctx context.Context, name string) *kit.List[str
 		start := time.Now()
 		resp, err := m.fed.QueryPublicRooms(ctx, name, limit, since)
 		if err != nil {
-			log.Warn().Err(err).Str("server", name).Msg("cannot query public rooms")
+			log.Warn("cannot query public rooms", "error", err, "server", name)
 			return servers
 		}
 		if len(resp.Chunk) == 0 {
-			log.Info().Str("server", name).Msg("no public rooms available")
+			log.Info("no public rooms available", "server", name)
 			return servers
 		}
 
@@ -512,7 +510,7 @@ func (m *Crawler) getPublicRooms(ctx context.Context, name string) *kit.List[str
 
 			qDir, err := m.fed.QueryDirectoryExternal(ctx, room.Alias)
 			if err != nil {
-				log.Warn().Err(err).Str("server", name).Str("room", room.ID).Str("alias", room.Alias).Msg("cannot query client directory")
+				log.Warn("cannot query client directory", "error", err, "server", name, "room", room.ID, "alias", room.Alias)
 			}
 			if qDir != nil && len(qDir.Servers) > 0 {
 				room.Servers = kit.Uniq(append(room.AllServers(), qDir.Servers...))
@@ -523,13 +521,12 @@ func (m *Crawler) getPublicRooms(ctx context.Context, name string) *kit.List[str
 			m.data.AddRoomBatch(ctx, room)
 			m.data.AddRoomMapping(ctx, room.ID, room.Alias) //nolint:errcheck // ignore error
 		}
-		log.
-			Info().
-			Str("server", name).
-			Int("added", added).
-			Int("of", resp.Total).
-			Str("took", time.Since(start).String()).
-			Msg("added rooms")
+		log.Info("added rooms",
+			"server", name,
+			"added", added,
+			"of", resp.Total,
+			"took", time.Since(start).String(),
+		)
 
 		if resp.NextBatch == "" {
 			return servers

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/etkecc/go-apm"
+	"github.com/etkecc/go-apm/v2"
 	"github.com/etkecc/go-kit/httpclient"
 	"github.com/etkecc/go-msc1929"
 
@@ -63,7 +63,7 @@ func checkRedirect(req *http.Request, via []*http.Request) error {
 	if len(via) > 0 && strings.HasPrefix(via[0].URL.Path, "/.well-known/matrix/") {
 		return nil
 	}
-	apm.Log(req.Context()).Debug().Str("url", req.URL.String()).Msg("blocked redirect off a non-well-known request")
+	apm.Log(req.Context()).Debug("blocked redirect off a non-well-known request", "url", req.URL.String())
 	return http.ErrUseLastResponse
 }
 

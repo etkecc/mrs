@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 
 	"github.com/etkecc/mrs/internal/model"
 )
@@ -28,7 +28,7 @@ type dataService interface {
 // @Success		200	{object}	model.IndexStats
 // @Router			/-/status [get]
 func status(stats statsService) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		return c.JSON(http.StatusOK, stats.Get())
 	}
 }
@@ -41,7 +41,7 @@ func status(stats statsService) echo.HandlerFunc {
 // @Success		201	"Discovery started in the background"
 // @Router			/-/discover [post]
 func discover(data dataService, cfg configService) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 		ctx = context.WithoutCancel(ctx)
 		go data.DiscoverServers(ctx, cfg.Get().Workers.Discovery)
@@ -57,7 +57,7 @@ func discover(data dataService, cfg configService) echo.HandlerFunc {
 // @Success		201	"Parsing started in the background"
 // @Router			/-/parse [post]
 func parse(data dataService, cfg configService) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 		ctx = context.WithoutCancel(ctx)
 		go data.ParseRooms(ctx, cfg.Get().Workers.Parsing)
@@ -73,7 +73,7 @@ func parse(data dataService, cfg configService) echo.HandlerFunc {
 // @Success		201	"Reindex started in the background"
 // @Router			/-/reindex [post]
 func reindex(data dataService) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 		ctx = context.WithoutCancel(ctx)
 		go data.Ingest(ctx)
@@ -89,7 +89,7 @@ func reindex(data dataService) echo.HandlerFunc {
 // @Success		201	"Full cycle started in the background"
 // @Router			/-/full [post]
 func full(data dataService, cfg configService) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		ctx := c.Request().Context()
 		ctx = context.WithoutCancel(ctx)
 		go data.Full(ctx, cfg.Get().Workers.Discovery, cfg.Get().Workers.Parsing)

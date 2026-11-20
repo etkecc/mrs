@@ -5,7 +5,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/etkecc/go-apm"
+	"github.com/etkecc/go-apm/v2"
 )
 
 // Blocklist service
@@ -36,7 +36,7 @@ func (b *Blocklist) initRegexes() {
 		r = strings.ReplaceAll(r, "\\\\", "\\") // replace double backslashes with single backslash, because they could be escaped in the config file
 		re, err := regexp.Compile(r)
 		if err != nil {
-			apm.Log().Error().Err(err).Str("regex", r).Msg("Failed to compile blocklist.servers regex for blocklist")
+			apm.Log().Error("Failed to compile blocklist.servers regex for blocklist", "error", err, "regex", r)
 			continue
 		}
 		b.regexes = append(b.regexes, re)
@@ -86,7 +86,7 @@ func (b *Blocklist) ByServer(server string) bool {
 
 	for _, re := range b.regexes {
 		if re.MatchString(server) {
-			apm.Log().Info().Str("server", server).Msg("server is blocked by blocklist")
+			apm.Log().Info("server is blocked by blocklist", "server", server)
 			return true
 		}
 	}

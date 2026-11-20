@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/etkecc/go-apm"
+	"github.com/etkecc/go-apm/v2"
 )
 
 func TestConfigConcurrentReadGet(t *testing.T) {

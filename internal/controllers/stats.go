@@ -5,7 +5,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 
 	"github.com/etkecc/mrs/internal/model"
 )
@@ -16,7 +16,7 @@ import (
 // @Success		200	{object}	model.StatsResponse
 // @Router			/stats [get]
 func stats(stats statsService) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		info := stats.Get()
 		resp := model.StatsResponse{
 			Servers: info.Servers.Online,

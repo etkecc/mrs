@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/etkecc/go-apm"
+	"github.com/etkecc/go-apm/v2"
 	"github.com/etkecc/go-kit/httpclient"
 	"github.com/goccy/go-json"
 	"github.com/matrix-org/gomatrixserverlib"
@@ -30,7 +30,7 @@ func (s *Server) getErrorResp(ctx context.Context, code, message string) []byte 
 		Message: message,
 	})
 	if err != nil {
-		apm.Log(ctx).Error().Err(err).Msg("cannot marshal canonical json")
+		apm.Log(ctx).Error("cannot marshal canonical json", "error", err)
 	}
 	return respb
 }
@@ -101,36 +101,36 @@ func (s *Server) parseClientWellKnown(ctx context.Context, serverName string) (s
 
 // parseServerWellKnown returns Federation API host:port
 func (s *Server) parseServerWellKnown(ctx context.Context, serverName string) (string, error) {
-	log := apm.Log(ctx).With().Str("server", serverName).Logger()
+	log := apm.Log(ctx).With("server", serverName)
 
 	resp, err := utils.Get(ctx, "https://"+serverName+"/.well-known/matrix/server")
 	if err != nil {
-		log.Warn().Err(err).Msg("failed to get /.well-known/matrix/server")
+		log.Warn("failed to get /.well-known/matrix/server", "error", err)
 		return "", err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		log.Warn().Str("status", resp.Status).Msg("no /.well-known/matrix/server")
+		log.Warn("no /.well-known/matrix/server", "status", resp.Status)
 		return "", fmt.Errorf("no /.well-known/matrix/server")
 	}
 
 	datab, err := readLimitedBody(resp.Body, maxWellKnownBytes)
 	if err != nil {
-		log.Warn().Err(err).Msg("failed to read /.well-known/matrix/server")
+		log.Warn("failed to read /.well-known/matrix/server", "error", err)
 		return "", err
 	}
 	var wellknown *model.WellKnownServer
 	if wkerr := json.Unmarshal(datab, &wellknown); wkerr != nil {
-		log.Warn().Err(wkerr).Msg("failed to parse /.well-known/matrix/server")
+		log.Warn("failed to parse /.well-known/matrix/server", "error", wkerr)
 		return "", wkerr
 	}
 	if wellknown == nil || wellknown.Host == "" {
-		log.Warn().Msg("/.well-known/matrix/server is empty")
+		log.Warn("/.well-known/matrix/server is empty")
 		return "", fmt.Errorf("/.well-known/matrix/server is empty")
 	}
 	parts := strings.Split(wellknown.Host, ":")
 	if len(parts) == 0 {
-		log.Warn().Msg("/.well-known/matrix/server is invalid")
+		log.Warn("/.well-known/matrix/server is invalid")
 		return "", fmt.Errorf("/.well-known/matrix/server is invalid")
 	}
 
@@ -209,14 +209,14 @@ func (s *Server) getURL(ctx context.Context, serverName string, discover bool) (
 
 // getURLFromSRV tries _matrix-fed._tcp SRV first, falls back to legacy _matrix._tcp, then defaults to port 8448.
 func (s *Server) getURLFromSRV(ctx context.Context, serverName string, discover bool) (ssURL, ssHost, dialIP string) {
-	log := apm.Log(ctx).With().Str("server", serverName).Logger()
+	log := apm.Log(ctx).With("server", serverName)
 	fromSRV, err := s.parseSRV(ctx, "matrix-fed", serverName)
 	if err != nil {
-		log.Warn().Err(err).Msg("failed to parse SRV matrix-fed, trying SRV matrix")
+		log.Warn("failed to parse SRV matrix-fed, trying SRV matrix", "error", err)
 		fromSRV, err = s.parseSRV(ctx, "matrix", serverName)
 	}
 	if err != nil {
-		log.Warn().Err(err).Msg("failed to parse SRV matrix, falling back to port 8448")
+		log.Warn("failed to parse SRV matrix, falling back to port 8448", "error", err)
 		return s.dcrURL(ctx, serverName, "https://"+serverName+":8448", serverName, "", discover)
 	}
 	return s.dcrURL(ctx, serverName, "https://"+fromSRV, fromSRV, "", discover)
@@ -224,10 +224,10 @@ func (s *Server) getURLFromSRV(ctx context.Context, serverName string, discover 
 
 // getURLFromWK: step 3; https://spec.matrix.org/v1.18/server-server-api/#resolving-server-names
 func (s *Server) getURLFromWK(ctx context.Context, serverName string, discover bool) (ssURL, ssHost, dialIP string) {
-	log := apm.Log(ctx).With().Str("server", serverName).Logger()
+	log := apm.Log(ctx).With("server", serverName)
 	fromWellKnown, err := s.parseServerWellKnown(ctx, serverName)
 	if err != nil {
-		log.Warn().Err(err).Msg("failed to parse /.well-known/matrix/server")
+		log.Warn("failed to parse /.well-known/matrix/server", "error", err)
 		return "", "", ""
 	}
 
@@ -267,11 +267,11 @@ func (s *Server) getURLFromWK(ctx context.Context, serverName string, discover b
 	}
 	_, port, err := net.SplitHostPort(fromSRV)
 	if err != nil {
-		log.Warn().Err(err).Str("srv", fromSRV).Msg("failed to parse SRV host:port, using default port 8448")
+		log.Warn("failed to parse SRV host:port, using default port 8448", "error", err, "srv", fromSRV)
 		port = "8448"
 	}
 	if net.ParseIP(ips[0]) == nil {
-		log.Warn().Str("ip", ips[0]).Msg("resolved SRV target is not a valid IP")
+		log.Warn("resolved SRV target is not a valid IP", "ip", ips[0])
 		return s.dcrURL(ctx, serverName, "https://"+fromWellKnown+":8448", fromWellKnown, "", discover)
 	}
 	// SRV differs from Host: keep fromWellKnown in URL (Host+SNI+cert), pin dial to the IP; dialContext brackets IPv6.
@@ -280,45 +280,45 @@ func (s *Server) getURLFromWK(ctx context.Context, serverName string, discover b
 
 // lookupKeys requests /_matrix/key/v2/server by serverName
 func (s *Server) lookupKeys(ctx context.Context, serverName string, discover bool) (*model.ServerKeys, error) {
-	log := apm.Log(ctx).With().Str("server", serverName).Logger()
+	log := apm.Log(ctx).With("server", serverName)
 
 	ctx, serverURL, serverHost := s.getURL(ctx, serverName, discover)
 	keysURL, err := url.Parse(serverURL + "/_matrix/key/v2/server")
 	if err != nil {
-		log.Warn().Err(err).Msg("failed to parse keys URL")
+		log.Warn("failed to parse keys URL", "error", err)
 		return nil, err
 	}
 	resp, err := utils.Get(ctx, keysURL.String(), serverHost)
 	if err != nil {
-		log.Warn().Err(err).Msg("failed to get keys")
+		log.Warn("failed to get keys", "error", err)
 		return nil, err
 	}
 	defer resp.Body.Close()
 	datab, err := io.ReadAll(io.LimitReader(resp.Body, maxServerKeysBytes+1))
 	if err != nil {
-		log.Warn().Err(err).Msg("failed to read keys")
+		log.Warn("failed to read keys", "error", err)
 		return nil, err
 	}
 	if len(datab) > maxServerKeysBytes {
 		err = fmt.Errorf("server keys response exceeds %d bytes", maxServerKeysBytes)
-		log.Warn().Err(err).Msg("failed to read keys")
+		log.Warn("failed to read keys", "error", err)
 		return nil, err
 	}
 	if merr := s.parseErrorResp(resp.Status, datab); merr != nil {
-		log.Warn().Str("http", merr.HTTP).Str("code", merr.Code).Str("message", merr.Message).Msg("keys query failed")
+		log.Warn("keys query failed", "http", merr.HTTP, "code", merr.Code, "message", merr.Message)
 		return nil, merr
 	}
 
 	var keysResp *model.ServerKeys
 	if err := json.Unmarshal(datab, &keysResp); err != nil {
-		log.Warn().Err(err).Msg("failed to parse keys")
+		log.Warn("failed to parse keys", "error", err)
 		return nil, err
 	}
 	if keysResp == nil {
 		return nil, fmt.Errorf("empty server keys response")
 	}
 	if err := verifyServerKeys(ctx, datab, keysResp); err != nil {
-		log.Warn().Err(err).Msg("server keys verification failed")
+		log.Warn("server keys verification failed", "error", err)
 		return nil, err
 	}
 	return keysResp, nil
@@ -395,7 +395,7 @@ func decodeServerVerifyKeys(verifyKeys map[string]map[string]string) (map[string
 
 // notaryLookupKeys returns signed serverName's keys for notary use
 func (s *Server) notaryLookupKeys(ctx context.Context, serverName string, validUntilTS int64) []byte {
-	log := apm.Log(ctx).With().Str("server", serverName).Logger()
+	log := apm.Log(ctx).With("server", serverName)
 	ctx, cancel := context.WithTimeout(ctx, utils.DefaultTimeout)
 	defer cancel()
 
@@ -410,20 +410,20 @@ func (s *Server) notaryLookupKeys(ctx context.Context, serverName string, validU
 		keysResp, err = s.lookupKeys(ctx, serverName, true)
 	}
 	if err != nil {
-		log.Warn().Err(err).Msg("cannot lookup server keys")
+		log.Warn("cannot lookup server keys", "error", err)
 		return nil
 	}
 	if keysResp == nil {
-		log.Warn().Msg("no server keys found")
+		log.Warn("no server keys found")
 		return nil
 	}
 	if keysResp.ServerName != serverName {
-		log.Warn().Str("discovered", keysResp.ServerName).Msg("server name mismatch in keys response")
+		log.Warn("server name mismatch in keys response", "discovered", keysResp.ServerName)
 		return nil
 	}
 	keyPayload, err := s.signJSON(keysResp)
 	if err != nil {
-		log.Error().Err(err).Msg("cannot sign key payload")
+		log.Error("cannot sign key payload", "error", err)
 		return nil
 	}
 
@@ -455,15 +455,15 @@ func (s *Server) queryKeys(ctx context.Context, serverName string) map[string]ed
 	log := apm.Log(ctx)
 	resp, err := s.lookupKeys(ctx, serverName, true)
 	if err != nil {
-		log.Warn().Err(err).Msg("keys query failed")
+		log.Warn("keys query failed", "error", err)
 		return nil
 	}
 	if resp.ServerName != serverName {
-		log.Warn().Msg("server name doesn't match")
+		log.Warn("server name doesn't match")
 		return nil
 	}
 	if resp.ValidUntilTS <= time.Now().UnixMilli() {
-		log.Warn().Msg("server keys are expired")
+		log.Warn("server keys are expired")
 	}
 	s.keysCache.Add(serverName, *resp)
 

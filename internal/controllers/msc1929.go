@@ -8,7 +8,7 @@ import (
 	"github.com/etkecc/go-msc1929"
 	"github.com/etkecc/mrs/internal/model"
 	"github.com/etkecc/mrs/internal/utils"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 var (
@@ -72,7 +72,7 @@ func validateMSC1929(resp *msc1929.Response) []*model.MatrixError {
 // @Failure		400		{array}	model.MatrixError	"Support file is missing, unreachable, or invalid"
 // @Router			/discover/msc1929/{name} [post]
 func checkMSC1929() echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		name := c.Param("name")
 		resp, err := msc1929.GetWithContext(c.Request().Context(), name)
 		if err != nil {

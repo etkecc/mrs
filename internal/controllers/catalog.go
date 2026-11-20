@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 
 	"github.com/etkecc/mrs/internal/model"
 	"github.com/etkecc/mrs/internal/utils"
@@ -26,7 +26,7 @@ type crawlerService interface {
 // @Failure		500					{object}	model.MatrixError	"Internal error reading the room"
 // @Router			/room/{room_id_or_alias} [get]
 func catalogRoom(dataSvc dataService, matrixSvc matrixService, plausible plausibleService) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		roomIDorAlias := utils.Unescape(c.Param("room_id_or_alias"))
 		if !utils.IsValidID(roomIDorAlias) && utils.IsValidAlias("#"+roomIDorAlias) {
 			roomIDorAlias = "#" + roomIDorAlias
@@ -84,7 +84,7 @@ func catalogRoom(dataSvc dataService, matrixSvc matrixService, plausible plausib
 // @Success		200	{object}	map[string]string	"Room ID to alias"
 // @Router			/catalog/rooms [get]
 func rooms(data dataService) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		rooms := map[string]string{}
 		data.EachRoom(c.Request().Context(), func(roomID string, room *model.MatrixRoom) bool {
 			if room == nil {
@@ -105,7 +105,7 @@ func rooms(data dataService) echo.HandlerFunc {
 // @Success		200	{array}	string	"Online server names"
 // @Router			/catalog/servers [get]
 func servers(crawler crawlerService) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		servers := crawler.OnlineServers(c.Request().Context())
 		return c.JSON(http.StatusOK, servers)
 	}
@@ -119,7 +119,7 @@ func servers(crawler crawlerService) echo.HandlerFunc {
 // @Success		200	{object}	map[string]model.MatrixServer	"Server name to crawl record"
 // @Router			/catalog/servers/objects [get]
 func serversObjects(crawler crawlerService) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		servers := crawler.OnlineServersObjects(c.Request().Context())
 		return c.JSON(http.StatusOK, servers)
 	}

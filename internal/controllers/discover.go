@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/goccy/go-json"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 
 	"github.com/etkecc/mrs/internal/model"
 )
@@ -23,7 +23,7 @@ import (
 // @Failure		429		"Rate limited (anonymous callers)"
 // @Router			/discover/{name} [post]
 func addServer(dataSvc dataService) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		code := dataSvc.AddServer(c.Request().Context(), c.Param("name"))
 		return c.NoContent(code)
 	}
@@ -41,7 +41,7 @@ func addServer(dataSvc dataService) echo.HandlerFunc {
 // @Failure		401		"Invalid Discovery credentials"
 // @Router			/discover/bulk [post]
 func addServers(dataSvc dataService, cfg configService) echo.HandlerFunc {
-	return func(c echo.Context) error {
+	return func(c *echo.Context) error {
 		defer c.Request().Body.Close()
 		jsonb, err := io.ReadAll(c.Request().Body)
 		if err != nil {

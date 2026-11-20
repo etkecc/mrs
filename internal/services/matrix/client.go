@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/etkecc/go-apm"
+	"github.com/etkecc/go-apm/v2"
 	"github.com/etkecc/go-kit"
 	"github.com/etkecc/mrs/internal/model"
 	"github.com/etkecc/mrs/internal/utils"
@@ -46,14 +46,14 @@ func (s *Server) GetClientDirectory(ctx context.Context, alias string) (statusCo
 	log := apm.Log(ctx)
 	alias = utils.Unescape(alias)
 
-	log.Info().Str("alias", alias).Str("origin", "client").Msg("querying directory")
+	log.Info("querying directory", "alias", alias, "origin", "client")
 	if alias == "" {
 		return http.StatusBadRequest, s.getErrorResp(ctx, "M_INVALID_PARAM", "Room alias invalid")
 	}
 
 	room, err := s.getRoom(ctx, alias)
 	if err != nil {
-		log.Error().Err(err).Msg("cannot get room from data store")
+		log.Error("cannot get room from data store", "error", err)
 	}
 	if room == nil {
 		return http.StatusNotFound, s.getErrorResp(ctx, "M_NOT_FOUND", "room not found")
@@ -65,7 +65,7 @@ func (s *Server) GetClientDirectory(ctx context.Context, alias string) (statusCo
 	}
 	respb, err = utils.JSON(resp)
 	if err != nil {
-		log.Error().Err(err).Msg("cannot marshal query directory resp")
+		log.Error("cannot marshal query directory resp", "error", err)
 		return http.StatusInternalServerError, nil
 	}
 
@@ -76,7 +76,7 @@ func (s *Server) GetClientDirectory(ctx context.Context, alias string) (statusCo
 func (s *Server) GetClientRoomSummary(ctx context.Context, aliasOrID, via string, onlyMSC3266 bool) (statusCode int, directoryRoom *model.RoomDirectoryRoom) {
 	log := apm.Log(ctx)
 	aliasOrID = utils.Unescape(aliasOrID)
-	log.Info().Str("aliasOrID", aliasOrID).Str("origin", "client").Msg("getting room summary")
+	log.Info("getting room summary", "aliasOrID", aliasOrID, "origin", "client")
 	if aliasOrID == "" {
 		return http.StatusBadRequest, nil
 	}
@@ -98,7 +98,7 @@ func (s *Server) GetClientRoomSummary(ctx context.Context, aliasOrID, via string
 	}
 
 	if s.data.IsBanned(ctx, entry.ID) {
-		log.Warn().Msg("attempting to get summary of a banned room")
+		log.Warn("attempting to get summary of a banned room")
 		return http.StatusNotFound, nil
 	}
 
@@ -123,7 +123,7 @@ func (s *Server) GetClientRoomVisibility(ctx context.Context, roomID string) (st
 
 	room, err := s.getRoom(ctx, roomID)
 	if err != nil {
-		apm.Log(ctx).Error().Err(err).Msg("cannot get room from data store")
+		apm.Log(ctx).Error("cannot get room from data store", "error", err)
 	}
 	if room == nil || s.data.IsBanned(ctx, room.ID) {
 		return http.StatusNotFound, s.getErrorResp(ctx, "M_NOT_FOUND", "room not found")
@@ -134,16 +134,16 @@ func (s *Server) GetClientRoomVisibility(ctx context.Context, roomID string) (st
 
 // roomSummaryDirect retrieves the room summary directly from the database
 func (s *Server) roomSummaryDirect(ctx context.Context, aliasOrID string) *model.RoomDirectoryRoom {
-	log := apm.Log(ctx).With().Str("room", aliasOrID).Logger()
+	log := apm.Log(ctx).With("room", aliasOrID)
 
 	// Try to get the room from the database
 	room, err := s.getRoom(ctx, aliasOrID)
 	if err != nil {
-		log.Error().Err(err).Msg("cannot get room from data store")
+		log.Error("cannot get room from data store", "error", err)
 		return nil
 	}
 	if room == nil {
-		log.Warn().Msg("room not found in data store")
+		log.Warn("room not found in data store")
 		return nil
 	}
 
@@ -152,7 +152,7 @@ func (s *Server) roomSummaryDirect(ctx context.Context, aliasOrID string) *model
 
 // roomSummaryFallback uses MSC3266 to find room summary
 func (s *Server) roomSummaryFallback(ctx context.Context, aliasOrID, via string) *model.RoomDirectoryRoom {
-	log := apm.Log(ctx).With().Str("room", aliasOrID).Str("via", via).Logger()
+	log := apm.Log(ctx).With("room", aliasOrID, "via", via)
 
 	if via == "" {
 		for _, fallback := range fallbacks {
@@ -170,14 +170,14 @@ func (s *Server) roomSummaryFallback(ctx context.Context, aliasOrID, via string)
 		host = h
 	}
 	if net.ParseIP(strings.Trim(host, "[]")) != nil {
-		log.Warn().Msg("via must be a server name, not an IP literal; refusing")
+		log.Warn("via must be a server name, not an IP literal; refusing")
 		return nil
 	}
 
 	// resolveCSURL, not QueryCSURL: an attacker-supplied via must never land in the shared curlsCache.
 	csURL := s.resolveCSURL(ctx, via)
 	if csURL == "" {
-		log.Warn().Msg("no CS URL found for user-defined via")
+		log.Warn("no CS URL found for user-defined via")
 		return nil
 	}
 
@@ -202,35 +202,35 @@ func (s *Server) summaryEndpoint(csBaseURL, aliasOrID string) (string, error) {
 }
 
 func (s *Server) roomSummaryVia(ctx context.Context, aliasOrID, via string) *model.RoomDirectoryRoom {
-	log := apm.Log(ctx).With().Str("room", aliasOrID).Str("via", via).Logger()
+	log := apm.Log(ctx).With("room", aliasOrID, "via", via)
 	var cancel context.CancelFunc
 	ctx, cancel = context.WithTimeout(ctx, roomSummaryTimeout)
 	defer cancel()
 
 	endpoint, err := s.summaryEndpoint(via, aliasOrID)
 	if err != nil {
-		log.Warn().Err(err).Msg("cannot build room summary endpoint")
+		log.Warn("cannot build room summary endpoint", "error", err)
 		return nil
 	}
-	log.Info().Str("endpoint", endpoint).Msg("querying room summary from fallback")
+	log.Info("querying room summary from fallback", "endpoint", endpoint)
 	resp, err := utils.Get(ctx, endpoint)
 	if err != nil {
-		log.Warn().Err(err).Msg("cannot get room summary from fallback")
+		log.Warn("cannot get room summary from fallback", "error", err)
 		return nil
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		log.Warn().Int("statusCode", resp.StatusCode).Msg("fallback returned non-OK status code")
+		log.Warn("fallback returned non-OK status code", "statusCode", resp.StatusCode)
 		return nil
 	}
 	var directoryEntry *model.RoomDirectoryRoom
 	if err := json.NewDecoder(resp.Body).Decode(&directoryEntry); err != nil {
-		log.Warn().Err(err).Msg("cannot decode room directory entry from fallback")
+		log.Warn("cannot decode room directory entry from fallback", "error", err)
 		return nil
 	}
 
 	if directoryEntry == nil || directoryEntry.ID == "" {
-		log.Warn().Msg("fallback returned empty room directory entry")
+		log.Warn("fallback returned empty room directory entry")
 		return nil
 	}
 
