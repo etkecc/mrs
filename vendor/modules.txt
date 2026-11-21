@@ -299,7 +299,7 @@ github.com/hashicorp/golang-lru/v2/internal
 github.com/json-iterator/go
 # github.com/kr/text v0.2.0
 ## explicit
-# github.com/labstack/echo/v5 v5.4.6
+# github.com/labstack/echo/v5 v5.4.7
 ## explicit; go 1.25.0
 github.com/labstack/echo/v5
 github.com/labstack/echo/v5/middleware
