@@ -410,7 +410,7 @@ go.yaml.in/yaml/v3
 golang.org/x/crypto/bcrypt
 golang.org/x/crypto/blowfish
 golang.org/x/crypto/ed25519
-# golang.org/x/exp v0.0.0-20261119141654-b15d094f3610
+# golang.org/x/exp v0.0.0-20261120182113-8801fbdfac81
 ## explicit; go 1.26.0
 golang.org/x/exp/constraints
 golang.org/x/exp/maps
