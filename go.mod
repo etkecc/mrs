@@ -25,7 +25,7 @@ require (
 	github.com/swaggo/echo-swagger/v2 v2.0.1
 	github.com/swaggo/swag v1.16.6
 	go.etcd.io/bbolt v1.5.0
-	golang.org/x/exp v0.0.0-20261119141654-b15d094f3610
+	golang.org/x/exp v0.0.0-20261120182113-8801fbdfac81
 	golang.org/x/net v0.63.0
 	golang.org/x/time v0.16.0
 	gopkg.in/yaml.v3 v3.0.1
