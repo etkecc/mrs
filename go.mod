@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/VictoriaMetrics/metrics v1.45.0
-	github.com/blevesearch/bleve/v2 v2.6.3
+	github.com/blevesearch/bleve/v2 v2.6.4
 	github.com/blevesearch/bleve_index_api v1.4.1
 	github.com/etkecc/go-apm/v2 v2.0.0
 	github.com/etkecc/go-echo-basic-auth/v2 v2.0.0
